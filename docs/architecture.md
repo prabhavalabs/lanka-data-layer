@@ -29,11 +29,22 @@ meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 
 -- Admin hierarchy, p-code keyed. level: 0 country, 1 province, 2 district,
 -- 3 DS division, 4 GN division. parent_pcode builds the chain.
+-- p-codes for levels 1-4 are the official OCHA COD-AB codes (LK1, LK11,
+-- LK1103, LK1103005, …). Interim GB:-prefixed ADM3 ids are retired once
+-- COD-AB is ingested; a meta key records the pcode scheme version.
 admin_units(
   pcode TEXT PRIMARY KEY, level INTEGER NOT NULL,
   name_en TEXT NOT NULL, name_si TEXT, name_ta TEXT,
   parent_pcode TEXT REFERENCES admin_units(pcode),
   area_km2 REAL, centroid_lat REAL, centroid_lon REAL
+);
+
+-- Simplified boundary geometry for instant map highlights (NOT for tiles —
+-- tiles come from PMTiles). GeoJSON geometry only (no Feature wrapper),
+-- simplified to ~0.0005° tolerance, 6 dp coordinates.
+admin_geometry(
+  pcode TEXT PRIMARY KEY REFERENCES admin_units(pcode),
+  geojson TEXT NOT NULL
 );
 
 -- Population by unit. sex: 'f'|'m'|'t'. age_bucket: '0-4' … '80+' | 'total'.
@@ -52,7 +63,10 @@ admin_stats(
   PRIMARY KEY (pcode, year, key)
 );
 
--- Gridded population (WorldPop 100 m resampled onto the canonical grid).
+-- Gridded population: WorldPop ~1 km (30 arc-sec) UN-adjusted raster,
+-- distributed uniformly across the canonical fine cells each raster pixel
+-- covers (pixel pop / covered-cell count). Point reads and radius sums are
+-- both correct at raster granularity; only cells with pop > 0 are stored.
 cells(cell_id INTEGER PRIMARY KEY, pop REAL NOT NULL);
 
 -- The reverse-geocode table. One row per land cell. Everything above GN
@@ -132,6 +146,19 @@ Raw source downloads cache in `foundry/data/raw/` (gitignored, re-fetchable). Bu
 - Caching: every GET sets `ETag: "<data_version>-<route-hash>"` and `Cache-Control: public, max-age=86400, stale-while-revalidate=604800`. Data release ⇒ new ETags everywhere.
 - Pagination: cursor-based (`?cursor=`, opaque), never offset.
 - Runtime: Node 22 + Hono + better-sqlite3 (sync reads are fine: the DB is read-only, queries are indexed point lookups). OpenAPI via zod schemas, served at `/v1/docs`.
+- **Universal lookup** `GET /v1/lookup?q=`: classifies the query before searching —
+  coordinate pair (`lat,lon` or `lat lon`, with optional °/N/E noise) → reverse geocode;
+  5-digit number → postal code (exact, then prefix); p-code pattern (`LK\d+`) → admin unit;
+  anything else → blended place + postal-name fuzzy search. Response is a typed list:
+  `{ type: 'place'|'postal'|'admin'|'coordinate', score, payload }`, best match first.
+  Suggestion mode `?suggest=1` returns lightweight rows (id, label, sublabel, lat, lon)
+  capped at 10 for typeahead use.
+- **Geometry for highlights** `GET /v1/admin/:pcode/geometry` serves the admin_geometry
+  row as GeoJSON. Postal codes and places highlight as points (lat/lon already in
+  their payloads).
+- **Tiles**: the api serves `foundry/data/artifacts/tiles/*.pmtiles` as static files
+  with range-request support at `/v1/tiles/<layer>.pmtiles`; clients use the pmtiles
+  protocol, no per-tile endpoint.
 
 ## 5. Package responsibilities
 
