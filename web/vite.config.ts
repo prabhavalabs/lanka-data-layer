@@ -11,6 +11,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    // maplibre-gl spins up its tile-parsing work in a Web Worker built from
+    // a separate `maplibre-gl-worker.mjs` entry; Vite's esbuild dep
+    // pre-bundler flattens the package into one chunk and loses that
+    // file, so the worker 404s at runtime ("Cannot read properties of
+    // undefined (reading 'height')" from the resulting empty worker).
+    // Excluding it from pre-bundling serves it as real ESM instead, where
+    // the worker's relative URL resolves correctly.
+    exclude: ["maplibre-gl"],
+  },
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : 5173,
     proxy: {

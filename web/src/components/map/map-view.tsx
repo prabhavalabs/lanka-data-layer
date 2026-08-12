@@ -1,12 +1,32 @@
 import * as React from "react";
-import { AttributionControl, Map as MaplibreMap, NavigationControl, ScaleControl } from "maplibre-gl";
-import type { LngLatBoundsLike } from "maplibre-gl";
+import {
+  AttributionControl,
+  Map as MaplibreMap,
+  Marker,
+  NavigationControl,
+  ScaleControl,
+} from "maplibre-gl";
+import type { GeoJSONSource, IControl, LayerSpecification, LngLatBoundsLike, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { MapboxOverlay } from "@deck.gl/mapbox";
 import { GRID } from "@geopub/shared";
 
 import { useTheme } from "@/components/theme-provider";
-import { applyBasemapMode, basemapStyle, resolveBasemapMode } from "@/components/map/basemap";
-import { LAYER_REGISTRY } from "@/components/map/layer-registry";
+import { applyBasemapMode, basemapStyle, resolveBasemapMode, type BasemapMode } from "@/components/map/basemap";
+import {
+  ADMIN_HOVER_LAYER_IDS,
+  ADMIN_SOURCE_ID,
+  applyThemedPaint,
+  LAYER_REGISTRY,
+} from "@/components/map/layer-registry";
+import { buildHighlightMarkerElement } from "@/components/map/highlight-marker";
+import { LayerPanel } from "@/components/map/layer-panel";
+import { MapLegend } from "@/components/map/legend";
+import { buildPopulationLayer, POPULATION_LAYER_ID, populationTooltip } from "@/components/map/population-layer";
+import "@/components/map/pmtiles-protocol";
+import { Card } from "@/components/ui/card";
+import { featureBounds } from "@/lib/geojson-bounds";
+import { usePopulationGrid } from "@/hooks/use-population-grid";
 import { useLayerStore } from "@/stores/layer-store";
 import { useMapStore } from "@/stores/map-store";
 
@@ -18,85 +38,314 @@ const CAMERA_BOUNDS: LngLatBoundsLike = [
   [GRID.lonMax + CAMERA_PADDING_DEG, GRID.latMax + CAMERA_PADDING_DEG],
 ];
 
+const POPULATION_PITCH = 50;
+
+const HIGHLIGHT_SOURCE_ID = "highlight";
+const HIGHLIGHT_FILL_LAYER_ID = "highlight-fill";
+const HIGHLIGHT_GLOW_LAYER_ID = "highlight-line-glow";
+const HIGHLIGHT_LINE_LAYER_ID = "highlight-line";
+const HIGHLIGHT_LAYER_IDS = [HIGHLIGHT_FILL_LAYER_ID, HIGHLIGHT_GLOW_LAYER_ID, HIGHLIGHT_LINE_LAYER_ID];
+
+const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+
+// Highlight accent — approximates the app's oklch primary token (~235deg,
+// blue) as a plain hex pair. MapLibre's paint expressions parse CSS colors
+// themselves and don't resolve `var(--...)` custom properties or oklch(),
+// so this can't just reference index.css's --primary; it's kept in sync by
+// eye instead.
+const HIGHLIGHT_ACCENT: Record<BasemapMode, string> = { light: "#0369a1", dark: "#38bdf8" };
+
+/** Re-applies the highlight layers' accent color for `mode`. Paired with applyBasemapMode/applyThemedPaint in the theme-change effect — highlight layers live outside LAYER_REGISTRY so they need their own call. */
+function applyHighlightTheme(map: MaplibreMap, mode: BasemapMode): void {
+  const accent = HIGHLIGHT_ACCENT[mode];
+  if (map.getLayer(HIGHLIGHT_FILL_LAYER_ID)) map.setPaintProperty(HIGHLIGHT_FILL_LAYER_ID, "fill-color", accent);
+  if (map.getLayer(HIGHLIGHT_GLOW_LAYER_ID)) map.setPaintProperty(HIGHLIGHT_GLOW_LAYER_ID, "line-color", accent);
+  if (map.getLayer(HIGHLIGHT_LINE_LAYER_ID)) map.setPaintProperty(HIGHLIGHT_LINE_LAYER_ID, "line-color", accent);
+}
+
+interface HoveredAdmin {
+  pcode: string;
+  name: string;
+}
+
+/** Tracks the currently feature-stated ("hover": true) admin feature so it can be cleared before the next one is set, or on mouseout. */
+interface HoverRef {
+  sourceLayer: string;
+  id: string | number;
+}
+
 /**
- * The MapLibre canvas. Deliberately small: layers come entirely from
- * LAYER_REGISTRY (currently empty — see that file), so there's no
- * per-dataset imperative wiring to grow this component over time.
+ * The MapLibre canvas plus its deck.gl overlay. Base layers come entirely
+ * from LAYER_REGISTRY — MapView just walks that array for the MapLibre
+ * (`kind: "maplibre"`) entries and adds/removes/toggles them; the one
+ * `kind: "deck"` entry (population-3d) is built imperatively here from
+ * population-layer.ts and pushed into the MapboxOverlay.
  *
  * The map is the source of truth for camera position once mounted; it only
  * reads the store once, at construction, for the initial view (already
  * restored from the URL by useMapUrlSync before this mounts). After that it
- * pushes moveend updates back into the store one-way, for the URL sync to
- * pick up — nothing currently drives the camera programmatically, so there
- * is no store -> map effect to fight with.
+ * pushes moveend updates back into the store one-way, EXCEPT for two
+ * store -> map paths added for this feature: `flyToRequest` (generic camera
+ * moves other features can request) and `highlight` (auto-fit/flyTo to
+ * whatever's highlighted).
  */
 export function MapView() {
   const { theme } = useTheme();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<MaplibreMap | null>(null);
+  const overlayRef = React.useRef<MapboxOverlay | null>(null);
+  const markerRef = React.useRef<Marker | null>(null);
+  const hoverRef = React.useRef<HoverRef | null>(null);
+  const populationPitchedRef = React.useRef(false);
+
   const visibility = useLayerStore((s) => s.visibility);
+  const highlight = useMapStore((s) => s.highlight);
+  const flyToRequest = useMapStore((s) => s.flyToRequest);
 
+  const [hoveredAdmin, setHoveredAdmin] = React.useState<HoveredAdmin | null>(null);
+  // Flips true once createMap() finishes (see the construction effect
+  // below). mapRef/overlayRef are refs, not state, precisely so the other
+  // effects can read them without re-running on every map-internal change
+  // — but that means an effect that fires *before* the map exists (a very
+  // real race: map construction is deferred behind a ResizeObserver, see
+  // below) reads a null ref, no-ops, and — since refs aren't reactive —
+  // never gets another chance once the map shows up. mapReady in each
+  // effect's dependency array is what forces that one retry.
+  const [mapReady, setMapReady] = React.useState(false);
+
+  const populationVisible = visibility[POPULATION_LAYER_ID] ?? false;
+  const { data: populationGrid } = usePopulationGrid(populationVisible);
+
+  // ---------------------------------------------------------------------
+  // Map + deck.gl overlay construction (once).
+  // ---------------------------------------------------------------------
   React.useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
+    const container = containerRef.current;
+    if (!container || mapRef.current) return;
 
-    const { center, zoom } = useMapStore.getState();
-    const mode = resolveBasemapMode(theme);
+    let map: MaplibreMap | null = null;
+    let detach: (() => void) | null = null;
 
-    const map = new MaplibreMap({
-      container: containerRef.current,
-      style: basemapStyle(mode),
-      center,
-      zoom,
-      minZoom: 5,
-      maxZoom: 18,
-      maxBounds: CAMERA_BOUNDS,
-      attributionControl: false,
-    });
+    function createMap(): void {
+      const { center, zoom } = useMapStore.getState();
+      const mode = resolveBasemapMode(theme);
 
-    map.addControl(new AttributionControl({ compact: true }));
-    map.addControl(new NavigationControl({ showCompass: true }), "top-right");
-    map.addControl(new ScaleControl({ maxWidth: 120, unit: "metric" }), "bottom-left");
+      const nextMap = new MaplibreMap({
+        container: container as HTMLDivElement,
+        style: basemapStyle(mode),
+        center,
+        zoom,
+        minZoom: 5,
+        maxZoom: 18,
+        maxBounds: CAMERA_BOUNDS,
+        attributionControl: false,
+      });
 
-    const onMoveEnd = () => {
-      const c = map.getCenter();
-      useMapStore.getState().setView({ center: [c.lng, c.lat], zoom: map.getZoom() });
-    };
-    map.on("moveend", onMoveEnd);
+      nextMap.addControl(new AttributionControl({ compact: true }));
+      nextMap.addControl(new NavigationControl({ showCompass: true }), "top-right");
+      nextMap.addControl(new ScaleControl({ maxWidth: 120, unit: "metric" }), "bottom-left");
 
-    const addRegistryLayers = () => {
-      for (const layer of LAYER_REGISTRY) {
-        if (!map.getSource(layer.id)) {
-          map.addSource(layer.id, layer.source);
+      // interleaved: false (overlaid mode), deliberately deviating from the
+      // task brief's `interleaved: true`. Verified (not assumed) that
+      // interleaved mode is broken with this exact dependency pair —
+      // @deck.gl/mapbox@9.3.10 against maplibre-gl@6.3.0 (a very recent
+      // major release): the data pipeline, WebGL2 context, and the
+      // MapboxLayerGroup custom layer's position in the style's layer
+      // order were all confirmed correct, and picking correctly resolved
+      // screen positions to the right coordinates — but nothing actually
+      // rasterized to the framebuffer (population-3d never painted a
+      // pixel, at any zoom/pitch). Switching to overlaid mode fixed
+      // rendering immediately with no other changes, isolating the fault
+      // to interleaved compositing. Overlaid mode still shares the same
+      // camera sync, hover-picking (via forwarded mouse events), and
+      // tooltip behavior — the only real difference is that its layers
+      // can't be interleaved *between* MapLibre layers (always draws
+      // above all of them), which doesn't matter here: population-3d is
+      // meant to sit above everything else anyway.
+      const overlay = new MapboxOverlay({
+        interleaved: false,
+        layers: [],
+        getTooltip: populationTooltip,
+      });
+      nextMap.addControl(overlay as unknown as IControl);
+
+      const onMoveEnd = () => {
+        const c = nextMap.getCenter();
+        useMapStore.getState().setView({ center: [c.lng, c.lat], zoom: nextMap.getZoom() });
+      };
+      nextMap.on("moveend", onMoveEnd);
+
+      const onClick = () => useMapStore.getState().setHighlight(null);
+      nextMap.on("click", onClick);
+
+      const clearHover = () => {
+        if (hoverRef.current) {
+          nextMap.setFeatureState(
+            { source: ADMIN_SOURCE_ID, sourceLayer: hoverRef.current.sourceLayer, id: hoverRef.current.id },
+            { hover: false }
+          );
+          hoverRef.current = null;
         }
-        for (const spec of layer.layers) {
-          if (!map.getLayer(spec.id)) {
-            map.addLayer(spec);
+        setHoveredAdmin(null);
+        nextMap.getCanvas().style.cursor = "";
+      };
+
+      const onMouseMove = (e: MapMouseEvent) => {
+        const layerIds = ADMIN_HOVER_LAYER_IDS.filter((id) => nextMap.getLayer(id));
+        if (layerIds.length === 0) return;
+        const features = nextMap.queryRenderedFeatures(e.point, { layers: layerIds });
+        const top = features[0];
+        if (!top || top.id === undefined || !top.sourceLayer) {
+          clearHover();
+          return;
+        }
+        if (hoverRef.current && (hoverRef.current.sourceLayer !== top.sourceLayer || hoverRef.current.id !== top.id)) {
+          nextMap.setFeatureState(
+            { source: ADMIN_SOURCE_ID, sourceLayer: hoverRef.current.sourceLayer, id: hoverRef.current.id },
+            { hover: false }
+          );
+        }
+        nextMap.setFeatureState({ source: ADMIN_SOURCE_ID, sourceLayer: top.sourceLayer, id: top.id }, { hover: true });
+        hoverRef.current = { sourceLayer: top.sourceLayer, id: top.id };
+        setHoveredAdmin({
+          pcode: String(top.properties?.pcode ?? ""),
+          name: String(top.properties?.name_en ?? ""),
+        });
+        nextMap.getCanvas().style.cursor = "pointer";
+      };
+      nextMap.on("mousemove", onMouseMove);
+      nextMap.on("mouseout", clearHover);
+
+      const addRegistryLayers = () => {
+        // Theme at mount time; the theme-change effect below keeps this in
+        // sync afterward via applyThemedPaint (paired with applyBasemapMode).
+        const mode = resolveBasemapMode(theme);
+        for (const layer of LAYER_REGISTRY) {
+          if (layer.kind !== "maplibre") continue;
+          if (!nextMap.getSource(layer.id)) {
+            nextMap.addSource(layer.id, layer.source);
+          }
+          const themed = layer.themedPaint?.(mode) ?? {};
+          for (const spec of layer.layers) {
+            if (nextMap.getLayer(spec.id)) continue;
+            const overrides = themed[spec.id];
+            // Merging in themedPaint's dynamically-keyed overrides breaks
+            // LayerSpecification's discriminated-union narrowing on `type`;
+            // the merged object is still a valid layer spec (overrides are
+            // just paint props from this same layer's own themedPaint fn).
+            const merged = overrides ? ({ ...spec, paint: { ...spec.paint, ...overrides } } as LayerSpecification) : spec;
+            nextMap.addLayer(merged);
           }
         }
-      }
-    };
-    if (map.isStyleLoaded()) addRegistryLayers();
-    else map.once("load", addRegistryLayers);
 
-    mapRef.current = map;
+        // Highlight source/layers, added last so they draw above every
+        // registry layer (glowing outline + soft fill, theme-aware accent).
+        const accent = HIGHLIGHT_ACCENT[mode];
+        if (!nextMap.getSource(HIGHLIGHT_SOURCE_ID)) {
+          nextMap.addSource(HIGHLIGHT_SOURCE_ID, { type: "geojson", data: EMPTY_FEATURE_COLLECTION });
+        }
+        if (!nextMap.getLayer(HIGHLIGHT_FILL_LAYER_ID)) {
+          nextMap.addLayer({
+            id: HIGHLIGHT_FILL_LAYER_ID,
+            type: "fill",
+            source: HIGHLIGHT_SOURCE_ID,
+            layout: { visibility: "none" },
+            paint: { "fill-color": accent, "fill-opacity": 0.12 },
+          });
+        }
+        if (!nextMap.getLayer(HIGHLIGHT_GLOW_LAYER_ID)) {
+          nextMap.addLayer({
+            id: HIGHLIGHT_GLOW_LAYER_ID,
+            type: "line",
+            source: HIGHLIGHT_SOURCE_ID,
+            layout: { visibility: "none", "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": accent,
+              "line-width": 9,
+              "line-blur": 4,
+              "line-opacity": 0.45,
+            },
+          });
+        }
+        if (!nextMap.getLayer(HIGHLIGHT_LINE_LAYER_ID)) {
+          nextMap.addLayer({
+            id: HIGHLIGHT_LINE_LAYER_ID,
+            type: "line",
+            source: HIGHLIGHT_SOURCE_ID,
+            layout: { visibility: "none", "line-join": "round", "line-cap": "round" },
+            paint: { "line-color": accent, "line-width": 2.5, "line-opacity": 0.95 },
+          });
+        }
+      };
+      if (nextMap.isStyleLoaded()) addRegistryLayers();
+      else nextMap.once("style.load", addRegistryLayers);
+
+      map = nextMap;
+      mapRef.current = nextMap;
+      overlayRef.current = overlay;
+      setMapReady(true);
+
+      detach = () => {
+        nextMap.off("moveend", onMoveEnd);
+        nextMap.off("click", onClick);
+        nextMap.off("mousemove", onMouseMove);
+        nextMap.off("mouseout", clearHover);
+        markerRef.current?.remove();
+        markerRef.current = null;
+        overlay.finalize();
+        overlayRef.current = null;
+        nextMap.remove();
+        mapRef.current = null;
+        setMapReady(false);
+      };
+    }
+
+    // Don't construct the map until `container` actually has a non-zero
+    // size. On a cold dev-server load, Tailwind's stylesheet can still be
+    // in flight when this effect first runs (Vite serves it as a separate
+    // request), so the container can genuinely measure zero-height at this
+    // exact moment; MapLibre sizes its WebGL canvas once, synchronously,
+    // from whatever it measures at construction time, and its own internal
+    // ResizeObserver doesn't reliably recover from a bad *initial* size in
+    // that scenario (initialization partially fails instead — the canvas
+    // gets stuck at a fallback size and never receives tiles). Gating
+    // construction on our own ResizeObserver's first real measurement
+    // sidesteps the race instead of papering over its symptom. Once
+    // created, the same observer keeps calling `resize()` on later size
+    // changes (sidebar/viewport), same as MapLibre's own would.
+    const resizeObserver = new ResizeObserver(() => {
+      if (map) {
+        map.resize();
+        return;
+      }
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      createMap();
+    });
+    resizeObserver.observe(container);
 
     return () => {
-      map.off("moveend", onMoveEnd);
-      map.remove();
-      mapRef.current = null;
+      resizeObserver.disconnect();
+      detach?.();
     };
     // Map is created once on mount; theme is handled by the effect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Swap the basemap tiles when the resolved theme changes.
+  // Swap the basemap tiles + every registry layer's themed paint props when
+  // the resolved theme changes.
   React.useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const apply = () => applyBasemapMode(map, resolveBasemapMode(theme));
+    const mode = resolveBasemapMode(theme);
+    const apply = () => {
+      applyBasemapMode(map, mode);
+      applyThemedPaint(map, mode);
+      applyHighlightTheme(map, mode);
+    };
     if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
-  }, [theme]);
+    else map.once("style.load", apply);
+  }, [theme, mapReady]);
 
   // Show/hide registry layers as the layer store changes.
   React.useEffect(() => {
@@ -104,6 +353,7 @@ export function MapView() {
     if (!map) return;
     const apply = () => {
       for (const layer of LAYER_REGISTRY) {
+        if (layer.kind !== "maplibre") continue;
         const value = visibility[layer.id] ? "visible" : "none";
         for (const spec of layer.layers) {
           if (map.getLayer(spec.id)) {
@@ -113,8 +363,116 @@ export function MapView() {
       }
     };
     if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
-  }, [visibility]);
+    else map.once("style.load", apply);
+  }, [visibility, mapReady]);
 
-  return <div ref={containerRef} className="size-full" />;
+  // population-3d: tilt into a 3D reveal when toggled on, level back out
+  // when toggled off.
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (populationVisible === populationPitchedRef.current) return;
+    populationPitchedRef.current = populationVisible;
+    const apply = () => map.easeTo({ pitch: populationVisible ? POPULATION_PITCH : 0, duration: 800 });
+    if (map.isStyleLoaded()) apply();
+    else map.once("style.load", apply);
+  }, [populationVisible, mapReady]);
+
+  // Rebuild the population-3d deck.gl layer whenever its visibility, data,
+  // or the resolved theme (color ramp) changes.
+  React.useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    const mode = resolveBasemapMode(theme);
+    overlay.setProps({
+      layers: [
+        buildPopulationLayer({
+          cells: populationGrid?.cells ?? [],
+          mode,
+          visible: populationVisible,
+        }),
+      ],
+    });
+  }, [populationGrid, populationVisible, theme, mapReady]);
+
+  // Generic camera moves requested via mapStore.flyTo (other features).
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyToRequest) return;
+    const apply = () =>
+      map.flyTo({
+        center: [flyToRequest.lon, flyToRequest.lat],
+        zoom: flyToRequest.zoom ?? map.getZoom(),
+        essential: true,
+        duration: 1000,
+      });
+    if (map.isStyleLoaded()) apply();
+    else map.once("style.load", apply);
+  }, [flyToRequest, mapReady]);
+
+  // Highlight: draw the geometry outline/fill or the point marker, and
+  // auto-fit/flyTo the target. Clears everything when highlight is null.
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const apply = () => {
+      markerRef.current?.remove();
+      markerRef.current = null;
+
+      const source = map.getSource(HIGHLIGHT_SOURCE_ID) as GeoJSONSource | undefined;
+
+      if (highlight?.kind === "geometry") {
+        source?.setData({ type: "FeatureCollection", features: [highlight.feature] });
+        for (const id of HIGHLIGHT_LAYER_IDS) {
+          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "visible");
+        }
+        const bounds = featureBounds(highlight.feature);
+        if (bounds) {
+          map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 800 });
+        }
+      } else {
+        source?.setData(EMPTY_FEATURE_COLLECTION);
+        for (const id of HIGHLIGHT_LAYER_IDS) {
+          if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
+        }
+      }
+
+      if (highlight?.kind === "point") {
+        const el = buildHighlightMarkerElement(highlight.label);
+        const marker = new Marker({ element: el, anchor: "center" })
+          .setLngLat([highlight.lon, highlight.lat])
+          .addTo(map);
+        markerRef.current = marker;
+        map.flyTo({ center: [highlight.lon, highlight.lat], zoom: 13, essential: true, duration: 800 });
+      }
+    };
+
+    if (map.isStyleLoaded()) apply();
+    else map.once("style.load", apply);
+  }, [highlight, mapReady]);
+
+  return (
+    <div className="relative size-full">
+      {/*
+        size-full, not absolute inset-0: MapLibre sets `position: relative`
+        as an inline style on its container once it mounts, which outranks
+        this className and makes `inset-0` a no-op (inset only sizes
+        absolute/fixed elements) — the container would collapse to its
+        content's height, which at that point is nothing, i.e. 0. Percentage
+        sizing works under any position value, so it survives the override.
+      */}
+      <div ref={containerRef} className="size-full" />
+      <LayerPanel />
+      <MapLegend />
+      {hoveredAdmin && hoveredAdmin.name && (
+        <div className="pointer-events-none absolute right-3 top-20 z-20">
+          <Card className="px-3 py-2 shadow-md">
+            <div className="text-sm font-medium">{hoveredAdmin.name}</div>
+            <div className="text-xs text-muted-foreground">{hoveredAdmin.pcode}</div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
 }
