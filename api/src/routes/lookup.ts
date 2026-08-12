@@ -46,7 +46,10 @@ type Classification =
 function classify(q: string): Classification {
   const coord = parseCoordinatePair(q);
   if (coord) return { kind: "coordinate", lat: coord.lat, lon: coord.lon };
-  if (/^\d{5}$/.test(q)) return { kind: "postal", code: q };
+  // 3-4 digits classify as postal too: codes are exactly 5 digits, so a
+  // shorter all-numeric query can only sensibly be a code being typed —
+  // the prefix branch handles it (e.g. "105" → 10500, 10502, …).
+  if (/^\d{3,5}$/.test(q)) return { kind: "postal", code: q };
   if (/^LK\d+$/i.test(q)) return { kind: "admin", pcode: q.toUpperCase() };
   return { kind: "blended" };
 }
