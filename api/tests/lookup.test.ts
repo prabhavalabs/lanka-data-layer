@@ -192,6 +192,19 @@ test("suggest mode for coordinates returns a single row labeled by the resolved 
   assert.equal(body.payload[0].pcode, "LK110101");
 });
 
+test("blended free text matches admin unit names", async () => {
+  const res = await app.request("/v1/lookup?q=colombo&suggest=1");
+  const body = await readJson(res);
+  const adminRows = body.payload.filter((r: { type: string }) => r.type === "admin");
+  assert.ok(adminRows.length >= 2, "expects the district and the DS division");
+  const labels = adminRows.map((r: { label: string }) => r.label);
+  assert.ok(labels.includes("Colombo District"));
+  // district (level 2) outranks the DS division (level 3) via the level penalty
+  const districtIdx = body.payload.findIndex((r: { pcode?: string }) => r.pcode === "LK11");
+  const dsIdx = body.payload.findIndex((r: { pcode?: string }) => r.pcode === "LK1101");
+  assert.ok(districtIdx !== -1 && dsIdx !== -1 && districtIdx < dsIdx);
+});
+
 // --- general validation ----------------------------------------------------------------
 
 test("GET /v1/lookup requires a non-empty q", async () => {

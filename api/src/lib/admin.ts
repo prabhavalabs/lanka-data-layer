@@ -31,6 +31,39 @@ export function mapAdminUnit(row: AdminUnitRow, lang: Lang): AdminUnit {
   };
 }
 
+export interface ScoredAdminRow {
+  row: AdminUnitRow;
+  score: number;
+}
+
+/**
+ * Name-prefix search over admin units (levels 1-4) for the blended lookup
+ * branch. Plain LIKE scan — 14K rows, sub-millisecond, no index needed.
+ * Scoring mirrors the place-search scale (exact 1.0 / prefix 0.88) with a
+ * small per-level penalty so a province outranks a same-named GN division.
+ */
+export function searchAdminByName(db: Database.Database, q: string, limit: number): ScoredAdminRow[] {
+  const cleaned = q.replace(/[%_]/g, "").trim();
+  if (cleaned.length === 0) return [];
+  const like = `${cleaned}%`;
+  const rows = prepared<AdminUnitRow>(
+    db,
+    `SELECT pcode, level, name_en, name_si, name_ta, parent_pcode, area_km2, centroid_lat, centroid_lon
+     FROM admin_units
+     WHERE level BETWEEN 1 AND 4
+       AND (name_en LIKE ? OR name_si LIKE ? OR name_ta LIKE ?)
+     ORDER BY level ASC, name_en ASC
+     LIMIT ?`,
+  ).all(like, like, like, limit);
+
+  const lower = cleaned.toLowerCase();
+  return rows.map((row) => {
+    const exact =
+      row.name_en.toLowerCase() === lower || row.name_si === cleaned || row.name_ta === cleaned;
+    return { row, score: (exact ? 1.0 : 0.88) - row.level * 0.03 };
+  });
+}
+
 export function getAdminUnitRow(db: Database.Database, pcode: string): AdminUnitRow | undefined {
   const stmt = prepared<AdminUnitRow>(
     db,

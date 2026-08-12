@@ -6,7 +6,8 @@ import type { AdminLevel, Lang } from "@geopub/shared";
 import { buildMeta, ok } from "../lib/envelope.ts";
 import { prepared } from "../lib/cache.ts";
 import { NotInCoverageError, ValidationError, formatZodIssues } from "../lib/errors.ts";
-import { getAdminUnitRow, mapAdminUnit, resolveAdminLevels } from "../lib/admin.ts";
+import { getAdminUnitRow, mapAdminUnit, resolveAdminLevels, searchAdminByName } from "../lib/admin.ts";
+import type { AdminUnitRow } from "../lib/admin.ts";
 import { resolveName } from "../lib/lang.ts";
 import { parseCoordinatePair } from "../lib/coords.ts";
 import { reverseGeocodeAtCell } from "../lib/reverseGeocode.ts";
@@ -178,14 +179,12 @@ function runAdminFull(db: Database.Database, pcode: string, lang: Lang): BranchO
   return { rows: [{ type: "admin", score: 1, payload: mapAdminUnit(row, lang) }], datasetIds: new Set(["admin-units"]) };
 }
 
-function runAdminSuggest(db: Database.Database, pcode: string, lang: Lang): BranchOutcome<SuggestRow> {
-  const row = getAdminUnitRow(db, pcode);
-  if (!row) return { rows: [], datasetIds: new Set() };
+function adminRowToSuggestRow(db: Database.Database, row: AdminUnitRow, lang: Lang): SuggestRow {
   const unit = mapAdminUnit(row, lang);
   const levelName = LEVEL_NAMES[row.level];
   const parent = row.parent_pcode ? getAdminUnitRow(db, row.parent_pcode) : undefined;
   const sublabel = parent ? `${levelName} · ${resolveName(parent, lang)}` : levelName;
-  const suggestRow: SuggestRow = {
+  return {
     type: "admin",
     id: unit.pcode,
     label: unit.name,
@@ -194,7 +193,12 @@ function runAdminSuggest(db: Database.Database, pcode: string, lang: Lang): Bran
     lon: unit.centroid?.lon ?? null,
     pcode: unit.pcode,
   };
-  return { rows: [suggestRow], datasetIds: new Set(["admin-units"]) };
+}
+
+function runAdminSuggest(db: Database.Database, pcode: string, lang: Lang): BranchOutcome<SuggestRow> {
+  const row = getAdminUnitRow(db, pcode);
+  if (!row) return { rows: [], datasetIds: new Set() };
+  return { rows: [adminRowToSuggestRow(db, row, lang)], datasetIds: new Set(["admin-units"]) };
 }
 
 function blendedDatasetIds(places: ScoredPlace[], postal: unknown[], touchedAdmin: boolean): Set<string> {
@@ -209,24 +213,31 @@ function runBlendedFull(db: Database.Database, q: string, lang: Lang, limit: num
   const sanitized = sanitizeForFts(q);
   const places = sanitized ? scorePlaceCandidates(db, sanitized, q, lang, { limit }) : [];
   const postal = searchPostalByName(db, q, limit);
+  const admin = searchAdminByName(db, q, limit);
 
   const merged: FullRow[] = [
     ...places.map((p): FullRow => ({ type: "place", score: p.score, payload: p })),
     ...postal.map((p): FullRow => postalToFullRow(p, p.score)),
+    ...admin.map((a): FullRow => ({ type: "admin", score: a.score, payload: mapAdminUnit(a.row, lang) })),
   ];
   merged.sort((a, b) => b.score - a.score);
 
-  return { rows: merged.slice(0, limit), datasetIds: blendedDatasetIds(places, postal, false) };
+  return {
+    rows: merged.slice(0, limit),
+    datasetIds: blendedDatasetIds(places, postal, admin.length > 0),
+  };
 }
 
 function runBlendedSuggest(db: Database.Database, q: string, lang: Lang, limit: number): BranchOutcome<SuggestRow> {
   const sanitized = sanitizeForFts(q);
   const places = sanitized ? scorePlaceCandidates(db, sanitized, q, lang, { limit }) : [];
   const postal = searchPostalByName(db, q, limit);
+  const admin = searchAdminByName(db, q, limit);
 
   const scoredRows: { score: number; row: SuggestRow }[] = [
     ...places.map((p) => ({ score: p.score, row: placeToSuggestRow(db, p, lang) })),
     ...postal.map((p) => ({ score: p.score, row: postalToSuggestRow(p) })),
+    ...admin.map((a) => ({ score: a.score, row: adminRowToSuggestRow(db, a.row, lang) })),
   ];
   scoredRows.sort((a, b) => b.score - a.score);
 
@@ -234,7 +245,7 @@ function runBlendedSuggest(db: Database.Database, q: string, lang: Lang, limit: 
     rows: scoredRows.slice(0, limit).map((r) => r.row),
     // The place branch always attempts a cell_lookup lookup for its sublabel (see placeToSuggestRow),
     // so tag admin-units attribution whenever there were any place candidates at all.
-    datasetIds: blendedDatasetIds(places, postal, places.length > 0),
+    datasetIds: blendedDatasetIds(places, postal, admin.length > 0 || places.length > 0),
   };
 }
 
