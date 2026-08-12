@@ -99,4 +99,57 @@ export function mountPopulationRoute(app: Hono, db: Database.Database): void {
     const meta = buildMeta(db, ["cells"]);
     return c.json(ok(payload, meta));
   });
+
+  mountPopulationGridRoute(app, db);
+}
+
+const GRID_RESOLUTIONS = [0.01, 0.02, 0.05];
+
+const GridQuerySchema = z.object({
+  res: z.coerce.number().refine((v) => GRID_RESOLUTIONS.includes(v), {
+    message: `res must be one of ${GRID_RESOLUTIONS.join(", ")}`,
+  }).default(0.02),
+});
+
+/** Per-process memo: the aggregation scans 5.4M rows (~1-2 s), but the DB is
+ * immutable for the process lifetime, so each resolution is computed once. */
+const gridMemo = new Map<number, [number, number, number][]>();
+
+/**
+ * GET /v1/population/grid?res= — density buckets for map rendering.
+ * Aggregates the canonical fine cells into res-degree buckets and returns
+ * compact [lat, lon, population] triples (bucket centers, pop rounded).
+ * Intended for GPU layers (deck.gl columns/heatmaps); at res 0.02 Sri Lanka
+ * is ~15K land buckets.
+ */
+function mountPopulationGridRoute(app: Hono, db: Database.Database): void {
+  app.get("/v1/population/grid", (c) => {
+    const parsed = GridQuerySchema.safeParse(c.req.query());
+    if (!parsed.success) throw new ValidationError(formatZodIssues(parsed.error.issues));
+    const { res } = parsed.data;
+
+    let cells = gridMemo.get(res);
+    if (!cells) {
+      // factor is inlined as a literal, not bound: parameters bind as REAL,
+      // which turns the integer division into real division and defeats the
+      // bucketing. Safe to inline — res comes from the whitelist above.
+      const factor = Math.round(res * 1000);
+      const rows = prepared<{ r: number; c: number; pop: number }>(
+        db,
+        `SELECT cell_id / ${GRID.cols} / ${factor} AS r,
+                cell_id % ${GRID.cols} / ${factor} AS c,
+                SUM(pop) AS pop
+         FROM cells GROUP BY r, c`,
+      ).all();
+      cells = rows.map((row) => [
+        Number((GRID.latMax - (row.r + 0.5) * res).toFixed(4)),
+        Number((GRID.lonMin + (row.c + 0.5) * res).toFixed(4)),
+        Math.round(row.pop),
+      ]);
+      gridMemo.set(res, cells);
+    }
+
+    const meta = buildMeta(db, ["cells"]);
+    return c.json(ok({ res, count: cells.length, cells }, meta));
+  });
 }
