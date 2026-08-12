@@ -24,7 +24,11 @@ import { LayerPanel } from "@/components/map/layer-panel";
 import { MapLegend } from "@/components/map/legend";
 import { buildPopulationLayer, POPULATION_LAYER_ID, populationTooltip } from "@/components/map/population-layer";
 import "@/components/map/pmtiles-protocol";
-import { Card } from "@/components/ui/card";
+import { ExploreAttribution } from "@/components/explore/explore-attribution";
+import { ExploreHeader } from "@/components/explore/explore-header";
+import { ExploreOmnibox } from "@/components/explore/explore-omnibox";
+import { ExploreReadout } from "@/components/explore/explore-readout";
+import { glassPanelStyle, MONO_FONT, SANS_FONT, TEXT, TEXT2 } from "@/components/explore/glass";
 import { featureBounds } from "@/lib/geojson-bounds";
 import { usePopulationGrid } from "@/hooks/use-population-grid";
 import { useLayerStore } from "@/stores/layer-store";
@@ -52,12 +56,12 @@ const HIGHLIGHT_LAYER_IDS = [HIGHLIGHT_FILL_LAYER_ID, HIGHLIGHT_GLOW_LAYER_ID, H
 
 const EMPTY_FEATURE_COLLECTION: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
-// Highlight accent — approximates the app's oklch primary token (~235deg,
-// blue) as a plain hex pair. MapLibre's paint expressions parse CSS colors
-// themselves and don't resolve `var(--...)` custom properties or oklch(),
-// so this can't just reference index.css's --primary; it's kept in sync by
-// eye instead.
-const HIGHLIGHT_ACCENT: Record<BasemapMode, string> = { light: "#0369a1", dark: "#38bdf8" };
+// Highlight accent — the Explore design's accent token (dark #D8446B,
+// light #8D153A per DESIGN-NOTES.md's token table), as a plain hex pair.
+// MapLibre's paint expressions parse CSS colors themselves and don't
+// resolve `var(--...)` custom properties, so this can't just reference
+// --accent; it's kept in sync by eye instead.
+const HIGHLIGHT_ACCENT: Record<BasemapMode, string> = { light: "#8D153A", dark: "#D8446B" };
 
 /** Re-applies the highlight layers' accent color for `mode`. Paired with applyBasemapMode/applyThemedPaint in the theme-change effect — highlight layers live outside LAYER_REGISTRY so they need their own call. */
 function applyHighlightTheme(map: MaplibreMap, mode: BasemapMode): void {
@@ -107,6 +111,13 @@ export function MapView() {
   const flyToRequest = useMapStore((s) => s.flyToRequest);
 
   const [hoveredAdmin, setHoveredAdmin] = React.useState<HoveredAdmin | null>(null);
+  // Bottom-left coordinate readout — updated on every mousemove; falls back
+  // to the map's initial center (read once, not subscribed reactively —
+  // see the class doc comment above on why this component avoids
+  // store->map reactive coupling outside flyToRequest/highlight) until the
+  // pointer first moves over the map.
+  const [pointer, setPointer] = React.useState<{ lat: number; lon: number } | null>(null);
+  const initialCenterRef = React.useRef(useMapStore.getState().center);
   // Flips true once createMap() finishes (see the construction effect
   // below). mapRef/overlayRef are refs, not state, precisely so the other
   // effects can read them without re-running on every map-internal change
@@ -203,6 +214,7 @@ export function MapView() {
       };
 
       const onMouseMove = (e: MapMouseEvent) => {
+        setPointer({ lat: e.lngLat.lat, lon: e.lngLat.lng });
         const layerIds = ADMIN_HOVER_LAYER_IDS.filter((id) => nextMap.getLayer(id));
         if (layerIds.length === 0) return;
         const features = nextMap.queryRenderedFeatures(e.point, { layers: layerIds });
@@ -390,22 +402,19 @@ export function MapView() {
     else map.once("style.load", apply);
   }, [populationVisible, mapReady]);
 
-  // Rebuild the population-3d deck.gl layer whenever its visibility, data,
-  // or the resolved theme (color ramp) changes.
+  // Rebuild the population-3d deck.gl layers whenever visibility or data
+  // changes. The ramp is theme-invariant (see population-layer.ts), so
+  // unlike the other registry layers this doesn't need to react to theme.
   React.useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;
-    const mode = resolveBasemapMode(theme);
     overlay.setProps({
-      layers: [
-        buildPopulationLayer({
-          cells: populationGrid?.cells ?? [],
-          mode,
-          visible: populationVisible && populationInZoomRange,
-        }),
-      ],
+      layers: buildPopulationLayer({
+        cells: populationGrid?.cells ?? [],
+        visible: populationVisible && populationInZoomRange,
+      }),
     });
-  }, [populationGrid, populationVisible, populationInZoomRange, theme, mapReady]);
+  }, [populationGrid, populationVisible, populationInZoomRange, mapReady]);
 
   // Generic camera moves requested via mapStore.flyTo (other features).
   React.useEffect(() => {
@@ -464,6 +473,10 @@ export function MapView() {
     else map.once("style.load", apply);
   }, [highlight, mapReady]);
 
+  const mode = resolveBasemapMode(theme);
+  const readoutLat = pointer?.lat ?? initialCenterRef.current[1];
+  const readoutLon = pointer?.lon ?? initialCenterRef.current[0];
+
   return (
     <div className="relative size-full">
       {/*
@@ -475,14 +488,22 @@ export function MapView() {
         sizing works under any position value, so it survives the override.
       */}
       <div ref={containerRef} className="size-full" />
+      <ExploreHeader />
+      <ExploreOmnibox />
       <LayerPanel />
       <MapLegend />
+      <ExploreReadout lat={readoutLat} lon={readoutLon} zoom={mapZoom} />
+      <ExploreAttribution />
       {hoveredAdmin && hoveredAdmin.name && (
-        <div className="pointer-events-none absolute right-3 top-20 z-20">
-          <Card className="px-3 py-2 shadow-md">
-            <div className="text-sm font-medium">{hoveredAdmin.name}</div>
-            <div className="text-xs text-muted-foreground">{hoveredAdmin.pcode}</div>
-          </Card>
+        <div className="pointer-events-none absolute right-3 top-20 z-20" style={{ fontFamily: SANS_FONT }}>
+          <div className="rounded-xl border px-3 py-2" style={glassPanelStyle(mode)}>
+            <div className="text-sm font-medium" style={{ color: TEXT }}>
+              {hoveredAdmin.name}
+            </div>
+            <div className="text-xs" style={{ color: TEXT2, fontFamily: MONO_FONT }}>
+              {hoveredAdmin.pcode}
+            </div>
+          </div>
         </div>
       )}
     </div>
