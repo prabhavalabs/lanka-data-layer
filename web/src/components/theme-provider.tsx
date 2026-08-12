@@ -14,6 +14,8 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  /** `theme` with "system" resolved against the OS color-scheme media query — what's actually painted right now. */
+  resolvedTheme: ResolvedTheme;
 };
 
 const COLOR_SCHEME_QUERY = "(prefers-color-scheme: dark)";
@@ -71,6 +73,9 @@ export function ThemeProvider({
 
     return defaultTheme;
   });
+  const [resolvedTheme, setResolvedTheme] = React.useState<ResolvedTheme>(() =>
+    theme === "system" ? getSystemTheme() : theme
+  );
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
@@ -90,6 +95,7 @@ export function ThemeProvider({
 
       root.classList.remove("light", "dark");
       root.classList.add(resolvedTheme);
+      setResolvedTheme(resolvedTheme);
 
       if (restoreTransitions) {
         restoreTransitions();
@@ -146,8 +152,9 @@ export function ThemeProvider({
     () => ({
       theme,
       setTheme,
+      resolvedTheme,
     }),
-    [theme, setTheme]
+    [theme, setTheme, resolvedTheme]
   );
 
   return (
