@@ -1,0 +1,5 @@
+packages:
+  - foundry
+  - api
+  - web
+  - shared

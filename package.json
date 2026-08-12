@@ -1,0 +1,19 @@
+{
+  "name": "lanka-data-layer",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Open geo-data platform for Sri Lanka: the Geopub API and visualization platform",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "foundry": "pnpm --filter @geopub/foundry",
+    "api": "pnpm --filter @geopub/api",
+    "web": "pnpm --filter @geopub/web"
+  }
+}
