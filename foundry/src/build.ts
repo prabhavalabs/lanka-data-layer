@@ -10,11 +10,12 @@ import * as elections from "./steps/elections.ts";
 import * as places from "./steps/places.ts";
 import * as postal from "./steps/postal.ts";
 import * as pois from "./steps/pois.ts";
+import * as datasets from "./steps/datasets.ts";
 import * as emit from "./steps/emit.ts";
 
 // Fixed pipeline order. `--only` filters this list but never reorders it,
 // so dependencies (e.g. admin before population/elections) always hold.
-const PIPELINE: Step[] = [seed, fetchPostal, admin, population, elections, places, postal, pois, emit];
+const PIPELINE: Step[] = [seed, fetchPostal, admin, population, elections, places, postal, pois, datasets, emit];
 
 function parseOnly(argv: string[]): Set<string> | null {
   const flag = argv.find((a) => a === "--only" || a.startsWith("--only="));
