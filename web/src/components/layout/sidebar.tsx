@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: "/map", label: "Map" },
   { to: "/datasets", label: "Datasets" },
   { to: "/elections", label: "Elections" },
+  { to: "/docs", label: "Docs" },
 ] as const;
 
 export function Sidebar() {
