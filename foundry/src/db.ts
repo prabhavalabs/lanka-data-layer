@@ -6,12 +6,9 @@ import { DB_PATH } from "./lib/paths.ts";
 /**
  * Schema — exactly per docs/architecture.md §2, plus the indexes needed by
  * the API's query patterns (§4: point lookups, admin hierarchy walks,
- * election lookups). `cells`, `cell_lookup`, and `datasets` are declared
- * per the contract but stay empty in this build:
- *   - cells        needs a WorldPop raster resample (not sourced yet)
- *   - cell_lookup  needs GN-division boundaries (not sourced yet)
- *   - datasets     is the bulk-download catalog, populated once a
- *                  `downloads` step exists to produce the files it indexes
+ * election lookups). Every table declared here is populated by some step in
+ * `src/build.ts`'s PIPELINE — see foundry/README.md's pipeline table for
+ * which step owns which table.
  *
  * Schema creation is idempotent (CREATE TABLE/INDEX IF NOT EXISTS) and runs
  * on every DB open, not only in the `emit` step. That is what lets any step
@@ -36,6 +33,14 @@ CREATE TABLE IF NOT EXISTS admin_units (
 );
 CREATE INDEX IF NOT EXISTS idx_admin_units_parent ON admin_units(parent_pcode);
 CREATE INDEX IF NOT EXISTS idx_admin_units_level ON admin_units(level);
+
+-- Simplified boundary geometry for instant map highlights (NOT for tiles —
+-- tiles come from PMTiles). Bare GeoJSON geometry (no Feature wrapper),
+-- Douglas-Peucker simplified to ~0.0005deg tolerance, 6 dp coordinates.
+CREATE TABLE IF NOT EXISTS admin_geometry (
+  pcode TEXT PRIMARY KEY REFERENCES admin_units(pcode),
+  geojson TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS admin_population (
   pcode TEXT NOT NULL REFERENCES admin_units(pcode),

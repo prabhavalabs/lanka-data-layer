@@ -27,7 +27,7 @@ async function readJson<T>(relPath: string): Promise<T> {
 
 interface AdminRow {
   pcode: string;
-  level: 0 | 1 | 2 | 3;
+  level: 0 | 1 | 2 | 3 | 4;
   name_en: string;
   name_si: string | null;
   name_ta: string | null;
@@ -37,19 +37,53 @@ interface AdminRow {
   centroid_lon: number | null;
 }
 
+/** COD-AB ADM3/ADM4 feature properties (see foundry/data/raw/cod-ab/lka_admin{3,4}.geojson). */
+interface CodAbProperties {
+  adm3_name: string;
+  adm3_name1: string | null; // si
+  adm3_name2: string | null; // ta
+  adm3_pcode: string;
+  adm2_pcode: string;
+  adm4_name?: string;
+  adm4_name1?: string | null;
+  adm4_name2?: string | null;
+  adm4_pcode?: string;
+  adm3_pcode_ref?: string;
+  area_sqkm: number;
+  center_lat: number;
+  center_lon: number;
+}
+interface CodAbFeature {
+  properties: CodAbProperties;
+}
+interface CodAbFeatureCollection {
+  features: CodAbFeature[];
+}
+
 /**
- * Builds admin_units (levels 0-3; level 4 GN divisions are out of scope —
- * see docs/architecture.md §2 note on cell_lookup). Levels 1-2 carry
- * official OCHA p-codes straight from the geoBoundaries GeoJSON. Level 3
- * (DS divisions) has no official p-code source yet, so each unit gets an
- * interim `GB:<geoBoundaries id>` pcode; the `meta` table records this so
- * consumers can detect and later re-key these rows without guessing.
+ * Builds admin_units (levels 0-4).
+ *
+ * Levels 0-2 (country/provinces/districts) come from geoBoundaries, as
+ * before — their p-codes (LK, LK1..LK9, LK11..LK92) already agree with
+ * OCHA COD-AB's adm1_pcode/adm2_pcode (verified against the ADM3 file: every
+ * districts.geojson `pcode` appears as some feature's `adm2_pcode`), so
+ * there's no reason to re-source them.
+ *
+ * Levels 3-4 (DS divisions, GN divisions) come from OCHA COD-AB
+ * (`fetch-gnd`, data/raw/cod-ab/lka_admin{3,4}.geojson) — the official
+ * p-code source geoBoundaries never had for these levels. This replaces the
+ * old `GB:<geoBoundaries id>` interim scheme entirely (see meta.pcode_scheme
+ * below); COD-AB also ships area_sqkm/center_lat/center_lon per feature
+ * (official Survey Department figures), which is more accurate than this
+ * pipeline's own bbox-center/area approximation, so levels 3-4 use those
+ * directly instead of computing from geometry.
  */
 export async function run({ db, log }: StepContext): Promise<void> {
   const country = await readJson<FeatureCollection>("geo/country.geojson");
   const provinces = await readJson<FeatureCollection>("geo/provinces.geojson");
   const districts = await readJson<FeatureCollection>("geo/districts.geojson");
-  const dsDivisions = await readJson<FeatureCollection>("geo/ds-divisions.geojson");
+  const dsDivisions = await readJson<CodAbFeatureCollection>("cod-ab/lka_admin3.geojson");
+  const gnDivisions = await readJson<CodAbFeatureCollection>("cod-ab/lka_admin4.geojson");
   const population = await readJson<{
     provinces: Record<string, PopUnit>;
     districts: Record<string, PopUnit>;
@@ -129,25 +163,50 @@ export async function run({ db, log }: StepContext): Promise<void> {
     });
   }
 
-  // Level 3: DS divisions. No official pcode — interim GB:<geoBoundaries id>.
-  // parent_pcode via parentId -> district id -> district pcode.
+  // Level 3: DS divisions, official COD-AB p-codes (e.g. LK1103). parent_pcode
+  // is COD-AB's own adm2_pcode — no id-lookup needed, and it already matches
+  // this build's level-2 pcodes (see the module doc comment).
+  const districtPcodes = new Set(districts.features.map((f) => String(f.properties.pcode)));
   for (const f of dsDivisions.features) {
-    const geoBoundariesId = String(f.id);
-    const pcode = `GB:${geoBoundariesId}`;
-    const parentId = String(f.properties.parentId);
-    const parentPcode = districtIdToPcode.get(parentId);
-    if (!parentPcode) throw new Error(`admin: DS division ${pcode} has unresolved parentId ${parentId}`);
-    const c = bboxCenter(f.geometry as never);
+    const p = f.properties;
+    if (!districtPcodes.has(p.adm2_pcode)) {
+      throw new Error(`admin: DS division ${p.adm3_pcode} has unresolved parent district ${p.adm2_pcode}`);
+    }
+    rows.push({
+      pcode: p.adm3_pcode,
+      level: 3,
+      name_en: p.adm3_name,
+      name_si: p.adm3_name1,
+      name_ta: p.adm3_name2,
+      parent_pcode: p.adm2_pcode,
+      area_km2: p.area_sqkm,
+      centroid_lat: p.center_lat,
+      centroid_lon: p.center_lon,
+    });
+  }
+
+  // Level 4: GN divisions, official COD-AB p-codes (e.g. LK1103005).
+  // parent_pcode is COD-AB's own adm3_pcode — always one of the level-3 rows
+  // just pushed above (both files come from the same COD-AB release).
+  const dsPcodes = new Set(dsDivisions.features.map((f) => f.properties.adm3_pcode));
+  for (const f of gnDivisions.features) {
+    const p = f.properties;
+    const pcode = p.adm4_pcode;
+    const parentPcode = p.adm3_pcode;
+    if (!pcode) throw new Error("admin: GN division feature missing adm4_pcode");
+    if (!dsPcodes.has(parentPcode)) {
+      throw new Error(`admin: GN division ${pcode} has unresolved parent DS division ${parentPcode}`);
+    }
     rows.push({
       pcode,
-      level: 3,
-      name_en: String(f.properties.name),
-      name_si: null,
-      name_ta: null,
+      level: 4,
+      name_en: p.adm4_name ?? "",
+      name_si: p.adm4_name1 ?? null,
+      name_ta: p.adm4_name2 ?? null,
       parent_pcode: parentPcode,
-      area_km2: typeof f.properties.areaKm2 === "number" ? f.properties.areaKm2 : null,
-      centroid_lat: c.lat,
-      centroid_lon: c.lon,
+      area_km2: p.area_sqkm,
+      centroid_lat: p.center_lat,
+      centroid_lon: p.center_lon,
     });
   }
 
@@ -161,17 +220,37 @@ export async function run({ db, log }: StepContext): Promise<void> {
   `);
   const insertMeta = db.prepare(`INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`);
 
+  // admin_geometry.pcode has a FOREIGN KEY REFERENCES admin_units(pcode), and
+  // this connection enforces foreign keys — so on a re-run (once
+  // admin-geometry has already populated rows for these exact pcodes),
+  // deleting a level 3/4 admin_units row would be rejected immediately even
+  // though the very next statement reinserts the same pcode. defer_foreign_keys
+  // postpones the check to COMMIT, where it passes because the final row set
+  // is unchanged (or correctly fails if upstream COD-AB data actually dropped
+  // a pcode that admin_geometry still references — a real problem, not a
+  // false positive). It auto-resets to OFF at the end of the transaction, so
+  // it doesn't leak into other steps sharing this connection.
+  db.pragma("defer_foreign_keys = ON");
   const tx = db.transaction(() => {
+    // Levels 3-4 are fully replaced every run (official COD-AB p-codes now,
+    // not upserted against a stable key that predates this rework) — clear
+    // both before reinserting so a build that ran against the old
+    // GB:-prefixed interim scheme doesn't leave orphaned rows behind.
+    // Level 4 first: it has no children, but keeping delete order the
+    // mirror of insert order (3 before 4) is one less thing to reason about.
+    db.prepare(`DELETE FROM admin_units WHERE level = 4`).run();
+    db.prepare(`DELETE FROM admin_units WHERE level = 3`).run();
     for (const row of rows) insert.run(row);
-    insertMeta.run(
-      "adm3_pcode_interim",
-      "true — DS-division (level 3) pcodes are GB:<geoBoundaries id>, not an official OCHA p-code",
-    );
+
+    insertMeta.run("pcode_scheme", "cod-ab-v1");
+    db.prepare(`DELETE FROM meta WHERE key = 'adm3_pcode_interim'`).run();
   });
   tx();
 
+  const dsCount = dsDivisions.features.length;
+  const gnCount = gnDivisions.features.length;
   log(
     `admin: upserted ${rows.length} admin_units (1 country, ${provinces.features.length} provinces, ` +
-      `${districts.features.length} districts, ${dsDivisions.features.length} DS divisions)`,
+      `${districts.features.length} districts, ${dsCount} DS divisions, ${gnCount} GN divisions) — pcode_scheme=cod-ab-v1`,
   );
 }

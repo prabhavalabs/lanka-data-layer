@@ -4,18 +4,57 @@ import { getDb, closeDb } from "./db.ts";
 
 import * as seed from "./steps/seed.ts";
 import * as fetchPostal from "./steps/fetch-postal.ts";
+import * as fetchWorldpop from "./steps/fetch-worldpop.ts";
+import * as fetchGnd from "./steps/fetch-gnd.ts";
 import * as admin from "./steps/admin.ts";
 import * as population from "./steps/population.ts";
 import * as elections from "./steps/elections.ts";
 import * as places from "./steps/places.ts";
 import * as postal from "./steps/postal.ts";
 import * as pois from "./steps/pois.ts";
+import * as layers from "./steps/layers.ts";
+import * as poisExtend from "./steps/pois-extend.ts";
+import * as cells from "./steps/cells.ts";
+import * as adminGeometry from "./steps/admin-geometry.ts";
+import * as cellLookup from "./steps/cell-lookup.ts";
+import * as downloads from "./steps/downloads.ts";
 import * as datasets from "./steps/datasets.ts";
 import * as emit from "./steps/emit.ts";
 
-// Fixed pipeline order. `--only` filters this list but never reorders it,
-// so dependencies (e.g. admin before population/elections) always hold.
-const PIPELINE: Step[] = [seed, fetchPostal, admin, population, elections, places, postal, pois, datasets, emit];
+// Fixed pipeline order. `--only` filters this list but never reorders it, so
+// dependencies always hold:
+//   - fetch-worldpop/fetch-gnd sit right after fetch-postal (network
+//     fetchers, independent of everything else) and before `admin`, which
+//     now reads fetch-gnd's COD-AB ADM3/ADM4 files for levels 3-4.
+//   - layers/pois-extend/downloads (sit after pois: pois-extend adds to the
+//     table pois just built; downloads reads layers' output) and before
+//     datasets (datasets stamps download_path by checking which files
+//     downloads produced — see datasets.ts).
+//   - cells needs fetch-worldpop's raster; admin-geometry needs admin_units
+//     (admin) + the COD-AB files (fetch-gnd); cell-lookup needs cells,
+//     admin_units level 4 (admin), and places/postal_codes — all three run
+//     before downloads/datasets so those steps' table counts and CSV/gz
+//     exports reflect the populated cells/cell_lookup tables.
+const PIPELINE: Step[] = [
+  seed,
+  fetchPostal,
+  fetchWorldpop,
+  fetchGnd,
+  admin,
+  population,
+  elections,
+  places,
+  postal,
+  pois,
+  layers,
+  poisExtend,
+  cells,
+  adminGeometry,
+  cellLookup,
+  downloads,
+  datasets,
+  emit,
+];
 
 function parseOnly(argv: string[]): Set<string> | null {
   const flag = argv.find((a) => a === "--only" || a.startsWith("--only="));
