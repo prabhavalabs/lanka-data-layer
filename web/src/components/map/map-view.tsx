@@ -28,7 +28,11 @@ import { Card } from "@/components/ui/card";
 import { featureBounds } from "@/lib/geojson-bounds";
 import { usePopulationGrid } from "@/hooks/use-population-grid";
 import { useLayerStore } from "@/stores/layer-store";
-import { useMapStore } from "@/stores/map-store";
+import { useMapStore, DEFAULT_MAP_VIEW } from "@/stores/map-store";
+
+// Above this zoom the ~1.1 km density columns are wider than the viewport;
+// the population-3d layer hides itself and returns when the user zooms out.
+const POPULATION_MAX_ZOOM = 11.5;
 
 // Keep the camera within the canonical grid's coverage, padded a bit so
 // panning near the coast doesn't feel clipped.
@@ -112,9 +116,14 @@ export function MapView() {
   // never gets another chance once the map shows up. mapReady in each
   // effect's dependency array is what forces that one retry.
   const [mapReady, setMapReady] = React.useState(false);
+  const [mapZoom, setMapZoom] = React.useState(DEFAULT_MAP_VIEW.zoom);
 
   const populationVisible = visibility[POPULATION_LAYER_ID] ?? false;
   const { data: populationGrid } = usePopulationGrid(populationVisible);
+  // The density buckets are ~1.1 km wide (res 0.02): past this zoom each
+  // column fills the viewport and buries whatever the user zoomed in on
+  // (e.g. a highlighted GN division), so the layer bows out.
+  const populationInZoomRange = mapZoom < POPULATION_MAX_ZOOM;
 
   // ---------------------------------------------------------------------
   // Map + deck.gl overlay construction (once).
@@ -174,6 +183,9 @@ export function MapView() {
         useMapStore.getState().setView({ center: [c.lng, c.lat], zoom: nextMap.getZoom() });
       };
       nextMap.on("moveend", onMoveEnd);
+
+      const onZoom = () => setMapZoom(nextMap.getZoom());
+      nextMap.on("zoom", onZoom);
 
       const onClick = () => useMapStore.getState().setHighlight(null);
       nextMap.on("click", onClick);
@@ -389,11 +401,11 @@ export function MapView() {
         buildPopulationLayer({
           cells: populationGrid?.cells ?? [],
           mode,
-          visible: populationVisible,
+          visible: populationVisible && populationInZoomRange,
         }),
       ],
     });
-  }, [populationGrid, populationVisible, theme, mapReady]);
+  }, [populationGrid, populationVisible, populationInZoomRange, theme, mapReady]);
 
   // Generic camera moves requested via mapStore.flyTo (other features).
   React.useEffect(() => {
