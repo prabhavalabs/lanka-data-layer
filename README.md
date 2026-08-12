@@ -1,8 +1,8 @@
 # Lanka Data Layer
 
-**Open geo-data infrastructure for Sri Lanka** — a fast, free, open-licensed API for Sri Lankan geographic data (the **Geopub API**) and a modern visualization platform built on top of it.
+**Open geo-data infrastructure for Sri Lanka.** A fast, free, openly licensed API for Sri Lankan geographic and statistical data — the **Geopub API** — plus a visualization platform built on top of it.
 
-Query cities, administrative divisions, postal codes, population, reverse geocoding, elections, and points of interest for Sri Lanka — faster than commercial geocoders, with permissive caching and no billing.
+Query cities, administrative divisions, postal codes, population, reverse geocoding, elections, and points of interest for Sri Lanka. All spatial computation happens offline, ahead of time, so the API itself is just a fast, cacheable read.
 
 ---
 
@@ -10,7 +10,7 @@ Query cities, administrative divisions, postal codes, population, reverse geocod
 
 Sri Lankan geographic and statistical data is scattered across census PDFs, government portals, OSM extracts, and one-off datasets. Developers who need "which district is this coordinate in?" or "population of this DS division by age" end up either paying for global APIs that know little about Sri Lanka below district level, or hand-rolling their own extracts.
 
-Lanka Data Layer fixes this with one principle: **Sri Lanka's data is small enough to precompute everything.** The entire country is ~70K populated 1 km grid cells, ~30K named places, 330 DS divisions, and ~14K GN divisions. That fits in a single SQLite file. So instead of running expensive spatial queries per request, we do all the spatial work offline in a data pipeline and serve precomputed lookups — reverse geocoding becomes a single indexed read.
+Lanka Data Layer fixes this with one principle: **Sri Lanka's data is small enough to precompute everything.** The entire country is on the order of ~70K populated 1 km grid cells, ~30K named places, 330 DS divisions, and ~14K GN divisions. That fits in a single SQLite file. So instead of running expensive spatial queries per request, we do all the spatial work offline in a data pipeline and serve precomputed lookups — reverse geocoding becomes a single indexed read.
 
 ## What's in the box
 
@@ -23,24 +23,41 @@ Lanka Data Layer fixes this with one principle: **Sri Lanka's data is small enou
 | [`infra/`](infra/) | — | Docker Compose, reverse-proxy config, deployment scripts |
 | [`docs/`](docs/) | — | Architecture, data contract, source catalog |
 
-## Data
+Package-level documentation: [`foundry/README.md`](foundry/README.md) covers the ETL pipeline and how to add a new source; [`api/README.md`](api/README.md) covers endpoints, environment variables, and Docker.
 
-All data comes from open sources and stays open:
+## Data sources & credits
 
-| Dataset | Source | License |
+Everything this project serves originates from open data. This table is the honest, current list of what we use and under what terms. It's kept in sync with the dataset catalog served at `GET /v1/datasets` and the machine-readable source list in every build's `manifest.json` (see [Transparency & data lineage](#transparency--data-lineage) below).
+
+| Source | What we use | License |
 |---|---|---|
-| Admin boundaries ADM0–ADM3 (country → DS divisions) | [geoBoundaries](https://www.geoboundaries.org) | CC BY 3.0 IGO |
-| GN divisions (ADM4, ~14K units) | HDX / OCHA COD-AB Sri Lanka | CC BY-IGO |
-| Population projections 2023 (age × sex, p-coded) | [HDX cod-ps-lka](https://data.humdata.org/dataset/cod-ps-lka) (OCHA) | CC BY-IGO |
-| Gridded population raster | [WorldPop](https://www.worldpop.org) Sri Lanka 100 m | CC BY 4.0 |
-| Electoral district / polling division boundaries | Survey Department of Sri Lanka (via nuuuwan/sl-topojson) | open |
-| Election results (2015, 2019, 2024 ×2) | Election Commission of Sri Lanka (via nuuuwan/lk_elections) | open |
-| Places, roads, rail, hospitals, schools, waterways, protected areas | [OpenStreetMap](https://www.openstreetmap.org) via Overpass | ODbL |
-| Place names incl. Sinhala / Tamil | GeoNames (LK + alternateNames) | CC BY 4.0 |
-| Postal codes | GeoNames postal dump + Sri Lanka Post directory | CC BY 4.0 |
-| Census tables (2012; 2024 releases as published) | Department of Census & Statistics | open |
+| [geoBoundaries](https://www.geoboundaries.org) | Administrative boundaries: country, 9 provinces, 25 districts, 330 DS divisions (ADM0-ADM3) | [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/) |
+| [OCHA / HDX — cod-ps-lka](https://data.humdata.org/dataset/cod-ps-lka) | Population projections by admin unit, age bucket, and sex | CC BY-IGO |
+| [OpenStreetMap](https://www.openstreetmap.org) contributors, via the Overpass API | Places, points of interest — hospitals, schools, stations, airports | [ODbL](https://opendatacommons.org/licenses/odbl/1-0/) — share-alike, see note below |
+| [GeoNames](https://www.geonames.org) | Sri Lanka postal-code dump today; the place-name gazetteer with Sinhala and Tamil alternates is planned | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Survey Department of Sri Lanka, via [nuuuwan/sl-topojson](https://github.com/nuuuwan/sl-topojson) | Electoral district and polling division boundaries | Open |
+| Election Commission of Sri Lanka, via [nuuuwan/lk_elections](https://github.com/nuuuwan/lk_elections) | Presidential and parliamentary election results, 2015–2024 | Open |
+| [Department of Census and Statistics](http://www.statistics.gov.lk) | 2012 census (ethnicity, religion); 2024 releases as published | Open |
+| [WorldPop](https://www.worldpop.org) | Gridded population raster — planned, see Known limitations below | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 
-Every API response carries `meta.source` attribution. OSM-derived tables remain under ODbL share-alike.
+**A note on OpenStreetMap and ODbL.** OSM data is licensed under the Open Database License, which is share-alike: if you produce and redistribute a derivative database built from the OSM-sourced tables in this project (places, points of interest, and related layers), that derivative must also be released under ODbL, with attribution to OpenStreetMap contributors preserved. Querying the data through the API, or displaying it on a map, doesn't by itself trigger that obligation — redistributing the underlying data does. See the [ODbL summary](https://opendatacommons.org/licenses/odbl/1-0/) if you're unsure.
+
+**Acknowledgements.** This project leans heavily on two communities in particular. The **OpenStreetMap Sri Lanka** contributor community has spent years mapping the country's places, roads, and infrastructure by hand — that patient, ongoing work is the backbone of our places and points-of-interest data. And the open-data projects maintained by **[nuuuwan](https://github.com/nuuuwan)** — [`sl-topojson`](https://github.com/nuuuwan/sl-topojson) and [`lk_elections`](https://github.com/nuuuwan/lk_elections) — did the hard, thankless work of turning Sri Lankan electoral geometry and Election Commission results into clean, usable open data. Without that curation, sourcing this project's electoral boundaries and results directly would have been far harder. Thank you.
+
+## Transparency & data lineage
+
+Every foundry build emits a `manifest.json` alongside the SQLite artifact, recording `data_version`, the fetch date of each upstream source, and a SHA-256 checksum for every artifact produced. Every API response also carries attribution: `meta.source` and `meta.data_version` travel with every payload that touches a dataset, and the full catalog — source, license, feature count — is queryable at `GET /v1/datasets`.
+
+### Known limitations
+
+We'd rather be upfront about the rough edges than hide them:
+
+- **DS-division p-codes are interim.** Sri Lanka's 330 divisional secretariat divisions (ADM3) don't have an official p-code in the source data we currently use, so the foundry mints one from the geoBoundaries id (`GB:<id>`) and flags it so downstream consumers can detect it. Re-keying to an official p-code once one is available is a contained, planned change.
+- **2012 religion figures are rounded in the source.** The Department of Census and Statistics' 2012 ethnicity/religion tables are reproduced as published, rounding included.
+- **Gridded population and cell-level reverse geocoding are still in progress** (Roadmap Phase 0). The grid and lookup schema exist, but the WorldPop raster resample and the GN-division (ADM4) boundaries needed to populate them aren't wired up yet.
+- **Postal-vote election entities have derived names.** The Election Commission's result files for the postal-vote entities carry vote totals but no display name, so the foundry constructs one from the sourced electoral district name — it won't match a name that appears verbatim in the source.
+
+If something you're building depends on any of the above, check `GET /v1/datasets` and the build's `manifest.json` for current status before relying on it.
 
 ## Architecture
 
@@ -89,6 +106,8 @@ pnpm api run dev
 pnpm web run dev
 ```
 
+See [`foundry/README.md`](foundry/README.md) for the full pipeline (steps, `--only` filtering, environment variables needed for a first run) and [`api/README.md`](api/README.md) for endpoint details and Docker.
+
 ## API preview
 
 ```
@@ -101,7 +120,7 @@ GET /v1/elections/pres-2024/results/EC-01
 GET /v1/datasets
 ```
 
-All endpoints return `{ success, message, payload, meta }`. OpenAPI docs served at `/v1/docs`.
+All endpoints return `{ success, message, payload, meta }`, where `meta` carries the data version and source attribution. An OpenAPI document is planned for Phase 1.
 
 ## Development
 
@@ -116,6 +135,14 @@ All endpoints return `{ success, message, payload, meta }`. OpenAPI docs served 
 - **Phase 2 — Platform**: map explorer with vector tiles, election atlas with swing analysis, age pyramids, density surfaces, accessibility maps
 - **Phase 3 — Community**: developer portal, bulk downloads, election-night updates, census 2024 integration, economy module
 
+## Contributing
+
+Issues and pull requests are welcome. Please open PRs against `develop`, not `main`, and follow the branch and commit conventions above (`feat/*` / `fix/*`, commit messages as `type: brief description`).
+
+Data corrections are especially welcome — Sri Lankan open data is scattered and occasionally wrong. If you spot an error (a misplaced boundary, a stale figure, an incorrect Sinhala or Tamil name), please open an issue with a citation to the correct source so it can be verified and fixed at the foundry level.
+
 ## License
 
-Code: MIT. Data: per-dataset licenses as listed above — attribution required, OSM-derived data under ODbL.
+Code in this repository is MIT-licensed — see [LICENSE](LICENSE).
+
+Data remains under each upstream source's own license, as listed in [Data sources & credits](#data-sources--credits) above and in each dataset's `license` field at `GET /v1/datasets`. Tables derived from OpenStreetMap (places, points of interest, and related layers) carry ODbL's share-alike terms. Whatever you build with this project's data, please preserve attribution to the original source.
