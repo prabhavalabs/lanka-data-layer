@@ -1,0 +1,29 @@
+{
+  "name": "@geopub/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Geopub API — HTTP service serving the foundry's read-only SQLite artifact",
+  "exports": {
+    ".": "./src/app.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@geopub/shared": "workspace:*",
+    "@hono/node-server": "^1.13.7",
+    "better-sqlite3": "^13.0.0",
+    "hono": "^4.6.9",
+    "tsx": "^4.19.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}
