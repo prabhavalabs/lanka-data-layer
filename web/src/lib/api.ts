@@ -92,3 +92,33 @@ export async function apiGetPayload<T>(path: string, options?: ApiRequestOptions
   }
   return envelope.payload;
 }
+
+/**
+ * Fetches `path` under the Geopub API base and returns the raw JSON body
+ * as-is — for the handful of routes that deliberately skip the
+ * `{success,message,payload,meta}` envelope, e.g.
+ * `GET /v1/admin/:pcode/geometry` (bare GeoJSON Feature, so map libraries
+ * can hand it straight to their loader; see api/src/routes/geometry.ts).
+ * Throws {@link ApiError} on a network failure or non-2xx response.
+ */
+export async function apiGetRaw<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  const url = `${API_BASE}${path}${buildQuery(options.params)}`;
+
+  let res: Response;
+  try {
+    res = await fetch(url, { signal: options.signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    throw new ApiError(`Could not reach ${url}: ${(err as Error).message}`, 0, true);
+  }
+
+  if (!res.ok) {
+    throw new ApiError(`Request to ${url} failed (${res.status})`, res.status);
+  }
+
+  try {
+    return (await res.json()) as T;
+  } catch {
+    throw new ApiError(`No response from the API at ${url} (${res.status})`, res.status, true);
+  }
+}
