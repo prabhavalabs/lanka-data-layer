@@ -142,15 +142,42 @@ export async function run({ db, log }: StepContext): Promise<void> {
   const layersDir = artifactPath("layers");
   await mkdir(layersDir, { recursive: true });
 
+  // name_si/name_ta aren't available on every level's raw source (geoBoundaries
+  // provinces/districts only carry name_en; admin.ts backfills si/ta for those
+  // from population-2023.json — see its siTaByPcode), but `admin_units` always
+  // has the resolved values regardless of level, and the `admin` step runs
+  // before `admin-geometry` in PIPELINE, so it's already populated here.
+  // Reading it back is simpler than re-deriving si/ta per level from scratch,
+  // and gives the tile build (docs/architecture.md §3, `admin.pmtiles`) the
+  // pcode/name_en/name_si/name_ta properties it needs straight from this file.
+  const nameByPcode = new Map<string, { name_si: string | null; name_ta: string | null }>();
+  for (const row of db.prepare(`SELECT pcode, name_si, name_ta FROM admin_units`).all() as {
+    pcode: string;
+    name_si: string | null;
+    name_ta: string | null;
+  }[]) {
+    nameByPcode.set(row.pcode, { name_si: row.name_si, name_ta: row.name_ta });
+  }
+
   for (const level of [1, 2, 3, 4] as const) {
     const levelUnits = units.filter((u) => u.level === level);
     const fc = {
       type: "FeatureCollection" as const,
-      features: levelUnits.map((u) => ({
-        type: "Feature" as const,
-        properties: { pcode: u.pcode, name_en: u.name_en, level: u.level, parent_pcode: u.parent_pcode },
-        geometry: roundGeometry(u.geometry, COORD_DP),
-      })),
+      features: levelUnits.map((u) => {
+        const names = nameByPcode.get(u.pcode);
+        return {
+          type: "Feature" as const,
+          properties: {
+            pcode: u.pcode,
+            name_en: u.name_en,
+            name_si: names?.name_si ?? null,
+            name_ta: names?.name_ta ?? null,
+            level: u.level,
+            parent_pcode: u.parent_pcode,
+          },
+          geometry: roundGeometry(u.geometry, COORD_DP),
+        };
+      }),
     };
     const destFile = `admin-adm${level}.geojson`;
     await writeFile(path.join(layersDir, destFile), JSON.stringify(fc), "utf8");

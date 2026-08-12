@@ -1,7 +1,8 @@
-import { readFile, stat, writeFile } from "node:fs/promises";
+import { readdir, readFile, stat, writeFile } from "node:fs/promises";
+import path from "node:path";
 import type { StepContext } from "../step.ts";
 import { closeDb } from "../db.ts";
-import { DB_PATH, MANIFEST_PATH, rawPath } from "../lib/paths.ts";
+import { artifactPath, DB_PATH, MANIFEST_PATH, rawPath } from "../lib/paths.ts";
 import { sha256File } from "../lib/hash.ts";
 
 export const name = "emit";
@@ -88,6 +89,36 @@ const SOURCES: SourceEntry[] = [
   },
 ];
 
+interface ArtifactEntry {
+  path: string;
+  bytes: number;
+  sha256: string;
+}
+
+/**
+ * Discovers the `.pmtiles` files the `tiles` step wrote (data/artifacts/
+ * tiles/*.pmtiles) so they're hashed into the manifest alongside
+ * geopub.sqlite. Returns [] rather than failing if `tiles/` doesn't exist —
+ * an `--only` run that skipped `tiles` still produces a valid manifest, just
+ * without tile entries.
+ */
+async function tileArtifacts(): Promise<ArtifactEntry[]> {
+  const tilesDir = artifactPath("tiles");
+  let files: string[];
+  try {
+    files = (await readdir(tilesDir)).filter((f) => f.endsWith(".pmtiles")).sort();
+  } catch {
+    return [];
+  }
+  return Promise.all(
+    files.map(async (f): Promise<ArtifactEntry> => {
+      const p = path.join(tilesDir, f);
+      const [{ size }, sha256] = await Promise.all([stat(p), sha256File(p)]);
+      return { path: `tiles/${f}`, bytes: size, sha256 };
+    }),
+  );
+}
+
 async function newestMtime(relFiles: string[]): Promise<Date> {
   const stats = await Promise.all(
     relFiles.map(async (f) => {
@@ -162,14 +193,17 @@ export async function run({ db, log }: StepContext): Promise<void> {
 
   const dbStat = await stat(DB_PATH);
   const dbSha256 = await sha256File(DB_PATH);
+  const tiles = await tileArtifacts();
 
   const manifest = {
     data_version: dataVersion,
     built_at: builtAt,
     sources: sourceEntries,
-    artifacts: [{ path: "geopub.sqlite", bytes: dbStat.size, sha256: dbSha256 }],
+    artifacts: [{ path: "geopub.sqlite", bytes: dbStat.size, sha256: dbSha256 }, ...tiles],
   };
   await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n", "utf8");
 
-  log(`emit: data_version=${dataVersion}, geopub.sqlite=${dbStat.size} bytes, manifest.json written`);
+  log(
+    `emit: data_version=${dataVersion}, geopub.sqlite=${dbStat.size} bytes, ${tiles.length} tile artifact(s), manifest.json written`,
+  );
 }

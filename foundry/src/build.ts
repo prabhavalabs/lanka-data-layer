@@ -18,6 +18,7 @@ import * as cells from "./steps/cells.ts";
 import * as adminGeometry from "./steps/admin-geometry.ts";
 import * as cellLookup from "./steps/cell-lookup.ts";
 import * as downloads from "./steps/downloads.ts";
+import * as tiles from "./steps/tiles.ts";
 import * as datasets from "./steps/datasets.ts";
 import * as emit from "./steps/emit.ts";
 
@@ -35,6 +36,13 @@ import * as emit from "./steps/emit.ts";
 //     admin_units level 4 (admin), and places/postal_codes — all three run
 //     before downloads/datasets so those steps' table counts and CSV/gz
 //     exports reflect the populated cells/cell_lookup tables.
+//   - tiles reads the GeoJSON layers/admin-geometry already wrote (roads,
+//     railways, admin-adm{1..4}, electoral/polling divisions, etc.) plus
+//     places/postal_codes for its own places.pmtiles — all already
+//     populated well before this point in PIPELINE. It sits after
+//     downloads (not a dependency, just keeps every step that only reads
+//     already-finished artifacts grouped together) and before datasets/emit
+//     so emit can discover and hash the .pmtiles files it writes.
 const PIPELINE: Step[] = [
   seed,
   fetchPostal,
@@ -52,6 +60,7 @@ const PIPELINE: Step[] = [
   adminGeometry,
   cellLookup,
   downloads,
+  tiles,
   datasets,
   emit,
 ];
