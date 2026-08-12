@@ -31,14 +31,15 @@ Everything this project serves originates from open data. This table is the hone
 
 | Source | What we use | License |
 |---|---|---|
-| [geoBoundaries](https://www.geoboundaries.org) | Administrative boundaries: country, 9 provinces, 25 districts, 330 DS divisions (ADM0-ADM3) | [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/) |
+| [geoBoundaries](https://www.geoboundaries.org) | Administrative boundaries: country, 9 provinces, 25 districts (ADM0-ADM2) | [CC BY 3.0 IGO](https://creativecommons.org/licenses/by/3.0/igo/) |
+| [OCHA / HDX — cod-ab-lka](https://data.humdata.org/dataset/cod-ab-lka) | DS divisions (339, ADM3) and GN divisions (~14,000, ADM4) with official p-codes | CC BY-IGO |
 | [OCHA / HDX — cod-ps-lka](https://data.humdata.org/dataset/cod-ps-lka) | Population projections by admin unit, age bucket, and sex | CC BY-IGO |
 | [OpenStreetMap](https://www.openstreetmap.org) contributors, via the Overpass API | Places, points of interest — hospitals, schools, stations, airports | [ODbL](https://opendatacommons.org/licenses/odbl/1-0/) — share-alike, see note below |
 | [GeoNames](https://www.geonames.org) | Sri Lanka postal-code dump today; the place-name gazetteer with Sinhala and Tamil alternates is planned | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | Survey Department of Sri Lanka, via [nuuuwan/sl-topojson](https://github.com/nuuuwan/sl-topojson) | Electoral district and polling division boundaries | Open |
 | Election Commission of Sri Lanka, via [nuuuwan/lk_elections](https://github.com/nuuuwan/lk_elections) | Presidential and parliamentary election results, 2015–2024 | Open |
 | [Department of Census and Statistics](http://www.statistics.gov.lk) | 2012 census (ethnicity, religion); 2024 releases as published | Open |
-| [WorldPop](https://www.worldpop.org) | Gridded population raster — planned, see Known limitations below | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| [WorldPop](https://www.worldpop.org) | ~1 km UN-adjusted gridded population, distributed onto the canonical grid | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 
 **A note on OpenStreetMap and ODbL.** OSM data is licensed under the Open Database License, which is share-alike: if you produce and redistribute a derivative database built from the OSM-sourced tables in this project (places, points of interest, and related layers), that derivative must also be released under ODbL, with attribution to OpenStreetMap contributors preserved. Querying the data through the API, or displaying it on a map, doesn't by itself trigger that obligation — redistributing the underlying data does. See the [ODbL summary](https://opendatacommons.org/licenses/odbl/1-0/) if you're unsure.
 
@@ -52,9 +53,9 @@ Every foundry build emits a `manifest.json` alongside the SQLite artifact, recor
 
 We'd rather be upfront about the rough edges than hide them:
 
-- **DS-division p-codes are interim.** Sri Lanka's 330 divisional secretariat divisions (ADM3) don't have an official p-code in the source data we currently use, so the foundry mints one from the geoBoundaries id (`GB:<id>`) and flags it so downstream consumers can detect it. Re-keying to an official p-code once one is available is a contained, planned change.
+- **Admin-unit counts differ between sources.** COD-AB reports 339 DS divisions where other sources say 330-331; we serve COD-AB as published. Levels 0-2 geometry comes from geoBoundaries while levels 3-4 come from COD-AB, so boundaries can disagree slightly where the two sources differ.
 - **2012 religion figures are rounded in the source.** The Department of Census and Statistics' 2012 ethnicity/religion tables are reproduced as published, rounding included.
-- **Gridded population and cell-level reverse geocoding are still in progress** (Roadmap Phase 0). The grid and lookup schema exist, but the WorldPop raster resample and the GN-division (ADM4) boundaries needed to populate them aren't wired up yet.
+- **Gridded population is a model, not a count.** The cells table distributes WorldPop's ~1 km modeled estimates uniformly across the fine grid cells each raster pixel covers — good for density visualization and radius sums, but not a source of truth for any individual 111 m cell.
 - **Postal-vote election entities have derived names.** The Election Commission's result files for the postal-vote entities carry vote totals but no display name, so the foundry constructs one from the sourced electoral district name — it won't match a name that appears verbatim in the source.
 
 If something you're building depends on any of the above, check `GET /v1/datasets` and the build's `manifest.json` for current status before relying on it.
@@ -111,16 +112,22 @@ See [`foundry/README.md`](foundry/README.md) for the full pipeline (steps, `--on
 ## API preview
 
 ```
-GET /v1/reverse?lat=6.9271&lon=79.8612
+GET /v1/lookup?q=nugegoda&suggest=1      # universal search: names, postal codes,
+GET /v1/lookup?q=6.9344,79.8428          # coordinates, and p-codes in one box
+GET /v1/reverse?lat=6.9271&lon=79.8612   # point → GN/DS/district/province + postal
 GET /v1/search?q=nugegoda&lang=si
 GET /v1/postal/10250
-GET /v1/admin/LK11?include=children,population
+GET /v1/postal?lat=6.9271&lon=79.8612
+GET /v1/admin/LK1103?include=children,population
+GET /v1/admin/LK1103/geometry            # boundary GeoJSON for map highlights
 GET /v1/population?lat=6.9271&lon=79.8612&radius=5
+GET /v1/population/grid?res=0.02         # density buckets for 3D map rendering
 GET /v1/elections/pres-2024/results/EC-01
 GET /v1/datasets
+GET /v1/tiles/admin.pmtiles              # vector tiles, range requests
 ```
 
-All endpoints return `{ success, message, payload, meta }`, where `meta` carries the data version and source attribution. An OpenAPI document is planned for Phase 1.
+All endpoints return `{ success, message, payload, meta }`, where `meta` carries the data version and source attribution. Interactive documentation with a live playground for every endpoint ships in the web app under `/docs`, including a postal-code demo that answers and maps a query in one view.
 
 ## Development
 
