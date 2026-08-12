@@ -44,6 +44,11 @@ const GEO_FILES = [
   "airports.geojson",
   "electoral-divisions.geojson",
   "polling-divisions.geojson",
+  // Map-layer sources for the `layers` step (docs/architecture.md §3).
+  "roads.geojson",
+  "railways.geojson",
+  "waterways.geojson",
+  "protected-areas.geojson",
 ];
 
 const DATA_FILES = [

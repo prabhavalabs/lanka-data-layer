@@ -21,7 +21,22 @@ const SOURCES: SourceEntry[] = [
     id: "admin-boundaries",
     license: "CC BY 3.0 IGO",
     url: "https://www.geoboundaries.org",
-    files: ["geo/country.geojson", "geo/provinces.geojson", "geo/districts.geojson", "geo/ds-divisions.geojson"],
+    // Levels 0-2 only — level 3 (DS divisions) moved to COD-AB below
+    // (admin.ts no longer reads geo/ds-divisions.geojson, which seed still
+    // fetches but nothing consumes: see foundry/README.md's design notes).
+    files: ["geo/country.geojson", "geo/provinces.geojson", "geo/districts.geojson"],
+  },
+  {
+    id: "admin-boundaries-cod-ab",
+    license: "CC BY-IGO",
+    url: "https://data.humdata.org/dataset/cod-ab-lka",
+    files: ["cod-ab/lka_admin3.geojson", "cod-ab/lka_admin4.geojson"],
+  },
+  {
+    id: "population-grid",
+    license: "CC BY 4.0",
+    url: "https://www.worldpop.org",
+    files: ["worldpop/lka_ppp_2020_1km_Aggregated_UNadj.tif"],
   },
   {
     id: "population-2023",
@@ -46,6 +61,12 @@ const SOURCES: SourceEntry[] = [
     license: "ODbL",
     url: "https://www.openstreetmap.org",
     files: ["geo/hospitals.geojson", "geo/education.geojson", "geo/airports.geojson"],
+  },
+  {
+    id: "osm-layers",
+    license: "ODbL",
+    url: "https://www.openstreetmap.org",
+    files: ["geo/roads.geojson", "geo/railways.geojson", "geo/waterways.geojson", "geo/protected-areas.geojson"],
   },
   {
     id: "electoral-boundaries",
