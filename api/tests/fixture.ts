@@ -304,7 +304,23 @@ export function buildFixtureDb(): Database.Database {
     20_000,
     "NPP",
     500_000,
-    JSON.stringify({ NPP: 500_000, SJB: 400_000, UNP: 280_000 }),
+    // Same shape the foundry writes: the full source entity object.
+    JSON.stringify({
+      valid: 1_180_000,
+      rejected: 20_000,
+      polled: 1_200_000,
+      electors: 1_600_000,
+      turnoutPct: 75.0,
+      winner: { party: "NPP", votes: 500_000, pct: 42.4 },
+      runnerUp: { party: "SJB", votes: 400_000, pct: 33.9 },
+      margin: 100_000,
+      topParties: [
+        { party: "NPP", votes: 500_000, pct: 42.4 },
+        { party: "SJB", votes: 400_000, pct: 33.9 },
+        { party: "UNP", votes: 280_000, pct: 23.7 },
+      ],
+      otherVotes: 0,
+    }),
   );
   insertResult.run(
     "pres-2024",
@@ -315,7 +331,22 @@ export function buildFixtureDb(): Database.Database {
     200_000,
     "NPP",
     5_700_000,
-    JSON.stringify({ NPP: 5_700_000, SJB: 4_200_000, UNP: 1_900_000 }),
+    JSON.stringify({
+      valid: 11_800_000,
+      rejected: 200_000,
+      polled: 12_000_000,
+      electors: 17_000_000,
+      turnoutPct: 70.6,
+      winner: { party: "NPP", votes: 5_700_000, pct: 48.3 },
+      runnerUp: { party: "SJB", votes: 4_200_000, pct: 35.6 },
+      margin: 1_500_000,
+      topParties: [
+        { party: "NPP", votes: 5_700_000, pct: 48.3 },
+        { party: "SJB", votes: 4_200_000, pct: 35.6 },
+        { party: "UNP", votes: 1_900_000, pct: 16.1 },
+      ],
+      otherVotes: 0,
+    }),
   );
 
   return db;

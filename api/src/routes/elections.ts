@@ -71,23 +71,40 @@ export function mountElectionsRoute(app: Hono, db: Database.Database): void {
         "SELECT entity_id, kind, name, ed_id FROM election_entities WHERE entity_id = ?",
       ).get(entityId) ?? null;
 
-    let resultsByCode: Record<string, number> = {};
+    // `results` holds the full source entity object from the foundry:
+    // { valid, rejected, polled, electors, turnoutPct, winner:{party,votes,pct},
+    //   runnerUp:{...}, margin, topParties:[{party,votes,pct}...], otherVotes }
+    interface PartyVotes {
+      party: string;
+      votes: number;
+      pct?: number;
+    }
+    interface FullResult {
+      turnoutPct?: number;
+      margin?: number;
+      otherVotes?: number;
+      winner?: PartyVotes;
+      runnerUp?: PartyVotes;
+      topParties?: PartyVotes[];
+    }
+    let full: FullResult = {};
     try {
-      resultsByCode = JSON.parse(resultRow.results) as Record<string, number>;
+      full = JSON.parse(resultRow.results) as FullResult;
     } catch {
-      resultsByCode = {};
+      full = {};
     }
 
     const partyStmt = prepared<ElectionPartyRow>(
       db,
       "SELECT code, candidate, name, color FROM election_parties WHERE election_id = ? AND code = ?",
     );
-    const parties = Object.entries(resultsByCode)
-      .map(([code, votes]) => {
+    const parties = (full.topParties ?? [])
+      .map(({ party: code, votes, pct }) => {
         const party = partyStmt.get(electionId, code);
         return {
           code,
           votes,
+          pct: pct ?? null,
           candidate: party?.candidate ?? null,
           name: party?.name ?? null,
           color: party?.color ?? null,
@@ -104,6 +121,9 @@ export function mountElectionsRoute(app: Hono, db: Database.Database): void {
       rejected: resultRow.rejected,
       winner_party: resultRow.winner_party,
       winner_votes: resultRow.winner_votes,
+      turnout_pct: full.turnoutPct ?? null,
+      margin: full.margin ?? null,
+      other_votes: full.otherVotes ?? null,
       parties,
     };
 
