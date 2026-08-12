@@ -108,7 +108,7 @@ export function mountAdminRoute(app: Hono, db: Database.Database): void {
     if (include.includes("population")) payload.population = loadPopulation(db, pcode);
     if (include.includes("stats")) payload.stats = loadStats(db, pcode);
 
-    const meta = buildMeta(db, ["admin_boundaries"]);
+    const meta = buildMeta(db, ["admin-units"]);
     return c.json(ok(payload, meta));
   });
 }

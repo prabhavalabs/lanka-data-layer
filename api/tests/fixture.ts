@@ -27,6 +27,11 @@ export function buildFixtureDb(): Database.Database {
       area_km2 REAL, centroid_lat REAL, centroid_lon REAL
     );
 
+    CREATE TABLE admin_geometry (
+      pcode TEXT PRIMARY KEY REFERENCES admin_units(pcode),
+      geojson TEXT NOT NULL
+    );
+
     CREATE TABLE admin_population (
       pcode TEXT NOT NULL REFERENCES admin_units(pcode),
       year INTEGER NOT NULL, sex TEXT NOT NULL, age_bucket TEXT NOT NULL,
@@ -108,7 +113,7 @@ export function buildFixtureDb(): Database.Database {
   `);
   for (const d of [
     {
-      id: "admin_boundaries",
+      id: "admin-units",
       title: "Administrative boundaries",
       category: "admin",
       description: "ADM0-ADM4 boundaries and population",
@@ -116,10 +121,10 @@ export function buildFixtureDb(): Database.Database {
       source_url: "https://www.geoboundaries.org",
       license: "CC BY 3.0 IGO",
       feature_count: 10,
-      download_path: "downloads/admin_boundaries.geojson.gz",
+      download_path: "downloads/admin-units.geojson.gz",
     },
     {
-      id: "gridded_population",
+      id: "cells",
       title: "Gridded population",
       category: "population",
       description: "WorldPop 100m resampled onto the canonical grid",
@@ -127,7 +132,7 @@ export function buildFixtureDb(): Database.Database {
       source_url: "https://www.worldpop.org",
       license: "CC BY 4.0",
       feature_count: 25,
-      download_path: "downloads/gridded_population.csv.gz",
+      download_path: "downloads/cells.csv.gz",
     },
     {
       id: "places",
@@ -141,7 +146,7 @@ export function buildFixtureDb(): Database.Database {
       download_path: "downloads/places.geojson.gz",
     },
     {
-      id: "postal_codes",
+      id: "postal-codes",
       title: "Postal codes",
       category: "places",
       description: "Sri Lanka postal code directory",
@@ -189,6 +194,28 @@ export function buildFixtureDb(): Database.Database {
   ]) {
     insertAdmin.run(u);
   }
+
+  // --- admin_geometry (a deliberate subset — LK21 exists in admin_units but has
+  // no geometry row, so /v1/admin/LK21/geometry exercises the "unit exists but
+  // geometry doesn't" 404, distinct from a wholly unknown pcode) -----------------
+  const insertGeometry = db.prepare("INSERT INTO admin_geometry (pcode, geojson) VALUES (?, ?)");
+  const simplePolygon = (cx: number, cy: number, r: number) =>
+    JSON.stringify({
+      type: "Polygon",
+      coordinates: [
+        [
+          [cx - r, cy - r],
+          [cx + r, cy - r],
+          [cx + r, cy + r],
+          [cx - r, cy + r],
+          [cx - r, cy - r],
+        ],
+      ],
+    });
+  insertGeometry.run("LK", simplePolygon(80.77, 7.87, 1.5));
+  insertGeometry.run("LK1", simplePolygon(80.03, 6.97, 0.6));
+  insertGeometry.run("LK1101", simplePolygon(79.8478, 6.9319, 0.05));
+  insertGeometry.run("LK110101", simplePolygon(FORT_LON, FORT_LAT, 0.01));
 
   // --- admin_population (LK1101, year 2023: 17 age buckets + total, x3 sexes) --
   const AGE_BUCKETS = [
@@ -242,14 +269,24 @@ export function buildFixtureDb(): Database.Database {
   });
   db.exec("INSERT INTO places_fts(places_fts) VALUES('rebuild')");
 
-  // --- postal_codes ------------------------------------------------------------
-  db.prepare("INSERT INTO postal_codes (code, name, admin_pcode, lat, lon) VALUES (?, ?, ?, ?, ?)").run(
-    "00100",
-    "Colombo Fort",
-    "LK110101",
-    FORT_LAT,
-    FORT_LON,
-  );
+  // --- postal_codes --------------------------------------------------------------
+  // Real artifact data leaves admin_pcode NULL on every row (the foundry hasn't
+  // joined postal codes to admin units directly) — the fixture matches that so
+  // /v1/postal's cell_lookup-derived admin chain is exercised for real, not
+  // short-circuited by a fixture-only admin_pcode.
+  const insertPostal = db.prepare("INSERT INTO postal_codes (code, name, admin_pcode, lat, lon) VALUES (?, ?, ?, ?, ?)");
+  insertPostal.run("00100", "Colombo Fort", null, FORT_LAT, FORT_LON);
+  // At Nugegoda's exact place coords (matches place #2) — deliberately NOT
+  // covered by cell_lookup (see the cell_lookup block below), so /v1/postal/10250
+  // exercises the "point isn't covered by cell_lookup" all-null admin chain.
+  insertPostal.run("10250", "Nugegoda", null, 6.8649, 79.8997);
+  // Shares the "10250" prefix with the row above but isn't an exact match —
+  // exercises /v1/lookup's "postal exact then prefix" branch (contract §4)
+  // finding both when a plain 5-digit query classifies as postal.
+  insertPostal.run("102501", "Nugegoda North", null, 6.871, 79.901);
+  // At the Kompannavidiya GN division centroid, covered by cell_lookup below —
+  // gives /v1/postal a case where the admin chain *does* resolve.
+  insertPostal.run("00300", "Kompannavidiya", null, 6.921, 79.8565);
 
   // --- cells + cell_lookup around Colombo Fort ---------------------------------
   // A 5x5 block of cells centered on the Fort cell so radius sums have something
@@ -265,9 +302,19 @@ export function buildFixtureDb(): Database.Database {
     }
   }
 
-  db.prepare(
+  const insertLookup = db.prepare(
     "INSERT INTO cell_lookup (cell_id, gnd_pcode, postal_code, nearest_place_id, nearest_place_dist_m) VALUES (?, ?, ?, ?, ?)",
-  ).run(FORT_CELL_ID, "LK110101", "00100", 1, 350);
+  );
+  insertLookup.run(FORT_CELL_ID, "LK110101", "00100", 1, 350);
+  // Richer cell_lookup coverage beyond the single Fort anchor, for /v1/lookup's
+  // coordinate branch, /v1/postal's admin-chain derivation, and the blended
+  // branch's cheap per-place sublabel resolution. Both are well clear of the
+  // Fort 5x5 block above and of Nugegoda's coords (which stays deliberately
+  // uncovered — see reverse.test.ts's nearest-place-fallback case).
+  const kompannavidiyaCellId = cellId(6.921, 79.8565)!;
+  insertLookup.run(kompannavidiyaCellId, "LK110102", "00300", null, null);
+  const kolonnawaCellId = cellId(6.932, 79.8886)!;
+  insertLookup.run(kolonnawaCellId, "LK110201", null, null, null);
 
   // --- elections ----------------------------------------------------------------
   db.prepare("INSERT INTO elections (id, type, year, date, label) VALUES (?, ?, ?, ?, ?)").run(

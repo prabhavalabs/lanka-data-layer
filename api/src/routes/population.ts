@@ -96,7 +96,7 @@ export function mountPopulationRoute(app: Hono, db: Database.Database): void {
       payload.radius = { radius_km: radius, population: sum.population, cell_count: sum.cell_count };
     }
 
-    const meta = buildMeta(db, ["gridded_population"]);
+    const meta = buildMeta(db, ["cells"]);
     return c.json(ok(payload, meta));
   });
 }

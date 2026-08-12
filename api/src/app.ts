@@ -7,10 +7,14 @@ import { HttpError, formatZodIssues } from "./lib/errors.ts";
 import { mountHealthRoute } from "./routes/health.ts";
 import { mountDatasetsRoute } from "./routes/datasets.ts";
 import { mountAdminRoute } from "./routes/admin.ts";
+import { mountAdminGeometryRoute } from "./routes/geometry.ts";
 import { mountReverseRoute } from "./routes/reverse.ts";
 import { mountSearchRoute } from "./routes/search.ts";
+import { mountLookupRoute } from "./routes/lookup.ts";
 import { mountPopulationRoute } from "./routes/population.ts";
 import { mountElectionsRoute } from "./routes/elections.ts";
+import { mountPostalRoute } from "./routes/postal.ts";
+import { mountTilesRoute } from "./routes/tiles.ts";
 
 /** Paths that never get the caching layer applied — just the health check for now (contract §4, task spec). */
 const UNCACHED_PATHS = new Set(["/v1/health"]);
@@ -55,10 +59,14 @@ export function buildApp(db: Database.Database): Hono {
   mountHealthRoute(app, db);
   mountDatasetsRoute(app, db);
   mountAdminRoute(app, db);
+  mountAdminGeometryRoute(app, db);
   mountReverseRoute(app, db);
   mountSearchRoute(app, db);
+  mountLookupRoute(app, db);
   mountPopulationRoute(app, db);
   mountElectionsRoute(app, db);
+  mountPostalRoute(app, db);
+  mountTilesRoute(app, db);
 
   app.notFound((c) => {
     const meta = buildMeta(db, []);

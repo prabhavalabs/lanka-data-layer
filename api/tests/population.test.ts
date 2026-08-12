@@ -54,3 +54,21 @@ test("an empty cells table degrades gracefully to populated:false", async () => 
   assert.equal(body.payload.populated, false);
   assert.equal(body.payload.point.population, 0);
 });
+
+test("the radius row-band query is a rowid range SEARCH, not a table SCAN (task spec: verify with EXPLAIN QUERY PLAN)", () => {
+  // sumRadiusPopulation (src/routes/population.ts) issues one
+  // `WHERE cell_id BETWEEN ? AND ?` per grid row within the radius.
+  // `cells(cell_id INTEGER PRIMARY KEY, ...)` makes cell_id an alias for
+  // SQLite's rowid, so a BETWEEN range on it is answered by a rowid range
+  // scan on the table's own b-tree — no secondary index is needed, and
+  // there's no full-table SCAN regardless of how many of the table's 5.4M
+  // real rows exist. Confirmed directly against the real artifact too
+  // (see the task's smoke-test notes): same "SEARCH cells USING INTEGER
+  // PRIMARY KEY (rowid>? AND rowid<?)" plan at 5,467,524 rows.
+  const plan = db
+    .prepare("EXPLAIN QUERY PLAN SELECT COALESCE(SUM(pop), 0), COUNT(*) FROM cells WHERE cell_id BETWEEN ? AND ?")
+    .all(0, 1000);
+  const detail = plan.map((row) => (row as { detail: string }).detail).join(" ");
+  assert.match(detail, /SEARCH cells USING INTEGER PRIMARY KEY/);
+  assert.doesNotMatch(detail, /SCAN cells\b/);
+});

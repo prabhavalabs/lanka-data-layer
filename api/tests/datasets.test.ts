@@ -14,7 +14,7 @@ test("GET /v1/datasets lists the catalog with source attribution", async () => {
   assert.equal(body.success, true);
   assert.equal(body.payload.length, 5);
   const ids = body.payload.map((d: { id: string }) => d.id).sort();
-  assert.deepEqual(ids, ["admin_boundaries", "elections", "gridded_population", "places", "postal_codes"]);
+  assert.deepEqual(ids, ["admin-units", "cells", "elections", "places", "postal-codes"]);
   assert.equal(body.meta.source.length, 5);
   assert.ok(body.meta.source.every((s: { name: string; url: string; license: string }) => s.name && s.url && s.license));
 });
