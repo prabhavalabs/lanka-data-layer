@@ -18,6 +18,7 @@ import * as cells from "./steps/cells.ts";
 import * as adminGeometry from "./steps/admin-geometry.ts";
 import * as cellLookup from "./steps/cell-lookup.ts";
 import * as populationRollup from "./steps/population-rollup.ts";
+import * as postalRollup from "./steps/postal-rollup.ts";
 import * as downloads from "./steps/downloads.ts";
 import * as tiles from "./steps/tiles.ts";
 import * as datasets from "./steps/datasets.ts";
@@ -61,6 +62,7 @@ const PIPELINE: Step[] = [
   adminGeometry,
   cellLookup,
   populationRollup,
+  postalRollup,
   downloads,
   tiles,
   datasets,

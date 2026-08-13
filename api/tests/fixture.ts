@@ -32,6 +32,13 @@ export function buildFixtureDb(): Database.Database {
       geojson TEXT NOT NULL
     );
 
+    CREATE TABLE admin_postal (
+      pcode TEXT NOT NULL REFERENCES admin_units(pcode),
+      code TEXT NOT NULL,
+      share REAL NOT NULL,
+      PRIMARY KEY (pcode, code)
+    );
+
     CREATE TABLE admin_population (
       pcode TEXT NOT NULL REFERENCES admin_units(pcode),
       year INTEGER NOT NULL, sex TEXT NOT NULL, age_bucket TEXT NOT NULL,
@@ -276,6 +283,14 @@ export function buildFixtureDb(): Database.Database {
   // short-circuited by a fixture-only admin_pcode.
   const insertPostal = db.prepare("INSERT INTO postal_codes (code, name, admin_pcode, lat, lon) VALUES (?, ?, ?, ?, ?)");
   insertPostal.run("00100", "Colombo Fort", null, FORT_LAT, FORT_LON);
+
+  // admin_postal rollup rows: the Fort GND is mostly 00100 with a 00300
+  // sliver; its DS division aggregates both.
+  const insertAdminPostal = db.prepare("INSERT INTO admin_postal (pcode, code, share) VALUES (?, ?, ?)");
+  insertAdminPostal.run("LK110101", "00100", 0.91);
+  insertAdminPostal.run("LK110101", "00300", 0.09);
+  insertAdminPostal.run("LK1101", "00100", 0.55);
+  insertAdminPostal.run("LK1101", "00300", 0.45);
   // At Nugegoda's exact place coords (matches place #2) — deliberately NOT
   // covered by cell_lookup (see the cell_lookup block below), so /v1/postal/10250
   // exercises the "point isn't covered by cell_lookup" all-null admin chain.

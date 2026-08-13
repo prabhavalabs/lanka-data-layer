@@ -47,6 +47,15 @@ admin_geometry(
   geojson TEXT NOT NULL
 );
 
+-- Postal codes serving each DS/GN division (levels 3-4), derived from
+-- cell_lookup: share = fraction of the unit's land cells assigned to the
+-- code. Served on /v1/admin/:pcode as `postal_codes`, dominant first.
+admin_postal(
+  pcode TEXT NOT NULL REFERENCES admin_units(pcode),
+  code TEXT NOT NULL, share REAL NOT NULL,
+  PRIMARY KEY (pcode, code)
+);
+
 -- Population by unit. sex: 'f'|'m'|'t'. age_bucket: '0-4' … '80+' | 'total'.
 admin_population(
   pcode TEXT NOT NULL REFERENCES admin_units(pcode),
