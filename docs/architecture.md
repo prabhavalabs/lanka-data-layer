@@ -99,6 +99,16 @@ places(
 -- FTS5 index over all three name columns for /search
 places_fts (fts5: name_en, name_si, name_ta, content=places)
 
+-- admin_pcode = the district-level (level 2) p-code, resolved from the
+-- GeoNames dump's own district column by normalized name match (not from
+-- lat/lon) — see foundry/src/steps/postal.ts. lat/lon are the dump's own
+-- coordinates unless an admin unit inside that district has a name_en
+-- matching the postal place name (normalized), in which case that unit's
+-- centroid is used instead — GeoNames LK postal coordinates are frequently
+-- inaccurate and occasionally badly misplaced into a neighboring district.
+-- cell_lookup constrains its nearest-postal-code search per cell to the
+-- codes mapped to the cell's own district (falling back to a country-wide
+-- nearest search only for districts with zero district-mapped codes).
 postal_codes(
   code TEXT PRIMARY KEY, name TEXT NOT NULL,
   admin_pcode TEXT, lat REAL, lon REAL
