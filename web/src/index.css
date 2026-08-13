@@ -244,8 +244,26 @@
   animation: fade-up 0.25s ease;
 }
 
+/* Explore selection card (selection-card.tsx): entrance fade+rise on the
+   card frame, and a smaller/faster version staggered per body section (JS
+   sets animation-delay per index — see selection-sections.tsx). Both reuse
+   fade-up's keyframes but with the brief's specific
+   cubic-bezier(0.22,1,0.36,1) easing rather than fade-up's own plain
+   "ease", so they're separate classes instead of overriding fade-up itself
+   (which minimap.tsx and others already depend on keeping its own timing). */
+.animate-card-in {
+  animation: fade-up 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-section-in {
+  animation: fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up {
+    animation: none;
+  }
+  .animate-card-in,
+  .animate-section-in {
     animation: none;
   }
 }
