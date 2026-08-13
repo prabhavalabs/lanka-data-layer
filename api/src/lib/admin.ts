@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { AdminLevel, AdminUnit, Lang } from "@geopub/shared";
+import type { AdminLevel, AdminUnit, Lang } from "@lanka-data-layer/shared";
 import { prepared } from "./cache.ts";
 import { resolveName } from "./lang.ts";
 

@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import type Database from "better-sqlite3";
 import { z } from "zod";
-import { cellId, GRID } from "@geopub/shared";
+import { cellId, GRID } from "@lanka-data-layer/shared";
 import { buildMeta, ok } from "../lib/envelope.ts";
 import { prepared } from "../lib/cache.ts";
 import { NotInCoverageError, ValidationError, formatZodIssues } from "../lib/errors.ts";

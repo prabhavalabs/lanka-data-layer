@@ -29,15 +29,47 @@ interface FlyToRequest extends FlyToTarget {
   requestId: number;
 }
 
+/**
+ * What the selection detail card is showing — set alongside `highlight`
+ * whenever the omnibox applies a result or the user clicks an admin
+ * polygon on the map, and read by SelectionCard/useSelectionCore to fetch
+ * the full picture. Carries just enough ids for that fetch; the card owns
+ * everything else (full admin unit, population, stats, hierarchy, ...).
+ *
+ * Deliberately keyed on `type` (not `kind`, like MapHighlight) — this
+ * mirrors LookupSuggestRow's own `type` field, since most Selections are
+ * built directly from a suggest row.
+ */
+export type Selection =
+  | { type: "admin"; pcode: string; label?: string }
+  | { type: "postal"; code: string; label?: string }
+  | { type: "place"; id: number | string; label: string; sublabel: string; lat: number; lon: number; pcode?: string }
+  | { type: "coordinate"; lat: number; lon: number; label?: string }
+  | null;
+
 interface MapStore extends MapViewState {
   highlight: MapHighlight;
   /** Internal — MapView subscribes to this to drive the camera; call `flyTo` instead of setting it directly. */
   flyToRequest: FlyToRequest | null;
+  /** What SelectionCard is showing — null when no card is open. */
+  selection: Selection;
+  /** True while the selection card is showing only its compact header pill. Persists across selections (browsing doesn't reset it); cleared on `clearSelection`. */
+  collapsed: boolean;
+  /** True when the card should ignore MapView's auto-collapse-on-map-interaction behavior. */
+  pinned: boolean;
   setView: (view: Partial<MapViewState>) => void;
   /** Moves the camera to (lat, lon), keeping the current zoom unless one is given. Consumed by MapView; other features (search, lookup results, etc.) call this directly. */
   flyTo: (target: FlyToTarget) => void;
-  /** Sets (or clears, with `null`) what the map highlights. MapView reacts by drawing the highlight and auto-fitting/flying the camera to it; clears on map click. */
+  /** Sets (or clears, with `null`) what the map highlights. MapView reacts by drawing the highlight and auto-fitting/flying the camera to it. No longer cleared by a plain map click — see `clearSelection` for the explicit-dismiss path. */
   setHighlight: (highlight: MapHighlight) => void;
+  /** Sets what the selection card shows. Does not touch `highlight` — callers that also want a map highlight (the common case) set both. Replaces any existing selection; does not touch `collapsed`/`pinned` so a collapsed card stays collapsed while the user browses to something new. */
+  setSelection: (selection: Selection) => void;
+  /** The card's explicit-dismiss action (✕ button, Escape while the map has focus): clears the selection, the highlight, and resets collapsed/pinned so the next selection opens fresh. */
+  clearSelection: () => void;
+  setCollapsed: (collapsed: boolean) => void;
+  toggleCollapsed: () => void;
+  /** Turning pin ON also expands the card (collapsed: false); turning it off leaves the current collapsed state alone. */
+  togglePinned: () => void;
 }
 
 /** Sri Lanka, per the task brief: lat 7.5, lon 80.7, zoom 7.2. */
@@ -49,17 +81,29 @@ export const DEFAULT_MAP_VIEW: MapViewState = {
 let flyToCounter = 0;
 
 /**
- * Current map camera + highlight. The map itself is the source of truth for
- * camera position once mounted (see MapView) — this store exists so the
- * camera can be read outside the map component (initial construction,
- * useMapUrlSync) and so other features can drive it (flyTo, setHighlight)
- * without reaching into MapView's internals.
+ * Current map camera + highlight/selection. The map itself is the source of
+ * truth for camera position once mounted (see MapView) — this store exists
+ * so the camera can be read outside the map component (initial
+ * construction, useMapUrlSync) and so other features can drive it (flyTo,
+ * setHighlight, setSelection) without reaching into MapView's internals.
  */
 export const useMapStore = create<MapStore>((set) => ({
   ...DEFAULT_MAP_VIEW,
   highlight: null,
   flyToRequest: null,
+  selection: null,
+  collapsed: false,
+  pinned: false,
   setView: (view) => set((state) => ({ ...state, ...view })),
   flyTo: (target) => set({ flyToRequest: { ...target, requestId: ++flyToCounter } }),
   setHighlight: (highlight) => set({ highlight }),
+  setSelection: (selection) => set({ selection }),
+  clearSelection: () => set({ selection: null, highlight: null, collapsed: false, pinned: false }),
+  setCollapsed: (collapsed) => set({ collapsed }),
+  toggleCollapsed: () => set((state) => ({ collapsed: !state.collapsed })),
+  togglePinned: () =>
+    set((state) => {
+      const pinned = !state.pinned;
+      return { pinned, collapsed: pinned ? false : state.collapsed };
+    }),
 }));

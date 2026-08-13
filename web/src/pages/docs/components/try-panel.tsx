@@ -202,9 +202,9 @@ export function TryPanel({ endpoint }: { endpoint: DocsEndpoint }) {
             <div className="mb-2 font-mono text-[11px] text-warn">ERR_CONNECTION_REFUSED</div>
             <div className="mb-1.5 text-[13.5px] font-semibold">Can&rsquo;t reach the API</div>
             <div className="mb-3.5 text-[12.5px] leading-[1.55] text-ink2">
-              The public instance may be down, or you&rsquo;re offline. Geopub is self-hostable — one container serves the full island.
+              The public instance may be down, or you&rsquo;re offline. Lanka Data Layer is self-hostable — one container serves the full island.
             </div>
-            <div className="mb-3 rounded-[7px] bg-code-bg px-2.5 py-2 font-mono text-[11.5px] text-json-str">docker run -p 8080:8080 geopub/geopub</div>
+            <div className="mb-3 rounded-[7px] bg-code-bg px-2.5 py-2 font-mono text-[11.5px] text-json-str">docker run -p 8080:8080 lanka-data-layer/api</div>
             <button
               type="button"
               onClick={() => void send()}

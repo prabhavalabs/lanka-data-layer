@@ -38,7 +38,11 @@ export function ExploreOmnibox() {
     <div className="pointer-events-none absolute left-1/2 top-3 z-30 w-[380px] -translate-x-1/2">
       <div
         ref={wrapperRef}
-        className="pointer-events-auto rounded-xl border px-1"
+        // The inner input draws its own rounded-md border/background box,
+        // which reads as a second, squarer bar inside this rounded-xl glass
+        // pill — flatten it (transparent, borderless, no focus ring) so the
+        // glass pill is the only visible surface.
+        className="pointer-events-auto rounded-xl border px-1 [&_input]:border-0 [&_input]:bg-transparent [&_input]:shadow-none [&_input]:focus-visible:ring-0"
         style={{ ...glassPanelStyle(mode), ...omniboxVariableOverrides(mode), fontFamily: SANS_FONT }}
       >
         <Omnibox />

@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
-import { SEARCH } from "@geopub/shared";
-import type { Lang } from "@geopub/shared";
+import { SEARCH } from "@lanka-data-layer/shared";
+import type { Lang } from "@lanka-data-layer/shared";
 import { prepared } from "./cache.ts";
 import { resolveName } from "./lang.ts";
 

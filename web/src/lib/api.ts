@@ -1,7 +1,7 @@
-import type { Envelope } from "@geopub/shared";
+import type { Envelope } from "@lanka-data-layer/shared";
 
 /**
- * Tiny typed client for the Geopub API. Base path and envelope shape follow
+ * Tiny typed client for the Lanka Data Layer API. Base path and envelope shape follow
  * docs/architecture.md §4: every route returns
  * `{ success, message, payload, meta }`, and the dev server proxies `/v1`
  * to the API (see vite.config.ts) so this works unmodified in prod behind
@@ -49,7 +49,7 @@ function buildQuery(params: ApiRequestOptions["params"]): string {
 }
 
 /**
- * Fetches `path` under the Geopub API base and returns the full envelope.
+ * Fetches `path` under the Lanka Data Layer API base and returns the full envelope.
  * Throws {@link ApiError} on a network failure, non-2xx response, or a
  * `success: false` payload.
  */
@@ -94,7 +94,7 @@ export async function apiGetPayload<T>(path: string, options?: ApiRequestOptions
 }
 
 /**
- * Fetches `path` under the Geopub API base and returns the raw JSON body
+ * Fetches `path` under the Lanka Data Layer API base and returns the raw JSON body
  * as-is — for the handful of routes that deliberately skip the
  * `{success,message,payload,meta}` envelope, e.g.
  * `GET /v1/admin/:pcode/geometry` (bare GeoJSON Feature, so map libraries

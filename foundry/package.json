@@ -1,9 +1,9 @@
 {
-  "name": "@geopub/foundry",
+  "name": "@lanka-data-layer/foundry",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Offline ETL pipeline: fetches sources, normalizes into a p-code-keyed schema, emits geopub.sqlite + manifest.json",
+  "description": "Offline ETL pipeline: fetches sources, normalizes into a p-code-keyed schema, emits lanka.sqlite + manifest.json",
   "scripts": {
     "build": "tsx src/build.ts",
     "test": "node --experimental-strip-types --test test/*.test.ts",

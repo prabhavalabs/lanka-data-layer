@@ -1,12 +1,12 @@
 /**
- * Typed spec of every public Geopub API endpoint, driving the interactive
+ * Typed spec of every public Lanka Data Layer API endpoint, driving the interactive
  * docs under /docs (web/src/pages/docs/**). This is documentation content,
  * not a runtime client — web/src/lib/api.ts remains the one place actual
  * app code talks to the API.
  *
  * Every `example` value below and every `exampleResponse` was captured by
  * actually calling the running API against the real build artifact
- * (`cd api && GEOPUB_DB=../foundry/data/artifacts/geopub.sqlite PORT=8600
+ * (`cd api && LANKA_DB=../foundry/data/artifacts/lanka.sqlite PORT=8600
  * npx tsx src/index.ts`), per docs/architecture.md §4 and api/README.md —
  * those two documents are the contract; api/src/routes/*.ts is the source
  * of truth for exact param/response shapes. Long arrays are truncated with
@@ -244,7 +244,7 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "A missing tiles directory or file is a normal 404 (the foundry's tile-emission step may not have run yet), not a startup error.",
       "The playground below issues a small ranged request (bytes=0-15) rather than downloading the full archive, and shows headers only.",
     ],
-    errors: [{ status: 404, code: "not_found", description: "Filename doesn't match the pmtiles whitelist, or the file doesn't exist in GEOPUB_TILES_DIR." }],
+    errors: [{ status: 404, code: "not_found", description: "Filename doesn't match the pmtiles whitelist, or the file doesn't exist in LANKA_TILES_DIR." }],
     sources: [
       { name: "OpenStreetMap", license: "ODbL" },
       { name: "geoBoundaries + OCHA COD-AB Sri Lanka", license: "CC BY 3.0 IGO / CC BY-IGO" },

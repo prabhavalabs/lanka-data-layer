@@ -1,6 +1,6 @@
 import type { Hono } from "hono";
 import type Database from "better-sqlite3";
-import type { ElectionEntityKind } from "@geopub/shared";
+import type { ElectionEntityKind } from "@lanka-data-layer/shared";
 import { buildMeta, ok } from "../lib/envelope.ts";
 import { prepared } from "../lib/cache.ts";
 import { NotFoundError } from "../lib/errors.ts";

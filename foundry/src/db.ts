@@ -42,6 +42,16 @@ CREATE TABLE IF NOT EXISTS admin_geometry (
   geojson TEXT NOT NULL
 );
 
+-- Postal codes serving each DS/GN division, rolled up from cell_lookup by
+-- the postal-rollup step. share = fraction of the unit's land cells whose
+-- nearest postal code this is (0..1).
+CREATE TABLE IF NOT EXISTS admin_postal (
+  pcode TEXT NOT NULL REFERENCES admin_units(pcode),
+  code TEXT NOT NULL,
+  share REAL NOT NULL,
+  PRIMARY KEY (pcode, code)
+);
+
 CREATE TABLE IF NOT EXISTS admin_population (
   pcode TEXT NOT NULL REFERENCES admin_units(pcode),
   year INTEGER NOT NULL,

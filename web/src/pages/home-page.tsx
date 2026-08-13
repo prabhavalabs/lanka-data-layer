@@ -204,7 +204,7 @@ export function HomePage() {
         <div className="mt-16 border-t border-border pt-7">
           <div className="flex flex-wrap items-baseline gap-3.5">
             <div className="text-[13px] font-semibold">Built on open data</div>
-            <div className="text-[12px] text-ink3">Geopub redistributes and refines these datasets. Keep their credit lines when you build.</div>
+            <div className="text-[12px] text-ink3">Lanka Data Layer redistributes and refines these datasets. Keep their credit lines when you build.</div>
           </div>
           <div className="mt-3.5 flex flex-wrap gap-2">
             {CREDITS.map((c) => (
@@ -215,7 +215,7 @@ export function HomePage() {
             ))}
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-2 text-[12px] text-ink3">
-            <span>© 2026 Geopub contributors</span>
+            <span>© 2026 Lanka Data Layer contributors</span>
             <span>·</span>
             <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="text-brand hover:text-brand2 hover:underline">
               GitHub

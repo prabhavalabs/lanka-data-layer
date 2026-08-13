@@ -6,9 +6,9 @@ import { ACCENT, BORDER, glassPanelStyle, SANS_FONT, TEXT, TEXT2, TEXT3 } from "
 import { useTheme } from "@/components/theme-provider";
 
 /**
- * Top-left brand pill: accent logo mark, "Geopub / Explore", and a link
- * back to the docs surface at `/` (see App.tsx, out of scope here — docs
- * now lives at the app's index route).
+ * Top-left brand pill: accent logo mark, "Lanka Data Layer / Explore", and a
+ * link back to the docs surface at `/` (see App.tsx, out of scope here —
+ * docs now lives at the app's index route).
  */
 export function ExploreHeader() {
   const { theme } = useTheme();
@@ -28,7 +28,7 @@ export function ExploreHeader() {
         </span>
         <span className="flex items-baseline gap-1.5 whitespace-nowrap text-[13px]">
           <span className="font-semibold" style={{ color: TEXT }}>
-            Geopub
+            Lanka Data Layer
           </span>
           <span style={{ color: TEXT3 }}>/</span>
           <span style={{ color: TEXT2 }}>Explore</span>

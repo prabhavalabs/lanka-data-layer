@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { Envelope, ResponseMeta, SourceAttribution } from "@geopub/shared";
+import type { Envelope, ResponseMeta, SourceAttribution } from "@lanka-data-layer/shared";
 import { prepared } from "./cache.ts";
 
 interface DatasetRow {

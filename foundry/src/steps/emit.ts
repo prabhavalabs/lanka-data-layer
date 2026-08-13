@@ -98,7 +98,7 @@ interface ArtifactEntry {
 /**
  * Discovers the `.pmtiles` files the `tiles` step wrote (data/artifacts/
  * tiles/*.pmtiles) so they're hashed into the manifest alongside
- * geopub.sqlite. Returns [] rather than failing if `tiles/` doesn't exist —
+ * lanka.sqlite. Returns [] rather than failing if `tiles/` doesn't exist —
  * an `--only` run that skipped `tiles` still produces a valid manifest, just
  * without tile entries.
  */
@@ -199,11 +199,11 @@ export async function run({ db, log }: StepContext): Promise<void> {
     data_version: dataVersion,
     built_at: builtAt,
     sources: sourceEntries,
-    artifacts: [{ path: "geopub.sqlite", bytes: dbStat.size, sha256: dbSha256 }, ...tiles],
+    artifacts: [{ path: "lanka.sqlite", bytes: dbStat.size, sha256: dbSha256 }, ...tiles],
   };
   await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + "\n", "utf8");
 
   log(
-    `emit: data_version=${dataVersion}, geopub.sqlite=${dbStat.size} bytes, ${tiles.length} tile artifact(s), manifest.json written`,
+    `emit: data_version=${dataVersion}, lanka.sqlite=${dbStat.size} bytes, ${tiles.length} tile artifact(s), manifest.json written`,
   );
 }

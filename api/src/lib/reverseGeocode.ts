@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import type { Lang, ReverseResult } from "@geopub/shared";
+import type { Lang, ReverseResult } from "@lanka-data-layer/shared";
 import { prepared } from "./cache.ts";
 import { resolveAdminLevels } from "./admin.ts";
 import { resolveName } from "./lang.ts";

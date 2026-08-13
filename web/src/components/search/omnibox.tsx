@@ -86,6 +86,7 @@ export function Omnibox() {
   const navigate = useNavigate();
   const location = useLocation();
   const setHighlight = useMapStore((s) => s.setHighlight);
+  const setSelection = useMapStore((s) => s.setSelection);
   const { recents, addRecent, clearRecents } = useRecentSearches();
 
   const [query, setQuery] = React.useState("");
@@ -160,6 +161,10 @@ export function Omnibox() {
         setActionError(`"${row.label}" doesn't have a boundary to show.`);
         return;
       }
+      // Set selection right away — SelectionCard starts its own
+      // /v1/admin/:pcode fetch immediately rather than waiting on the
+      // boundary geometry below, which is only for the highlight outline.
+      setSelection({ type: "admin", pcode: row.pcode, label: row.label });
       try {
         const feature = await apiGetRaw<GeoJSON.Feature>(`/admin/${encodeURIComponent(row.pcode)}/geometry`);
         setHighlight({ kind: "geometry", feature, label: row.label });
@@ -175,6 +180,13 @@ export function Omnibox() {
       return;
     }
     setHighlight({ kind: "point", lat: row.lat, lon: row.lon, label: row.label });
+    if (row.type === "postal") {
+      setSelection({ type: "postal", code: String(row.id), label: row.label });
+    } else if (row.type === "place") {
+      setSelection({ type: "place", id: row.id, label: row.label, sublabel: row.sublabel, lat: row.lat, lon: row.lon, pcode: row.pcode });
+    } else {
+      setSelection({ type: "coordinate", lat: row.lat, lon: row.lon, label: row.label });
+    }
   }
 
   function onInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {

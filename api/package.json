@@ -1,9 +1,9 @@
 {
-  "name": "@geopub/api",
+  "name": "@lanka-data-layer/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Geopub API — HTTP service serving the foundry's read-only SQLite artifact",
+  "description": "Lanka Data Layer API — HTTP service serving the foundry's read-only SQLite artifact",
   "exports": {
     ".": "./src/app.ts"
   },
@@ -14,7 +14,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@geopub/shared": "workspace:*",
+    "@lanka-data-layer/shared": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "better-sqlite3": "^13.0.0",
     "hono": "^4.6.9",

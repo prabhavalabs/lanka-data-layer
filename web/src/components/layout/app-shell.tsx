@@ -40,7 +40,7 @@ export function AppShell() {
         >
           <MenuIcon />
         </button>
-        <span className="text-[14px] font-semibold tracking-tight">Geopub</span>
+        <span className="text-[14px] font-semibold tracking-tight">Lanka Data Layer</span>
       </div>
 
       <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />

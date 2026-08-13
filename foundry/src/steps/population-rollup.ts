@@ -1,0 +1,51 @@
+import type { StepContext } from "../step.ts";
+
+export const name = "population-rollup";
+
+// The WorldPop raster's reference year (see fetch-worldpop) — kept distinct
+// from the 2023 HDX projections so consumers can tell the two sources apart.
+const WORLDPOP_YEAR = 2020;
+
+/**
+ * population-rollup: fills the levels the 2023 HDX projections don't cover
+ * (DS and GN divisions) with WorldPop-derived totals, by rolling the gridded
+ * population up through the reverse-geocode index:
+ *
+ *   GND total  = SUM(cells.pop) over the cells cell_lookup assigns to it
+ *   DS total   = SUM of its GND children
+ *
+ * Rows are written as (year 2020, sex 't', age_bucket 'total') only — a
+ * modeled estimate, not a census count. Levels 0-2 keep their 2023 HDX rows;
+ * the API serves whatever the latest year per unit is, so districts stay on
+ * the official projections while GN/DS divisions get the WorldPop rollup.
+ */
+export async function run({ db, log }: StepContext): Promise<void> {
+  const tx = db.transaction(() => {
+    db.prepare("DELETE FROM admin_population WHERE year = ?").run(WORLDPOP_YEAR);
+
+    const gnd = db
+      .prepare(
+        `INSERT INTO admin_population (pcode, year, sex, age_bucket, count)
+         SELECT cl.gnd_pcode, ?, 't', 'total', CAST(ROUND(SUM(c.pop)) AS INTEGER)
+         FROM cell_lookup cl JOIN cells c ON c.cell_id = cl.cell_id
+         GROUP BY cl.gnd_pcode`,
+      )
+      .run(WORLDPOP_YEAR);
+
+    const ds = db
+      .prepare(
+        `INSERT INTO admin_population (pcode, year, sex, age_bucket, count)
+         SELECT u.parent_pcode, ?, 't', 'total', SUM(ap.count)
+         FROM admin_population ap
+         JOIN admin_units u ON u.pcode = ap.pcode AND u.level = 4
+         WHERE ap.year = ? AND u.parent_pcode IS NOT NULL
+         GROUP BY u.parent_pcode`,
+      )
+      .run(WORLDPOP_YEAR, WORLDPOP_YEAR);
+
+    return { gnd: gnd.changes, ds: ds.changes };
+  });
+
+  const counts = tx();
+  log(`population-rollup: ${counts.gnd} GND + ${counts.ds} DS division totals (worldpop ${WORLDPOP_YEAR})`);
+}

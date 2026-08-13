@@ -10,12 +10,12 @@ importers:
 
   api:
     dependencies:
-      '@geopub/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.17(hono@4.13.1)
+      '@lanka-data-layer/shared':
+        specifier: workspace:*
+        version: link:../shared
       better-sqlite3:
         specifier: ^13.0.0
         version: 13.0.3
@@ -96,7 +96,7 @@ importers:
       '@fontsource/geist-mono':
         specifier: ^5.3.0
         version: 5.3.0
-      '@geopub/shared':
+      '@lanka-data-layer/shared':
         specifier: workspace:*
         version: link:../shared
       class-variance-authority:

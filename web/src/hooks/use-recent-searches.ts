@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { lookupRowKey, type LookupSuggestRow } from "@/lib/lookup";
 
-const STORAGE_KEY = "geopub.omnibox.recent-searches";
+const STORAGE_KEY = "lanka.omnibox.recent-searches";
 const MAX_RECENTS = 6;
 
 function readStoredRecents(): LookupSuggestRow[] {

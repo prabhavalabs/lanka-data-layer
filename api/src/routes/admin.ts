@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import type Database from "better-sqlite3";
 import { z } from "zod";
-import type { Lang, Sex } from "@geopub/shared";
+import type { Lang, Sex } from "@lanka-data-layer/shared";
 import { buildMeta, ok } from "../lib/envelope.ts";
 import { prepared } from "../lib/cache.ts";
 import { NotFoundError, ValidationError, formatZodIssues } from "../lib/errors.ts";
@@ -108,7 +108,18 @@ export function mountAdminRoute(app: Hono, db: Database.Database): void {
     if (include.includes("population")) payload.population = loadPopulation(db, pcode);
     if (include.includes("stats")) payload.stats = loadStats(db, pcode);
 
-    const meta = buildMeta(db, ["admin-units"]);
+    // Postal codes serving the unit (DS/GN divisions only — the foundry's
+    // postal-rollup doesn't aggregate above level 3). Dominant code first.
+    const postalCodes = prepared<{ code: string; share: number }>(
+      db,
+      "SELECT code, share FROM admin_postal WHERE pcode = ? ORDER BY share DESC LIMIT 6",
+    ).all(pcode);
+    if (postalCodes.length > 0) {
+      payload.postal_codes = postalCodes;
+    }
+
+    const datasetIds = postalCodes.length > 0 ? ["admin-units", "postal-codes"] : ["admin-units"];
+    const meta = buildMeta(db, datasetIds);
     return c.json(ok(payload, meta));
   });
 }

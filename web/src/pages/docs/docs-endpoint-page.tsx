@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { getDocsEndpoint } from "@/lib/docs-spec";
 import { ParamTable } from "@/pages/docs/components/param-table";
 import { TryPanel } from "@/pages/docs/components/try-panel";
+import { useTryPanelWidth } from "@/pages/docs/use-try-panel-width";
 
 const RESPONSE_KIND_LABEL = {
   envelope: "{success, message, payload, meta} envelope",
@@ -34,6 +35,7 @@ export function DocsEndpointPage() {
   const endpoint = slug ? getDocsEndpoint(slug) : undefined;
   const [pillLabel, copyPill] = useCopyLabel();
   const [responseLabel, copyResponse] = useCopyLabel();
+  const tryPanel = useTryPanelWidth();
 
   if (!endpoint) {
     return (
@@ -148,7 +150,24 @@ export function DocsEndpointPage() {
         </div>
       </div>
 
-      <div className="w-full shrink-0 border-t border-border bg-bg2 min-[1100px]:w-[400px] min-[1100px]:overflow-y-auto min-[1100px]:border-l min-[1100px]:border-t-0">
+      {/* Resize handle — only meaningful in the side-by-side layout. Drag
+          left to widen the Try panel; double-click to reset. */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize the try panel"
+        onPointerDown={tryPanel.onHandlePointerDown}
+        onDoubleClick={tryPanel.reset}
+        className={`relative hidden w-[5px] shrink-0 cursor-col-resize touch-none select-none min-[1100px]:block ${
+          tryPanel.dragging ? "bg-brand/60" : "bg-transparent hover:bg-brand/35"
+        } transition-colors`}
+      />
+      <div
+        style={{ "--try-width": `${tryPanel.width}px` } as React.CSSProperties}
+        className={`w-full shrink-0 border-t border-border bg-bg2 min-[1100px]:w-[var(--try-width)] min-[1100px]:overflow-y-auto min-[1100px]:border-l min-[1100px]:border-t-0 ${
+          tryPanel.dragging ? "pointer-events-none" : ""
+        }`}
+      >
         <TryPanel endpoint={endpoint} />
       </div>
     </div>

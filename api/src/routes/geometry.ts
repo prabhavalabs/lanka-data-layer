@@ -21,10 +21,10 @@ const QuerySchema = z.object({
  * envelope routes, matching how /v1/tiles/*.pmtiles also serves raw bytes
  * rather than an envelope.
  *
- * Cache-Control is strengthened beyond the app-wide default: a pcode's
- * geometry never changes within a data_version (contract §3 — artifacts
- * are rebuilt as a whole, versioned as a whole), so this is safe to mark
- * `immutable` rather than the usual max-age=86400 + revalidate.
+ * Same cache policy as the app-wide default. `immutable` would only be
+ * correct if the URL embedded the data_version — it doesn't, and a data
+ * release DOES change what this URL serves, so clients must be allowed to
+ * revalidate (the ETag carries the data_version, making 304s cheap).
  */
 export function mountAdminGeometryRoute(app: Hono, db: Database.Database): void {
   app.get("/v1/admin/:pcode/geometry", (c) => {
@@ -36,7 +36,7 @@ export function mountAdminGeometryRoute(app: Hono, db: Database.Database): void 
     const feature = getAdminGeometryFeature(db, pcode, lang);
     if (!feature) throw new NotFoundError(`geometry for admin unit "${pcode}" not found`);
 
-    c.header("Cache-Control", "public, max-age=31536000, immutable");
+    c.header("Cache-Control", "public, max-age=300, stale-while-revalidate=86400");
     return c.json(feature);
   });
 }

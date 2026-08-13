@@ -12,7 +12,7 @@ export function DatasetsPage() {
       <div className="mx-auto flex max-w-5xl flex-col gap-5">
         <div>
           <h2 className="text-[22px] font-bold tracking-[-0.02em]">Datasets</h2>
-          <p className="mt-1.5 text-[14px] text-ink2">Everything published by the Geopub API, with source and license attribution.</p>
+          <p className="mt-1.5 text-[14px] text-ink2">Everything published by the API, with source and license attribution.</p>
         </div>
         <Separator />
         <DatasetsBody state={state} />
@@ -93,7 +93,7 @@ function DatasetsError({ error }: { error: ApiError }) {
       <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-border py-16 text-center">
         <p className="text-sm font-medium">API not running</p>
         <p className="max-w-sm text-sm text-muted-foreground">
-          Couldn&apos;t reach the Geopub API at <code className="text-foreground">/v1</code>. Start it
+          Couldn&apos;t reach the API at <code className="text-foreground">/v1</code>. Start it
           with <code className="text-foreground">pnpm api run dev</code> and reload.
         </p>
       </div>

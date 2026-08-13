@@ -42,9 +42,9 @@ test("GET /v1/admin/:pcode/geometry 404s for a wholly unknown pcode", async () =
   assert.equal(res.status, 404);
 });
 
-test("GET /v1/admin/:pcode/geometry sets a strong, immutable Cache-Control", async () => {
+test("GET /v1/admin/:pcode/geometry sets a revalidating Cache-Control", async () => {
   const res = await app.request("/v1/admin/LK1101/geometry");
-  assert.equal(res.headers.get("Cache-Control"), "public, max-age=31536000, immutable");
+  assert.equal(res.headers.get("Cache-Control"), "public, max-age=300, stale-while-revalidate=86400");
 });
 
 test("GET /v1/admin/:pcode/geometry still sets a data_version-based ETag", async () => {

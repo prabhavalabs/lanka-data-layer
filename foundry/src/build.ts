@@ -17,6 +17,8 @@ import * as poisExtend from "./steps/pois-extend.ts";
 import * as cells from "./steps/cells.ts";
 import * as adminGeometry from "./steps/admin-geometry.ts";
 import * as cellLookup from "./steps/cell-lookup.ts";
+import * as populationRollup from "./steps/population-rollup.ts";
+import * as postalRollup from "./steps/postal-rollup.ts";
 import * as downloads from "./steps/downloads.ts";
 import * as tiles from "./steps/tiles.ts";
 import * as datasets from "./steps/datasets.ts";
@@ -59,6 +61,8 @@ const PIPELINE: Step[] = [
   cells,
   adminGeometry,
   cellLookup,
+  populationRollup,
+  postalRollup,
   downloads,
   tiles,
   datasets,
@@ -95,7 +99,7 @@ async function main(): Promise<void> {
 
   const db = getDb();
   const startedAt = Date.now();
-  console.log(`geopub foundry: running ${steps.map((s) => s.name).join(" -> ")}`);
+  console.log(`lanka-data-layer foundry: running ${steps.map((s) => s.name).join(" -> ")}`);
 
   for (const step of steps) {
     const t0 = Date.now();
@@ -112,10 +116,10 @@ async function main(): Promise<void> {
   }
 
   closeDb();
-  console.log(`\ngeopub foundry: build complete in ${Date.now() - startedAt}ms`);
+  console.log(`\nlanka-data-layer foundry: build complete in ${Date.now() - startedAt}ms`);
 }
 
 main().catch((err) => {
-  console.error("geopub foundry: unhandled error", err);
+  console.error("lanka-data-layer foundry: unhandled error", err);
   process.exitCode = 1;
 });

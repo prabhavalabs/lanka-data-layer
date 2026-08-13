@@ -28,7 +28,9 @@ import { ExploreHeader } from "@/components/explore/explore-header";
 import { ExploreOmnibox } from "@/components/explore/explore-omnibox";
 import { ExploreReadout } from "@/components/explore/explore-readout";
 import { glassPanelStyle, MONO_FONT, SANS_FONT, TEXT, TEXT2 } from "@/components/explore/glass";
+import { SelectionCard } from "@/components/explore/selection-card";
 import { featureBounds } from "@/lib/geojson-bounds";
+import { selectAdminUnit } from "@/lib/map-selection";
 import { usePopulationGrid } from "@/hooks/use-population-grid";
 import { useLayerStore } from "@/stores/layer-store";
 import { useMapStore, DEFAULT_MAP_VIEW } from "@/stores/map-store";
@@ -45,10 +47,15 @@ const COUNTRY_BBOX: LngLatBoundsLike = [
   [79.6509, 5.919],
   [81.879, 9.8358],
 ];
-const CAMERA_PADDING_DEG = 0.35;
+// Generous on purpose: maxBounds doubles as a zoom clamp — MapLibre will
+// force-zoom IN until the viewport fits inside the bounds, so a tight cage
+// silently overrides fitBounds on wide viewports (island height on screen
+// needs lots of longitude at 21:9). ±5°/±3° keeps panning loosely tethered
+// to the island while never fighting the fit; the sea mask makes the extra
+// area visually inert anyway.
 const CAMERA_BOUNDS: LngLatBoundsLike = [
-  [79.6509 - CAMERA_PADDING_DEG, 5.919 - CAMERA_PADDING_DEG],
-  [81.879 + CAMERA_PADDING_DEG, 9.8358 + CAMERA_PADDING_DEG],
+  [79.6509 - 5, 5.919 - 3],
+  [81.879 + 5, 9.8358 + 3],
 ];
 // Mirrors the design mock's fitExtent margins: clear of the header/layer
 // panel on the left and the omnibox strip on top.
@@ -161,6 +168,7 @@ export function MapView() {
     let detach: (() => void) | null = null;
 
     function createMap(): void {
+      if (map) return;
       const mode = resolveBasemapMode(theme);
 
       const nextMap = new MaplibreMap({
@@ -179,8 +187,21 @@ export function MapView() {
       // a phone and an ultrawide both get the full island). The zoom floor
       // sits ZOOM_OUT_HEADROOM below the fit, so pulling back for context
       // is possible but the island can never be lost off-screen (maxBounds
-      // still pins the camera to it). Recomputed on resize.
+      // still pins the camera to it).
+      //
+      // The fit is recomputed — and RE-APPLIED — on every resize and once on
+      // "load" until the user's first gesture. Construction can happen while
+      // the container is still settling into its final layout size, so the
+      // first fit may frame the island for the wrong viewport; only a real
+      // interaction (drag/wheel/touch/control click) freezes the camera as
+      // the user's own.
       const ZOOM_OUT_HEADROOM = 1.4;
+      let userInteracted = false;
+      const markInteracted = () => {
+        userInteracted = true;
+      };
+      container?.addEventListener("pointerdown", markInteracted, { capture: true });
+      container?.addEventListener("wheel", markInteracted, { capture: true, passive: true });
       const applyIslandFit = (jump: boolean) => {
         const cam = nextMap.cameraForBounds(COUNTRY_BBOX, { padding: FIT_PADDING });
         if (!cam) return;
@@ -188,9 +209,18 @@ export function MapView() {
         if (jump) nextMap.jumpTo({ center: cam.center, zoom: cam.zoom, pitch: 0, bearing: 0 });
       };
       if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__map = nextMap;
+      const fitUnlessInteracted = () => applyIslandFit(!userInteracted);
       applyIslandFit(true);
-      const onResize = () => applyIslandFit(false);
-      nextMap.on("resize", onResize);
+      // The constructor can measure the container mid-layout, leaving the
+      // transform (and therefore cameraForBounds) with stale dimensions —
+      // and "load" is no rescue when tiles fail. One frame later layout has
+      // settled: force a re-measure, then fit again.
+      requestAnimationFrame(() => {
+        nextMap.resize();
+        fitUnlessInteracted();
+      });
+      nextMap.once("load", fitUnlessInteracted);
+      nextMap.on("resize", fitUnlessInteracted);
 
       // Sea mask: world polygon with the country as holes, painted the
       // design's flat sea color so neighboring coastlines and ocean labels
@@ -262,8 +292,35 @@ export function MapView() {
       const onZoom = () => setMapZoom(nextMap.getZoom());
       nextMap.on("zoom", onZoom);
 
-      const onClick = () => useMapStore.getState().setHighlight(null);
+      // Selecting persists until explicitly dismissed (SelectionCard's close
+      // button or Escape below) — a plain map click no longer clears
+      // anything. Clicking an admin polygon instead *selects* it: sets
+      // `selection` right away (SelectionCard starts its own /v1/admin/:pcode
+      // fetch immediately) and best-effort fetches its boundary for the
+      // highlight outline, same flow Omnibox and SelectionCard's breadcrumb
+      // links use (lib/map-selection.ts). Clicking empty water/basemap is a
+      // no-op — whatever's currently selected/highlighted just stays put.
+      const onClick = (e: MapMouseEvent) => {
+        const layerIds = ADMIN_HOVER_LAYER_IDS.filter((id) => nextMap.getLayer(id));
+        if (layerIds.length === 0) return;
+        const top = nextMap.queryRenderedFeatures(e.point, { layers: layerIds })[0];
+        const pcode = top?.properties?.pcode;
+        if (typeof pcode !== "string" || !pcode) return;
+        const name = typeof top.properties?.name_en === "string" ? top.properties.name_en : undefined;
+        selectAdminUnit(pcode, name);
+      };
       nextMap.on("click", onClick);
+
+      // Auto-collapse the selection card out of the way on a genuine user
+      // gesture (drag/wheel/touch) — but not on our own programmatic camera
+      // moves (flyTo/fitBounds), which MapLibre fires without an
+      // `originalEvent`. The pin toggle (SelectionCard) exists specifically
+      // to opt out of this.
+      const onMoveStart = (e: { originalEvent?: unknown }) => {
+        if (!e.originalEvent) return;
+        if (!useMapStore.getState().pinned) useMapStore.getState().setCollapsed(true);
+      };
+      nextMap.on("movestart", onMoveStart);
 
       const clearHover = () => {
         if (hoverRef.current) {
@@ -303,6 +360,18 @@ export function MapView() {
       };
       nextMap.on("mousemove", onMouseMove);
       nextMap.on("mouseout", clearHover);
+
+      // Escape dismisses the selection (card + highlight) — "while the map
+      // has focus": MapLibre's canvas is tabindex'd and grabs focus on
+      // click/drag, so a keydown listener scoped to this container only
+      // ever sees Escape when focus is somewhere inside it (the canvas),
+      // not e.g. while the omnibox input has focus — that's a sibling
+      // element outside this subtree, so its own Escape handling (closing
+      // the dropdown) is unaffected.
+      const onContainerKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") useMapStore.getState().clearSelection();
+      };
+      container?.addEventListener("keydown", onContainerKeyDown);
 
       const addRegistryLayers = () => {
         // Theme at mount time; the theme-change effect below keeps this in
@@ -376,8 +445,10 @@ export function MapView() {
       detach = () => {
         nextMap.off("moveend", onMoveEnd);
         nextMap.off("click", onClick);
+        nextMap.off("movestart", onMoveStart);
         nextMap.off("mousemove", onMouseMove);
         nextMap.off("mouseout", clearHover);
+        container?.removeEventListener("keydown", onContainerKeyDown);
         markerRef.current?.remove();
         markerRef.current = null;
         overlay.finalize();
@@ -411,6 +482,16 @@ export function MapView() {
       createMap();
     });
     resizeObserver.observe(container);
+    // Also measure synchronously: per spec ResizeObserver fires once on
+    // observe(), but that initial delivery cannot be relied on in every
+    // embedding (and even when it comes, it's a task later). If the
+    // container is already laid out — the common case — construct now; the
+    // observer then only handles genuine size changes and the zero-size
+    // cold-load race documented above.
+    {
+      const rect = container.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) createMap();
+    }
 
     return () => {
       resizeObserver.disconnect();
@@ -559,6 +640,7 @@ export function MapView() {
       <MapLegend />
       <ExploreReadout lat={readoutLat} lon={readoutLon} zoom={mapZoom} />
       <ExploreAttribution />
+      <SelectionCard />
       {hoveredAdmin && hoveredAdmin.name && (
         <div className="pointer-events-none absolute right-3 top-20 z-20" style={{ fontFamily: SANS_FONT }}>
           <div className="rounded-xl border px-3 py-2" style={glassPanelStyle(mode)}>

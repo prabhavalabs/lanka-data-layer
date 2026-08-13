@@ -19,7 +19,7 @@ col = floor((lon - 79.400) * 1000)
 - Only land cells (and near-shore water cells) get rows in `cell_lookup`; a missing cell means "in bbox but not on land".
 - The same formula must exist in exactly three places: `foundry/src/grid.ts`, `shared/src/grid.ts` (exported for api + web), and this document. Unit tests pin all corner cases (Colombo Fort, Point Pedro, Dondra Head, out-of-bounds).
 
-## 2. SQLite schema (artifact: `geopub.sqlite`)
+## 2. SQLite schema (artifact: `lanka.sqlite`)
 
 Built read-only by the foundry. The API never writes.
 
@@ -45,6 +45,15 @@ admin_units(
 admin_geometry(
   pcode TEXT PRIMARY KEY REFERENCES admin_units(pcode),
   geojson TEXT NOT NULL
+);
+
+-- Postal codes serving each DS/GN division (levels 3-4), derived from
+-- cell_lookup: share = fraction of the unit's land cells assigned to the
+-- code. Served on /v1/admin/:pcode as `postal_codes`, dominant first.
+admin_postal(
+  pcode TEXT NOT NULL REFERENCES admin_units(pcode),
+  code TEXT NOT NULL, share REAL NOT NULL,
+  PRIMARY KEY (pcode, code)
 );
 
 -- Population by unit. sex: 'f'|'m'|'t'. age_bucket: '0-4' … '80+' | 'total'.
@@ -90,6 +99,16 @@ places(
 -- FTS5 index over all three name columns for /search
 places_fts (fts5: name_en, name_si, name_ta, content=places)
 
+-- admin_pcode = the district-level (level 2) p-code, resolved from the
+-- GeoNames dump's own district column by normalized name match (not from
+-- lat/lon) — see foundry/src/steps/postal.ts. lat/lon are the dump's own
+-- coordinates unless an admin unit inside that district has a name_en
+-- matching the postal place name (normalized), in which case that unit's
+-- centroid is used instead — GeoNames LK postal coordinates are frequently
+-- inaccurate and occasionally badly misplaced into a neighboring district.
+-- cell_lookup constrains its nearest-postal-code search per cell to the
+-- codes mapped to the cell's own district (falling back to a country-wide
+-- nearest search only for districts with zero district-mapped codes).
 postal_codes(
   code TEXT PRIMARY KEY, name TEXT NOT NULL,
   admin_pcode TEXT, lat REAL, lon REAL
@@ -131,7 +150,7 @@ Search notes: FTS5 `unicode61` tokenizer handles Sinhala/Tamil; ranking = FTS ra
 
 | Artifact | Consumed by | Notes |
 |---|---|---|
-| `geopub.sqlite` | api | schema above, `PRAGMA journal_mode=OFF`, fully vacuumed |
+| `lanka.sqlite` | api | schema above, `PRAGMA journal_mode=OFF`, fully vacuumed |
 | `tiles/<layer>.pmtiles` | web (+ api passthrough) | layers: admin (all levels, zoom-gated), electoral, roads, railways, water, pois |
 | `downloads/<dataset>.<fmt>.gz` | public bulk downloads | GeoJSON (6 dp coordinates), CSV for tabular |
 | `manifest.json` | api + web | `{ data_version, built_at, sources: [{id, fetched_at, license, url}], artifacts: [{path, bytes, sha256}] }` |
@@ -143,7 +162,7 @@ Raw source downloads cache in `foundry/data/raw/` (gitignored, re-fetchable). Bu
 - Base path `/v1`. Envelope: `{ success, message, payload, meta }`; `meta` always carries `data_version` and `source` attribution for the datasets touched.
 - Errors: 400 validation, 404 `not_found` / `not_in_coverage`, 500 masked internals. Same envelope, `success: false`.
 - `lang=en|si|ta` (default `en`) selects name fields; missing translation falls back to `en`.
-- Caching: every GET sets `ETag: "<data_version>-<route-hash>"` and `Cache-Control: public, max-age=86400, stale-while-revalidate=604800`. Data release ⇒ new ETags everywhere.
+- Caching: every GET sets `ETag: "<data_version>-<route-hash>"` and `Cache-Control: public, max-age=300, stale-while-revalidate=86400` (tiles: max-age=3600). Freshness is deliberately short: URLs carry no version, so clients must revalidate (cheap 304 via ETag) for data corrections to propagate. Never mark unversioned URLs `immutable`. Data release ⇒ new ETags everywhere.
 - Pagination: cursor-based (`?cursor=`, opaque), never offset.
 - Runtime: Node 22 + Hono + better-sqlite3 (sync reads are fine: the DB is read-only, queries are indexed point lookups). OpenAPI via zod schemas, served at `/v1/docs`.
 - **Universal lookup** `GET /v1/lookup?q=`: classifies the query before searching —

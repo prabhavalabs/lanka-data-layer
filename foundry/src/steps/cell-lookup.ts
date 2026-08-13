@@ -29,10 +29,23 @@ interface CodAbFeatureCollection {
  * ADM4 (GN division) polygons for gnd_pcode, plus nearest postal_codes row
  * and nearest places row by haversine.
  *
+ * The postal lookup is district-constrained: a cell's candidate postal codes
+ * are only the ones postal.ts resolved (via the dump's own district column,
+ * not coordinates) to the cell's own district. Some GeoNames LK postal
+ * points are badly misplaced — occasionally landing on top of a *different*
+ * code's true location in a neighboring district — so an unconstrained
+ * "nearest by distance" search can hand a cell a code that belongs many km
+ * away just because its (wrong) coordinate happens to be close. Districts
+ * with zero district-mapped postal codes fall back to the old country-wide
+ * nearest-search behavior, same as codes whose district couldn't be
+ * resolved at all.
+ *
  * Two performance techniques keep ~5M cells x 3 lookups tractable:
  *  - Every lookup goes through a grid-bucket index (lib/pip.ts's
  *    PolygonIndex, lib/nearest.ts's NearestIndex) instead of scanning every
- *    polygon/point per cell.
+ *    polygon/point per cell. This now includes one NearestIndex per
+ *    district for postal codes (in addition to the global fallback index),
+ *    each built once up front — cheap, since there are only ~25 districts.
  *  - `cells` is walked in cell_id order, which is row-major over the grid
  *    (lib/grid.ts) — consecutive cells are spatially adjacent, so a cell
  *    almost always sits in the same GN division as the previous one. A
@@ -55,11 +68,77 @@ export async function run({ db, log }: StepContext): Promise<void> {
   }
   log(`cell-lookup: indexed ${geometryByPcode.size} ADM4 polygons`);
 
+  // GN division -> district, by walking the admin_units parent chain (the
+  // ground truth) rather than assuming p-code prefixes are hierarchical.
+  // Spot-verified separately against a handful of rows (LK6175085 ->
+  // LK6175 -> LK61, LK6248025 -> LK6248 -> LK62) and, across all 14k+ GN
+  // divisions checked here, the first-4-chars prefix shortcut turns out to
+  // agree with the walk every time — logged below so a future COD-AB
+  // release that broke that agreement wouldn't go unnoticed. The walk
+  // result (not the prefix) is what's actually used.
+  const adminRows = db.prepare(`SELECT pcode, level, parent_pcode FROM admin_units WHERE level IN (2, 3, 4)`).all() as {
+    pcode: string;
+    level: number;
+    parent_pcode: string | null;
+  }[];
+  const adminByPcode = new Map(adminRows.map((r) => [r.pcode, r]));
+  const gndToDistrict = new Map<string, string>();
+  let prefixAgrees = 0;
+  let prefixDisagrees = 0;
+  for (const r of adminRows) {
+    if (r.level !== 4) continue;
+    let cur = r;
+    let district: string | null = null;
+    for (let hop = 0; hop < 5; hop++) {
+      const parent = cur.parent_pcode ? adminByPcode.get(cur.parent_pcode) : undefined;
+      if (!parent) break;
+      if (parent.level === 2) {
+        district = parent.pcode;
+        break;
+      }
+      cur = parent;
+    }
+    if (district) {
+      gndToDistrict.set(r.pcode, district);
+      if (r.pcode.slice(0, 4) === district) prefixAgrees++;
+      else prefixDisagrees++;
+    }
+  }
+  log(
+    `cell-lookup: resolved district for ${gndToDistrict.size} GN divisions via parent-chain walk ` +
+      `(pcode-prefix shortcut agreed for ${prefixAgrees}, disagreed for ${prefixDisagrees})`,
+  );
+
   const postalRows = db
-    .prepare(`SELECT code, lat, lon FROM postal_codes WHERE lat IS NOT NULL AND lon IS NOT NULL`)
-    .all() as { code: string; lat: number; lon: number }[];
-  const postalIndex = new NearestIndex<string>(POSTAL_BUCKET_CELL_DEG);
-  for (const r of postalRows) postalIndex.insert(r.code, r.lat, r.lon);
+    .prepare(`SELECT code, lat, lon, admin_pcode FROM postal_codes WHERE lat IS NOT NULL AND lon IS NOT NULL`)
+    .all() as { code: string; lat: number; lon: number; admin_pcode: string | null }[];
+
+  // Global fallback index (unconstrained, country-wide nearest — the old
+  // behavior) for districts with no district-mapped postal codes, and for
+  // any postal code whose own district couldn't be resolved.
+  const globalPostalIndex = new NearestIndex<string>(POSTAL_BUCKET_CELL_DEG);
+  for (const r of postalRows) globalPostalIndex.insert(r.code, r.lat, r.lon);
+
+  // Per-district indexes — the fixed behavior (see module doc comment).
+  const postalIndexByDistrict = new Map<string, NearestIndex<string>>();
+  let postalCodesWithoutDistrict = 0;
+  for (const r of postalRows) {
+    if (!r.admin_pcode) {
+      postalCodesWithoutDistrict++;
+      continue;
+    }
+    let idx = postalIndexByDistrict.get(r.admin_pcode);
+    if (!idx) {
+      idx = new NearestIndex<string>(POSTAL_BUCKET_CELL_DEG);
+      postalIndexByDistrict.set(r.admin_pcode, idx);
+    }
+    idx.insert(r.code, r.lat, r.lon);
+  }
+  const districtCount = (db.prepare(`SELECT COUNT(*) AS n FROM admin_units WHERE level = 2`).get() as { n: number }).n;
+  log(
+    `cell-lookup: ${postalIndexByDistrict.size}/${districtCount} districts have district-mapped postal codes; ` +
+      `${postalCodesWithoutDistrict} postal codes have no admin_pcode (global-fallback only)`,
+  );
 
   const placeRows = db.prepare(`SELECT id, lat, lon FROM places`).all() as { id: number; lat: number; lon: number }[];
   const placeIndex = new NearestIndex<number>(PLACE_BUCKET_CELL_DEG);
@@ -83,6 +162,8 @@ export async function run({ db, log }: StepContext): Promise<void> {
   let assignedFallback = 0;
   let skippedNoGnd = 0;
   let stickyHits = 0;
+  let postalDistrictConstrained = 0;
+  let postalGlobalFallback = 0;
 
   let stickyPcode: string | null = null;
   let stickyGeometry: PolygonalGeometry | null = null;
@@ -123,7 +204,11 @@ export async function run({ db, log }: StepContext): Promise<void> {
         continue;
       }
 
-      const postal = postalIndex.nearest(c.lat, c.lon);
+      const district = gndToDistrict.get(gnd);
+      const districtPostalIndex = district ? postalIndexByDistrict.get(district) : undefined;
+      if (districtPostalIndex) postalDistrictConstrained++;
+      else postalGlobalFallback++;
+      const postal = (districtPostalIndex ?? globalPostalIndex).nearest(c.lat, c.lon);
       const place = placeIndex.nearest(c.lat, c.lon);
 
       insert.run({
@@ -142,5 +227,9 @@ export async function run({ db, log }: StepContext): Promise<void> {
     `cell-lookup: assigned ${total} rows (${assignedDirect} direct PIP incl. ${stickyHits} sticky-cache hits, ` +
       `${assignedFallback} nearest-polygon fallback <= ${NEAREST_POLYGON_FALLBACK_M}m), skipped ${skippedNoGnd} ` +
       `(no ADM4 polygon within range)`,
+  );
+  log(
+    `cell-lookup: postal assignment was district-constrained for ${postalDistrictConstrained} cells, ` +
+      `${postalGlobalFallback} used the country-wide global fallback (unresolved district or zero district-mapped codes)`,
   );
 }

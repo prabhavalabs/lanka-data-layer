@@ -82,3 +82,20 @@ test("lang=si resolves Sinhala names where present, falling back to English othe
   const countryBody = await readJson(country);
   assert.equal(countryBody.payload.unit.name, "ශ්‍රී ලංකාව");
 });
+
+test("GET /v1/admin/:pcode includes rolled-up postal codes for GN/DS divisions", async () => {
+  const res = await app.request("/v1/admin/LK110101");
+  const body = await readJson(res);
+  assert.deepEqual(
+    body.payload.postal_codes.map((p: { code: string }) => p.code),
+    ["00100", "00300"],
+  );
+  assert.ok(body.payload.postal_codes[0].share > body.payload.postal_codes[1].share);
+  assert.ok(body.meta.source.length >= 2, "postal attribution joins the meta sources");
+});
+
+test("GET /v1/admin/:pcode omits postal_codes where no rollup exists", async () => {
+  const res = await app.request("/v1/admin/LK1");
+  const body = await readJson(res);
+  assert.equal(body.payload.postal_codes, undefined);
+});

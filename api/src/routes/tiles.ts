@@ -11,7 +11,7 @@ import { NotFoundError } from "../lib/errors.ts";
 const FILENAME_RE = /^[a-z0-9-]+\.pmtiles$/;
 
 function tilesDir(): string {
-  return resolve(process.env.GEOPUB_TILES_DIR ?? "../foundry/data/artifacts/tiles");
+  return resolve(process.env.LANKA_TILES_DIR ?? "../foundry/data/artifacts/tiles");
 }
 
 interface RangeResult {
@@ -84,7 +84,10 @@ export function mountTilesRoute(app: Hono, db: Database.Database): void {
 
     const dataVersion = getDataVersion(db);
     const etag = `"${dataVersion}-${stats.mtimeMs.toString(36)}-${stats.size.toString(36)}"`;
-    c.header("Cache-Control", "public, max-age=31536000, immutable");
+    // Not `immutable`: the tileset URL carries no version, and a data
+    // release rewrites the file in place. The mtime-based ETag makes
+    // revalidation cheap; an hour of freshness keeps tile traffic light.
+    c.header("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400");
     c.header("ETag", etag);
     c.header("Accept-Ranges", "bytes");
 

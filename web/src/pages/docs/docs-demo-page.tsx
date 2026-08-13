@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { AdminUnit } from "@geopub/shared";
+import type { AdminUnit } from "@lanka-data-layer/shared";
 
 import { Separator } from "@/components/ui/separator";
 import { ApiError, apiGetPayload } from "@/lib/api";
