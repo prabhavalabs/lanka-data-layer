@@ -21,6 +21,11 @@ export default defineConfig({
     // the worker's relative URL resolves correctly.
     exclude: ["maplibre-gl"],
   },
+  worker: {
+    // The maplibre worker entry (see pmtiles-protocol.ts) is loaded with
+    // `new Worker(url, { type: "module" })`; build it as ESM to match.
+    format: "es",
+  },
   server: {
     port: process.env.PORT ? Number(process.env.PORT) : 5173,
     proxy: {
