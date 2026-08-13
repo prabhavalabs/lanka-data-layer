@@ -56,7 +56,13 @@ admin_postal(
   PRIMARY KEY (pcode, code)
 );
 
--- Population by unit. sex: 'f'|'m'|'t'. age_bucket: '0-4' … '80+' | 'total'.
+-- Population by unit. sex: 'f'|'m'|'t'.
+-- age_bucket: '0-4' … '80+' | 'total' for the 2023 projection rows;
+-- the 2024 census rows use the final report's coarse groups instead
+-- ('0-14'|'15-59'|'60-64'|'65+' | 'total', sex 't' only for age rows — the
+-- published tables have no sex-by-age cross-tabulation). Consumers must
+-- treat age_bucket as an opaque label within a (pcode, year) group, not a
+-- fixed domain.
 admin_population(
   pcode TEXT NOT NULL REFERENCES admin_units(pcode),
   year INTEGER NOT NULL, sex TEXT NOT NULL, age_bucket TEXT NOT NULL,
@@ -64,8 +70,10 @@ admin_population(
   PRIMARY KEY (pcode, year, sex, age_bucket)
 );
 
--- Flexible per-unit stats (ethnicity, religion, later census 2024).
--- key examples: 'ethnicity.sinhala', 'religion.buddhist'
+-- Flexible per-unit stats (ethnicity, religion). Years: 2012 census
+-- (districts) and 2024 census (country + districts + DS divisions).
+-- key examples: 'ethnicity.sinhala', 'religion.buddhist' — camelCase group
+-- keys are stable across census years.
 admin_stats(
   pcode TEXT NOT NULL, year INTEGER NOT NULL, key TEXT NOT NULL,
   value REAL NOT NULL,
