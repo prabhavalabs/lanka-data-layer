@@ -15,5 +15,10 @@
     "foundry": "pnpm --filter @lanka-data-layer/foundry",
     "api": "pnpm --filter @lanka-data-layer/api",
     "web": "pnpm --filter @lanka-data-layer/web"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.0"
   }
 }
