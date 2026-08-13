@@ -1,0 +1,48 @@
+{
+  "name": "@lanka-data-layer/census",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Offline Sri Lankan census indicators — 2024 population, age structure, ethnicity, and religion for the country, every district, and every DS division, with a 2012-census comparison. Zero dependencies.",
+  "keywords": [
+    "sri-lanka",
+    "census",
+    "demographics",
+    "population",
+    "open-data",
+    "geo-data"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prabhavalabs/lanka-data-layer.git",
+    "directory": "packages/census"
+  },
+  "homepage": "https://github.com/prabhavalabs/lanka-data-layer/tree/main/packages/census#readme",
+  "bugs": {
+    "url": "https://github.com/prabhavalabs/lanka-data-layer/issues"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "test": "node --experimental-strip-types --test src/*.test.ts",
+    "lint": "tsc --noEmit"
+  }
+}
