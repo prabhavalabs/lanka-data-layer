@@ -32,7 +32,7 @@ interface FlyToRequest extends FlyToTarget {
 /**
  * What the selection detail card is showing — set alongside `highlight`
  * whenever the omnibox applies a result or the user clicks an admin
- * polygon on the map, and read by SelectionCard/useSelectionData to fetch
+ * polygon on the map, and read by SelectionCard/useSelectionCore to fetch
  * the full picture. Carries just enough ids for that fetch; the card owns
  * everything else (full admin unit, population, stats, hierarchy, ...).
  *

@@ -3,10 +3,11 @@ import * as React from "react";
 import { resolveBasemapMode } from "@/components/map/basemap";
 import { ACCENT, BORDER, glassPanelStyle, MONO_FONT, SANS_FONT, TEXT, TEXT2, TEXT3 } from "@/components/explore/glass";
 import { ADMIN_LEVEL_LABELS } from "@/components/explore/selection-format";
-import { SelectionSections } from "@/components/explore/selection-sections";
+import { SecondarySections, SelectionSections } from "@/components/explore/selection-sections";
+import { ShimmerBlock } from "@/components/explore/selection-widgets";
 import { useTheme } from "@/components/theme-provider";
 import { useIsMobileViewport, usePrefersReducedMotion } from "@/hooks/use-media-query";
-import { useSelectionData, type SelectionData } from "@/hooks/use-selection-data";
+import { dedupeSources, useSelectionCore, useSelectionSecondary, type SelectionData } from "@/hooks/use-selection-data";
 import { LOOKUP_TYPE_LABELS } from "@/lib/lookup";
 import { useMapStore, type Selection } from "@/stores/map-store";
 
@@ -92,25 +93,21 @@ function TypeChip({ label }: { label: string }) {
   );
 }
 
-function SkeletonBlock({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded ${className}`} style={{ background: "rgba(120,140,160,0.16)" }} />;
-}
-
 function SkeletonBody() {
   return (
     <div className="flex flex-col gap-4 px-4 py-3.5">
       <div className="space-y-1.5">
-        <SkeletonBlock className="h-2.5 w-16" />
-        <SkeletonBlock className="h-6 w-28" />
+        <ShimmerBlock className="h-2.5 w-16" />
+        <ShimmerBlock className="h-6 w-28" />
       </div>
       <div className="space-y-1.5">
-        <SkeletonBlock className="h-2.5 w-20" />
-        <SkeletonBlock className="h-3.5 w-full" />
+        <ShimmerBlock className="h-2.5 w-20" />
+        <ShimmerBlock className="h-3.5 w-full" />
       </div>
       <div className="space-y-1.5">
-        <SkeletonBlock className="h-2.5 w-24" />
-        <SkeletonBlock className="h-2 w-full rounded-full" />
-        <SkeletonBlock className="h-2 w-2/3 rounded-full" />
+        <ShimmerBlock className="h-2.5 w-24" />
+        <ShimmerBlock className="h-2 w-full rounded-full" />
+        <ShimmerBlock className="h-2 w-2/3 rounded-full" />
       </div>
     </div>
   );
@@ -178,10 +175,12 @@ function headerInfo(selection: NonNullable<Selection>, data: SelectionData | und
  * two-state bottom sheet (collapsed header strip / expanded scrollable
  * body). Renders nothing when `selection` is null.
  *
- * Fetches its own data via useSelectionData (independent of the map
- * highlight, which MapView/Omnibox/map-selection.ts drive separately) —
- * loading/error/success are all handled here so callers just need to set
- * `selection`.
+ * Fetches its own data progressively (independent of the map highlight,
+ * which MapView/Omnibox/map-selection.ts drive separately) — the "core"
+ * query (useSelectionCore) renders the frame, header, and primary sections
+ * the moment it lands; useSelectionSecondary then fills in the rest,
+ * section by section, once core succeeds. Loading/error/success are all
+ * handled here so callers just need to set `selection`.
  */
 export function SelectionCard() {
   const selection = useMapStore((s) => s.selection);
@@ -196,7 +195,15 @@ export function SelectionCard() {
   const isMobile = useIsMobileViewport();
   const reducedMotion = usePrefersReducedMotion();
 
-  const state = useSelectionData(selection);
+  const state = useSelectionCore(selection);
+  const secondary = useSelectionSecondary(selection, state);
+  // The footer's source list is the union of the core response's
+  // attribution plus every secondary section's own — recomputed (and thus
+  // visibly growing) as each secondary section lands, per the task brief.
+  const allSources = React.useMemo(
+    () => (state.status === "success" ? dedupeSources([...state.data.source, ...secondary.flatMap((s) => s.source)]) : []),
+    [state, secondary]
+  );
 
   if (!selection) return null;
 
@@ -273,9 +280,10 @@ export function SelectionCard() {
           {state.status === "success" && (
             <div className="flex flex-col gap-3.5 border-t px-3.5 py-3.5" style={{ borderColor: BORDER }}>
               <SelectionSections data={state.data} reducedMotion={reducedMotion} />
-              {state.data.source.length > 0 && (
+              <SecondarySections sections={secondary} reducedMotion={reducedMotion} />
+              {allSources.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 border-t pt-3" style={{ borderColor: BORDER }}>
-                  {state.data.source.map((s) => (
+                  {allSources.map((s) => (
                     <span
                       key={s.name + s.license}
                       title={`${s.name} — ${s.license}`}
