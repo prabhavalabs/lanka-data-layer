@@ -1,0 +1,76 @@
+name: Publish packages
+
+# Publishes the standalone npm libraries under the @lanka-data-layer scope.
+# Manual-only: data releases and API changes deploy continuously, but a
+# registry publish is a versioned, irrevocable act — a human picks the
+# moment. Requires the NPM_TOKEN repository secret (npm automation token
+# with publish rights on the @lanka-data-layer org).
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Space-separated package dirs to publish, or 'all'"
+        required: true
+        default: "all"
+      tag:
+        description: "npm dist-tag"
+        required: true
+        default: "latest"
+
+concurrency:
+  group: publish-packages
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build all packages
+        run: pnpm --filter "./packages/*" run build
+      - name: Test all packages
+        run: pnpm --filter "./packages/*" run test
+      - name: Dry-run pack
+        run: |
+          for dir in packages/*/; do
+            (cd "$dir" && npm pack --dry-run)
+          done
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write # npm --provenance attestation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm --filter "./packages/*" run build
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ "${{ inputs.packages }}" = "all" ]; then
+            dirs="admin postal electoral census"
+          else
+            dirs="${{ inputs.packages }}"
+          fi
+          for name in $dirs; do
+            echo "==> Publishing @lanka-data-layer/$name"
+            (cd "packages/$name" && npm publish --access public --provenance --tag "${{ inputs.tag }}")
+          done

@@ -25,6 +25,7 @@ import * as downloads from "./steps/downloads.ts";
 import * as tiles from "./steps/tiles.ts";
 import * as datasets from "./steps/datasets.ts";
 import * as emit from "./steps/emit.ts";
+import * as packages from "./steps/packages.ts";
 
 // Fixed pipeline order. `--only` filters this list but never reorders it, so
 // dependencies always hold:
@@ -50,6 +51,11 @@ import * as emit from "./steps/emit.ts";
 //     downloads (not a dependency, just keeps every step that only reads
 //     already-finished artifacts grouped together) and before datasets/emit
 //     so emit can discover and hash the .pmtiles files it writes.
+//   - packages runs dead last, after emit: it needs meta.data_version,
+//     which only emit stamps, and reads it via its own read-only connection
+//     to the finalized lanka.sqlite rather than the shared `db` handle —
+//     emit closes that connection as part of finalizing the artifact, so by
+//     this point in PIPELINE it's no longer safe to reuse. See packages.ts.
 const PIPELINE: Step[] = [
   seed,
   fetchPostal,
@@ -74,6 +80,7 @@ const PIPELINE: Step[] = [
   tiles,
   datasets,
   emit,
+  packages,
 ];
 
 function parseOnly(argv: string[]): Set<string> | null {
