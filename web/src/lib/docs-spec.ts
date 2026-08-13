@@ -715,6 +715,135 @@ etag: "20260812.7-msq8g036.nv-n22g5"
     sources: [{ name: "WorldPop", license: "CC BY 4.0" }],
   },
 
+  {
+    slug: "demographics",
+    method: "GET",
+    pathTemplate: "/v1/demographics/:pcode",
+    group: "Population",
+    summary: "Demographic profile",
+    description:
+      "Pre-computed demographic indicators for one census unit: population totals with a sex ratio, the four-bucket age structure with a dependency ratio, and ethnicity/religion breakdowns — each raw count paired with its share of the unit's own total. Where a 2012 census row also exists, adds a 2012→2024 ethnicity/religion comparison, plus the unit's share of its nearest census-covered ancestor's population (a DS division against its district, a district against the country). The underlying counts are the same ones GET /v1/admin/:pcode?include=population,stats already serves — this route exists so callers don't have to compute shares, ratios, and the year-over-year comparison themselves.",
+    params: [
+      {
+        name: "pcode",
+        location: "path",
+        kind: "string",
+        required: true,
+        description:
+          "Admin p-code with 2024 census data — the country (LK), a district (level 2, e.g. LK11), or a DS division (level 3, e.g. LK1103). Provinces (level 1) and GN divisions (level 4) carry no 2024 census row and 404 — see Errors below.",
+        example: "LK11",
+      },
+      LANG_PARAM,
+    ],
+    responseKind: "envelope",
+    exampleResponse: `// GET /v1/demographics/LK11 (default) — Colombo District:
+{
+  "success": true,
+  "message": "OK",
+  "payload": {
+    "unit": { "pcode": "LK11", "level": 2, "name": "Colombo District", "name_si": "කොළඹ දිස්ත්‍රික්කය", "name_ta": "கொழும்பு மாவட்டம்", "parent_pcode": "LK1", "area_km2": 687.11, "centroid": { "lat": 6.8485007, "lon": 80.0228072 } },
+    "census_year": 2024,
+    "population": { "total": 2375415, "male": 1154799, "female": 1220616, "sex_ratio": 94.6, "female_share": 0.5139 },
+    "age": {
+      "buckets": [
+        { "bucket": "0-14", "count": 392721, "share": 0.1653 },
+        { "bucket": "15-59", "count": 1525340, "share": 0.6421 },
+        { "bucket": "60-64", "count": 136268, "share": 0.0574 },
+        { "bucket": "65+", "count": 321086, "share": 0.1352 }
+      ],
+      "dependency_ratio": 43.0,
+      "working_age_share": 0.6995,
+      "child_share": 0.1653,
+      "elderly_share": 0.1352
+    },
+    "ethnicity": [
+      { "key": "sinhala", "count": 1807945, "share": 0.7611 },
+      { "key": "moor", "count": 285346, "share": 0.1201 },
+      { "key": "sriLankanTamil", "count": 243856, "share": 0.1027 }
+      // … 7 more ethnicity groups (10 total)
+    ],
+    "religion": [
+      { "key": "buddhist", "count": 1682524, "share": 0.7083 },
+      { "key": "muslim", "count": 298422, "share": 0.1256 },
+      { "key": "hindu", "count": 197759, "share": 0.0833 }
+      // … 3 more religion groups (6 total)
+    ],
+    "change_2012": {
+      "ethnicity": [
+        { "key": "sinhala", "share_2012": 0.7454, "share_2024": 0.7611, "delta": 0.0157 },
+        { "key": "moor", "share_2012": 0.1066, "share_2024": 0.1201, "delta": 0.0135 },
+        { "key": "sriLankanTamil", "share_2012": 0.1062, "share_2024": 0.1027, "delta": -0.0035 }
+        // … 4 more (7 total — only the groups the 2012 tables also broke out)
+      ],
+      "religion": [
+        { "key": "buddhist", "share_2012": 0.6819, "share_2024": 0.7083, "delta": 0.0264 },
+        { "key": "muslim", "share_2012": 0.1119, "share_2024": 0.1256, "delta": 0.0137 },
+        { "key": "hindu", "share_2012": 0.0903, "share_2024": 0.0833, "delta": -0.007 }
+        // … 3 more (6 total)
+      ]
+    },
+    "parent_share": { "parent_pcode": "LK", "parent_name": "Sri Lanka", "share": 0.1091 }
+  },
+  "meta": { "data_version": "20260812.7", "source": [{ "name": "Department of Census and Statistics, Sri Lanka", "url": "http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024", "license": "Not stated (government statistical publication)" }] }
+}
+
+// GET /v1/demographics/LK1103 — Colombo DS division (a finer-grained unit than the default example; note change_2012 goes null below district level):
+{
+  "success": true,
+  "message": "OK",
+  "payload": {
+    "unit": { "pcode": "LK1103", "level": 3, "name": "Colombo", "name_si": "කොළඹ", "name_ta": "கொழும்பு", "parent_pcode": "LK11", "area_km2": 24.53715118, "centroid": { "lat": 6.94698684, "lon": 79.86526281 } },
+    "census_year": 2024,
+    "population": { "total": 292089, "male": 145398, "female": 146691, "sex_ratio": 99.1, "female_share": 0.5022 },
+    "age": {
+      "buckets": [
+        { "bucket": "0-14", "count": 60723, "share": 0.2079 },
+        { "bucket": "15-59", "count": 185998, "share": 0.6368 },
+        { "bucket": "60-64", "count": 15570, "share": 0.0533 },
+        { "bucket": "65+", "count": 29798, "share": 0.102 }
+      ],
+      "dependency_ratio": 44.9,
+      "working_age_share": 0.6901,
+      "child_share": 0.2079,
+      "elderly_share": 0.102
+    },
+    "ethnicity": [
+      { "key": "moor", "count": 122247, "share": 0.4185 },
+      { "key": "sriLankanTamil", "count": 96647, "share": 0.3309 },
+      { "key": "sinhala", "count": 64504, "share": 0.2208 }
+      // … 6 more ethnicity groups (9 total)
+    ],
+    "religion": [
+      { "key": "muslim", "count": 125890, "share": 0.431 },
+      { "key": "hindu", "count": 71811, "share": 0.2459 },
+      { "key": "buddhist", "count": 47726, "share": 0.1634 }
+      // … 3 more religion groups (6 total)
+    ],
+    "change_2012": null,
+    "parent_share": { "parent_pcode": "LK11", "parent_name": "Colombo District", "share": 0.123 }
+  },
+  "meta": { "data_version": "20260812.7", "source": [{ "name": "Department of Census and Statistics, Sri Lanka", "...": "..." }] }
+}`,
+    notes: [
+      CACHING_NOTE,
+      LANG_NOTE,
+      "Census coverage is the country plus its 25 districts and 330 DS divisions only — the published 2024 report has no GN-division tables. A pcode at level 4, or any pcode with no admin_population year=2024 row at all (i.e. provinces, which only ever got the 2023 HDX projection), is a 404 not_found rather than a payload with nulled-out fields.",
+      "Every share is a fraction of that unit's own total, rounded to 4dp — age.buckets[].share, ethnicity[].share, and religion[].share are each computed against population.total, age.buckets' own sum, and each group's own .total stat row respectively, so they sum close to 1 within one array but aren't cross-comparable across arrays.",
+      "sex_ratio (males per 100 females) and age.dependency_ratio (= (age 0-14 + 65+) ÷ (15-59 + 60-64) × 100, dependents per 100 working-age residents) are both rounded to 1dp.",
+      "change_2012 is null unless this exact pcode also has an admin_stats year=2012 row — the ingested 2012 ethnicity/religion tables cover the 25 districts only, so it's populated for districts and null for the country and every DS division (see the LK1103 example above).",
+      "Within a populated change_2012, an ethnicity/religion key only appears if the 2012 tables broke it out too — a few small 2024 groups (e.g. Bharatha, Sri Lanka Chetty) have no 2012 counterpart and are simply absent from change_2012, even though they're present in the top-level ethnicity/religion arrays.",
+      "parent_share compares the unit against its nearest ancestor that actually carries 2024 census data: a DS division against its district, but a district against the country — its literal parent (the province) has no 2024 census rows, so the chain walks past it. Only the country itself (no ancestors) gets null.",
+    ],
+    errors: [
+      {
+        status: 404,
+        code: "not_found",
+        description: "Unknown pcode, or a pcode with no 2024 census row (provinces, GN divisions, or any other non-census unit).",
+      },
+    ],
+    sources: [{ name: "Department of Census and Statistics, Sri Lanka", license: "Not stated (government statistical publication)" }],
+  },
+
   // ---------------------------------------------------------------------
   // Elections
   // ---------------------------------------------------------------------

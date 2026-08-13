@@ -34,12 +34,12 @@ export function MapLegend() {
         <div className="h-2 w-full rounded-full" style={{ background: POPULATION_RAMP_CSS }} />
         <div className="mt-1.5 flex justify-between text-[10px]" style={{ color: TEXT3, fontFamily: MONO_FONT }}>
           <span>sparse</span>
-          <span>15 k / cell</span>
+          <span>dense</span>
         </div>
         <div className="mt-2 text-[9px] leading-snug" style={{ color: TEXT3, fontFamily: MONO_FONT }}>
           WorldPop 1 km · UN-adjusted
           <br />
-          Columns scale with density
+          Warmer areas are denser
         </div>
       </div>
     </div>

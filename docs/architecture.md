@@ -184,6 +184,12 @@ Raw source downloads cache in `foundry/data/raw/` (gitignored, re-fetchable). Bu
 - **Geometry for highlights** `GET /v1/admin/:pcode/geometry` serves the admin_geometry
   row as GeoJSON. Postal codes and places highlight as points (lat/lon already in
   their payloads).
+- **Demographics** `GET /v1/demographics/:pcode` serves derived 2024-census indicators
+  (population, sex ratio, age structure, ethnicity, religion) for a unit, sourced from
+  `admin_population`/`admin_stats` year 2024. Coverage is country + district + DS
+  division only (GN divisions 404 with `no census data for "<pcode>"`). Districts also
+  get a `change_2012` ethnicity/religion comparison against the 2012 census; other
+  levels get `change_2012: null`.
 - **Tiles**: the api serves `foundry/data/artifacts/tiles/*.pmtiles` as static files
   with range-request support at `/v1/tiles/<layer>.pmtiles`; clients use the pmtiles
   protocol, no per-tile endpoint.

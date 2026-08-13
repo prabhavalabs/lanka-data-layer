@@ -60,7 +60,10 @@ test("?include=stats returns the latest-year stats map", async () => {
 });
 
 test("?include=population,stats returns both, and an unbuilt pcode gets nulls", async () => {
-  const res = await app.request("/v1/admin/LK11?include=population,stats");
+  // LK1102 (Kolonnawa DS Division) deliberately carries no admin_population/admin_stats
+  // rows in the fixture at all — LK11 itself now has 2024 census rows (see fixture.ts's
+  // demographics block), so it no longer demonstrates the "unbuilt pcode" case here.
+  const res = await app.request("/v1/admin/LK1102?include=population,stats");
   const body = await readJson(res);
   assert.equal(body.payload.population, null);
   assert.equal(body.payload.stats, null);

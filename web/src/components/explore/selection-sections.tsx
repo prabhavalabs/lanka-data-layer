@@ -10,8 +10,11 @@ import {
   formatDensity,
   formatDistance,
   formatNumber,
+  formatRatio,
   populationSourceLabel,
   shortAdminLabel,
+  STAT_BAR_COLORS,
+  type StatSegment,
 } from "@/components/explore/selection-format";
 import { CountUp, MicroHeading, ShimmerBlock, StatBar } from "@/components/explore/selection-widgets";
 import type {
@@ -163,6 +166,10 @@ function NearestPlaceLine({ place }: { place: { name: string; distance_m: number
 
 // --- admin -------------------------------------------------------------------
 
+/** Census age-bucket display order and readable labels — `admin_population.age_bucket` is an opaque label per docs/architecture.md §2, but the 2024 census rows always use these four (docs/architecture.md §2, `admin_population`). */
+const AGE_BUCKET_ORDER = ["0-14", "15-59", "60-64", "65+"];
+const AGE_BUCKET_LABELS: Record<string, string> = { "0-14": "0–14", "15-59": "15–59", "60-64": "60–64", "65+": "65+" };
+
 function buildAdminSections(data: AdminSelectionData): SectionEntry[] {
   const { unit, level, parentChain, children, population, stats, postalCodes } = data;
   const sections: SectionEntry[] = [];
@@ -229,6 +236,60 @@ function buildAdminSections(data: AdminSelectionData): SectionEntry[] {
         </div>
       ),
     });
+  }
+
+  // "Age & sex" — census-only (2024 rows carry sex-by-total + coarse age
+  // buckets; GN divisions' WorldPop total has neither, so total.m stays 0
+  // and buckets stays empty there — the render condition below excludes
+  // them per the task brief).
+  if (population && population.total && population.total.m > 0 && Object.keys(population.buckets).length > 0) {
+    const total = population.total;
+    const sexBase = total.m + total.f;
+    const sexSegments: StatSegment[] =
+      sexBase > 0
+        ? [
+            { key: "male", label: "Male", value: total.m, share: total.m / sexBase, color: STAT_BAR_COLORS[0] },
+            { key: "female", label: "Female", value: total.f, share: total.f / sexBase, color: STAT_BAR_COLORS[1] },
+          ]
+        : [];
+
+    const buckets = population.buckets;
+    const ageEntries = AGE_BUCKET_ORDER.map((key) => ({ key, value: buckets[key]?.t ?? 0 })).filter((e) => e.value > 0);
+    const ageTotal = ageEntries.reduce((sum, e) => sum + e.value, 0);
+    const ageSegments: StatSegment[] = ageEntries.map((e, i) => ({
+      key: e.key,
+      label: AGE_BUCKET_LABELS[e.key] ?? e.key,
+      value: e.value,
+      share: ageTotal > 0 ? e.value / ageTotal : 0,
+      color: STAT_BAR_COLORS[i % STAT_BAR_COLORS.length],
+    }));
+
+    const young = buckets["0-14"]?.t ?? 0;
+    const elderly = buckets["65+"]?.t ?? 0;
+    const workingAge = (buckets["15-59"]?.t ?? 0) + (buckets["60-64"]?.t ?? 0);
+    const dependencyRatio = workingAge > 0 ? ((young + elderly) / workingAge) * 100 : null;
+
+    if (sexSegments.length > 0 || ageSegments.length > 0) {
+      sections.push({
+        key: "age-sex",
+        content: (
+          <div className="space-y-3">
+            <MicroHeading>Age & sex</MicroHeading>
+            <StatBar title="Sex" segments={sexSegments} valueFormat={formatNumber} />
+            <StatBar title="Age structure" segments={ageSegments} />
+            {dependencyRatio !== null && (
+              <div className="text-[12px]" style={{ color: TEXT2 }}>
+                Dependency ratio <span style={{ fontFamily: MONO_FONT, color: TEXT }}>{formatRatio(dependencyRatio)}</span> per 100
+                working-age
+              </div>
+            )}
+            <div className="text-[10.5px]" style={{ color: TEXT3 }}>
+              {populationSourceLabel(population.year)}
+            </div>
+          </div>
+        ),
+      });
+    }
   }
 
   if (stats) {

@@ -70,6 +70,11 @@ export function formatCoord(lat: number, lon: number): string {
   return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
 }
 
+/** Formats a derived ratio (dependency ratio, sex ratio, …) to 1 decimal place — "56.4". */
+export function formatRatio(n: number): string {
+  return n.toFixed(1);
+}
+
 /** A small, theme-agnostic categorical palette for the demographics stacked bars — reuses the JSON-syntax tokens already in index.css (blue/green/amber) plus the brand rose, so no new arbitrary colors enter the design system. "Other" gets a neutral gray. */
 export const STAT_BAR_COLORS = [
   "var(--brand, #D8446B)",

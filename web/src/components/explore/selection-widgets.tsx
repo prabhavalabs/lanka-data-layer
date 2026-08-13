@@ -57,8 +57,22 @@ export function MicroHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Compact horizontal stacked bar (top-4 + other) with a wrapping legend below — used for ethnicity/religion shares. */
-export function StatBar({ title, segments }: { title: string; segments: StatSegment[] }) {
+/**
+ * Compact horizontal stacked bar (top-4 + other) with a wrapping legend
+ * below — used for ethnicity/religion shares. `valueFormat`, when given,
+ * inserts each segment's formatted raw count into the legend ahead of its
+ * percentage (used by the sex split, which wants both; ethnicity/religion
+ * omit it and keep the percentage-only legend).
+ */
+export function StatBar({
+  title,
+  segments,
+  valueFormat,
+}: {
+  title: string;
+  segments: StatSegment[];
+  valueFormat?: (n: number) => string;
+}) {
   if (segments.length === 0) return null;
   return (
     <div>
@@ -79,6 +93,7 @@ export function StatBar({ title, segments }: { title: string; segments: StatSegm
           <div key={seg.key} className="flex items-center gap-1.5 text-[10.5px]" style={{ color: TEXT3 }}>
             <span aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ background: seg.color }} />
             <span>{seg.label}</span>
+            {valueFormat && <span style={{ fontFamily: MONO_FONT }}>{valueFormat(seg.value)}</span>}
             <span style={{ fontFamily: MONO_FONT }}>{(seg.share * 100).toFixed(0)}%</span>
           </div>
         ))}
