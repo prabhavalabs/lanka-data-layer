@@ -1,0 +1,48 @@
+{
+  "name": "@lanka-data-layer/electoral",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Offline Sri Lankan election results — 2024 parliamentary and 2015/2019/2024 presidential, by district, polling division, and postal vote. Zero dependencies.",
+  "keywords": [
+    "sri-lanka",
+    "elections",
+    "election-results",
+    "electoral",
+    "open-data",
+    "geo-data"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prabhavalabs/lanka-data-layer.git",
+    "directory": "packages/electoral"
+  },
+  "homepage": "https://github.com/prabhavalabs/lanka-data-layer/tree/main/packages/electoral#readme",
+  "bugs": {
+    "url": "https://github.com/prabhavalabs/lanka-data-layer/issues"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "test": "node --experimental-strip-types --test src/*.test.ts",
+    "lint": "tsc --noEmit"
+  }
+}
