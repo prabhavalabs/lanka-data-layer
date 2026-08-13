@@ -12,6 +12,7 @@ import { mountReverseRoute } from "./routes/reverse.ts";
 import { mountSearchRoute } from "./routes/search.ts";
 import { mountLookupRoute } from "./routes/lookup.ts";
 import { mountPopulationRoute } from "./routes/population.ts";
+import { mountDemographicsRoute } from "./routes/demographics.ts";
 import { mountElectionsRoute } from "./routes/elections.ts";
 import { mountPostalRoute } from "./routes/postal.ts";
 import { mountTilesRoute } from "./routes/tiles.ts";
@@ -69,6 +70,7 @@ export function buildApp(db: Database.Database): Hono {
   mountSearchRoute(app, db);
   mountLookupRoute(app, db);
   mountPopulationRoute(app, db);
+  mountDemographicsRoute(app, db);
   mountElectionsRoute(app, db);
   mountPostalRoute(app, db);
   mountTilesRoute(app, db);

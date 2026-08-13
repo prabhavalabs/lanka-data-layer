@@ -142,6 +142,32 @@ export function buildFixtureDb(): Database.Database {
       download_path: "downloads/cells.csv.gz",
     },
     {
+      id: "census-2024",
+      title: "Census of Population and Housing 2024",
+      category: "population",
+      description: "Population, age structure, ethnicity and religion by admin unit",
+      source_name: "Department of Census and Statistics, Sri Lanka",
+      source_url: "https://www.statistics.gov.lk",
+      license: "Not stated (government statistical publication)",
+      feature_count: 2,
+      download_path: "downloads/census-2024.csv.gz",
+    },
+    // Deliberately present in the fixture (unlike the real artifact, which has
+    // no 2012 dataset row yet) so /v1/demographics's optional inclusion of
+    // this id in meta.source — only when a unit's change_2012 is non-null AND
+    // this row actually exists — gets exercised on its "true" branch too.
+    {
+      id: "census-2012",
+      title: "Census of Population and Housing 2012 (ethnicity & religion)",
+      category: "population",
+      description: "District-level ethnicity and religion counts",
+      source_name: "Department of Census and Statistics, Sri Lanka",
+      source_url: "https://www.statistics.gov.lk",
+      license: "Not stated (government statistical publication)",
+      feature_count: 1,
+      download_path: "downloads/census-2012.csv.gz",
+    },
+    {
       id: "places",
       title: "Named places",
       category: "places",
@@ -250,6 +276,101 @@ export function buildFixtureDb(): Database.Database {
   insertStats.run("LK1101", 2023, "ethnicity.sinhala", 65.5);
   insertStats.run("LK1101", 2023, "ethnicity.tamil", 15.2);
   insertStats.run("LK1101", 2023, "religion.buddhist", 70.1);
+
+  // --- 2024 census demographics fixture (GET /v1/demographics/:pcode) --------
+  // Coverage mirrors the real artifact exactly: country (LK) + district (LK11)
+  // get full 2024 population + ethnicity/religion rows; provinces (LK1) and GN
+  // divisions (LK110101 etc.) get none at all, which is what makes LK1's
+  // absence from the chain force /v1/demographics to walk past it when
+  // computing a district's parent_share, and what makes a GN division 404 with
+  // "no census data". Only the district (LK11) also gets 2012 rows — country
+  // level was skipped by the 2012 census entirely, matching the real data.
+  //
+  // LK11 (Colombo District), 2024: total 1000 = 480 male + 520 female,
+  // age buckets 200/600/50/150 (0-14 / 15-59 / 60-64 / 65+, sums to 1000).
+  insertPop.run("LK11", 2024, "t", "0-14", 200);
+  insertPop.run("LK11", 2024, "t", "15-59", 600);
+  insertPop.run("LK11", 2024, "t", "60-64", 50);
+  insertPop.run("LK11", 2024, "t", "65+", 150);
+  insertPop.run("LK11", 2024, "t", "total", 1000);
+  insertPop.run("LK11", 2024, "m", "total", 480);
+  insertPop.run("LK11", 2024, "f", "total", 520);
+
+  // LK (country), 2024: total 20000 = 9800 male + 10200 female,
+  // age buckets 3600/12500/1200/2700 (sums to 20000). Used both for the
+  // country's own happy-path test and as LK11's parent_share denominator
+  // (LK11's literal parent LK1 has no 2024 rows — see the comment above).
+  insertPop.run("LK", 2024, "t", "0-14", 3600);
+  insertPop.run("LK", 2024, "t", "15-59", 12500);
+  insertPop.run("LK", 2024, "t", "60-64", 1200);
+  insertPop.run("LK", 2024, "t", "65+", 2700);
+  insertPop.run("LK", 2024, "t", "total", 20000);
+  insertPop.run("LK", 2024, "m", "total", 9800);
+  insertPop.run("LK", 2024, "f", "total", 10200);
+
+  // LK11 ethnicity/religion, 2024 (both totals 1000, matching the population
+  // total above — the real artifact's stats and population totals always
+  // agree for the same pcode/year, since they come from the same census).
+  insertStats.run("LK11", 2024, "ethnicity.sinhala", 676);
+  insertStats.run("LK11", 2024, "ethnicity.sriLankanTamil", 190);
+  insertStats.run("LK11", 2024, "ethnicity.indianTamil", 36);
+  insertStats.run("LK11", 2024, "ethnicity.moor", 71);
+  insertStats.run("LK11", 2024, "ethnicity.burgher", 12);
+  insertStats.run("LK11", 2024, "ethnicity.malay", 6);
+  insertStats.run("LK11", 2024, "ethnicity.sriLankaChetty", 4);
+  insertStats.run("LK11", 2024, "ethnicity.bharatha", 3);
+  insertStats.run("LK11", 2024, "ethnicity.veddha", 2);
+  insertStats.run("LK11", 2024, "ethnicity.other", 0);
+  insertStats.run("LK11", 2024, "ethnicity.total", 1000);
+  insertStats.run("LK11", 2024, "religion.buddhist", 619);
+  insertStats.run("LK11", 2024, "religion.hindu", 170);
+  insertStats.run("LK11", 2024, "religion.muslim", 140);
+  insertStats.run("LK11", 2024, "religion.romanCatholic", 46);
+  insertStats.run("LK11", 2024, "religion.otherChristian", 20);
+  insertStats.run("LK11", 2024, "religion.other", 5);
+  insertStats.run("LK11", 2024, "religion.total", 1000);
+
+  // LK11 ethnicity/religion, 2012 (both totals 1000). Ethnicity intentionally
+  // omits sriLankaChetty/bharatha/veddha — the 2012 census's coarser grouping,
+  // matching the real artifact — so change_2012 only compares the 7 keys
+  // present in both years.
+  insertStats.run("LK11", 2012, "ethnicity.sinhala", 650);
+  insertStats.run("LK11", 2012, "ethnicity.sriLankanTamil", 200);
+  insertStats.run("LK11", 2012, "ethnicity.indianTamil", 40);
+  insertStats.run("LK11", 2012, "ethnicity.moor", 90);
+  insertStats.run("LK11", 2012, "ethnicity.burgher", 10);
+  insertStats.run("LK11", 2012, "ethnicity.malay", 5);
+  insertStats.run("LK11", 2012, "ethnicity.other", 5);
+  insertStats.run("LK11", 2012, "ethnicity.total", 1000);
+  insertStats.run("LK11", 2012, "religion.buddhist", 600);
+  insertStats.run("LK11", 2012, "religion.hindu", 180);
+  insertStats.run("LK11", 2012, "religion.muslim", 150);
+  insertStats.run("LK11", 2012, "religion.romanCatholic", 50);
+  insertStats.run("LK11", 2012, "religion.otherChristian", 15);
+  insertStats.run("LK11", 2012, "religion.other", 5);
+  insertStats.run("LK11", 2012, "religion.total", 1000);
+
+  // LK ethnicity/religion, 2024 only (both totals 20000) — no 2012 rows for
+  // the country, matching the real artifact, so /v1/demographics/LK always
+  // gets change_2012: null.
+  insertStats.run("LK", 2024, "ethnicity.sinhala", 14000);
+  insertStats.run("LK", 2024, "ethnicity.sriLankanTamil", 2800);
+  insertStats.run("LK", 2024, "ethnicity.indianTamil", 850);
+  insertStats.run("LK", 2024, "ethnicity.moor", 1500);
+  insertStats.run("LK", 2024, "ethnicity.burgher", 250);
+  insertStats.run("LK", 2024, "ethnicity.malay", 150);
+  insertStats.run("LK", 2024, "ethnicity.sriLankaChetty", 200);
+  insertStats.run("LK", 2024, "ethnicity.bharatha", 150);
+  insertStats.run("LK", 2024, "ethnicity.veddha", 50);
+  insertStats.run("LK", 2024, "ethnicity.other", 50);
+  insertStats.run("LK", 2024, "ethnicity.total", 20000);
+  insertStats.run("LK", 2024, "religion.buddhist", 12500);
+  insertStats.run("LK", 2024, "religion.hindu", 2200);
+  insertStats.run("LK", 2024, "religion.muslim", 1900);
+  insertStats.run("LK", 2024, "religion.romanCatholic", 2200);
+  insertStats.run("LK", 2024, "religion.otherChristian", 1000);
+  insertStats.run("LK", 2024, "religion.other", 200);
+  insertStats.run("LK", 2024, "religion.total", 20000);
 
   // --- places + FTS -----------------------------------------------------------
   const insertPlace = db.prepare(`
