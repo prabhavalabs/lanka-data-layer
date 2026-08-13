@@ -32,5 +32,5 @@ docker compose -f infra/docker-compose.yml build api
 docker compose -f infra/docker-compose.yml up -d api
 
 echo "==> Health check"
-curl -fsS --retry 15 --retry-connrefused --retry-delay 2 http://127.0.0.1:8600/v1/health >/dev/null
+curl -fsS --retry 15 --retry-all-errors --retry-delay 2 http://127.0.0.1:8600/v1/health >/dev/null
 echo "==> Deploy OK: $(git rev-parse --short HEAD)"
