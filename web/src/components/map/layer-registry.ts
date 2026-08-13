@@ -472,14 +472,17 @@ const placesLayer: MaplibreLayerDefinition = {
 };
 
 // ---------------------------------------------------------------------------
-// Population-3d: deck.gl ColumnLayer, built imperatively by MapView from
-// population-layer.ts — see that file for the elevation/color tuning.
+// Population density: deck.gl HeatmapLayer, built imperatively by MapView
+// from population-layer.ts — see that file for the weight/color tuning.
+// Layer id is kept as "population-3d" even though the layer itself is now
+// flat — URL state can reference layer ids, so it stays stable across the
+// column -> heatmap swap.
 // ---------------------------------------------------------------------------
 
 const populationLayer: DeckLayerDefinition = {
   kind: "deck",
   id: POPULATION_LAYER_ID,
-  title: "Population (3D)",
+  title: "Population density",
   group: "population",
   defaultVisible: false,
   swatchColor: "linear-gradient(135deg, #8D153A, #FFD166)",

@@ -35,8 +35,9 @@ import { usePopulationGrid } from "@/hooks/use-population-grid";
 import { useLayerStore } from "@/stores/layer-store";
 import { useMapStore, DEFAULT_MAP_VIEW } from "@/stores/map-store";
 
-// Above this zoom the ~1.1 km density columns are wider than the viewport;
-// the population-3d layer hides itself and returns when the user zooms out.
+// Above this zoom the ~2.2 km density grid feeding the heatmap is coarser
+// than a comfortable blur radius; the population-3d layer hides itself and
+// returns when the user zooms out.
 const POPULATION_MAX_ZOOM = 11.5;
 
 // The island is the product: the camera is locked to Sri Lanka's own
@@ -66,8 +67,6 @@ const FIT_PADDING = { top: 76, bottom: 56, left: 270, right: 64 };
 const MASK_SOURCE_ID = "country-mask";
 const MASK_LAYER_ID = "country-mask-fill";
 const MASK_SEA: Record<BasemapMode, string> = { dark: "#07090C", light: "#EAEFF3" };
-
-const POPULATION_PITCH = 50;
 
 const HIGHLIGHT_SOURCE_ID = "highlight";
 const HIGHLIGHT_FILL_LAYER_ID = "highlight-fill";
@@ -125,7 +124,6 @@ export function MapView() {
   const overlayRef = React.useRef<MapboxOverlay | null>(null);
   const markerRef = React.useRef<Marker | null>(null);
   const hoverRef = React.useRef<HoverRef | null>(null);
-  const populationPitchedRef = React.useRef(false);
 
   const visibility = useLayerStore((s) => s.visibility);
   const highlight = useMapStore((s) => s.highlight);
@@ -152,9 +150,10 @@ export function MapView() {
 
   const populationVisible = visibility[POPULATION_LAYER_ID] ?? false;
   const { data: populationGrid } = usePopulationGrid(populationVisible);
-  // The density buckets are ~1.1 km wide (res 0.02): past this zoom each
-  // column fills the viewport and buries whatever the user zoomed in on
-  // (e.g. a highlighted GN division), so the layer bows out.
+  // The density buckets are ~2.2 km apart (res 0.02): past this zoom each
+  // cell's heatmap blob would swallow the viewport and bury whatever the
+  // user zoomed in on (e.g. a highlighted GN division), so the layer bows
+  // out.
   const populationInZoomRange = mapZoom < POPULATION_MAX_ZOOM;
 
   // ---------------------------------------------------------------------
@@ -536,21 +535,11 @@ export function MapView() {
     else map.once("style.load", apply);
   }, [visibility, mapReady]);
 
-  // population-3d: tilt into a 3D reveal when toggled on, level back out
-  // when toggled off.
-  React.useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    if (populationVisible === populationPitchedRef.current) return;
-    populationPitchedRef.current = populationVisible;
-    const apply = () => map.easeTo({ pitch: populationVisible ? POPULATION_PITCH : 0, duration: 800 });
-    if (map.isStyleLoaded()) apply();
-    else map.once("style.load", apply);
-  }, [populationVisible, mapReady]);
-
-  // Rebuild the population-3d deck.gl layers whenever visibility or data
-  // changes. The ramp is theme-invariant (see population-layer.ts), so
-  // unlike the other registry layers this doesn't need to react to theme.
+  // Rebuild the population-3d deck.gl layer whenever visibility or data
+  // changes. Flat and top-down — no pitch coupling here (the camera stays
+  // wherever the user left it) and the ramp is theme-invariant (see
+  // population-layer.ts), so unlike the other registry layers this doesn't
+  // need to react to theme either.
   React.useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;

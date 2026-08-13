@@ -1,101 +1,86 @@
-import { ColumnLayer } from "@deck.gl/layers";
-import type { PickingInfo } from "@deck.gl/core";
+import { HeatmapLayer } from "@deck.gl/aggregation-layers";
+import type { Color, PickingInfo } from "@deck.gl/core";
 
 export const POPULATION_LAYER_ID = "population-3d";
-const POPULATION_CAP_LAYER_ID = `${POPULATION_LAYER_ID}-caps`;
 
 /** One bucket from `GET /v1/population/grid?res=0.02`: `[lat, lon, pop]` (see api/src/routes/population.ts). */
 export type PopulationCell = [number, number, number];
 
-// res=0.02deg buckets are ~2.2km square; half that (center to edge) is
-// ~1.1km. The Explore design calls for "slim columns (radius ~55% of
-// cell)" — read as 55% of that half-width, not the full cell — so columns
-// sit well clear of their neighbors and read as discrete spikes rather
-// than a slab.
-const CELL_HALF_WIDTH_M = 1100;
-const CELL_RADIUS_M = Math.round(CELL_HALF_WIDTH_M * 0.55); // ~605m
+// res=0.02deg buckets are ~2.2km apart center-to-center. HeatmapLayer's
+// radiusPixels is a *screen-space* blur radius, not a world-space one, so
+// it isn't derived from that spacing directly — it just needs to be large
+// enough that neighboring cells overlap into one continuous blob at every
+// zoom the layer is ever shown at, and small enough that city-core
+// clusters still read as distinct peaks rather than one island-wide wash.
+//
+// Worked at the layer's own ceiling (POPULATION_MAX_ZOOM = 11.5 in
+// map-view.tsx, past which the layer hides itself): at ~7.9°N, meters/pixel
+// there is ~156543*cos(7.9°)/2^11.5 ≈ 53.5, so the ~2.2km cell spacing is
+// ~41 screen px at that zoom — almost exactly one radius, i.e. the
+// tightest the grid ever packs on screen while this layer is visible. A
+// radius that already blends neighbors there guarantees full overlap at
+// every zoom below it too (island-wide views pack far more cells per
+// pixel, yielding smoother, broader district blobs).
+const HEATMAP_RADIUS_PIXELS = 40;
 
-// Color and elevation both key off the same log-normalized value (t, see
-// normalizedValue below) rather than raw population, so a cell's height and
-// hue always agree. The distribution at res=0.02 (14.1k populated cells) is
-// heavily right-skewed — p50 ~527, p90 ~3.5k, p99 ~15.6k, max ~106.7k
-// (central Colombo) — so a linear domain would blow the scale out on one
-// cell; log1p spreads the p50-p90 band (where most of the country's
-// population actually lives) across visibly different values. Domain
-// ceiling is the observed p99.9 (~38.4k); higher outliers just clip to 1
-// instead of compressing everything else. Raising that normalized value to
-// a >1 exponent for elevation (per the Explore design's "elevation ∝
-// pow(normalized, 1.7)") then pushes ordinary cells down relative to the
-// hottest ones — the skyline reads as gentle countryside cresting into a
-// handful of dramatic peaks, not a field of same-height blocks.
-const COLOR_DOMAIN_MAX = 38_000;
-const ELEVATION_EXPONENT = 1.7;
-const MAX_ELEVATION_M = 1600;
-const MIN_ELEVATION_M = 12;
+// HeatmapLayer sums getWeight over every cell within radiusPixels of a
+// given screen pixel, then maps that sum linearly onto colorRange across
+// [threshold * max, max] — max being whatever the single hottest
+// aggregated screen pixel actually is, auto-computed per frame (colorDomain
+// is intentionally left unset below so it keeps auto-fitting rather than
+// clipping to a fixed ceiling). Feeding it raw population counts would make
+// that max Colombo's own core and nothing else: the distribution is
+// heavily right-skewed (p50 ~527, p90 ~3.5k, p99 ~15.6k, max ~106.7k in a
+// single res=0.02 cell), so every other city's aggregate would land at a
+// tiny fraction of that peak and mostly fall under the threshold cutoff.
+// sqrt splits the difference: strong enough compression that secondary
+// cities register against Colombo's peak, but — unlike log1p, which left
+// barely 2x between the median cell and the max and made the whole island
+// saturate uniformly hot — it preserves a ~14x median-to-max spread, so
+// rural interior stays in the ramp's cool end while city cores climb to
+// the top.
+function heatmapWeight(pop: number): number {
+  return Math.sqrt(Math.max(0, pop));
+}
 
-// Cells at/above this percentile of the *current* dataset get a second,
-// thinner, brighter "cap" layer stacked near their tip — deck.gl's
-// ColumnLayer can't gradient a single column's fill top-to-bottom, so this
-// is the approximation the design brief calls for: two flat-shaded layers
-// standing in for one gradiented one.
-const CAP_PERCENTILE = 0.85;
-const CAP_RADIUS_RATIO = 0.5;
-const CAP_HEIGHT_RATIO = 0.22;
-const CAP_BASE_RATIO = 1 - CAP_HEIGHT_RATIO;
+// Neutral intensity — with sqrt weights the ramp's dynamic range does the
+// separating on its own; boosting past 1 was what washed the whole island
+// to the ramp's top under the flatter log1p weights.
+const HEATMAP_INTENSITY = 1;
+
+// Ratio of the fading weight to the max weight (deck.gl default: 0.05).
+// Lowered slightly so the smooth halo around inhabited areas extends a bit
+// further into lower-density fringe before fading out — reads as
+// continuous district-level coverage rather than a few isolated islands of
+// color with hard edges.
+const HEATMAP_THRESHOLD = 0.035;
 
 // Explore design's population ramp (DESIGN-NOTES.md "Design tokens":
 // #41102382 -> #8D153A -> #C73E3E -> #EF8A2C -> #FFD166) — one ramp for
 // both themes, unlike the basemap/glass surfaces, which do split light/
-// dark: the columns sit on top of whichever basemap is showing and need to
-// read the same way regardless.
+// dark: the heatmap sits on top of whichever basemap is showing and needs
+// to read the same way regardless.
 const RAMP: readonly [number, number, number][] = [
-  [65, 16, 35], // #411023 (the legend's #41102382 stop, alpha dropped — the column fill's alpha is applied uniformly below instead)
+  [65, 16, 35], // #411023
   [141, 21, 58], // #8D153A
   [199, 62, 62], // #C73E3E
   [239, 138, 44], // #EF8A2C
   [255, 209, 102], // #FFD166
 ];
 
-/** The legend's CSS gradient — same stops as RAMP, keeping the faded-in alpha on the coolest stop that the (opaque) deck.gl fill doesn't use. */
+// Alpha per RAMP stop, ascending — the lowest ramp stop is the most
+// transparent so sparse/low-density areas fade toward the basemap instead
+// of painting a flat wash over them. 130 (0x82) is the same coolest-stop
+// alpha the legend's CSS gradient already carries (POPULATION_RAMP_CSS's
+// "#41102382"): the old column layer's flat-alpha fill never actually used
+// that channel, so the heatmap's colorRange is the first place it does.
+const RAMP_ALPHA: readonly number[] = [130, 170, 200, 230, 255];
+
+const HEATMAP_COLOR_RANGE: Color[] = RAMP.map(([r, g, b], i) => [r, g, b, RAMP_ALPHA[i]]);
+
+/** The legend's CSS gradient — same stops as RAMP, keeping the faded-in alpha on the coolest stop that HEATMAP_COLOR_RANGE also now uses. */
 export const POPULATION_RAMP_CSS =
   "linear-gradient(to right, #41102382 0%, #8D153A 25%, #C73E3E 50%, #EF8A2C 75%, #FFD166 100%)";
-
-function rampColor(t: number): [number, number, number] {
-  const clamped = Math.min(1, Math.max(0, t));
-  const scaled = clamped * (RAMP.length - 1);
-  const i = Math.min(RAMP.length - 2, Math.floor(scaled));
-  const f = scaled - i;
-  const [r0, g0, b0] = RAMP[i];
-  const [r1, g1, b1] = RAMP[i + 1];
-  return [r0 + (r1 - r0) * f, g0 + (g1 - g0) * f, b0 + (b1 - b0) * f];
-}
-
-/** Log-normalizes `pop` against COLOR_DOMAIN_MAX, clamped to [0, 1]. Drives both color and elevation. */
-function normalizedValue(pop: number): number {
-  const t = Math.log1p(Math.max(0, pop)) / Math.log1p(COLOR_DOMAIN_MAX);
-  return Math.min(1, Math.max(0, t));
-}
-
-function colorForValue(t: number): [number, number, number, number] {
-  const [r, g, b] = rampColor(t);
-  return [r, g, b, 225];
-}
-
-/** Lightens an RGB triple toward white — stands in for the hot-cell "cap" layer's brighter tint. */
-function brighten([r, g, b]: readonly [number, number, number], amount: number): [number, number, number, number] {
-  return [r + (255 - r) * amount, g + (255 - g) * amount, b + (255 - b) * amount, 255];
-}
-
-function elevationForValue(t: number): number {
-  return MIN_ELEVATION_M + Math.pow(t, ELEVATION_EXPONENT) * (MAX_ELEVATION_M - MIN_ELEVATION_M);
-}
-
-/** The value at the given percentile (0-1) of `sortedAscending`. Returns Infinity for an empty array so a percentile filter over it naturally yields no cells. */
-function percentile(sortedAscending: number[], p: number): number {
-  if (sortedAscending.length === 0) return Infinity;
-  const idx = Math.min(sortedAscending.length - 1, Math.max(0, Math.floor(p * sortedAscending.length)));
-  return sortedAscending[idx];
-}
 
 export interface BuildPopulationLayerOptions {
   cells: PopulationCell[];
@@ -103,61 +88,48 @@ export interface BuildPopulationLayerOptions {
 }
 
 /**
- * Builds (or rebuilds) the population-3d layers: the main ColumnLayer for
- * every cell, plus — for cells at/above the 85th percentile of the current
- * dataset — a second, thinner, brighter "cap" layer floating near the top
- * of the main column (via a z-offset getPosition) to approximate a glow
- * deck.gl can't render as a true per-column gradient. Cheap enough to call
- * on every visibility/data change — deck.gl diffs props internally and only
- * re-uploads what changed.
+ * Builds (or rebuilds) the population-3d layer as a flat, top-down
+ * HeatmapLayer over the same `GET /v1/population/grid` cells the previous
+ * ColumnLayer used — no elevation, no camera pitch coupling (see
+ * map-view.tsx, which no longer tilts the camera when this layer toggles
+ * on). Cheap enough to call on every visibility/data change — deck.gl
+ * diffs props internally and only re-uploads what changed.
  */
-export function buildPopulationLayer(options: BuildPopulationLayerOptions): ColumnLayer<PopulationCell>[] {
+export function buildPopulationLayer(options: BuildPopulationLayerOptions): HeatmapLayer<PopulationCell>[] {
   const { cells, visible } = options;
 
-  const main = new ColumnLayer<PopulationCell>({
+  const heatmap = new HeatmapLayer<PopulationCell>({
     id: POPULATION_LAYER_ID,
     data: cells,
     visible,
-    pickable: true,
-    extruded: true,
-    diskResolution: 6,
-    radius: CELL_RADIUS_M,
-    getPosition: (d) => [d[1], d[0]],
-    getElevation: (d) => elevationForValue(normalizedValue(d[2])),
-    getFillColor: (d) => colorForValue(normalizedValue(d[2])),
-    material: { ambient: 0.55, diffuse: 0.65, shininess: 28, specularColor: [255, 255, 255] },
-    // getFillColor is deliberately not transitioned (only getElevation is):
-    // a data refresh should recolor immediately, not glitch through
-    // intermediate ramp colors.
-    transitions: { getElevation: 300 },
-  });
-
-  const sortedPops = cells.map((c) => c[2]).sort((a, b) => a - b);
-  const hotThreshold = percentile(sortedPops, CAP_PERCENTILE);
-  const hotCells = cells.filter((c) => c[2] >= hotThreshold);
-
-  const caps = new ColumnLayer<PopulationCell>({
-    id: POPULATION_CAP_LAYER_ID,
-    data: hotCells,
-    visible: visible && hotCells.length > 0,
+    // HeatmapLayer aggregates into a screen-space density texture rather
+    // than picking discrete instances, so it doesn't support picking at
+    // all (@deck.gl/aggregation-layers' heatmap-layer.js has no
+    // encodePickingColor / pickable handling anywhere in it). Explicit
+    // false rather than an implicit default, so that's documented instead
+    // of silently relied upon.
     pickable: false,
-    extruded: true,
-    diskResolution: 6,
-    radius: CELL_RADIUS_M * CAP_RADIUS_RATIO,
-    // LNGLAT coordinates take a meters altitude as their third component —
-    // floating the cap's base near the top of the matching main column is
-    // what makes it read as a bright tip rather than a second full column.
-    getPosition: (d) => [d[1], d[0], elevationForValue(normalizedValue(d[2])) * CAP_BASE_RATIO],
-    getElevation: (d) => elevationForValue(normalizedValue(d[2])) * CAP_HEIGHT_RATIO,
-    getFillColor: (d) => brighten(rampColor(normalizedValue(d[2])), 0.4),
-    material: { ambient: 0.85, diffuse: 0.5, shininess: 40, specularColor: [255, 255, 255] },
-    transitions: { getElevation: 300 },
+    getPosition: (d) => [d[1], d[0]],
+    getWeight: (d) => heatmapWeight(d[2]),
+    radiusPixels: HEATMAP_RADIUS_PIXELS,
+    intensity: HEATMAP_INTENSITY,
+    threshold: HEATMAP_THRESHOLD,
+    colorRange: HEATMAP_COLOR_RANGE,
+    aggregation: "SUM",
   });
 
-  return [main, caps];
+  return [heatmap];
 }
 
-/** Tooltip text for a picked population column, or null when nothing is under the pointer. Passed as `getTooltip` to the MapboxOverlay. */
+/**
+ * Tooltip text for a picked population cell, or null when nothing is under
+ * the pointer. Still wired as the MapboxOverlay's global `getTooltip` in
+ * map-view.tsx, but HeatmapLayer never actually picks anything (see
+ * buildPopulationLayer's `pickable: false` above) — `info.object` is always
+ * undefined for this layer, so this now always returns null in practice.
+ * Left in place rather than removed: it's harmless, and still exported in
+ * case a future pickable layer (e.g. a per-cell hover layer) wants it.
+ */
 export function populationTooltip(info: PickingInfo): { text: string } | null {
   const cell = info.object as PopulationCell | undefined;
   if (!cell) return null;
