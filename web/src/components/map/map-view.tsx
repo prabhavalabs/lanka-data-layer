@@ -161,35 +161,34 @@ export function MapView() {
     let detach: (() => void) | null = null;
 
     function createMap(): void {
-      const { center, zoom } = useMapStore.getState();
       const mode = resolveBasemapMode(theme);
-      // Only honor the stored view when the URL actually carried one —
-      // otherwise the island always opens fitted to the viewport.
-      const hasUrlView = new URLSearchParams(window.location.search).has("lat");
 
       const nextMap = new MaplibreMap({
         container: container as HTMLDivElement,
         style: basemapStyle(mode),
-        center,
-        zoom,
+        center: [80.77, 7.87],
+        zoom: 7,
         minZoom: 5,
         maxZoom: 18,
         maxBounds: CAMERA_BOUNDS,
         attributionControl: false,
       });
 
-      // Fit-to-island: compute the camera that frames the whole country in
-      // this viewport, use it as the zoom floor (you can never zoom out past
-      // "the island fills the screen"), and as the opening view unless the
-      // URL restored one. Recomputed on resize so the fit tracks the window.
+      // Fit-to-island: the map always OPENS with the whole country framed
+      // for the current viewport (the fit is computed per viewport size, so
+      // a phone and an ultrawide both get the full island). The zoom floor
+      // sits ZOOM_OUT_HEADROOM below the fit, so pulling back for context
+      // is possible but the island can never be lost off-screen (maxBounds
+      // still pins the camera to it). Recomputed on resize.
+      const ZOOM_OUT_HEADROOM = 1.4;
       const applyIslandFit = (jump: boolean) => {
         const cam = nextMap.cameraForBounds(COUNTRY_BBOX, { padding: FIT_PADDING });
         if (!cam) return;
-        nextMap.setMinZoom((cam.zoom ?? 6.5) - 0.05);
+        nextMap.setMinZoom(Math.max(4.5, (cam.zoom ?? 6.5) - ZOOM_OUT_HEADROOM));
         if (jump) nextMap.jumpTo({ center: cam.center, zoom: cam.zoom, pitch: 0, bearing: 0 });
       };
       if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__map = nextMap;
-      applyIslandFit(!hasUrlView);
+      applyIslandFit(true);
       const onResize = () => applyIslandFit(false);
       nextMap.on("resize", onResize);
 
