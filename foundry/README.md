@@ -41,21 +41,25 @@ same `data/artifacts/lanka.sqlite`):
 | 2 | `fetch-postal` | `fetch-postal.ts` | Downloads + extracts the GeoNames LK postal dump |
 | 3 | `fetch-worldpop` | `fetch-worldpop.ts` | Downloads the WorldPop Sri Lanka 1km UN-adjusted population GeoTIFF (2025) |
 | 4 | `fetch-gnd` | `fetch-gnd.ts` | Downloads + extracts OCHA COD-AB Sri Lanka ADM3/ADM4 GeoJSON |
-| 5 | `admin` | `admin.ts` | `admin_units` (levels 0-4) |
-| 6 | `population` | `population.ts` | `admin_population`, `admin_stats` |
-| 7 | `elections` | `elections.ts` | `elections`, `election_parties`, `election_entities`, `election_results` |
-| 8 | `places` | `places.ts` | `places`, `places_fts` |
-| 9 | `postal` | `postal.ts` | `postal_codes` |
-| 10 | `pois` | `pois.ts` | `pois` |
-| 11 | `layers` | `layers.ts` | `data/artifacts/layers/*.geojson` (roads, railways, waterways, protected areas, country) |
-| 12 | `pois-extend` | `pois-extend.ts` | Adds railway stations/halts to `pois` (category=`transport`) |
-| 13 | `cells` | `cells.ts` | `cells` (gridded population) |
-| 14 | `admin-geometry` | `admin-geometry.ts` | `admin_geometry` (levels 1-4) + `data/artifacts/layers/admin-adm{1..4}.geojson`, `electoral-divisions.geojson`, `polling-divisions.geojson` |
-| 15 | `cell-lookup` | `cell-lookup.ts` | `cell_lookup` (reverse-geocode grid index) |
-| 16 | `downloads` | `downloads.ts` | `data/artifacts/downloads/*.csv` + `*.geojson.gz` |
-| 17 | `tiles` | `tiles.ts` | `data/artifacts/tiles/*.pmtiles` (+ `data/artifacts/layers/places.geojson`, `postal.geojson`) |
-| 18 | `datasets` | `datasets.ts` | `datasets` (the bulk-download catalog) |
-| 19 | `emit` | `emit.ts` | `meta` rows, VACUUM + `journal_mode=OFF`, `manifest.json` (incl. tile artifact hashes) |
+| 5 | `fetch-census` | `fetch-census.ts` | Downloads the 2024 census final-report tables A5-A7 (.xlsx) |
+| 6 | `admin` | `admin.ts` | `admin_units` (levels 0-4) |
+| 7 | `population` | `population.ts` | `admin_population`, `admin_stats` (2023 projections, 2012 ethnicity/religion) |
+| 8 | `census` | `census.ts` | `admin_population`, `admin_stats` rows for the 2024 census (country, districts, DS divisions) |
+| 9 | `elections` | `elections.ts` | `elections`, `election_parties`, `election_entities`, `election_results` |
+| 10 | `places` | `places.ts` | `places`, `places_fts` |
+| 11 | `postal` | `postal.ts` | `postal_codes` |
+| 12 | `pois` | `pois.ts` | `pois` |
+| 13 | `layers` | `layers.ts` | `data/artifacts/layers/*.geojson` (roads, railways, waterways, protected areas, country) |
+| 14 | `pois-extend` | `pois-extend.ts` | Adds railway stations/halts to `pois` (category=`transport`) |
+| 15 | `cells` | `cells.ts` | `cells` (gridded population) |
+| 16 | `admin-geometry` | `admin-geometry.ts` | `admin_geometry` (levels 1-4) + `data/artifacts/layers/admin-adm{1..4}.geojson`, `electoral-divisions.geojson`, `polling-divisions.geojson` |
+| 17 | `cell-lookup` | `cell-lookup.ts` | `cell_lookup` (reverse-geocode grid index) |
+| 18 | `population-rollup` | `population-rollup.ts` | WorldPop-derived `admin_population` totals for GN divisions (and any DS division the census didn't cover) |
+| 19 | `postal-rollup` | `postal-rollup.ts` | `admin_postal` (postal codes serving each DS/GN division) |
+| 20 | `downloads` | `downloads.ts` | `data/artifacts/downloads/*.csv` + `*.geojson.gz` |
+| 21 | `tiles` | `tiles.ts` | `data/artifacts/tiles/*.pmtiles` (+ `data/artifacts/layers/places.geojson`, `postal.geojson`) |
+| 22 | `datasets` | `datasets.ts` | `datasets` (the bulk-download catalog) |
+| 23 | `emit` | `emit.ts` | `meta` rows, VACUUM + `journal_mode=OFF`, `manifest.json` (incl. tile artifact hashes) |
 
 The SQLite schema itself (`CREATE TABLE`/`CREATE INDEX IF NOT EXISTS`) lives
 in `src/db.ts` and is applied idempotently on every DB open — not only in
@@ -138,6 +142,38 @@ against the raster's own total and fails the build if they diverge by more
 than 0.5% — both totals are logged either way. In this build: 78,745
 positive pixels distribute across 5,468,498 fine cells (raster total
 23,168,692), 0.0000% deviation, in ~3-5s.
+
+## 2024 census (`fetch-census` + `census`)
+
+`fetch-census.ts` downloads the 2024 Census of Population and Housing
+final-report tables from statistics.gov.lk into `data/raw/census-2024/`:
+A5 (population by sex and coarse age group), A6 (ethnicity), A7 (religion) —
+each a small .xlsx with country, district, and DS-division rows.
+
+`census.ts` parses them (`src/lib/xlsx.ts` via `exceljs`, layout logic in
+`src/lib/census.ts`) and writes year-2024 rows: `admin_population` gets
+per-unit sex totals (`m`/`f`/`t` x `total`) plus `t`-only coarse age buckets
+(`0-14`, `15-59`, `60-64`, `65+` — the published tables have no sex-by-age
+cross-tabulation), and `admin_stats` gets `ethnicity.*`/`religion.*` counts
+keyed with the same camelCase group names the 2012 dataset uses, so a group
+keeps its key across census years.
+
+The census identifies DS divisions by name only, so rows are joined to
+COD-AB ADM3 p-codes by normalized name *within their parent district*, with
+a hand-verified alias table (`DS_NAME_ALIASES`) covering ~65 spelling
+variants; a census row with no COD-AB counterpart is logged and skipped
+(2024: exactly one, "Kalmunai North Sub" in Ampara — a sub-office COD-AB
+doesn't gazette), and more than a handful of unmatched rows fails the build.
+The step also enforces the tables' internal additivity (DS rows sum to their
+district row, districts to the country row, and every unit's grand total
+agrees across A5/A6/A7), so a silent layout change upstream fails loudly
+instead of half-loading.
+
+Because the API serves each unit's *latest* population year,
+`population-rollup` (which writes WorldPop year-2025 totals) skips any DS
+division that already carries a census row — otherwise the modeled 2025
+number would shadow the official 2024 count. GN divisions have no census
+resolution and keep the WorldPop rollup.
 
 ## Admin geometry (`admin-geometry`)
 
@@ -347,6 +383,7 @@ the 2025 file (Global 2015-2030, R2024B) as of this writing; see the
 | WorldPop Sri Lanka 1km UN-adjusted population (2025) | CC BY 4.0 |
 | HDX `cod-ps-lka` population projections 2023 | CC BY-IGO |
 | Dept. of Census & Statistics ethnicity/religion 2012 | Open data |
+| Dept. of Census & Statistics 2024 Census of Population and Housing, tables A5-A7 | Not stated (see top-level README) |
 | OpenStreetMap places, hospitals, education, airports | ODbL |
 | OpenStreetMap roads, railways, waterways, protected areas (map layers) | ODbL |
 | Survey Department electoral/polling division boundaries (via `nuuuwan/sl-topojson`) | open |

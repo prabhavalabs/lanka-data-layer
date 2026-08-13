@@ -29,17 +29,18 @@ export function shortAdminLabel(name: string): string {
 }
 
 /**
- * `admin_population.year` tells the two source generations apart: GN/DS
- * divisions carry a WorldPop-modeled total (sex breakdown not attempted at
- * that resolution, currently 2025); districts/provinces carry a 2023 HDX
- * projection with a real f/m split. Keyed on the year the API actually
- * returned rather than a hardcoded per-level rule: year 2023 is always the
- * HDX projection (the one vintage with a real sex/age breakdown), and any
- * other year is a WorldPop-modeled total — so a future WorldPop refresh
- * (e.g. 2025 -> 2026) needs no change here, only a future *second* HDX
- * vintage would need this to grow past a single hardcoded year check.
+ * `admin_population.year` tells the source generations apart: year 2024 is
+ * the Census of Population and Housing 2024 (official counts — country,
+ * districts, and name-matched DS divisions); year 2023 is the HDX projection
+ * (the one vintage with a full 5-year sex/age breakdown, still what
+ * provinces serve); any other year is a WorldPop-modeled total (GN divisions,
+ * plus any DS division the census matching missed — currently 2025). Keyed
+ * on the year the API actually returned rather than a per-level rule, so a
+ * future WorldPop refresh (e.g. 2025 -> 2026) needs no change here — only a
+ * new census or projection vintage would add a year check.
  */
 export function populationSourceLabel(year: number): string {
+  if (year === 2024) return `Census ${year}`;
   return year === 2023 ? `HDX projection ${year}` : `WorldPop ${year} (modeled)`;
 }
 

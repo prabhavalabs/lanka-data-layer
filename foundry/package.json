@@ -12,6 +12,7 @@
   "dependencies": {
     "adm-zip": "^0.6.0",
     "better-sqlite3": "^13.0.3",
+    "exceljs": "^4.4.0",
     "geotiff": "^3.0.5"
   },
   "devDependencies": {

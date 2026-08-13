@@ -6,8 +6,10 @@ import * as seed from "./steps/seed.ts";
 import * as fetchPostal from "./steps/fetch-postal.ts";
 import * as fetchWorldpop from "./steps/fetch-worldpop.ts";
 import * as fetchGnd from "./steps/fetch-gnd.ts";
+import * as fetchCensus from "./steps/fetch-census.ts";
 import * as admin from "./steps/admin.ts";
 import * as population from "./steps/population.ts";
+import * as census from "./steps/census.ts";
 import * as elections from "./steps/elections.ts";
 import * as places from "./steps/places.ts";
 import * as postal from "./steps/postal.ts";
@@ -26,9 +28,12 @@ import * as emit from "./steps/emit.ts";
 
 // Fixed pipeline order. `--only` filters this list but never reorders it, so
 // dependencies always hold:
-//   - fetch-worldpop/fetch-gnd sit right after fetch-postal (network
-//     fetchers, independent of everything else) and before `admin`, which
-//     now reads fetch-gnd's COD-AB ADM3/ADM4 files for levels 3-4.
+//   - fetch-worldpop/fetch-gnd/fetch-census sit right after fetch-postal
+//     (network fetchers, independent of everything else) and before `admin`,
+//     which now reads fetch-gnd's COD-AB ADM3/ADM4 files for levels 3-4.
+//   - census runs after admin (admin_population/admin_stats rows reference
+//     admin_units pcodes) and before population-rollup, which skips the DS
+//     divisions census already covered with real counts.
 //   - layers/pois-extend/downloads (sit after pois: pois-extend adds to the
 //     table pois just built; downloads reads layers' output) and before
 //     datasets (datasets stamps download_path by checking which files
@@ -50,8 +55,10 @@ const PIPELINE: Step[] = [
   fetchPostal,
   fetchWorldpop,
   fetchGnd,
+  fetchCensus,
   admin,
   population,
+  census,
   elections,
   places,
   postal,

@@ -20,6 +20,8 @@ interface TableCsvSpec {
   file: string;
   /** Table whose row count gates this export — skipped gracefully if 0. */
   countTable: string;
+  /** Optional replacement for the plain COUNT(*) gate, for exports scoped narrower than their table (e.g. one census year). */
+  countQuery?: string;
   headers: string[];
   query: string;
 }
@@ -33,12 +35,36 @@ const TABLE_CSVS: TableCsvSpec[] = [
             FROM admin_units ORDER BY pcode`,
   },
   {
+    // Scoped to year 2023 — admin_population also carries the 2024 census
+    // (exported as census-2024.csv below) and the WorldPop DS/GN rollup
+    // (derived, reconstructible from cells.csv + cell-lookup.csv).
     file: "population-2023.csv",
     countTable: "admin_population",
+    countQuery: `SELECT COUNT(*) AS n FROM admin_population WHERE year = 2023`,
     headers: ["pcode", "name_en", "name_si", "name_ta", "year", "sex", "age_bucket", "count"],
     query: `SELECT ap.pcode, au.name_en, au.name_si, au.name_ta, ap.year, ap.sex, ap.age_bucket, ap.count
             FROM admin_population ap LEFT JOIN admin_units au ON au.pcode = ap.pcode
-            ORDER BY ap.pcode, ap.year, ap.sex, ap.age_bucket`,
+            WHERE ap.year = 2023
+            ORDER BY ap.pcode, ap.sex, ap.age_bucket`,
+  },
+  {
+    // The 2024 census in one long-format file: population.<sex>.<age_bucket>
+    // rows from admin_population plus ethnicity.*/religion.* rows from
+    // admin_stats, both scoped to the census year.
+    file: "census-2024.csv",
+    countTable: "admin_population",
+    countQuery: `SELECT COUNT(*) AS n FROM admin_population WHERE year = 2024`,
+    headers: ["pcode", "name_en", "name_si", "name_ta", "year", "key", "value"],
+    query: `SELECT ap.pcode AS pcode, au.name_en AS name_en, au.name_si AS name_si, au.name_ta AS name_ta,
+                   ap.year AS year, 'population.' || ap.sex || '.' || ap.age_bucket AS key, ap.count AS value
+            FROM admin_population ap LEFT JOIN admin_units au ON au.pcode = ap.pcode
+            WHERE ap.year = 2024
+            UNION ALL
+            SELECT s.pcode AS pcode, au.name_en AS name_en, au.name_si AS name_si, au.name_ta AS name_ta,
+                   s.year AS year, s.key AS key, s.value AS value
+            FROM admin_stats s LEFT JOIN admin_units au ON au.pcode = s.pcode
+            WHERE s.year = 2024
+            ORDER BY pcode, key`,
   },
   {
     file: "elections.csv",
@@ -109,7 +135,7 @@ export async function run({ db, log }: StepContext): Promise<void> {
   let skipped = 0;
 
   for (const spec of TABLE_CSVS) {
-    const n = rowCount(db, spec.countTable);
+    const n = spec.countQuery ? (db.prepare(spec.countQuery).get() as { n: number }).n : rowCount(db, spec.countTable);
     if (n === 0) {
       log(`downloads: skipping ${spec.file} (${spec.countTable} is empty)`);
       skipped++;
