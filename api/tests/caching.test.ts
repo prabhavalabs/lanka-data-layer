@@ -9,7 +9,7 @@ const app = buildApp(db);
 test("GET /v1/datasets sets ETag and Cache-Control per contract §4", async () => {
   const res = await app.request("/v1/datasets");
   assert.equal(res.status, 200);
-  assert.equal(res.headers.get("Cache-Control"), "public, max-age=86400, stale-while-revalidate=604800");
+  assert.equal(res.headers.get("Cache-Control"), "public, max-age=300, stale-while-revalidate=86400");
   const etag = res.headers.get("ETag");
   assert.ok(etag, "expected an ETag header");
   assert.ok(etag!.startsWith(`"${DATA_VERSION}-`), `expected etag to start with data_version, got ${etag}`);

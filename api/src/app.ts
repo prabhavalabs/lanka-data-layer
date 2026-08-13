@@ -48,7 +48,12 @@ export function buildApp(db: Database.Database): Hono {
     }
     const dataVersion = getDataVersion(db);
     const etag = computeEtag(dataVersion, path, new URL(c.req.url).searchParams);
-    c.header("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
+    // Short freshness + long stale-while-revalidate: responses serve
+    // instantly from cache, but browsers revalidate (cheap ETag 304) within
+    // minutes — so data corrections reach users promptly. A long max-age
+    // here previously pinned stale data client-side for a full day after a
+    // release, with no revalidation at all.
+    c.header("Cache-Control", "public, max-age=300, stale-while-revalidate=86400");
     c.header("ETag", etag);
     if (c.req.method === "GET" && c.req.header("If-None-Match") === etag) {
       return c.body(null, 304);

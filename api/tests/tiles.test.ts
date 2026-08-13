@@ -31,7 +31,7 @@ test("GET /v1/tiles/:file streams the full file with the right headers", async (
   assert.equal(res.headers.get("Content-Type"), "application/octet-stream");
   assert.equal(res.headers.get("Content-Length"), String(FILE_SIZE));
   assert.equal(res.headers.get("Accept-Ranges"), "bytes");
-  assert.equal(res.headers.get("Cache-Control"), "public, max-age=31536000, immutable");
+  assert.equal(res.headers.get("Cache-Control"), "public, max-age=3600, stale-while-revalidate=86400");
   const body = await bodyBuffer(res);
   assert.equal(body.length, FILE_SIZE);
   assert.ok(body.equals(FILE_BYTES));

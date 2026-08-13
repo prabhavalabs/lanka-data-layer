@@ -162,7 +162,7 @@ Raw source downloads cache in `foundry/data/raw/` (gitignored, re-fetchable). Bu
 - Base path `/v1`. Envelope: `{ success, message, payload, meta }`; `meta` always carries `data_version` and `source` attribution for the datasets touched.
 - Errors: 400 validation, 404 `not_found` / `not_in_coverage`, 500 masked internals. Same envelope, `success: false`.
 - `lang=en|si|ta` (default `en`) selects name fields; missing translation falls back to `en`.
-- Caching: every GET sets `ETag: "<data_version>-<route-hash>"` and `Cache-Control: public, max-age=86400, stale-while-revalidate=604800`. Data release ⇒ new ETags everywhere.
+- Caching: every GET sets `ETag: "<data_version>-<route-hash>"` and `Cache-Control: public, max-age=300, stale-while-revalidate=86400` (tiles: max-age=3600). Freshness is deliberately short: URLs carry no version, so clients must revalidate (cheap 304 via ETag) for data corrections to propagate. Never mark unversioned URLs `immutable`. Data release ⇒ new ETags everywhere.
 - Pagination: cursor-based (`?cursor=`, opaque), never offset.
 - Runtime: Node 22 + Hono + better-sqlite3 (sync reads are fine: the DB is read-only, queries are indexed point lookups). OpenAPI via zod schemas, served at `/v1/docs`.
 - **Universal lookup** `GET /v1/lookup?q=`: classifies the query before searching —
