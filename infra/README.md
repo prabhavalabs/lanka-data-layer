@@ -32,6 +32,27 @@ Repository secrets: `DEPLOY_SSH_KEY` (dedicated ed25519 deploy key),
 the public key in the server's `~/.ssh/authorized_keys`, and updating the
 secret.
 
+## Rate limiting
+
+Public-API protection lives at the nginx layer (zones in
+[`nginx/lanka-data-layer-limits.conf`](nginx/lanka-data-layer-limits.conf),
+installed to `/etc/nginx/conf.d/`; per-location `limit_req`/`limit_conn` in
+the vhost):
+
+- `/v1/` — 10 req/s per client IP, bursts to 40 absorbed, then `429` with a
+  JSON envelope body and `Retry-After: 1`.
+- `/v1/tiles/` — separate 40 req/s zone with burst 120: PMTiles range
+  requests arrive in bursts of dozens per zoom gesture, and they're cheap
+  sendfile reads.
+- 30 concurrent connections per IP across both.
+
+The vhost also trusts `CF-Connecting-IP` from Cloudflare's published
+ranges, so per-IP keys keep pointing at real clients if the DNS record is
+ever flipped to orange-cloud (inert while the record stays DNS-only).
+Changing limits: edit the zone/burst numbers, reinstall the two files, and
+`nginx -t && systemctl reload nginx` — nginx config is installed manually,
+not by `deploy.sh`.
+
 ## Data releases
 
 Code deploys never touch data. To ship a new data build:
