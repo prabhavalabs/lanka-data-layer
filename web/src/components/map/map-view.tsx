@@ -45,10 +45,15 @@ const COUNTRY_BBOX: LngLatBoundsLike = [
   [79.6509, 5.919],
   [81.879, 9.8358],
 ];
-const CAMERA_PADDING_DEG = 0.35;
+// Generous on purpose: maxBounds doubles as a zoom clamp — MapLibre will
+// force-zoom IN until the viewport fits inside the bounds, so a tight cage
+// silently overrides fitBounds on wide viewports (island height on screen
+// needs lots of longitude at 21:9). ±5°/±3° keeps panning loosely tethered
+// to the island while never fighting the fit; the sea mask makes the extra
+// area visually inert anyway.
 const CAMERA_BOUNDS: LngLatBoundsLike = [
-  [79.6509 - CAMERA_PADDING_DEG, 5.919 - CAMERA_PADDING_DEG],
-  [81.879 + CAMERA_PADDING_DEG, 9.8358 + CAMERA_PADDING_DEG],
+  [79.6509 - 5, 5.919 - 3],
+  [81.879 + 5, 9.8358 + 3],
 ];
 // Mirrors the design mock's fitExtent margins: clear of the header/layer
 // panel on the left and the omnibox strip on top.
@@ -161,6 +166,7 @@ export function MapView() {
     let detach: (() => void) | null = null;
 
     function createMap(): void {
+      if (map) return;
       const mode = resolveBasemapMode(theme);
 
       const nextMap = new MaplibreMap({
@@ -179,8 +185,21 @@ export function MapView() {
       // a phone and an ultrawide both get the full island). The zoom floor
       // sits ZOOM_OUT_HEADROOM below the fit, so pulling back for context
       // is possible but the island can never be lost off-screen (maxBounds
-      // still pins the camera to it). Recomputed on resize.
+      // still pins the camera to it).
+      //
+      // The fit is recomputed — and RE-APPLIED — on every resize and once on
+      // "load" until the user's first gesture. Construction can happen while
+      // the container is still settling into its final layout size, so the
+      // first fit may frame the island for the wrong viewport; only a real
+      // interaction (drag/wheel/touch/control click) freezes the camera as
+      // the user's own.
       const ZOOM_OUT_HEADROOM = 1.4;
+      let userInteracted = false;
+      const markInteracted = () => {
+        userInteracted = true;
+      };
+      container?.addEventListener("pointerdown", markInteracted, { capture: true });
+      container?.addEventListener("wheel", markInteracted, { capture: true, passive: true });
       const applyIslandFit = (jump: boolean) => {
         const cam = nextMap.cameraForBounds(COUNTRY_BBOX, { padding: FIT_PADDING });
         if (!cam) return;
@@ -188,9 +207,18 @@ export function MapView() {
         if (jump) nextMap.jumpTo({ center: cam.center, zoom: cam.zoom, pitch: 0, bearing: 0 });
       };
       if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__map = nextMap;
+      const fitUnlessInteracted = () => applyIslandFit(!userInteracted);
       applyIslandFit(true);
-      const onResize = () => applyIslandFit(false);
-      nextMap.on("resize", onResize);
+      // The constructor can measure the container mid-layout, leaving the
+      // transform (and therefore cameraForBounds) with stale dimensions —
+      // and "load" is no rescue when tiles fail. One frame later layout has
+      // settled: force a re-measure, then fit again.
+      requestAnimationFrame(() => {
+        nextMap.resize();
+        fitUnlessInteracted();
+      });
+      nextMap.once("load", fitUnlessInteracted);
+      nextMap.on("resize", fitUnlessInteracted);
 
       // Sea mask: world polygon with the country as holes, painted the
       // design's flat sea color so neighboring coastlines and ocean labels
@@ -411,6 +439,16 @@ export function MapView() {
       createMap();
     });
     resizeObserver.observe(container);
+    // Also measure synchronously: per spec ResizeObserver fires once on
+    // observe(), but that initial delivery cannot be relied on in every
+    // embedding (and even when it comes, it's a task later). If the
+    // container is already laid out — the common case — construct now; the
+    // observer then only handles genuine size changes and the zero-size
+    // cold-load race documented above.
+    {
+      const rect = container.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) createMap();
+    }
 
     return () => {
       resizeObserver.disconnect();
