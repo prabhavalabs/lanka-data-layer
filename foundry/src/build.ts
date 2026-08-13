@@ -17,6 +17,7 @@ import * as poisExtend from "./steps/pois-extend.ts";
 import * as cells from "./steps/cells.ts";
 import * as adminGeometry from "./steps/admin-geometry.ts";
 import * as cellLookup from "./steps/cell-lookup.ts";
+import * as populationRollup from "./steps/population-rollup.ts";
 import * as downloads from "./steps/downloads.ts";
 import * as tiles from "./steps/tiles.ts";
 import * as datasets from "./steps/datasets.ts";
@@ -59,6 +60,7 @@ const PIPELINE: Step[] = [
   cells,
   adminGeometry,
   cellLookup,
+  populationRollup,
   downloads,
   tiles,
   datasets,
