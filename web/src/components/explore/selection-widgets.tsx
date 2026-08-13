@@ -40,6 +40,11 @@ export function CountUp({ value, format }: { value: number; format?: (n: number)
   return <span style={{ fontFamily: MONO_FONT, fontVariantNumeric: "tabular-nums" }}>{text}</span>;
 }
 
+/** Loading placeholder block — a soft gradient sweep (index.css's .animate-skeleton-shimmer), reduced to a flat static fill under prefers-reduced-motion (handled in CSS, not here — no reducedMotion prop needed). Used for both the core full-card skeleton (selection-card.tsx) and each progressively-loading secondary section's skeleton (selection-sections.tsx). */
+export function ShimmerBlock({ className }: { className: string }) {
+  return <div className={`animate-skeleton-shimmer rounded ${className}`} />;
+}
+
 /** 11px uppercase micro-heading — "POPULATION", "AREA", etc. per the card anatomy spec. */
 export function MicroHeading({ children }: { children: React.ReactNode }) {
   return (

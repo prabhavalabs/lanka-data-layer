@@ -258,6 +258,34 @@
   animation: fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
+/* Selection card loading placeholder (selection-widgets.tsx's ShimmerBlock):
+   a soft gradient band sweeps across the block, used for both the core
+   full-card skeleton and each progressively-loading secondary section's
+   skeleton (selection-card.tsx / selection-sections.tsx). Reduced motion
+   below swaps the sweep for the gradient's own flat middle tone rather than
+   removing the placeholder outright — the block still needs to read as
+   "content is coming". */
+.animate-skeleton-shimmer {
+  background-color: rgba(120, 140, 160, 0.14);
+  background-image: linear-gradient(
+    90deg,
+    rgba(120, 140, 160, 0.14) 25%,
+    rgba(120, 140, 160, 0.3) 50%,
+    rgba(120, 140, 160, 0.14) 75%
+  );
+  background-size: 250% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up {
     animation: none;
@@ -265,5 +293,9 @@
   .animate-card-in,
   .animate-section-in {
     animation: none;
+  }
+  .animate-skeleton-shimmer {
+    animation: none;
+    background-image: none;
   }
 }
