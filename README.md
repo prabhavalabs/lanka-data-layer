@@ -39,7 +39,7 @@ Everything this project serves originates from open data. This table is the hone
 | Survey Department of Sri Lanka, via [nuuuwan/sl-topojson](https://github.com/nuuuwan/sl-topojson) | Electoral district and polling division boundaries | Open |
 | Election Commission of Sri Lanka, via [nuuuwan/lk_elections](https://github.com/nuuuwan/lk_elections) | Presidential and parliamentary election results, 2015–2024 | Open |
 | [Department of Census and Statistics](http://www.statistics.gov.lk) | 2012 census (ethnicity, religion); 2024 releases as published | Open |
-| [WorldPop](https://www.worldpop.org) | ~1 km UN-adjusted gridded population, distributed onto the canonical grid | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
+| [WorldPop](https://www.worldpop.org) | ~1 km UN-adjusted gridded population (2025), distributed onto the canonical grid | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 
 **A note on OpenStreetMap and ODbL.** OSM data is licensed under the Open Database License, which is share-alike: if you produce and redistribute a derivative database built from the OSM-sourced tables in this project (places, points of interest, and related layers), that derivative must also be released under ODbL, with attribution to OpenStreetMap contributors preserved. Querying the data through the API, or displaying it on a map, doesn't by itself trigger that obligation — redistributing the underlying data does. See the [ODbL summary](https://opendatacommons.org/licenses/odbl/1-0/) if you're unsure.
 

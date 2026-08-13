@@ -161,7 +161,7 @@ const DATASETS: DatasetSpec[] = [
     id: "cells",
     title: "Gridded population",
     category: "population",
-    description: "WorldPop 1km UN-adjusted population estimate, distributed across the canonical fine grid.",
+    description: "WorldPop 1km 2025 UN-adjusted population estimate, distributed across the canonical fine grid.",
     source_name: "WorldPop",
     source_url: "https://www.worldpop.org",
     license: "CC BY 4.0",

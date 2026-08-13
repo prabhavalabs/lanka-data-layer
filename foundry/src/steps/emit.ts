@@ -37,7 +37,7 @@ const SOURCES: SourceEntry[] = [
     id: "population-grid",
     license: "CC BY 4.0",
     url: "https://www.worldpop.org",
-    files: ["worldpop/lka_ppp_2020_1km_Aggregated_UNadj.tif"],
+    files: ["worldpop/lka_pop_2025_UC_1km_R2024B_UA_v1.tif"],
   },
   {
     id: "population-2023",
