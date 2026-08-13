@@ -1,0 +1,47 @@
+{
+  "name": "@lanka-data-layer/admin",
+  "version": "0.1.0",
+  "description": "Offline, dependency-free lookup library for Sri Lanka's administrative hierarchy (province, district, DS division, GN division), keyed by official p-codes.",
+  "keywords": [
+    "sri-lanka",
+    "geodata",
+    "admin-boundaries",
+    "pcode",
+    "gis"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prabhavalabs/lanka-data-layer.git",
+    "directory": "packages/admin"
+  },
+  "homepage": "https://github.com/prabhavalabs/lanka-data-layer/tree/main/packages/admin#readme",
+  "bugs": {
+    "url": "https://github.com/prabhavalabs/lanka-data-layer/issues"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "test": "node --experimental-strip-types --test src/*.test.ts",
+    "lint": "tsc --noEmit"
+  }
+}
