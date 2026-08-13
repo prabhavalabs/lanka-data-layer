@@ -10,44 +10,50 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function Bracket({ children }: { children: React.ReactNode }) {
-  return <span className="text-muted-foreground">{children}</span>;
+function Punc({ children }: { children: React.ReactNode }) {
+  return <span className="text-json-punc">{children}</span>;
 }
 
 function PrimitiveValue({ value }: { value: unknown }) {
-  if (value === null) return <span className="text-muted-foreground">null</span>;
-  if (typeof value === "string") return <span className="text-emerald-600 dark:text-emerald-400">&quot;{value}&quot;</span>;
-  if (typeof value === "number") return <span className="text-sky-600 dark:text-sky-400">{value}</span>;
-  if (typeof value === "boolean") return <span className="text-amber-600 dark:text-amber-400">{String(value)}</span>;
+  if (value === null) return <span className="text-json-bool">null</span>;
+  if (typeof value === "string") return <span className="text-json-str">&quot;{value}&quot;</span>;
+  if (typeof value === "number") return <span className="tabular-nums text-json-num">{value.toLocaleString("en-US", { maximumFractionDigits: 6, useGrouping: false })}</span>;
+  if (typeof value === "boolean") return <span className="text-json-bool">{String(value)}</span>;
   return <span>{String(value)}</span>;
 }
 
 /** One key/value row (or bare array item) — objects/arrays recurse into JsonNode, indented. */
-function JsonEntry({ label, value }: { label: string | null; value: unknown }) {
+function JsonEntry({ label, value, path }: { label: string | null; value: unknown; path: string }) {
   const isContainer = isPlainObject(value) || Array.isArray(value);
   return (
-    <div className="flex gap-1.5">
-      {label !== null && <span className="shrink-0 text-foreground/80">&quot;{label}&quot;:</span>}
-      {isContainer ? <JsonNode value={value} /> : <PrimitiveValue value={value} />}
+    <div className="flex gap-1">
+      {label !== null && (
+        <span className="shrink-0">
+          <span className="text-json-key">&quot;{label}&quot;</span>
+          <Punc>: </Punc>
+        </span>
+      )}
+      {isContainer ? <JsonNode value={value} path={path} /> : <PrimitiveValue value={value} />}
     </div>
   );
 }
 
-/** Renders an object or array node, recursively. Collapsible via the bracket; long arrays chunk-load via "… N more". */
-function JsonNode({ value }: { value: unknown }) {
+/** Renders an object or array node, recursively. Collapsible via the caret; long arrays chunk-load via "… N more". */
+function JsonNode({ value, path }: { value: unknown; path: string }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [visibleCount, setVisibleCount] = React.useState(ARRAY_CHUNK);
 
   if (Array.isArray(value)) {
-    if (value.length === 0) return <Bracket>[]</Bracket>;
+    if (value.length === 0) return <Punc>[]</Punc>;
     if (collapsed) {
       return (
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className="rounded text-muted-foreground hover:text-foreground hover:underline"
-        >
-          [ … {value.length} item{value.length === 1 ? "" : "s"} ]
+        <button type="button" onClick={() => setCollapsed(false)} className="inline-flex items-center gap-1 text-json-punc hover:text-code-ink">
+          <span className="inline-block w-3 select-none">▸</span>
+          <Punc>[</Punc>
+          <span className="italic text-code-ink3">
+            {value.length} item{value.length === 1 ? "" : "s"}
+          </span>
+          <Punc>]</Punc>
         </button>
       );
     }
@@ -56,58 +62,54 @@ function JsonNode({ value }: { value: unknown }) {
     return (
       <div className="flex flex-col">
         <div className="flex items-baseline gap-1">
-          <button type="button" onClick={() => setCollapsed(true)} className="text-muted-foreground hover:text-foreground" aria-label="Collapse array">
-            [
+          <button type="button" onClick={() => setCollapsed(true)} className="text-json-punc hover:text-code-ink" aria-label="Collapse array">
+            <span className="inline-block w-3 select-none">▾</span>
+            <Punc>[</Punc>
           </button>
-          {value.length > COLLAPSE_ARRAY_THRESHOLD && (
-            <span className="text-[10px] text-muted-foreground">{value.length} items</span>
-          )}
+          {value.length > COLLAPSE_ARRAY_THRESHOLD && <span className="text-[10px] text-code-ink3">{value.length} items</span>}
         </div>
-        <div className="flex flex-col gap-0.5 border-l border-border/60 pl-3">
+        <div className="flex flex-col gap-0.5 border-l border-border/70 pl-4">
           {shown.map((item, i) => (
-            <JsonEntry key={i} label={null} value={item} />
+            <JsonEntry key={i} label={null} value={item} path={`${path}.${i}`} />
           ))}
         </div>
         {remaining > 0 && (
-          <button
-            type="button"
-            onClick={() => setVisibleCount((n) => n + ARRAY_CHUNK)}
-            className="w-fit rounded pl-3 text-muted-foreground hover:text-foreground hover:underline"
-          >
+          <button type="button" onClick={() => setVisibleCount((n) => n + ARRAY_CHUNK)} className="w-fit pl-4 text-json-punc hover:text-code-ink hover:underline">
             … {remaining} more
           </button>
         )}
-        <Bracket>]</Bracket>
+        <Punc>]</Punc>
       </div>
     );
   }
 
   if (isPlainObject(value)) {
     const keys = Object.keys(value);
-    if (keys.length === 0) return <Bracket>{"{}"}</Bracket>;
+    if (keys.length === 0) return <Punc>{"{}"}</Punc>;
     if (collapsed) {
       return (
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className="rounded text-muted-foreground hover:text-foreground hover:underline"
-        >
-          {"{ … "}
-          {keys.length} key{keys.length === 1 ? "" : "s"} {" }"}
+        <button type="button" onClick={() => setCollapsed(false)} className="inline-flex items-center gap-1 text-json-punc hover:text-code-ink">
+          <span className="inline-block w-3 select-none">▸</span>
+          <Punc>{"{"}</Punc>
+          <span className="italic text-code-ink3">
+            {keys.length} key{keys.length === 1 ? "" : "s"}
+          </span>
+          <Punc>{"}"}</Punc>
         </button>
       );
     }
     return (
       <div className="flex flex-col">
-        <button type="button" onClick={() => setCollapsed(true)} className="w-fit text-muted-foreground hover:text-foreground" aria-label="Collapse object">
-          {"{"}
+        <button type="button" onClick={() => setCollapsed(true)} className="w-fit text-json-punc hover:text-code-ink" aria-label="Collapse object">
+          <span className="inline-block w-3 select-none">▾</span>
+          <Punc>{"{"}</Punc>
         </button>
-        <div className="flex flex-col gap-0.5 border-l border-border/60 pl-3">
+        <div className="flex flex-col gap-0.5 border-l border-border/70 pl-4">
           {keys.map((key) => (
-            <JsonEntry key={key} label={key} value={value[key]} />
+            <JsonEntry key={key} label={key} value={value[key]} path={`${path}.${key}`} />
           ))}
         </div>
-        <Bracket>{"}"}</Bracket>
+        <Punc>{"}"}</Punc>
       </div>
     );
   }
@@ -115,11 +117,19 @@ function JsonNode({ value }: { value: unknown }) {
   return <PrimitiveValue value={value} />;
 }
 
-/** Pretty-prints a parsed JSON value with collapsible objects/arrays and chunked array truncation ("… N more"). Not a <pre>/JSON.stringify dump — long arrays (population/grid cells, admin children) would otherwise flood the DOM. */
+/**
+ * Pretty-prints a parsed JSON value with the design's exact syntax colors
+ * (key #8AB4F8, string #6BD9A5, number #F0B15C, bool/null #E5537A, punctuation
+ * #5B6875 — see index.css's --json-* tokens, identical in both themes since
+ * this panel's background stays --code-bg either way), collapsible
+ * objects/arrays, and chunked array truncation ("… N more"). Not a
+ * <pre>/JSON.stringify dump — long arrays (population/grid cells, admin
+ * children) would otherwise flood the DOM.
+ */
 export function JsonViewer({ value, className }: { value: unknown; className?: string }) {
   return (
-    <div className={cn("overflow-x-auto rounded-md border border-border bg-muted/30 p-3 font-mono text-xs leading-relaxed", className)}>
-      <JsonEntry label={null} value={value} />
+    <div className={cn("overflow-x-auto rounded-md bg-code-bg p-3 font-mono text-[12px] leading-relaxed text-code-ink", className)}>
+      <JsonEntry label={null} value={value} path="root" />
     </div>
   );
 }

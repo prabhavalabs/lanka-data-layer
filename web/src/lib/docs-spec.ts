@@ -50,6 +50,19 @@ export interface DocsParam {
  */
 export type DocsResponseKind = "envelope" | "geojson" | "binary";
 
+/** One documented error response, grounded in api/src/lib/errors.ts's HttpError subclasses and each route's actual `throw` sites — not invented. */
+export interface DocsErrorCase {
+  status: number;
+  code: string;
+  description: string;
+}
+
+/** One dataset this endpoint's response draws from, for the "Sources" trust row — taken from the endpoint's own captured `meta.source` (or, for the two non-envelope routes, the dataset backing it). */
+export interface DocsSource {
+  name: string;
+  license: string;
+}
+
 export interface DocsEndpoint {
   slug: string;
   method: "GET";
@@ -63,6 +76,13 @@ export interface DocsEndpoint {
   /** Real (truncated) response, captured from the running API. Display-only. */
   exampleResponse: string;
   notes: string[];
+  errors: DocsErrorCase[];
+  sources: DocsSource[];
+}
+
+/** Short mono nav label for the sidebar — path with the leading "/v1/" stripped and ":param" rewritten to "{param}", matching the design's `navLabel` vocabulary (e.g. "postal/{code}", "admin/{pcode}/geometry"). */
+export function endpointNavLabel(endpoint: DocsEndpoint): string {
+  return endpoint.pathTemplate.replace(/^\/v1\//, "").replace(/:([a-zA-Z_]+)/g, "{$1}");
 }
 
 /**
@@ -141,6 +161,8 @@ export const DOCS_ENDPOINTS: DocsEndpoint[] = [
       "The only route with no ETag/Cache-Control at all — every other GET carries them.",
       "meta.source is always [] here; there's no dataset to attribute a liveness check to.",
     ],
+    errors: [],
+    sources: [],
   },
   {
     slug: "datasets",
@@ -182,6 +204,8 @@ export const DOCS_ENDPOINTS: DocsEndpoint[] = [
       "meta.source is [] here too — this route IS the source table, so it doesn't attribute itself.",
       "feature_count and download_path can be null for datasets that aren't independently downloadable (e.g. derived indexes).",
     ],
+    errors: [],
+    sources: [],
   },
   {
     slug: "tiles",
@@ -219,6 +243,11 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "Cache-Control is immutable — a data_version's tiles never change once built.",
       "A missing tiles directory or file is a normal 404 (the foundry's tile-emission step may not have run yet), not a startup error.",
       "The playground below issues a small ranged request (bytes=0-15) rather than downloading the full archive, and shows headers only.",
+    ],
+    errors: [{ status: 404, code: "not_found", description: "Filename doesn't match the pmtiles whitelist, or the file doesn't exist in GEOPUB_TILES_DIR." }],
+    sources: [
+      { name: "OpenStreetMap", license: "ODbL" },
+      { name: "geoBoundaries + OCHA COD-AB Sri Lanka", license: "CC BY 3.0 IGO / CC BY-IGO" },
     ],
   },
 
@@ -290,6 +319,15 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "Postal matching in the current build is exact-5-digit only: every postal_codes.code is exactly 5 digits, so the 'prefix' sub-branch (matching codes that share a prefix, excluding the exact match) never actually contributes rows yet — typing fewer than 5 digits falls through to the free-text branch instead, which matches place and postal *names*, not partial codes.",
       "Suggest rows: label is the best-lang name (or the code itself, for postal — sublabel carries the place name there); a place's sublabel is its admin parent resolved via cell_lookup when cheap, else its kind; an admin row's sublabel is '<level name> · <parent name>'.",
     ],
+    errors: [
+      { status: 400, code: "validation_error", description: "q missing/empty, or another query param fails validation." },
+      { status: 404, code: "not_in_coverage", description: "q parses as a coordinate pair outside the grid's bbox." },
+    ],
+    sources: [
+      { name: "GeoNames", license: "CC BY 4.0" },
+      { name: "OpenStreetMap", license: "ODbL" },
+      { name: "geoBoundaries + OCHA COD-AB Sri Lanka", license: "CC BY 3.0 IGO / CC BY-IGO" },
+    ],
   },
   {
     slug: "search",
@@ -343,6 +381,8 @@ etag: "20260812.7-msq8g036.nv-n22g5"
   }
 }`,
     notes: [CACHING_NOTE, LANG_NOTE, "q shorter than 2 or longer than 80 characters is a 400 validation_error."],
+    errors: [{ status: 400, code: "validation_error", description: "q is shorter than 2 or longer than 80 characters, or another query param fails validation." }],
+    sources: [{ name: "OpenStreetMap", license: "ODbL" }],
   },
   {
     slug: "reverse",
@@ -377,6 +417,16 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       LANG_NOTE,
       "Out-of-bbox coordinates are a 404 not_in_coverage, not a null payload.",
       "gnd/ds_division/district/province and nearest_place are all null together only when the cell falls in-bbox but has no cell_lookup row and no nearby named place — rare, but not impossible near the coast.",
+    ],
+    errors: [
+      { status: 400, code: "validation_error", description: "lat/lon missing or not finite numbers." },
+      { status: 404, code: "not_in_coverage", description: "The point is outside Sri Lankan territory (the grid bbox)." },
+    ],
+    sources: [
+      { name: "geoBoundaries + OCHA COD-AB Sri Lanka", license: "CC BY 3.0 IGO / CC BY-IGO" },
+      { name: "GeoNames", license: "CC BY 4.0" },
+      { name: "OpenStreetMap", license: "ODbL" },
+      { name: "WorldPop", license: "CC BY 4.0" },
     ],
   },
   {
@@ -414,6 +464,11 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "postal_codes.admin_pcode is unpopulated in the current artifact, so the admin chain is derived the same way /v1/reverse derives it (cellId → cell_lookup.gnd_pcode → parent chain); if that point isn't covered, the chain is all-null but the record is still a valid 200.",
       "gnd.pcode is what the postal-code demo (/docs/demo) feeds into /v1/admin/:pcode/geometry to draw the boundary glow.",
     ],
+    errors: [{ status: 404, code: "not_found", description: "No postal_codes row for that code." }],
+    sources: [
+      { name: "GeoNames", license: "CC BY 4.0" },
+      { name: "geoBoundaries + OCHA COD-AB Sri Lanka", license: "CC BY 3.0 IGO / CC BY-IGO" },
+    ],
   },
   {
     slug: "postal-point",
@@ -438,6 +493,11 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "postal_code (and name) are null, not a 404, when the cell has no postal code on record.",
       "Out-of-bbox coordinates are a 404 not_in_coverage.",
     ],
+    errors: [
+      { status: 400, code: "validation_error", description: "lat/lon missing or not finite numbers." },
+      { status: 404, code: "not_in_coverage", description: "The point is outside the grid bbox." },
+    ],
+    sources: [{ name: "GeoNames", license: "CC BY 4.0" }],
   },
 
   // ---------------------------------------------------------------------
@@ -512,6 +572,11 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "population/stats are null (not omitted) when ?include= asked for them but the unit has no rows — LK1103 above has neither; LK11 has stats but not population. This is normal, not an error: census/stats coverage is still being built out level by level.",
       "An unrecognized ?include= value (anything but population or stats) is a 400 validation_error.",
     ],
+    errors: [
+      { status: 400, code: "validation_error", description: "include contains a value other than population or stats, or pcode/lang fails validation." },
+      { status: 404, code: "not_found", description: "No admin_units row for that pcode." },
+    ],
+    sources: [{ name: "geoBoundaries + OCHA COD-AB Sri Lanka", license: "CC BY 3.0 IGO / CC BY-IGO" }],
   },
   {
     slug: "admin-geometry",
@@ -541,6 +606,11 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "data_version still travels via the ETag; there's no per-request meta.source the way envelope routes have.",
       "This is what MapView's setHighlight({kind:'geometry', feature}) consumes for the glowing-outline highlight (see stores/map-store.ts) — the /docs/demo page's boundary glow calls this endpoint the same way.",
     ],
+    errors: [
+      { status: 400, code: "validation_error", description: "pcode or lang fails validation." },
+      { status: 404, code: "not_found", description: "The pcode has no admin_geometry row." },
+    ],
+    sources: [{ name: "geoBoundaries + OCHA COD-AB Sri Lanka", license: "CC BY 3.0 IGO / CC BY-IGO" }],
   },
 
   // ---------------------------------------------------------------------
@@ -585,6 +655,11 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "radius is null unless ?radius was given and > 0.",
       "Population values are floats (WorldPop's per-cell estimate distributed across the grid), not integers — don't assume whole people.",
     ],
+    errors: [
+      { status: 400, code: "validation_error", description: "lat/lon missing/not finite, or radius outside 0-10." },
+      { status: 404, code: "not_in_coverage", description: "The point is outside Sri Lankan territory." },
+    ],
+    sources: [{ name: "WorldPop", license: "CC BY 4.0" }],
   },
   {
     slug: "population-grid",
@@ -628,6 +703,8 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "The first request at a given res pays a one-time ~1-2s scan cost (5.4M rows); the process memoizes every resolution after that for its lifetime, since the DB is read-only.",
       "At res=0.01 this returns ~55,700 rows — the playground below truncates the rendered array, it does not limit what the API itself returns.",
     ],
+    errors: [{ status: 400, code: "validation_error", description: "res is not one of 0.01, 0.02, 0.05." }],
+    sources: [{ name: "WorldPop", license: "CC BY 4.0" }],
   },
 
   // ---------------------------------------------------------------------
@@ -654,6 +731,8 @@ etag: "20260812.7-msq8g036.nv-n22g5"
   "meta": { "data_version": "20260812.7", "source": [{ "name": "Election Commission of Sri Lanka (via nuuuwan/lk_elections)", "url": "https://github.com/nuuuwan/lk_elections", "license": "open" }] }
 }`,
     notes: [CACHING_NOTE, "Small, un-paginated list — one row per election held, not per result."],
+    errors: [],
+    sources: [{ name: "Election Commission of Sri Lanka (via nuuuwan/lk_elections)", license: "open" }],
   },
   {
     slug: "election-results",
@@ -696,6 +775,8 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       "404 (not_found) for an unknown election id, entity id, or a valid pairing with no results row.",
       "parties is sorted by votes descending; a party missing from election_parties still appears with candidate/name/color as null rather than being dropped.",
     ],
+    errors: [{ status: 404, code: "not_found", description: "Unknown election id, unknown entity id, or a valid pairing with no results row." }],
+    sources: [{ name: "Election Commission of Sri Lanka (via nuuuwan/lk_elections)", license: "open" }],
   },
 ];
 

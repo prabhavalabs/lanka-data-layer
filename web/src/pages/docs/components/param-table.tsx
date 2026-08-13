@@ -7,48 +7,43 @@ function ParamKindLabel({ param }: { param: DocsParam }) {
   return <>{param.kind}</>;
 }
 
-/** Static reference table for one endpoint's params — separate from the playground's editable inputs, which live in playground.tsx. */
+/**
+ * Static reference table for one endpoint's params, matching the design's
+ * four-column layout (Name/Type/Default/Constraints — "required" is a small
+ * inline badge next to the name rather than its own column, and "location"
+ * — path vs query — is called out in the caller's paramNote sentence
+ * instead of a fifth column, per the design). Separate from the Try panel's
+ * editable inputs (try-panel.tsx).
+ */
 export function ParamTable({ params }: { params: DocsParam[] }) {
   if (params.length === 0) {
-    return <p className="text-sm text-muted-foreground">This endpoint takes no parameters.</p>;
+    return <p className="text-[13px] text-ink2">This endpoint takes no parameters.</p>;
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="px-3 py-2 font-medium">Name</th>
-            <th className="px-3 py-2 font-medium">In</th>
-            <th className="px-3 py-2 font-medium">Type</th>
-            <th className="px-3 py-2 font-medium">Required</th>
-            <th className="px-3 py-2 font-medium">Default</th>
-            <th className="px-3 py-2 font-medium">Constraints</th>
-            <th className="px-3 py-2 font-medium">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {params.map((param) => (
-            <tr key={param.name} className="border-b border-border last:border-b-0">
-              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs font-medium">{param.name}</td>
-              <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{param.location}</td>
-              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-muted-foreground">
-                <ParamKindLabel param={param} />
-              </td>
-              <td className="px-3 py-2 text-xs">
-                {param.required ? (
-                  <span className="rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground">required</span>
-                ) : (
-                  <span className="text-muted-foreground">optional</span>
-                )}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-muted-foreground">{param.defaultValue ?? "—"}</td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">{param.constraints ?? "—"}</td>
-              <td className="px-3 py-2 text-xs">{param.description}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="overflow-hidden overflow-x-auto rounded-[10px] border border-border">
+      <div className="grid min-w-[520px] grid-cols-[1.1fr_0.7fr_0.7fr_1.6fr] gap-0 border-b border-border bg-bg2 px-3.5 py-2 text-[10.5px] font-semibold uppercase tracking-[0.07em] text-ink3">
+        <span>Name</span>
+        <span>Type</span>
+        <span>Default</span>
+        <span>Constraints</span>
+      </div>
+      {params.map((param) => (
+        <div
+          key={param.name}
+          className="grid min-w-[520px] grid-cols-[1.1fr_0.7fr_0.7fr_1.6fr] items-baseline border-b border-border px-3.5 py-2.5 text-[12.5px] last:border-b-0 hover:bg-bg2"
+        >
+          <span className="flex items-baseline gap-1.5">
+            <span className="font-mono font-semibold text-ink">{param.name}</span>
+            {param.required && <span className="text-[9.5px] font-semibold text-brand">required</span>}
+          </span>
+          <span className="font-mono text-[12px] text-ink2">
+            <ParamKindLabel param={param} />
+          </span>
+          <span className="font-mono text-[12px] text-ink3">{param.defaultValue ?? "—"}</span>
+          <span className="text-ink2">{param.constraints ?? param.description}</span>
+        </div>
+      ))}
     </div>
   );
 }

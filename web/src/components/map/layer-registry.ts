@@ -39,8 +39,15 @@ export interface MaplibreLayerDefinition {
   layers: LayerSpecification[];
   defaultVisible: boolean;
   themedPaint?: (mode: BasemapMode) => ThemedPaint;
-  /** Small legend swatch color for the current theme. */
-  legendColor?: (mode: BasemapMode) => string;
+  /**
+   * Fixed (theme-invariant) swatch color/gradient for the Explore layer
+   * panel's row marker — a stylized representative color, not necessarily
+   * matching every themedPaint hue this layer renders on the map (e.g.
+   * admin boundaries render 4 different per-level hues; the panel just
+   * shows one "boundaries" swatch). CSS `background` shorthand, so either
+   * a solid color or a gradient string works.
+   */
+  swatchColor: string;
 }
 
 /**
@@ -56,6 +63,8 @@ export interface DeckLayerDefinition {
   title: string;
   group: LayerGroup;
   defaultVisible: boolean;
+  /** See MaplibreLayerDefinition.swatchColor. */
+  swatchColor: string;
 }
 
 export type LayerDefinition = MaplibreLayerDefinition | DeckLayerDefinition;
@@ -153,7 +162,7 @@ const adminLayer: MaplibreLayerDefinition = {
     }
     return themed;
   },
-  legendColor: (mode) => (mode === "dark" ? ADMIN_LEVELS[1].dark : ADMIN_LEVELS[1].light),
+  swatchColor: "#3B4A59",
 };
 
 /** Style layer ids MapView hit-tests for the admin hover card. */
@@ -179,7 +188,7 @@ const electoralLayer: MaplibreLayerDefinition = {
       source: "electoral",
       "source-layer": "ed",
       layout: { visibility: "none", "line-join": "round", "line-cap": "round" },
-      paint: { "line-color": "#be185d", "line-width": 1.3, "line-opacity": 0.85 },
+      paint: { "line-color": "#be185d", "line-width": 1.3, "line-dasharray": [3, 2], "line-opacity": 0.85 },
     },
     {
       id: "electoral-pd-line",
@@ -191,11 +200,14 @@ const electoralLayer: MaplibreLayerDefinition = {
       paint: { "line-color": "#c2410c", "line-width": 0.7, "line-opacity": 0.75 },
     },
   ],
+  // ed-line recolored to the Explore accent (dark #D8446B / light #8D153A,
+  // per DESIGN-NOTES' token table) — it's also this layer's swatchColor
+  // below, so the layer-panel row and the on-map dashed line now agree.
   themedPaint: (mode) => ({
-    "electoral-ed-line": { "line-color": mode === "dark" ? "#f472b6" : "#be185d" },
+    "electoral-ed-line": { "line-color": mode === "dark" ? "#D8446B" : "#8D153A" },
     "electoral-pd-line": { "line-color": mode === "dark" ? "#fb923c" : "#c2410c" },
   }),
-  legendColor: (mode) => (mode === "dark" ? "#f472b6" : "#be185d"),
+  swatchColor: "#D8446B",
 };
 
 // ---------------------------------------------------------------------------
@@ -291,7 +303,7 @@ const transportLayer: MaplibreLayerDefinition = {
       "circle-stroke-color": mode === "dark" ? "#0f172a" : "#ffffff",
     },
   }),
-  legendColor: (mode) => (mode === "dark" ? "#fdba74" : "#ea580c"),
+  swatchColor: "#4A5866",
 };
 
 // ---------------------------------------------------------------------------
@@ -331,7 +343,7 @@ const waterLayer: MaplibreLayerDefinition = {
     "water-fill": { "fill-color": mode === "dark" ? "#0ea5e9" : "#38bdf8" },
     "water-line": { "line-color": mode === "dark" ? "#38bdf8" : "#0284c7" },
   }),
-  legendColor: (mode) => (mode === "dark" ? "#38bdf8" : "#0284c7"),
+  swatchColor: "#28527A",
 };
 
 // ---------------------------------------------------------------------------
@@ -368,7 +380,7 @@ const protectedLayer: MaplibreLayerDefinition = {
     "protected-fill": { "fill-color": mode === "dark" ? "#4ade80" : "#16a34a" },
     "protected-line": { "line-color": mode === "dark" ? "#4ade80" : "#15803d" },
   }),
-  legendColor: (mode) => (mode === "dark" ? "#4ade80" : "#15803d"),
+  swatchColor: "#2F5E45",
 };
 
 // ---------------------------------------------------------------------------
@@ -456,7 +468,7 @@ const placesLayer: MaplibreLayerDefinition = {
       "text-halo-color": mode === "dark" ? "#0b1220" : "#ffffff",
     },
   }),
-  legendColor: (mode) => (mode === "dark" ? "#f8fafc" : "#1e293b"),
+  swatchColor: "#C4CFDA",
 };
 
 // ---------------------------------------------------------------------------
@@ -470,6 +482,7 @@ const populationLayer: DeckLayerDefinition = {
   title: "Population (3D)",
   group: "population",
   defaultVisible: false,
+  swatchColor: "linear-gradient(135deg, #8D153A, #FFD166)",
 };
 
 export const LAYER_REGISTRY: LayerDefinition[] = [

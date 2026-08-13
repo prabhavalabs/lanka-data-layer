@@ -8,13 +8,11 @@ export function DatasetsPage() {
   const state = useDatasets();
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4">
+    <div className="h-full overflow-y-auto px-6 py-10 sm:px-12">
+      <div className="mx-auto flex max-w-5xl flex-col gap-5">
         <div>
-          <h2 className="text-lg font-semibold">Datasets</h2>
-          <p className="text-sm text-muted-foreground">
-            Everything published by the Geopub API, with source and license attribution.
-          </p>
+          <h2 className="text-[22px] font-bold tracking-[-0.02em]">Datasets</h2>
+          <p className="mt-1.5 text-[14px] text-ink2">Everything published by the Geopub API, with source and license attribution.</p>
         </div>
         <Separator />
         <DatasetsBody state={state} />
@@ -39,33 +37,28 @@ function DatasetsBody({ state }: { state: DatasetsState }) {
 
 function DatasetCard({ dataset }: { dataset: Dataset }) {
   return (
-    <Card>
+    <Card className="rounded-xl border-border bg-bg2 transition-colors hover:border-line2">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
-          <CardTitle>{dataset.title}</CardTitle>
-          <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+          <CardTitle className="text-[14.5px] tracking-[-0.01em]">{dataset.title}</CardTitle>
+          <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 font-mono text-[10.5px] font-medium text-brand">
             {dataset.category}
           </span>
         </div>
-        {dataset.description && <CardDescription>{dataset.description}</CardDescription>}
+        {dataset.description && <CardDescription className="text-[12.5px] text-ink2">{dataset.description}</CardDescription>}
       </CardHeader>
-      <CardContent className="flex flex-col gap-1 text-sm text-muted-foreground">
+      <CardContent className="flex flex-col gap-1 text-[12.5px] text-ink2">
         <div>
-          License: <span className="text-foreground">{dataset.license}</span>
+          License: <span className="text-ink">{dataset.license}</span>
         </div>
         {dataset.feature_count != null && (
           <div>
-            Features: <span className="text-foreground">{dataset.feature_count.toLocaleString()}</span>
+            Features: <span className="text-ink">{dataset.feature_count.toLocaleString()}</span>
           </div>
         )}
       </CardContent>
       <CardFooter>
-        <a
-          href={dataset.source_url}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm font-medium text-primary hover:underline"
-        >
+        <a href={dataset.source_url} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-brand hover:text-brand2 hover:underline">
           {dataset.source_name} ↗
         </a>
       </CardFooter>

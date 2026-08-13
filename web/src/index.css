@@ -1,6 +1,124 @@
 @import "tailwindcss";
 
+/* Self-hosted Geist (UI) + Geist Mono (code/paths/coordinates/labels) — no
+   runtime Google Fonts CDN. @fontsource ships the woff2 files + @font-face
+   blocks per weight; Vite resolves these bare-specifier CSS imports through
+   its normal npm resolution. */
+@import "@fontsource/geist/400.css";
+@import "@fontsource/geist/500.css";
+@import "@fontsource/geist/600.css";
+@import "@fontsource/geist/700.css";
+@import "@fontsource/geist-mono/400.css";
+@import "@fontsource/geist-mono/500.css";
+@import "@fontsource/geist-mono/600.css";
+
 @custom-variant dark (&:is(.dark *));
+
+/*
+ * Design tokens, ported verbatim (same hex/rgba values) from the approved
+ * geopub-docs.dc.html spec — see scratchpad/design/DESIGN-NOTES.md for the
+ * extracted palette. Dark is the default (matches the design's un-suffixed
+ * `body{...}` block); `.light` overrides (matches `body.light{...}`).
+ *
+ * These are exposed to Tailwind utilities below (bg-bg2, text-ink2, etc.)
+ * via @theme inline, AND mapped onto the shadcn-style semantic tokens
+ * (--background, --primary, --muted, ...) that Button/Card/etc. already
+ * consume, so existing components pick up the new palette without every
+ * call site being rewritten.
+ */
+:root {
+  /* surfaces */
+  --bg: #0b0e12;
+  --bg2: #0e1217;
+  --bg3: #131922;
+  --bg4: #182029;
+  --code-bg: #0a0d11;
+  /* lines */
+  --line: #1e252e;
+  --line2: #2a333e;
+  /* ink */
+  --ink: #e8edf2;
+  --ink2: #9aa7b4;
+  --ink3: #66737f;
+  /* brand */
+  --brand: #d8446b;
+  --brand2: #e5537a;
+  --brand-soft: rgba(216, 68, 107, 0.12);
+  /* status */
+  --positive: #3fb950;
+  --positive-soft: rgba(63, 185, 80, 0.12);
+  --ok: #3fb950;
+  --warn: #e8a33d;
+  /* JSON syntax (same in light mode — code panels stay dark in both themes) */
+  --json-key: #8ab4f8;
+  --json-str: #6bd9a5;
+  --json-num: #f0b15c;
+  --json-bool: #e5537a;
+  --json-punc: #5b6875;
+  /* Fixed text colors for code/curl panels — those panels keep --code-bg's
+     dark background in both themes (design: "code blocks stay dark"), so
+     their plain (non-syntax-highlighted) text must NOT flip with --ink,
+     which goes near-black in light mode and would vanish. */
+  --code-ink: #e8edf2;
+  --code-ink2: #9aa7b4;
+  --code-ink3: #66737f;
+  /* elevation */
+  --shadow-elev: 0 12px 40px rgba(0, 0, 0, 0.5);
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius: 0.625rem;
+
+  /* shadcn-style semantic mapping, derived from the tokens above */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--bg2);
+  --card-foreground: var(--ink);
+  --popover: var(--bg2);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--bg3);
+  --secondary-foreground: var(--ink);
+  --muted: var(--bg3);
+  --muted-foreground: var(--ink2);
+  --accent: var(--bg4);
+  --accent-foreground: var(--ink);
+  --destructive: var(--brand2);
+  --border: var(--line);
+  --input: var(--line2);
+  --ring: var(--brand);
+  --sidebar: var(--bg2);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--bg4);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--brand);
+}
+
+:root.light {
+  --bg: #ffffff;
+  --bg2: #f8f9fa;
+  --bg3: #f2f4f6;
+  --bg4: #e9edf0;
+  --code-bg: #0e1217;
+  --line: #e4e9ed;
+  --line2: #d2d9df;
+  --ink: #171b20;
+  --ink2: #5a6672;
+  --ink3: #8a96a1;
+  --brand: #8d153a;
+  --brand2: #a81c48;
+  --brand-soft: rgba(141, 21, 58, 0.08);
+  --positive: #1a7f37;
+  --positive-soft: rgba(26, 127, 55, 0.1);
+  --ok: #1a7f37;
+  --warn: #b45309;
+  --shadow-elev: 0 12px 40px rgba(23, 27, 32, 0.14);
+}
 
 @theme inline {
   --color-sidebar-ring: var(--sidebar-ring);
@@ -33,72 +151,101 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-}
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0.008 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0.008 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0.008 250);
-  --primary: oklch(0.511 0.14 235);
-  --primary-foreground: oklch(0.984 0.01 235);
-  --secondary: oklch(0.967 0.003 250);
-  --secondary-foreground: oklch(0.21 0.01 250);
-  --muted: oklch(0.96 0.003 250);
-  --muted-foreground: oklch(0.542 0.03 250);
-  --accent: oklch(0.96 0.02 235);
-  --accent-foreground: oklch(0.21 0.02 250);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0.004 250);
-  --input: oklch(0.922 0.004 250);
-  --ring: oklch(0.63 0.1 235);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0.008 250);
-  --sidebar-primary: oklch(0.511 0.14 235);
-  --sidebar-primary-foreground: oklch(0.984 0.01 235);
-  --sidebar-accent: oklch(0.96 0.02 235);
-  --sidebar-accent-foreground: oklch(0.21 0.02 250);
-  --sidebar-border: oklch(0.922 0.004 250);
-  --sidebar-ring: oklch(0.63 0.1 235);
-}
+  /* Design-system tokens exposed as Tailwind utilities: bg-bg2, text-ink2,
+     border-line2, text-brand, bg-brand-soft, text-json-key, etc. */
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg2);
+  --color-bg3: var(--bg3);
+  --color-bg4: var(--bg4);
+  --color-code-bg: var(--code-bg);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  --color-brand: var(--brand);
+  --color-brand2: var(--brand2);
+  --color-brand-soft: var(--brand-soft);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-json-key: var(--json-key);
+  --color-json-str: var(--json-str);
+  --color-json-num: var(--json-num);
+  --color-json-bool: var(--json-bool);
+  --color-json-punc: var(--json-punc);
+  --color-code-ink: var(--code-ink);
+  --color-code-ink2: var(--code-ink2);
+  --color-code-ink3: var(--code-ink3);
 
-.dark {
-  --background: oklch(0.145 0.008 250);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0.015 250);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0.015 250);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.65 0.14 235);
-  --primary-foreground: oklch(0.145 0.02 250);
-  --secondary: oklch(0.274 0.006 250);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.263 0.012 250);
-  --muted-foreground: oklch(0.711 0.02 250);
-  --accent: oklch(0.3 0.04 235);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.54 0.08 235);
-  --sidebar: oklch(0.18 0.015 250);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.65 0.14 235);
-  --sidebar-primary-foreground: oklch(0.145 0.02 250);
-  --sidebar-accent: oklch(0.3 0.04 235);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.54 0.08 235);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --shadow-elev: var(--shadow-elev);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html,
   body {
-    @apply bg-background text-foreground;
+    height: 100%;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  ::selection {
+    background: var(--brand-soft);
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line2);
+    border-radius: 6px;
+    border: 2px solid var(--bg);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--ink3);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes marker-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none;
   }
 }
