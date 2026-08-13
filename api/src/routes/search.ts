@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import type Database from "better-sqlite3";
 import { z } from "zod";
-import { SEARCH } from "@geopub/shared";
+import { SEARCH } from "@lanka-data-layer/shared";
 import { buildMeta, ok } from "../lib/envelope.ts";
 import { ValidationError, formatZodIssues } from "../lib/errors.ts";
 import { sanitizeForFts, scorePlaceCandidates } from "../lib/placeSearch.ts";

@@ -11,7 +11,7 @@ import { NotFoundError } from "../lib/errors.ts";
 const FILENAME_RE = /^[a-z0-9-]+\.pmtiles$/;
 
 function tilesDir(): string {
-  return resolve(process.env.GEOPUB_TILES_DIR ?? "../foundry/data/artifacts/tiles");
+  return resolve(process.env.LANKA_TILES_DIR ?? "../foundry/data/artifacts/tiles");
 }
 
 interface RangeResult {

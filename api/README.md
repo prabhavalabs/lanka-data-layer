@@ -1,7 +1,7 @@
-# @geopub/api
+# @lanka-data-layer/api
 
-The Geopub API — an HTTP service that serves the foundry's read-only SQLite
-artifact (`geopub.sqlite`). Node 22, [Hono](https://hono.dev), synchronous
+The Lanka Data Layer API — an HTTP service that serves the foundry's read-only SQLite
+artifact (`lanka.sqlite`). Node 22, [Hono](https://hono.dev), synchronous
 `better-sqlite3` reads, `zod` validation. This package never writes to the
 database and never fetches or computes spatial data itself — see
 [`docs/architecture.md`](../docs/architecture.md) for the full contract
@@ -11,26 +11,26 @@ database and never fetches or computes spatial data itself — see
 
 ```bash
 pnpm install                # from the repo root
-pnpm --filter @geopub/api dev     # tsx watch, reloads on change
-pnpm --filter @geopub/api start   # single run, no watch
-pnpm --filter @geopub/api test    # node:test against an in-memory fixture DB
-pnpm --filter @geopub/api lint    # tsc --noEmit
+pnpm --filter @lanka-data-layer/api dev     # tsx watch, reloads on change
+pnpm --filter @lanka-data-layer/api start   # single run, no watch
+pnpm --filter @lanka-data-layer/api test    # node:test against an in-memory fixture DB
+pnpm --filter @lanka-data-layer/api lint    # tsc --noEmit
 ```
 
 The server ships and runs its TypeScript source directly via `tsx` — there
-is no compiled `dist/`, matching `@geopub/shared`'s own no-build convention.
+is no compiled `dist/`, matching `@lanka-data-layer/shared`'s own no-build convention.
 
 ## Environment variables
 
 | Variable          | Default                                    | Meaning                                                |
 |--------------------|---------------------------------------------|---------------------------------------------------------|
 | `PORT`             | `8600`                                      | HTTP port                                                |
-| `GEOPUB_DB`        | `../foundry/data/artifacts/geopub.sqlite`   | Path to the built SQLite artifact, opened read-only      |
-| `GEOPUB_TILES_DIR` | `../foundry/data/artifacts/tiles`           | Directory `/v1/tiles/:file` streams `*.pmtiles` files from |
+| `LANKA_DB`        | `../foundry/data/artifacts/lanka.sqlite`   | Path to the built SQLite artifact, opened read-only      |
+| `LANKA_TILES_DIR` | `../foundry/data/artifacts/tiles`           | Directory `/v1/tiles/:file` streams `*.pmtiles` files from |
 
-If `GEOPUB_DB` doesn't point at an existing file, the process logs a clear
+If `LANKA_DB` doesn't point at an existing file, the process logs a clear
 error and exits with status 1 instead of silently creating an empty database.
-`GEOPUB_TILES_DIR` has no such check — the directory (or individual files in
+`LANKA_TILES_DIR` has no such check — the directory (or individual files in
 it) may not exist yet if the foundry's tile-emission step hasn't run; missing
 files are just a normal `404` on `/v1/tiles/:file`, not a startup error.
 
@@ -59,7 +59,7 @@ honors `If-None-Match` with a `304`.
 | `GET /v1/elections/:id/results/:entity` | Parsed results for one entity, with party metadata (`election_parties`) joined in. |
 | `GET /v1/postal/:code` | A postal code record — `code`, `name`, `lat`/`lon`, and its admin chain (`gnd`/`ds_division`/`district`/`province`), derived from `cell_lookup` at the code's own coordinates (`postal_codes.admin_pcode` is unpopulated in the current artifact). `404` for an unknown code. |
 | `GET /v1/postal?lat&lon` | The postal code covering a point, via `cell_lookup`. `postal_code` (and `name`) are `null` when the cell has no postal code on record. Out-of-bbox is a `404 not_in_coverage`. |
-| `GET /v1/tiles/:file` | Streams a `*.pmtiles` file from `GEOPUB_TILES_DIR` with HTTP Range support (**not** the usual envelope — raw bytes, `Content-Type: application/octet-stream`). `:file` is whitelisted to `[a-z0-9-]+\.pmtiles`; anything else, or a missing file, is `404`. |
+| `GET /v1/tiles/:file` | Streams a `*.pmtiles` file from `LANKA_TILES_DIR` with HTTP Range support (**not** the usual envelope — raw bytes, `Content-Type: application/octet-stream`). `:file` is whitelisted to `[a-z0-9-]+\.pmtiles`; anything else, or a missing file, is `404`. |
 
 ### `/v1/lookup` classifier and response shapes
 
@@ -164,14 +164,14 @@ small file written to a temp directory. 89 tests total.
 
 ## Docker
 
-Build from the **repository root** (the image needs the `@geopub/shared`
+Build from the **repository root** (the image needs the `@lanka-data-layer/shared`
 workspace package):
 
 ```bash
-docker build -f api/Dockerfile -t geopub-api .
+docker build -f api/Dockerfile -t lanka-data-layer-api .
 docker run --rm -p 8600:8600 \
-  -v /path/to/geopub.sqlite:/app/foundry/data/artifacts/geopub.sqlite:ro \
-  geopub-api
+  -v /path/to/lanka.sqlite:/app/foundry/data/artifacts/lanka.sqlite:ro \
+  lanka-data-layer-api
 ```
 
 Multi-stage build: resolves the workspace from `pnpm-lock.yaml`, typechecks

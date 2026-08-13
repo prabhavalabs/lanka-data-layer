@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { cellId, GRID } from "@geopub/shared";
+import { cellId, GRID } from "@lanka-data-layer/shared";
 
 /**
  * Builds an in-memory SQLite database implementing the full contract schema

@@ -12,7 +12,7 @@ if (!rootElement) throw new Error("Root element #root not found");
 createRoot(rootElement).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider defaultTheme="system" storageKey="geopub-theme">
+      <ThemeProvider defaultTheme="system" storageKey="lanka-theme">
         <App />
       </ThemeProvider>
     </BrowserRouter>

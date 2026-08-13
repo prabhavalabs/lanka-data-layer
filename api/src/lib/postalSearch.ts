@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import { SEARCH } from "@geopub/shared";
+import { SEARCH } from "@lanka-data-layer/shared";
 import { prepared } from "./cache.ts";
 
 export interface PostalRow {

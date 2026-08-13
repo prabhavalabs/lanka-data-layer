@@ -157,7 +157,7 @@ const TILESETS: TilesetSpec[] = [
     minzoom: 0,
     maxzoom: 14,
     // places/postal come straight from the DB, not a layers/*.geojson file
-    // written by an earlier step — geopub.sqlite is their real upstream
+    // written by an earlier step — lanka.sqlite is their real upstream
     // input. This is coarser than per-table freshness (any table's write
     // touches the same file's mtime), so an unrelated table change can
     // trigger an unnecessary rebuild here, but never a stale skip.

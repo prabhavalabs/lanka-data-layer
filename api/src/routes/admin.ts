@@ -1,7 +1,7 @@
 import type { Hono } from "hono";
 import type Database from "better-sqlite3";
 import { z } from "zod";
-import type { Lang, Sex } from "@geopub/shared";
+import type { Lang, Sex } from "@lanka-data-layer/shared";
 import { buildMeta, ok } from "../lib/envelope.ts";
 import { prepared } from "../lib/cache.ts";
 import { NotFoundError, ValidationError, formatZodIssues } from "../lib/errors.ts";

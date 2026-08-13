@@ -95,7 +95,7 @@ async function main(): Promise<void> {
 
   const db = getDb();
   const startedAt = Date.now();
-  console.log(`geopub foundry: running ${steps.map((s) => s.name).join(" -> ")}`);
+  console.log(`lanka-data-layer foundry: running ${steps.map((s) => s.name).join(" -> ")}`);
 
   for (const step of steps) {
     const t0 = Date.now();
@@ -112,10 +112,10 @@ async function main(): Promise<void> {
   }
 
   closeDb();
-  console.log(`\ngeopub foundry: build complete in ${Date.now() - startedAt}ms`);
+  console.log(`\nlanka-data-layer foundry: build complete in ${Date.now() - startedAt}ms`);
 }
 
 main().catch((err) => {
-  console.error("geopub foundry: unhandled error", err);
+  console.error("lanka-data-layer foundry: unhandled error", err);
   process.exitCode = 1;
 });

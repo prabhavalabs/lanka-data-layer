@@ -2,7 +2,7 @@
  * Shape of a row from the `datasets` table (docs/architecture.md §2),
  * as returned by `GET /v1/datasets`.
  *
- * This mirrors the SQLite schema, not a type from @geopub/shared — the
+ * This mirrors the SQLite schema, not a type from @lanka-data-layer/shared — the
  * shared package does not yet export API response types for this route.
  * If/when it does, prefer that export over this local copy.
  */

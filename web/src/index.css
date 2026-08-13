@@ -16,7 +16,7 @@
 
 /*
  * Design tokens, ported verbatim (same hex/rgba values) from the approved
- * geopub-docs.dc.html spec — see scratchpad/design/DESIGN-NOTES.md for the
+ * design spec — see scratchpad/design/DESIGN-NOTES.md for the
  * extracted palette. Dark is the default (matches the design's un-suffixed
  * `body{...}` block); `.light` overrides (matches `body.light{...}`).
  *

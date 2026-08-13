@@ -30,7 +30,7 @@ function computeEtag(dataVersion: string, path: string, searchParams: URLSearchP
 /**
  * Builds the Hono app against an already-open database. Factory pattern so
  * tests can inject a fixture database via app.request() instead of the
- * process's real GEOPUB_DB (docs/architecture.md §5 — api never writes,
+ * process's real LANKA_DB (docs/architecture.md §5 — api never writes,
  * only ever reads whatever db it's handed).
  */
 export function buildApp(db: Database.Database): Hono {

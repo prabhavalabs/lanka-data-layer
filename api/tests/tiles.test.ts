@@ -13,9 +13,9 @@ const app = buildApp(db);
 const FILE_SIZE = 300;
 const FILE_BYTES = Buffer.from(Array.from({ length: FILE_SIZE }, (_, i) => i % 256));
 
-const tilesDir = mkdtempSync(join(tmpdir(), "geopub-tiles-test-"));
+const tilesDir = mkdtempSync(join(tmpdir(), "lanka-tiles-test-"));
 writeFileSync(join(tilesDir, "admin.pmtiles"), FILE_BYTES);
-process.env.GEOPUB_TILES_DIR = tilesDir;
+process.env.LANKA_TILES_DIR = tilesDir;
 
 after(() => {
   rmSync(tilesDir, { recursive: true, force: true });

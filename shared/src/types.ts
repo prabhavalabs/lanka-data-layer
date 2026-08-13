@@ -1,4 +1,4 @@
-/** API envelope — every Geopub API response uses this shape. */
+/** API envelope — every Lanka Data Layer API response uses this shape. */
 export interface Envelope<T> {
   success: boolean;
   message: string;

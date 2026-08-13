@@ -1,6 +1,6 @@
 # Lanka Data Layer
 
-**Open geo-data infrastructure for Sri Lanka.** A fast, free, openly licensed API for Sri Lankan geographic and statistical data — the **Geopub API** — plus a visualization platform built on top of it.
+**Open geo-data infrastructure for Sri Lanka.** A fast, free, openly licensed API for Sri Lankan geographic and statistical data — **Lanka Data Layer** — plus a visualization platform built on top of it.
 
 Query cities, administrative divisions, postal codes, population, reverse geocoding, elections, and points of interest for Sri Lanka. All spatial computation happens offline, ahead of time, so the API itself is just a fast, cacheable read.
 
@@ -16,10 +16,10 @@ Lanka Data Layer fixes this with one principle: **Sri Lanka's data is small enou
 
 | Package | Name | Purpose |
 |---|---|---|
-| [`foundry/`](foundry/) | `@geopub/foundry` | Offline ETL pipeline: fetches every source, normalizes into a canonical p-code-keyed schema, emits build artifacts (SQLite database, lookup tables, vector tiles, downloads) |
-| [`api/`](api/) | `@geopub/api` | The Geopub API: HTTP service serving the foundry's artifacts |
-| [`web/`](web/) | `@geopub/web` | Visualization platform: maps, charts, dashboards — the API's first consumer |
-| [`shared/`](shared/) | `@geopub/shared` | Shared TypeScript types: API contracts, p-code and grid conventions |
+| [`foundry/`](foundry/) | `@lanka-data-layer/foundry` | Offline ETL pipeline: fetches every source, normalizes into a canonical p-code-keyed schema, emits build artifacts (SQLite database, lookup tables, vector tiles, downloads) |
+| [`api/`](api/) | `@lanka-data-layer/api` | The Lanka Data Layer API: HTTP service serving the foundry's artifacts |
+| [`web/`](web/) | `@lanka-data-layer/web` | Visualization platform: maps, charts, dashboards — the API's first consumer |
+| [`shared/`](shared/) | `@lanka-data-layer/shared` | Shared TypeScript types: API contracts, p-code and grid conventions |
 | [`infra/`](infra/) | — | Docker Compose, reverse-proxy config, deployment scripts |
 | [`docs/`](docs/) | — | Architecture, data contract, source catalog |
 
@@ -71,7 +71,7 @@ If something you're building depends on any of the above, check `GET /v1/dataset
    │ (offline) │                                               │
    └──────────┘                                               ▼
                                                         ┌───────────┐
-                                                        │ Geopub API │ ◄── third-party apps
+                                                        │    api     │ ◄── third-party apps
                                                         └───────────┘
                                                                ▲
                                                         ┌───────────┐
@@ -133,12 +133,12 @@ All endpoints return `{ success, message, payload, meta }`, where `meta` carries
 
 - **Branches**: work happens on `feat/*` / `fix/*` branches off `develop`; `main` is production.
 - **Commits**: `type: brief description` — `feat`, `fix`, `refactor`, `test`, `docs`, `chore`.
-- **Monorepo**: pnpm workspaces; run any package's scripts via `pnpm --filter @geopub/<pkg> run <script>`.
+- **Monorepo**: pnpm workspaces; run any package's scripts via `pnpm --filter @lanka-data-layer/<pkg> run <script>`.
 
 ## Roadmap
 
 - **Phase 0 — Data foundry**: source fetchers, canonical schema, SQLite + lookup + tile artifacts
-- **Phase 1 — Geopub API**: reverse geocode, search, postal, admin, population, elections, datasets; OpenAPI; benchmark suite
+- **Phase 1 — Lanka Data Layer API**: reverse geocode, search, postal, admin, population, elections, datasets; OpenAPI; benchmark suite
 - **Phase 2 — Platform**: map explorer with vector tiles, election atlas with swing analysis, age pyramids, density surfaces, accessibility maps
 - **Phase 3 — Community**: developer portal, bulk downloads, election-night updates, census 2024 integration, economy module
 

@@ -1,5 +1,5 @@
 {
-  "name": "@geopub/web",
+  "name": "@lanka-data-layer/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -16,7 +16,7 @@
     "@deck.gl/mapbox": "^9.3.10",
     "@fontsource/geist": "^5.3.0",
     "@fontsource/geist-mono": "^5.3.0",
-    "@geopub/shared": "workspace:*",
+    "@lanka-data-layer/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "echarts": "^6.0.0",

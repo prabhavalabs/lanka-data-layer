@@ -1,8 +1,8 @@
-# @geopub/foundry
+# @lanka-data-layer/foundry
 
 Offline ETL pipeline. Fetches every source, normalizes it into the p-code-keyed
 schema in [`docs/architecture.md`](../docs/architecture.md) §2, and emits
-`data/artifacts/geopub.sqlite` + `manifest.json`.
+`data/artifacts/lanka.sqlite` + `manifest.json`.
 
 `foundry` never imports from `api` or `web`, and the API never writes to the
 SQLite file it reads — see architecture.md §5 for the full package contract.
@@ -14,26 +14,26 @@ pnpm install                                   # from the repo root
 
 # First run (or any time data/raw/ is empty): the seed step needs a local
 # checkout of the source project it copies from.
-FOUNDRY_SEED_SOURCE=/path/to/ceylon-hub pnpm --filter @geopub/foundry run build
+FOUNDRY_SEED_SOURCE=/path/to/ceylon-hub pnpm --filter @lanka-data-layer/foundry run build
 
 # Once data/raw/ is populated, FOUNDRY_SEED_SOURCE isn't needed again —
 # seed only reads it for files still missing from data/raw/.
-pnpm --filter @geopub/foundry run build
-pnpm --filter @geopub/foundry run build -- --only admin,population
-pnpm --filter @geopub/foundry run build -- --only seed,layers,pois-extend,downloads,datasets,emit
-pnpm --filter @geopub/foundry run build -- --only fetch-worldpop,fetch-gnd,admin,cells,admin-geometry,cell-lookup
-pnpm --filter @geopub/foundry run test         # unit tests (node:test)
+pnpm --filter @lanka-data-layer/foundry run build
+pnpm --filter @lanka-data-layer/foundry run build -- --only admin,population
+pnpm --filter @lanka-data-layer/foundry run build -- --only seed,layers,pois-extend,downloads,datasets,emit
+pnpm --filter @lanka-data-layer/foundry run build -- --only fetch-worldpop,fetch-gnd,admin,cells,admin-geometry,cell-lookup
+pnpm --filter @lanka-data-layer/foundry run test         # unit tests (node:test)
 ```
 
 Raw downloads cache in `data/raw/` (gitignored); every fetch/seed step skips
 work it already did, so re-running `build` is cheap and safe. Artifacts land
-in `data/artifacts/` (also gitignored) — `geopub.sqlite` and `manifest.json`.
+in `data/artifacts/` (also gitignored) — `lanka.sqlite` and `manifest.json`.
 
 ## Pipeline
 
 Steps run in this fixed order (`--only` filters the list, it never reorders
 it — later steps assume earlier ones already ran at least once against the
-same `data/artifacts/geopub.sqlite`):
+same `data/artifacts/lanka.sqlite`):
 
 | # | Step | `src/steps/*.ts` | Produces |
 |---|---|---|---|
@@ -262,7 +262,7 @@ are always freshly regenerated when a tileset does need rebuilding, so their
 own mtime would never usefully signal staleness): the four
 `admin-adm{1..4}.geojson` files for `admin.pmtiles`, the matching
 `layers/*.geojson` file(s) for `electoral`/`transport`/`water`/`protected`,
-and `geopub.sqlite` itself for `places.pmtiles` (its data comes from the DB,
+and `lanka.sqlite` itself for `places.pmtiles` (its data comes from the DB,
 not a `layers/*.geojson` file — coarser than per-table freshness, since any
 table write touches the same file's mtime, but never a stale skip).
 
@@ -281,7 +281,7 @@ duration of a tileset's build and are removed once the whole step finishes
 (success or failure) — they're never a permanent artifact.
 
 `emit` (see below) discovers every `data/artifacts/tiles/*.pmtiles` file and
-hashes it into `manifest.json`'s `artifacts` array alongside `geopub.sqlite`.
+hashes it into `manifest.json`'s `artifacts` array alongside `lanka.sqlite`.
 
 ## Bulk downloads (`downloads` + `datasets`)
 

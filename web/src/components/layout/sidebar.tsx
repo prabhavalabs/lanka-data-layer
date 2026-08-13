@@ -7,7 +7,7 @@ import { apiGetPayload } from "@/lib/api";
 import { docsEndpointsByGroup, endpointNavLabel } from "@/lib/docs-spec";
 import { cn } from "@/lib/utils";
 
-/** Compass glyph, copied verbatim from the approved design's logo mark (geopub-docs.dc.html). */
+/** Compass glyph, copied verbatim from the approved design's logo mark. */
 function CompassMark() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -120,7 +120,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         <div className="grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-brand text-white">
           <CompassMark />
         </div>
-        <div className="text-[15.5px] font-semibold tracking-tight">Geopub</div>
+        <div className="text-[15.5px] font-semibold tracking-tight">Lanka Data Layer</div>
         <div className="ml-auto rounded-full border border-line2 px-[7px] py-[1px] font-mono text-[10px] text-ink3">v1</div>
       </div>
 

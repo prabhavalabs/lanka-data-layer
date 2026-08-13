@@ -19,7 +19,7 @@ col = floor((lon - 79.400) * 1000)
 - Only land cells (and near-shore water cells) get rows in `cell_lookup`; a missing cell means "in bbox but not on land".
 - The same formula must exist in exactly three places: `foundry/src/grid.ts`, `shared/src/grid.ts` (exported for api + web), and this document. Unit tests pin all corner cases (Colombo Fort, Point Pedro, Dondra Head, out-of-bounds).
 
-## 2. SQLite schema (artifact: `geopub.sqlite`)
+## 2. SQLite schema (artifact: `lanka.sqlite`)
 
 Built read-only by the foundry. The API never writes.
 
@@ -131,7 +131,7 @@ Search notes: FTS5 `unicode61` tokenizer handles Sinhala/Tamil; ranking = FTS ra
 
 | Artifact | Consumed by | Notes |
 |---|---|---|
-| `geopub.sqlite` | api | schema above, `PRAGMA journal_mode=OFF`, fully vacuumed |
+| `lanka.sqlite` | api | schema above, `PRAGMA journal_mode=OFF`, fully vacuumed |
 | `tiles/<layer>.pmtiles` | web (+ api passthrough) | layers: admin (all levels, zoom-gated), electoral, roads, railways, water, pois |
 | `downloads/<dataset>.<fmt>.gz` | public bulk downloads | GeoJSON (6 dp coordinates), CSV for tabular |
 | `manifest.json` | api + web | `{ data_version, built_at, sources: [{id, fetched_at, license, url}], artifacts: [{path, bytes, sha256}] }` |

@@ -1,8 +1,8 @@
 import type { Hono } from "hono";
 import type Database from "better-sqlite3";
 import { z } from "zod";
-import { cellId, SEARCH } from "@geopub/shared";
-import type { AdminLevel, Lang } from "@geopub/shared";
+import { cellId, SEARCH } from "@lanka-data-layer/shared";
+import type { AdminLevel, Lang } from "@lanka-data-layer/shared";
 import { buildMeta, ok } from "../lib/envelope.ts";
 import { prepared } from "../lib/cache.ts";
 import { NotInCoverageError, ValidationError, formatZodIssues } from "../lib/errors.ts";

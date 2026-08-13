@@ -1,4 +1,4 @@
-import type { Lang } from "@geopub/shared";
+import type { Lang } from "@lanka-data-layer/shared";
 
 export const LANGS: readonly Lang[] = ["en", "si", "ta"];
 
