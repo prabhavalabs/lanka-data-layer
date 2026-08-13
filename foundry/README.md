@@ -39,7 +39,7 @@ same `data/artifacts/lanka.sqlite`):
 |---|---|---|---|
 | 1 | `seed` | `seed.ts` | Copies the source files this build needs into `data/raw/` |
 | 2 | `fetch-postal` | `fetch-postal.ts` | Downloads + extracts the GeoNames LK postal dump |
-| 3 | `fetch-worldpop` | `fetch-worldpop.ts` | Downloads the WorldPop Sri Lanka 1km UN-adjusted population GeoTIFF |
+| 3 | `fetch-worldpop` | `fetch-worldpop.ts` | Downloads the WorldPop Sri Lanka 1km UN-adjusted population GeoTIFF (2025) |
 | 4 | `fetch-gnd` | `fetch-gnd.ts` | Downloads + extracts OCHA COD-AB Sri Lanka ADM3/ADM4 GeoJSON |
 | 5 | `admin` | `admin.ts` | `admin_units` (levels 0-4) |
 | 6 | `population` | `population.ts` | `admin_population`, `admin_stats` |
@@ -115,10 +115,15 @@ comment in `admin.ts`.
 
 ## Gridded population (`fetch-worldpop` + `cells`)
 
-`fetch-worldpop.ts` downloads the WorldPop "Global 2000-2020, 1km UNadj"
-Sri Lanka raster (`lka_ppp_2020_1km_Aggregated_UNadj.tif`, ~30 arc-sec /
-~1km pixels, UN-adjusted to match national population totals) into
-`data/raw/worldpop/`.
+`fetch-worldpop.ts` downloads the WorldPop "Global 2015-2030, R2024B" Sri
+Lanka raster for 2025 (`lka_pop_2025_UC_1km_R2024B_UA_v1.tif`, ~30 arc-sec /
+~1km pixels, unconstrained and UN-adjusted to match national population
+totals) into `data/raw/worldpop/`. This replaced the retired "Global
+2000-2020, 1km UNadj" product's 2020 raster — same ~1km resolution and
+UN-adjustment, but a different underlying model generation, so its pixel
+grid (width/origin) isn't identical to the 2020 file's; `cells.ts` doesn't
+care, since it derives fine-cell coverage from whichever raster's own
+affine transform it's given.
 
 `cells.ts` parses it with the `geotiff` package (pure JS, no native deps)
 and resamples it onto the canonical 0.001deg grid (`src/grid.ts`): for every
@@ -130,9 +135,9 @@ to exactly one pixel (pixels tile the plane the same way the grid does), so
 there's no double-counting; the insert still accumulates on conflict as a
 defensive measure. A guard compares the sum of all inserted `cells.pop`
 against the raster's own total and fails the build if they diverge by more
-than 0.5% — both totals are logged either way. In this build: 78,731
-positive pixels distribute across 5,467,524 fine cells, 0.0000% deviation,
-in ~3-5s.
+than 0.5% — both totals are logged either way. In this build: 78,745
+positive pixels distribute across 5,468,498 fine cells (raster total
+23,168,692), 0.0000% deviation, in ~3-5s.
 
 ## Admin geometry (`admin-geometry`)
 
@@ -190,12 +195,12 @@ Three techniques keep ~5.5M cells x 3 lookups tractable (all in
   cell is almost always in the same GN division as the previous one. Each
   cell first re-tests the *previous* cell's matched polygon (one exact PIP
   test) before falling back to the bucket index; in this build that's a
-  ~92% hit rate, which is most of why the whole step finishes in ~2 minutes
-  rather than much longer.
+  ~93.5% hit rate, which is most of why the whole step finishes in under
+  2 minutes rather than much longer.
 
 This build: 14,043 ADM4 polygons, 1,833 postal codes, 553 places indexed;
-5,467,317 of 5,467,524 cells resolved (207 skipped, no polygon within 2km);
-~119s end to end.
+5,467,970 of 5,468,498 cells resolved (528 skipped, no polygon within 2km);
+~108s end to end.
 
 ## POIs: railway stations (`pois-extend`)
 
@@ -330,13 +335,16 @@ beyond `downloads` running first.
 Seeded from a local clone of the predecessor project (`prabhavalabs/ceylon-hub`)
 via `seed.ts` — see that file for the exact file list. `fetch-postal.ts`,
 `fetch-worldpop.ts`, and `fetch-gnd.ts` hit the network directly (GeoNames,
-WorldPop, HDX respectively) rather than being seeded.
+WorldPop, HDX respectively) rather than being seeded. `fetch-worldpop.ts`
+tracks WorldPop's latest annual raster rather than a fixed vintage — it's on
+the 2025 file (Global 2015-2030, R2024B) as of this writing; see the
+"Gridded population" section above.
 
 | Source | License |
 |---|---|
 | geoBoundaries admin boundaries (ADM0-ADM2) | CC BY 3.0 IGO |
 | OCHA COD-AB Sri Lanka (`cod-ab-lka`) — DS/GN division boundaries, ADM3-ADM4 | CC BY-IGO |
-| WorldPop Sri Lanka 1km UN-adjusted population | CC BY 4.0 |
+| WorldPop Sri Lanka 1km UN-adjusted population (2025) | CC BY 4.0 |
 | HDX `cod-ps-lka` population projections 2023 | CC BY-IGO |
 | Dept. of Census & Statistics ethnicity/religion 2012 | Open data |
 | OpenStreetMap places, hospitals, education, airports | ODbL |

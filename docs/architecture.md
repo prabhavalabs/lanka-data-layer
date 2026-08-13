@@ -72,10 +72,11 @@ admin_stats(
   PRIMARY KEY (pcode, year, key)
 );
 
--- Gridded population: WorldPop ~1 km (30 arc-sec) UN-adjusted raster,
--- distributed uniformly across the canonical fine cells each raster pixel
--- covers (pixel pop / covered-cell count). Point reads and radius sums are
--- both correct at raster granularity; only cells with pop > 0 are stored.
+-- Gridded population: WorldPop ~1 km (30 arc-sec) UN-adjusted raster (2025
+-- vintage, Global 2015-2030 R2024B), distributed uniformly across the
+-- canonical fine cells each raster pixel covers (pixel pop / covered-cell
+-- count). Point reads and radius sums are both correct at raster
+-- granularity; only cells with pop > 0 are stored.
 cells(cell_id INTEGER PRIMARY KEY, pop REAL NOT NULL);
 
 -- The reverse-geocode table. One row per land cell. Everything above GN

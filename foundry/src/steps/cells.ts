@@ -5,7 +5,7 @@ import { fineCellsForBounds } from "../lib/raster.ts";
 
 export const name = "cells";
 
-const TIF_PATH = ["worldpop", "lka_ppp_2020_1km_Aggregated_UNadj.tif"];
+const TIF_PATH = ["worldpop", "lka_pop_2025_UC_1km_R2024B_UA_v1.tif"];
 
 // WorldPop's nodata sentinel for this product (confirmed via the raster's
 // own pixel values — geotiff.js doesn't surface GDAL_NODATA as a typed
@@ -15,7 +15,7 @@ const NODATA = -99999;
 
 /**
  * Gridded population (docs/architecture.md §2 `cells`): resamples the
- * WorldPop ~1km UN-adjusted raster onto the canonical 0.001deg grid. For
+ * WorldPop ~1km UN-adjusted 2025 raster onto the canonical 0.001deg grid. For
  * every pixel with population > 0, its value is split evenly across every
  * fine cell whose center the pixel's bounds contain (lib/raster.ts, driven
  * by the raster's own affine transform) — point reads and radius sums both

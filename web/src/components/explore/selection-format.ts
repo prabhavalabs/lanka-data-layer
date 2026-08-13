@@ -29,15 +29,18 @@ export function shortAdminLabel(name: string): string {
 }
 
 /**
- * `admin_population.year` tells the two source generations apart, per the
- * task brief: GN/DS divisions carry a 2020 WorldPop-modeled total (sex
- * breakdown not attempted at that resolution); districts/provinces carry a
- * 2023 HDX projection with a real f/m split. Keyed on the year the API
- * actually returned rather than hardcoded per-level, so this stays correct
- * if a future data release changes which levels have which vintage.
+ * `admin_population.year` tells the two source generations apart: GN/DS
+ * divisions carry a WorldPop-modeled total (sex breakdown not attempted at
+ * that resolution, currently 2025); districts/provinces carry a 2023 HDX
+ * projection with a real f/m split. Keyed on the year the API actually
+ * returned rather than a hardcoded per-level rule: year 2023 is always the
+ * HDX projection (the one vintage with a real sex/age breakdown), and any
+ * other year is a WorldPop-modeled total — so a future WorldPop refresh
+ * (e.g. 2025 -> 2026) needs no change here, only a future *second* HDX
+ * vintage would need this to grow past a single hardcoded year check.
  */
 export function populationSourceLabel(year: number): string {
-  return year === 2020 ? `WorldPop ${year} (modeled)` : `HDX projection ${year}`;
+  return year === 2023 ? `HDX projection ${year}` : `WorldPop ${year} (modeled)`;
 }
 
 /** camelCase stat key segment -> "Title Case" — "sriLankanTamil" -> "Sri Lankan Tamil", "otherChristian" -> "Other Christian". */

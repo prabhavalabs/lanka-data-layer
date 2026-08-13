@@ -4,7 +4,7 @@ export const name = "population-rollup";
 
 // The WorldPop raster's reference year (see fetch-worldpop) — kept distinct
 // from the 2023 HDX projections so consumers can tell the two sources apart.
-const WORLDPOP_YEAR = 2020;
+const WORLDPOP_YEAR = 2025;
 
 /**
  * population-rollup: fills the levels the 2023 HDX projections don't cover
@@ -14,7 +14,7 @@ const WORLDPOP_YEAR = 2020;
  *   GND total  = SUM(cells.pop) over the cells cell_lookup assigns to it
  *   DS total   = SUM of its GND children
  *
- * Rows are written as (year 2020, sex 't', age_bucket 'total') only — a
+ * Rows are written as (year 2025, sex 't', age_bucket 'total') only — a
  * modeled estimate, not a census count. Levels 0-2 keep their 2023 HDX rows;
  * the API serves whatever the latest year per unit is, so districts stay on
  * the official projections while GN/DS divisions get the WorldPop rollup.
