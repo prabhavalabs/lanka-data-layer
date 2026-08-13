@@ -1,0 +1,30 @@
+# Production compose for the VPS. Run from the repo root on the server:
+#   docker compose -f infra/docker-compose.yml up -d
+#
+# Only the API runs as a container; the web app is a static build served by
+# the host nginx (see infra/nginx/ and infra/deploy.sh). Data artifacts are
+# NOT built on the server — they're produced by the foundry on a workstation
+# and rsync'd to foundry/data/artifacts/ (see infra/README.md).
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    image: lanka-data-layer-api
+    container_name: lanka-data-layer-api
+    restart: unless-stopped
+    # Loopback only — the host nginx terminates TLS and proxies /v1.
+    ports:
+      - "127.0.0.1:8600:8600"
+    environment:
+      PORT: "8600"
+      LANKA_DB: /data/lanka.sqlite
+      LANKA_TILES_DIR: /data/tiles
+    volumes:
+      - ../foundry/data/artifacts:/data:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8600/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
