@@ -3,7 +3,7 @@
 **Sri Lanka's open geo-data API** — reverse geocoding, universal search, postal codes, population, and election results for every GN division, DS division, district, and province on the island, plus a map platform built on top of it. Free, open source, no API keys.
 
 <p align="center">
-  <img src="docs/screenshots/explore-population.png" alt="Sri Lanka rendered as a tilted 3D column map, each column's height and color driven by WorldPop gridded population density" width="820">
+  <img src="docs/screenshots/explore-population.png" alt="Sri Lanka rendered as a population density heatmap — Colombo, Kandy, Jaffna and Galle glow warm against a dark island, with district boundaries and a legend" width="820">
 </p>
 
 All spatial computation happens offline, ahead of time, so the API itself is just a fast, cacheable read — reverse geocoding is one indexed SQLite lookup, not a live point-in-polygon query.
@@ -32,13 +32,13 @@ Every endpoint page has a live "Try it" panel: real request parameters, a **Send
 
 ### Explore map
 
-The map explorer resolves any search into a highlighted boundary or point and a detail card. The card's core fields (population, area, admin hierarchy, postal codes) render immediately from one request; secondary sections (nearby-population context, source attribution) load progressively as each upstream source responds, each carrying its own attribution rather than one blended credit line. The highlight stays pinned to the map while the card loads, and the card itself can be pinned open while you keep browsing.
+The map explorer resolves any search into a highlighted boundary or point and a detail card. The card's core fields (population, area, admin hierarchy, postal codes) render immediately from one request; secondary sections load progressively as each upstream source responds, each carrying its own attribution rather than one blended credit line. For census-covered units the card carries a full demographic profile — male/female split, age structure, dependency ratio, ethnicity and religion — sourced from the 2024 Census of Population and Housing. The highlight stays pinned to the map while the card loads, and the card itself can be pinned open while you keep browsing.
 
 <p align="center">
-  <img src="docs/screenshots/explore-selection.png" alt="Map explorer with the Nugegoda GN division highlighted and its detail card open, showing population, area, administrative hierarchy, and postal codes" width="820">
+  <img src="docs/screenshots/explore-selection.png" alt="Map explorer with Kandy District highlighted over the density heatmap, its detail card expanded with population, area, hierarchy, age and sex structure, dependency ratio, and ethnicity and religion breakdowns from Census 2024" width="820">
 </p>
 
-Toggle **Population (3D)** in the layer panel and the camera tilts into a column view of WorldPop's gridded density — the hero image at the top of this README is that layer over the island's southwest.
+Toggle **Population density** in the layer panel for a flat heatmap of WorldPop's gridded counts — the hero image at the top of this README is that layer over the whole island, with the south-western wet zone, Kandy, and Jaffna reading as the warm cores they are.
 
 ### Universal search
 
@@ -118,14 +118,14 @@ All endpoints return `{ success, message, payload, meta }`, where `meta` carries
 
 ## npm packages
 
-Don't want to call (or host) an API? The core datasets also ship as standalone npm libraries — zero runtime dependencies, data bundled in, working offline in Node 18+, browsers, and edge runtimes:
+Don't want to call (or host) an API? The core datasets also ship as standalone npm libraries, published to the public registry with provenance attestation — zero runtime dependencies, data bundled in, working offline in Node 18+, browsers, and edge runtimes:
 
-| Package | What you get | Install size (packed) |
+| Package | What you get | Packed |
 | --- | --- | --- |
-| `@lanka-data-layer/admin` | 14,417 admin units (province → GN division), trilingual names, hierarchy walking, name search | ~830 kB |
-| `@lanka-data-layer/postal` | 1,833 postal codes: lookup, office search, per-division codes, nearest-code by coordinates | ~320 kB |
-| `@lanka-data-layer/electoral` | Elections, electoral divisions, and full per-division results with turnout and party shares | ~86 kB |
-| `@lanka-data-layer/census` | 2024 census demographics per unit — age/sex structure, ethnicity, religion, 2012 comparisons | ~73 kB |
+| [`@lanka-data-layer/admin`](https://www.npmjs.com/package/@lanka-data-layer/admin) [![npm](https://img.shields.io/npm/v/%40lanka-data-layer%2Fadmin)](https://www.npmjs.com/package/@lanka-data-layer/admin) | 14,417 admin units (province → GN division), trilingual names, hierarchy walking, name search | ~830 kB |
+| [`@lanka-data-layer/postal`](https://www.npmjs.com/package/@lanka-data-layer/postal) [![npm](https://img.shields.io/npm/v/%40lanka-data-layer%2Fpostal)](https://www.npmjs.com/package/@lanka-data-layer/postal) | 1,833 postal codes: lookup, office search, per-division codes, nearest-code by coordinates | ~320 kB |
+| [`@lanka-data-layer/electoral`](https://www.npmjs.com/package/@lanka-data-layer/electoral) [![npm](https://img.shields.io/npm/v/%40lanka-data-layer%2Felectoral)](https://www.npmjs.com/package/@lanka-data-layer/electoral) | Elections, electoral divisions, and full per-division results with turnout and party shares | ~86 kB |
+| [`@lanka-data-layer/census`](https://www.npmjs.com/package/@lanka-data-layer/census) [![npm](https://img.shields.io/npm/v/%40lanka-data-layer%2Fcensus)](https://www.npmjs.com/package/@lanka-data-layer/census) | 2024 census demographics per unit — age/sex structure, ethnicity, religion, 2012 comparisons | ~73 kB |
 
 ```ts
 import { getUnit, searchByName } from "@lanka-data-layer/admin";
