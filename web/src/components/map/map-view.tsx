@@ -9,7 +9,6 @@ import {
 import type { GeoJSONSource, IControl, LayerSpecification, LngLatBoundsLike, MapMouseEvent } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import { GRID } from "@geopub/shared";
 
 import { useTheme } from "@/components/theme-provider";
 import { applyBasemapMode, basemapStyle, resolveBasemapMode, type BasemapMode } from "@/components/map/basemap";
@@ -38,13 +37,28 @@ import { useMapStore, DEFAULT_MAP_VIEW } from "@/stores/map-store";
 // the population-3d layer hides itself and returns when the user zooms out.
 const POPULATION_MAX_ZOOM = 11.5;
 
-// Keep the camera within the canonical grid's coverage, padded a bit so
-// panning near the coast doesn't feel clipped.
-const CAMERA_PADDING_DEG = 1.5;
-const CAMERA_BOUNDS: LngLatBoundsLike = [
-  [GRID.lonMin - CAMERA_PADDING_DEG, GRID.latMin - CAMERA_PADDING_DEG],
-  [GRID.lonMax + CAMERA_PADDING_DEG, GRID.latMax + CAMERA_PADDING_DEG],
+// The island is the product: the camera is locked to Sri Lanka's own
+// bounding box (from the geoBoundaries outline that also feeds
+// public/country-mask.json), padded just enough that the coast isn't
+// glued to the panel edges.
+const COUNTRY_BBOX: LngLatBoundsLike = [
+  [79.6509, 5.919],
+  [81.879, 9.8358],
 ];
+const CAMERA_PADDING_DEG = 0.35;
+const CAMERA_BOUNDS: LngLatBoundsLike = [
+  [79.6509 - CAMERA_PADDING_DEG, 5.919 - CAMERA_PADDING_DEG],
+  [81.879 + CAMERA_PADDING_DEG, 9.8358 + CAMERA_PADDING_DEG],
+];
+// Mirrors the design mock's fitExtent margins: clear of the header/layer
+// panel on the left and the omnibox strip on top.
+const FIT_PADDING = { top: 76, bottom: 56, left: 270, right: 64 };
+
+// Everything that isn't Sri Lanka is painted over with a flat sea fill —
+// a world polygon with the country outline as holes (web/public/country-mask.json).
+const MASK_SOURCE_ID = "country-mask";
+const MASK_LAYER_ID = "country-mask-fill";
+const MASK_SEA: Record<BasemapMode, string> = { dark: "#07090C", light: "#EAEFF3" };
 
 const POPULATION_PITCH = 50;
 
@@ -149,6 +163,9 @@ export function MapView() {
     function createMap(): void {
       const { center, zoom } = useMapStore.getState();
       const mode = resolveBasemapMode(theme);
+      // Only honor the stored view when the URL actually carried one —
+      // otherwise the island always opens fitted to the viewport.
+      const hasUrlView = new URLSearchParams(window.location.search).has("lat");
 
       const nextMap = new MaplibreMap({
         container: container as HTMLDivElement,
@@ -160,6 +177,54 @@ export function MapView() {
         maxBounds: CAMERA_BOUNDS,
         attributionControl: false,
       });
+
+      // Fit-to-island: compute the camera that frames the whole country in
+      // this viewport, use it as the zoom floor (you can never zoom out past
+      // "the island fills the screen"), and as the opening view unless the
+      // URL restored one. Recomputed on resize so the fit tracks the window.
+      const applyIslandFit = (jump: boolean) => {
+        const cam = nextMap.cameraForBounds(COUNTRY_BBOX, { padding: FIT_PADDING });
+        if (!cam) return;
+        nextMap.setMinZoom((cam.zoom ?? 6.5) - 0.05);
+        if (jump) nextMap.jumpTo({ center: cam.center, zoom: cam.zoom, pitch: 0, bearing: 0 });
+      };
+      if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__map = nextMap;
+      applyIslandFit(!hasUrlView);
+      const onResize = () => applyIslandFit(false);
+      nextMap.on("resize", onResize);
+
+      // Sea mask: world polygon with the country as holes, painted the
+      // design's flat sea color so neighboring coastlines and ocean labels
+      // from the raster basemap never show.
+      fetch("/country-mask.json")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((mask: GeoJSON.Feature | null) => {
+          if (!mask || nextMap.getSource(MASK_SOURCE_ID)) return;
+          const addMask = () => {
+            if (nextMap.getSource(MASK_SOURCE_ID)) return;
+            nextMap.addSource(MASK_SOURCE_ID, { type: "geojson", data: mask });
+            // Insert below every vector layer but above the raster basemap:
+            // the first non-raster layer is the right anchor.
+            const anchor = nextMap.getStyle().layers?.find((l) => l.type !== "raster")?.id;
+            nextMap.addLayer(
+              {
+                id: MASK_LAYER_ID,
+                type: "fill",
+                source: MASK_SOURCE_ID,
+                paint: { "fill-color": MASK_SEA[resolveBasemapMode(theme)], "fill-opacity": 1 },
+              },
+              anchor,
+            );
+          };
+          // Not isStyleLoaded(): that stays false while raster tiles are
+          // still fetching, long after the style itself (an inline object)
+          // is usable — and "style.load" has already fired by then, so
+          // waiting for it again would wait forever. The style object being
+          // present is the actual precondition for addLayer.
+          if (nextMap.getStyle()) addMask();
+          else nextMap.once("styledata", addMask);
+        })
+        .catch(() => undefined);
 
       nextMap.addControl(new AttributionControl({ compact: true }));
       nextMap.addControl(new NavigationControl({ showCompass: true }), "top-right");
@@ -366,6 +431,7 @@ export function MapView() {
       applyBasemapMode(map, mode);
       applyThemedPaint(map, mode);
       applyHighlightTheme(map, mode);
+      if (map.getLayer(MASK_LAYER_ID)) map.setPaintProperty(MASK_LAYER_ID, "fill-color", MASK_SEA[mode]);
     };
     if (map.isStyleLoaded()) apply();
     else map.once("style.load", apply);
