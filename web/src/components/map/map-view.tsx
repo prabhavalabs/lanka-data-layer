@@ -28,7 +28,9 @@ import { ExploreHeader } from "@/components/explore/explore-header";
 import { ExploreOmnibox } from "@/components/explore/explore-omnibox";
 import { ExploreReadout } from "@/components/explore/explore-readout";
 import { glassPanelStyle, MONO_FONT, SANS_FONT, TEXT, TEXT2 } from "@/components/explore/glass";
+import { SelectionCard } from "@/components/explore/selection-card";
 import { featureBounds } from "@/lib/geojson-bounds";
+import { selectAdminUnit } from "@/lib/map-selection";
 import { usePopulationGrid } from "@/hooks/use-population-grid";
 import { useLayerStore } from "@/stores/layer-store";
 import { useMapStore, DEFAULT_MAP_VIEW } from "@/stores/map-store";
@@ -290,8 +292,35 @@ export function MapView() {
       const onZoom = () => setMapZoom(nextMap.getZoom());
       nextMap.on("zoom", onZoom);
 
-      const onClick = () => useMapStore.getState().setHighlight(null);
+      // Selecting persists until explicitly dismissed (SelectionCard's close
+      // button or Escape below) — a plain map click no longer clears
+      // anything. Clicking an admin polygon instead *selects* it: sets
+      // `selection` right away (SelectionCard starts its own /v1/admin/:pcode
+      // fetch immediately) and best-effort fetches its boundary for the
+      // highlight outline, same flow Omnibox and SelectionCard's breadcrumb
+      // links use (lib/map-selection.ts). Clicking empty water/basemap is a
+      // no-op — whatever's currently selected/highlighted just stays put.
+      const onClick = (e: MapMouseEvent) => {
+        const layerIds = ADMIN_HOVER_LAYER_IDS.filter((id) => nextMap.getLayer(id));
+        if (layerIds.length === 0) return;
+        const top = nextMap.queryRenderedFeatures(e.point, { layers: layerIds })[0];
+        const pcode = top?.properties?.pcode;
+        if (typeof pcode !== "string" || !pcode) return;
+        const name = typeof top.properties?.name_en === "string" ? top.properties.name_en : undefined;
+        selectAdminUnit(pcode, name);
+      };
       nextMap.on("click", onClick);
+
+      // Auto-collapse the selection card out of the way on a genuine user
+      // gesture (drag/wheel/touch) — but not on our own programmatic camera
+      // moves (flyTo/fitBounds), which MapLibre fires without an
+      // `originalEvent`. The pin toggle (SelectionCard) exists specifically
+      // to opt out of this.
+      const onMoveStart = (e: { originalEvent?: unknown }) => {
+        if (!e.originalEvent) return;
+        if (!useMapStore.getState().pinned) useMapStore.getState().setCollapsed(true);
+      };
+      nextMap.on("movestart", onMoveStart);
 
       const clearHover = () => {
         if (hoverRef.current) {
@@ -331,6 +360,18 @@ export function MapView() {
       };
       nextMap.on("mousemove", onMouseMove);
       nextMap.on("mouseout", clearHover);
+
+      // Escape dismisses the selection (card + highlight) — "while the map
+      // has focus": MapLibre's canvas is tabindex'd and grabs focus on
+      // click/drag, so a keydown listener scoped to this container only
+      // ever sees Escape when focus is somewhere inside it (the canvas),
+      // not e.g. while the omnibox input has focus — that's a sibling
+      // element outside this subtree, so its own Escape handling (closing
+      // the dropdown) is unaffected.
+      const onContainerKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") useMapStore.getState().clearSelection();
+      };
+      container?.addEventListener("keydown", onContainerKeyDown);
 
       const addRegistryLayers = () => {
         // Theme at mount time; the theme-change effect below keeps this in
@@ -404,8 +445,10 @@ export function MapView() {
       detach = () => {
         nextMap.off("moveend", onMoveEnd);
         nextMap.off("click", onClick);
+        nextMap.off("movestart", onMoveStart);
         nextMap.off("mousemove", onMouseMove);
         nextMap.off("mouseout", clearHover);
+        container?.removeEventListener("keydown", onContainerKeyDown);
         markerRef.current?.remove();
         markerRef.current = null;
         overlay.finalize();
@@ -597,6 +640,7 @@ export function MapView() {
       <MapLegend />
       <ExploreReadout lat={readoutLat} lon={readoutLon} zoom={mapZoom} />
       <ExploreAttribution />
+      <SelectionCard />
       {hoveredAdmin && hoveredAdmin.name && (
         <div className="pointer-events-none absolute right-3 top-20 z-20" style={{ fontFamily: SANS_FONT }}>
           <div className="rounded-xl border px-3 py-2" style={glassPanelStyle(mode)}>
