@@ -8,6 +8,7 @@ export const name = "datasets";
 
 type FeatureCountSource =
   | { kind: "table"; table: string }
+  | { kind: "query"; sql: string }
   | { kind: "layer-file"; file: string };
 
 interface DatasetSpec {
@@ -50,8 +51,25 @@ const DATASETS: DatasetSpec[] = [
     source_name: "HDX cod-ps-lka",
     source_url: "https://data.humdata.org/dataset/cod-ps-lka",
     license: "CC BY-IGO",
-    count: { kind: "table", table: "admin_population" },
+    count: { kind: "query", sql: "SELECT COUNT(*) AS n FROM admin_population WHERE year = 2023" },
     downloadFile: "population-2023.csv",
+  },
+  {
+    id: "census-2024",
+    title: "Census of Population and Housing 2024",
+    category: "population",
+    description:
+      "Official 2024 census counts (final report, DS-division level): population by sex and coarse age group, " +
+      "ethnicity, and religion for the country, districts, and DS divisions. DS-division rows are matched to " +
+      "COD-AB ADM3 p-codes by name within their district — see the README's known-limitations notes.",
+    source_name: "Department of Census and Statistics, Sri Lanka",
+    source_url: "http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024",
+    license: "Not stated (government statistical publication)",
+    count: {
+      kind: "query",
+      sql: "SELECT (SELECT COUNT(*) FROM admin_population WHERE year = 2024) + (SELECT COUNT(*) FROM admin_stats WHERE year = 2024) AS n",
+    },
+    downloadFile: "census-2024.csv",
   },
   {
     id: "elections",
@@ -218,7 +236,11 @@ export async function run({ db, log }: StepContext): Promise<void> {
   const resolved: Resolved[] = [];
   for (const spec of DATASETS) {
     const featureCount =
-      spec.count.kind === "table" ? rowCount(db, spec.count.table) : await layerFileFeatureCount(spec.count.file);
+      spec.count.kind === "table"
+        ? rowCount(db, spec.count.table)
+        : spec.count.kind === "query"
+          ? (db.prepare(spec.count.sql).get() as { n: number }).n
+          : await layerFileFeatureCount(spec.count.file);
     const downloadRelPath = `downloads/${spec.downloadFile}`;
     const downloadPath = featureCount ? ((await exists(artifactPath(downloadRelPath))) ? downloadRelPath : null) : null;
     resolved.push({ spec, featureCount, downloadPath });

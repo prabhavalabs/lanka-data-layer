@@ -52,6 +52,13 @@ const SOURCES: SourceEntry[] = [
     files: ["data/ethnicity-religion-2012.json"],
   },
   {
+    id: "census-2024",
+    // The source page states no license terms — see the README's data table.
+    license: "Not stated (government statistical publication)",
+    url: "http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024",
+    files: ["census-2024/a5-sex-age.xlsx", "census-2024/a6-ethnicity.xlsx", "census-2024/a7-religion.xlsx"],
+  },
+  {
     id: "osm-places",
     license: "ODbL",
     url: "https://www.openstreetmap.org",
