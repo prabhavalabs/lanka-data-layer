@@ -193,10 +193,10 @@ export const DOCS_ENDPOINTS: DocsEndpoint[] = [
       "id": "cell-lookup",
       "title": "Reverse-geocode grid lookup",
       "category": "admin",
-      "...": "cells, country, elections, places, pois, population-2023, postal-codes, protected-areas, railways, roads, waterways",
+      "...": "cells, census-2024, country, elections, places, pois, population-2023, postal-codes, protected-areas, railways, roads, waterways",
       "feature_count": 5467317
     }
-    // … 11 more datasets (13 total)
+    // … 12 more datasets (14 total)
   ],
   "meta": { "data_version": "20260812.7", "source": [] }
 }`,
@@ -545,7 +545,7 @@ etag: "20260812.7-msq8g036.nv-n22g5"
   "meta": { "data_version": "20260812.7", "source": [{ "name": "geoBoundaries + OCHA COD-AB Sri Lanka", "...": "..." }] }
 }
 
-// GET /v1/admin/LK11?include=population,stats — Colombo District (has real rows):
+// GET /v1/admin/LK11?include=population,stats — Colombo District (2024 census rows):
 {
   "success": true,
   "message": "OK",
@@ -553,13 +553,20 @@ etag: "20260812.7-msq8g036.nv-n22g5"
     "unit": { "pcode": "LK11", "level": 2, "name": "Colombo District", "...": "AdminUnit fields" },
     "parent_chain": [ /* LK, LK1 */ ],
     "children": [ { "pcode": "LK1103", "name": "Colombo" } /* … 12 more */ ],
-    "population": null,
+    "population": {
+      "year": 2024,
+      "buckets": {
+        "0-14": { "f": 0, "m": 0, "t": 392721 }, "15-59": { "f": 0, "m": 0, "t": 1525340 },
+        "60-64": { "f": 0, "m": 0, "t": 136268 }, "65+": { "f": 0, "m": 0, "t": 321086 }
+      },
+      "total": { "f": 1220616, "m": 1154799, "t": 2375415 }
+    },
     "stats": {
-      "year": 2012,
+      "year": 2024,
       "values": {
-        "ethnicity.sinhala": 1732530, "ethnicity.sriLankanTamil": 246932, "ethnicity.moor": 247739,
-        "religion.buddhist": 1585000, "religion.hindu": 210000, "religion.muslim": 260000
-        // … 9 more ethnicity/religion values
+        "ethnicity.sinhala": 1807945, "ethnicity.sriLankanTamil": 243856, "ethnicity.moor": 285346,
+        "religion.buddhist": 1682524, "religion.hindu": 197759, "religion.muslim": 298422
+        // … 13 more ethnicity/religion values
       }
     }
   },
@@ -569,7 +576,8 @@ etag: "20260812.7-msq8g036.nv-n22g5"
       CACHING_NOTE,
       LANG_NOTE,
       "404 for an unknown pcode.",
-      "population/stats are null (not omitted) when ?include= asked for them but the unit has no rows — LK1103 above has neither; LK11 has stats but not population. This is normal, not an error: census/stats coverage is still being built out level by level.",
+      "population/stats are null (not omitted) when ?include= asked for them but the unit has no rows of that kind at all.",
+      "Both blocks serve the unit's latest available year, and the shape follows that year's source: 2024 census rows (country, districts, DS divisions) carry coarse age buckets with sex breakdown on the total only — the published census tables have no sex-by-age cross-tabulation, so bucket f/m are 0; 2023 projection rows (provinces) carry the full 5-year buckets with real f/m splits; GN divisions carry a WorldPop-modeled total only.",
       "An unrecognized ?include= value (anything but population or stats) is a 400 validation_error.",
     ],
     errors: [
