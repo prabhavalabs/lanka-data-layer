@@ -171,6 +171,13 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           </NavLink>
         </div>
 
+        <div className="flex flex-col gap-px">
+          <div className="px-2.5 pb-[5px] text-[10.5px] font-semibold uppercase tracking-[0.09em] text-ink3">Libraries</div>
+          <NavLink to="/docs/packages" onClick={onClose} className={({ isActive }) => cn(navItemClass, isActive ? "bg-brand-soft text-ink" : "text-ink2")}>
+            npm packages
+          </NavLink>
+        </div>
+
         {/* Internal SPA route styled as an "exit" per the design (↗ affordance for leaving the docs chrome for the flagship map experience) — kept a real <Link>-style nav so it's a client-side transition, not a full reload. */}
         <NavLink
           to="/map"
