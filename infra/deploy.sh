@@ -21,6 +21,7 @@ docker run --rm \
   node:22-slim \
   sh -c "corepack enable && corepack prepare pnpm@10.0.0 --activate \
     && pnpm install --frozen-lockfile \
+    && pnpm --filter \"./packages/*\" run build \
     && pnpm --filter @lanka-data-layer/web run build"
 
 echo "==> Publishing static bundle"

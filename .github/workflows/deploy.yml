@@ -22,6 +22,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Run test suites
         run: pnpm -r test
+      - name: Build npm packages
+        run: pnpm --filter "./packages/*" run build
       - name: Build web bundle
         run: pnpm --filter @lanka-data-layer/web run build
 
