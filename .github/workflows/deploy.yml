@@ -23,7 +23,7 @@ jobs:
       - name: Run test suites
         run: pnpm -r test
       - name: Build npm packages
-        run: pnpm --filter "./packages/*" run build
+        run: pnpm --filter ./packages/admin --filter ./packages/postal --filter ./packages/electoral --filter ./packages/census run build
       - name: Build web bundle
         run: pnpm --filter @lanka-data-layer/web run build
 

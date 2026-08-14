@@ -34,9 +34,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Build all packages
-        run: pnpm --filter "./packages/*" run build
+        run: pnpm --filter ./packages/admin --filter ./packages/postal --filter ./packages/electoral --filter ./packages/census run build
       - name: Test all packages
-        run: pnpm --filter "./packages/*" run test
+        run: pnpm --filter ./packages/admin --filter ./packages/postal --filter ./packages/electoral --filter ./packages/census run test
       - name: Dry-run pack
         run: |
           for dir in packages/*/; do
@@ -60,7 +60,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: pnpm install --frozen-lockfile
       - name: Build
-        run: pnpm --filter "./packages/*" run build
+        run: pnpm --filter ./packages/admin --filter ./packages/postal --filter ./packages/electoral --filter ./packages/census run build
       - name: Publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
