@@ -443,7 +443,7 @@ const placesLayer: MaplibreLayerDefinition = {
           12,
           ["match", ["get", "kind"], "city", 14, "town", 12, 10],
         ] as unknown as LayerSpecification["layout"],
-        "text-font": ["Open Sans Regular"],
+        "text-font": ["Noto Sans Regular"],
         "text-anchor": "top",
         "text-offset": [0, 0.6],
         "text-optional": true,

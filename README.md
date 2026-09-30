@@ -95,6 +95,8 @@ pnpm web run dev      # Vite — http://localhost:5173
 
 The dev server proxies `/v1` to `http://localhost:8600`, so it only needs the API running alongside it — no separate config. Interactive API docs live at `/`, the endpoint reference at `/docs/:slug` (e.g. `/docs/reverse`), and the map explorer at `/map`.
 
+The explorer and postal-code demo use [OpenFreeMap](https://openfreemap.org/)'s public OpenStreetMap vector tiles, with light/dark styles defined in the app. No map API key, registration, or paid plan is required. The basemap needs internet access; the public service has no uptime SLA and can also be self-hosted. OpenMapTiles and OpenStreetMap attribution stays visible in the map control.
+
 ## API at a glance
 
 ```

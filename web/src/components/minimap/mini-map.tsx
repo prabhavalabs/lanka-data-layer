@@ -148,7 +148,7 @@ export interface MiniMapProps {
 /**
  * The signature small MapLibre view used on the docs home hero and every
  * endpoint's Try panel — a flat cartographic basemap (land/coast/district
- * lines from the real admin.pmtiles, NOT the CARTO raster used by the
+ * lines from the real admin.pmtiles, separate from the OpenFreeMap basemap on the
  * flagship map), non-interactive, redrawn per MiniMapScene. Marker pulse and
  * the boundary's marching-ants dash both no-op under
  * prefers-reduced-motion.

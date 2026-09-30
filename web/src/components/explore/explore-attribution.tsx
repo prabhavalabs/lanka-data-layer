@@ -5,7 +5,7 @@ const ATTRIBUTION_TEXT =
 
 /**
  * Centered bottom attribution for the data layers themselves (admin
- * boundaries, places, population). The basemap's own required CARTO/OSM
+ * boundaries, places, population). The basemap's own required OpenMapTiles/OSM
  * tile attribution stays on MapLibre's native (compact) AttributionControl
  * — see map-view.tsx — rather than being folded in here, so removing this
  * text can never drop a legally-required notice.
