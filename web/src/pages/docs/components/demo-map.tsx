@@ -4,7 +4,7 @@ import type { GeoJSONSource } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { useTheme } from "@/components/theme-provider";
-import { applyBasemapMode, basemapStyle, resolveBasemapMode, type BasemapMode } from "@/components/map/basemap";
+import { applyBasemapMode, BASEMAP_LAYER_PREFIX, basemapStyle, resolveBasemapMode, type BasemapMode } from "@/components/map/basemap";
 import { buildHighlightMarkerElement } from "@/components/map/highlight-marker";
 import "@/components/map/pmtiles-protocol";
 import { featureBounds } from "@/lib/geojson-bounds";
@@ -37,7 +37,7 @@ export interface DemoMapPoint {
  * boundary glow (styled the same way MapView's highlight layers are).
  */
 export function DemoMap({ point, geometry }: { point: DemoMapPoint | null; geometry: GeoJSON.Feature | null }) {
-  const { theme } = useTheme();
+  const { resolvedTheme: theme } = useTheme();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<MaplibreMap | null>(null);
   const markerRef = React.useRef<Marker | null>(null);
@@ -122,8 +122,9 @@ export function DemoMap({ point, geometry }: { point: DemoMapPoint | null; geome
       if (map.getLayer(BOUNDARY_GLOW_LAYER_ID)) map.setPaintProperty(BOUNDARY_GLOW_LAYER_ID, "line-color", accent);
       if (map.getLayer(BOUNDARY_LINE_LAYER_ID)) map.setPaintProperty(BOUNDARY_LINE_LAYER_ID, "line-color", accent);
     };
-    if (map.isStyleLoaded()) apply();
+    if (map.getLayer(`${BASEMAP_LAYER_PREFIX}background`)) apply();
     else map.once("style.load", apply);
+    return () => { map.off("style.load", apply); };
   }, [theme, mapReady]);
 
   // Fly to + marker for the selected postal point.

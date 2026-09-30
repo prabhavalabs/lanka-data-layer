@@ -11,7 +11,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { MapboxOverlay } from "@deck.gl/mapbox";
 
 import { useTheme } from "@/components/theme-provider";
-import { applyBasemapMode, basemapStyle, resolveBasemapMode, type BasemapMode } from "@/components/map/basemap";
+import { applyBasemapMode, BASEMAP_LAYER_PREFIX, basemapStyle, resolveBasemapMode, type BasemapMode } from "@/components/map/basemap";
 import {
   ADMIN_HOVER_LAYER_IDS,
   ADMIN_SOURCE_ID,
@@ -118,7 +118,7 @@ interface HoverRef {
  * whatever's highlighted).
  */
 export function MapView() {
-  const { theme } = useTheme();
+  const { resolvedTheme: theme } = useTheme();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const mapRef = React.useRef<MaplibreMap | null>(null);
   const overlayRef = React.useRef<MapboxOverlay | null>(null);
@@ -223,7 +223,7 @@ export function MapView() {
 
       // Sea mask: world polygon with the country as holes, painted the
       // design's flat sea color so neighboring coastlines and ocean labels
-      // from the raster basemap never show.
+      // from the basemap never show.
       fetch("/country-mask.json")
         .then((r) => (r.ok ? r.json() : null))
         .then((mask: GeoJSON.Feature | null) => {
@@ -231,9 +231,9 @@ export function MapView() {
           const addMask = () => {
             if (nextMap.getSource(MASK_SOURCE_ID)) return;
             nextMap.addSource(MASK_SOURCE_ID, { type: "geojson", data: mask });
-            // Insert below every vector layer but above the raster basemap:
-            // the first non-raster layer is the right anchor.
-            const anchor = nextMap.getStyle().layers?.find((l) => l.type !== "raster")?.id;
+            // Above the entire basemap (including its labels), below our
+            // data overlays. Vector basemap layers share a reserved prefix.
+            const anchor = nextMap.getStyle().layers?.find((l) => !l.id.startsWith(BASEMAP_LAYER_PREFIX))?.id;
             nextMap.addLayer(
               {
                 id: MASK_LAYER_ID,
@@ -500,7 +500,7 @@ export function MapView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Swap the basemap tiles + every registry layer's themed paint props when
+  // Recolor the basemap + every registry layer's themed paint props when
   // the resolved theme changes.
   React.useEffect(() => {
     const map = mapRef.current;
@@ -512,8 +512,9 @@ export function MapView() {
       applyHighlightTheme(map, mode);
       if (map.getLayer(MASK_LAYER_ID)) map.setPaintProperty(MASK_LAYER_ID, "fill-color", MASK_SEA[mode]);
     };
-    if (map.isStyleLoaded()) apply();
+    if (map.getLayer(`${BASEMAP_LAYER_PREFIX}background`)) apply();
     else map.once("style.load", apply);
+    return () => { map.off("style.load", apply); };
   }, [theme, mapReady]);
 
   // Show/hide registry layers as the layer store changes.
