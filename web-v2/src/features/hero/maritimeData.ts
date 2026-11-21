@@ -65,18 +65,20 @@ export const LANES: LaneDef[] = [
 
 export type VesselKind = 'container' | 'tanker' | 'fishing'
 /** Scene units per second. The hero runs the sea at roughly ×400: a 14-knot ship covers ~0.026 units a second. */
-export const SPEED: Record<VesselKind, number> = { container: 0.027, tanker: 0.02, fishing: 0.011 }
+export const SPEED: Record<VesselKind, number> = { container: 0.026, tanker: 0.022, fishing: 0.011 }
+/**
+ * A sparse fleet: enough traffic to say "this is the busiest lane in the Indian Ocean",
+ * few enough hulls that each one can be followed. Density falls with rank.
+ */
 export const FLEET: { lane: string; kind: VesselKind; count: number; bothWays?: boolean }[] = [
-  { lane: 'trunk-east', kind: 'container', count: 8 },
-  { lane: 'trunk-east', kind: 'tanker', count: 6 },
-  { lane: 'trunk-west', kind: 'container', count: 8 },
-  { lane: 'trunk-west', kind: 'tanker', count: 6 },
-  { lane: 'colombo-west', kind: 'container', count: 3, bothWays: true },
-  { lane: 'colombo-south', kind: 'container', count: 3, bothWays: true },
-  { lane: 'colombo-south', kind: 'tanker', count: 1, bothWays: true },
-  { lane: 'hambantota-west', kind: 'tanker', count: 2, bothWays: true },
+  { lane: 'trunk-east', kind: 'container', count: 6 },
+  { lane: 'trunk-east', kind: 'tanker', count: 4 },
+  { lane: 'trunk-west', kind: 'container', count: 6 },
+  { lane: 'trunk-west', kind: 'tanker', count: 4 },
+  { lane: 'colombo-west', kind: 'container', count: 2, bothWays: true },
+  { lane: 'colombo-south', kind: 'container', count: 2, bothWays: true },
+  { lane: 'hambantota-west', kind: 'tanker', count: 1, bothWays: true },
   { lane: 'hambantota-east', kind: 'container', count: 1, bothWays: true },
   { lane: 'coastal', kind: 'container', count: 4, bothWays: true },
-  { lane: 'coastal', kind: 'tanker', count: 2, bothWays: true },
-  { lane: 'coastal', kind: 'fishing', count: 16, bothWays: true },
+  { lane: 'coastal', kind: 'fishing', count: 9, bothWays: true },
 ]

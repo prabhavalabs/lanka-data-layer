@@ -44,11 +44,11 @@ class Boundary extends Component<{ onError: () => void; children: ReactNode }, {
   }
 }
 
-/** What sits behind the scene before it paints: a brand-tinted sky and a faint survey grid. */
+/** What sits behind the scene before it paints: the scene's own horizon haze and a faint survey grid, so the hand-over is a fade and not a change of colour. */
 function Backdrop({ dim }: { dim: boolean }) {
   return (
     <div className={cn('absolute inset-0 overflow-hidden transition-opacity duration-700', dim ? 'opacity-0' : 'opacity-100')} aria-hidden>
-      <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_70%_60%,color-mix(in_oklab,var(--brand)_16%,var(--bg))_0%,var(--bg)_62%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_70%_58%,color-mix(in_oklab,var(--hero-haze)_78%,var(--bg))_0%,var(--bg)_64%)]" />
       <div className="hairline-grid absolute inset-0 [mask-image:radial-gradient(70%_60%_at_68%_55%,black,transparent)]" />
     </div>
   )
@@ -69,16 +69,16 @@ function Poster() {
     <svg viewBox="0 0 323 520" className="absolute top-[52%] left-1/2 h-[74%] -translate-x-1/2 -translate-y-1/2 [animation:fade-up_700ms_var(--ease-out)_both] lg:left-[69%]" aria-hidden>
       <defs>
         <linearGradient id="poster-land" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7fbf5c" />
-          <stop offset="0.55" stopColor="#2f7a45" />
-          <stop offset="1" stopColor="#1d5236" />
+          <stop offset="0" stopColor="var(--hero-land-hi)" />
+          <stop offset="0.42" stopColor="var(--hero-land)" />
+          <stop offset="1" stopColor="var(--hero-land-lo)" />
         </linearGradient>
         <filter id="poster-glow" x="-30%" y="-30%" width="160%" height="160%">
           <feGaussianBlur stdDeviation="9" />
         </filter>
       </defs>
-      <path d={d} fill="#2b9aa0" opacity="0.4" filter="url(#poster-glow)" />
-      <path d={d} fill="url(#poster-land)" stroke="#e6d3a3" strokeWidth="1.2" strokeLinejoin="round" />
+      <path d={d} fill="var(--hero-shelf)" opacity="0.55" filter="url(#poster-glow)" />
+      <path d={d} fill="url(#poster-land)" stroke="var(--hero-rim)" strokeWidth="1.1" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -164,7 +164,7 @@ const EXAMPLES = ['Colombo', 'LK2127', '10250', '6.93, 79.84']
 
 export function Hero() {
   const [theme, setTheme] = useTheme()
-  const mood = theme === 'light' ? 'day' : 'dusk'
+  const mood = theme === 'light' ? 'day' : 'night'
   const reduced = useReducedMotion()
   const coarse = useMediaQuery('(pointer: coarse)')
   const narrow = useMediaQuery('(max-width: 767px)')
@@ -292,9 +292,10 @@ export function Hero() {
         {!failed && !loaderGone && <HeroLoader stage={REVIEW === 'loading' ? 2 : stage} done={ready} hold={REVIEW === 'loading' ? 64 : undefined} />}
       </div>
 
-      {/* legibility: a soft wash behind the headline, and a fade into the page below */}
+      {/* legibility: the page colour under the nav, a soft wash behind the headline, and a fade into the page below */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 hidden h-[26%] bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--bg)_72%,transparent)_0%,transparent_100%)] lg:block" />
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--bg)_82%,transparent)_0%,transparent_46%)] lg:bg-[linear-gradient(100deg,color-mix(in_oklab,var(--bg)_78%,transparent)_0%,color-mix(in_oklab,var(--bg)_38%,transparent)_30%,transparent_56%)]" />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-[var(--bg)]" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-[var(--bg)] sm:h-40" />
 
       {/* copy */}
       <div className="pointer-events-none relative z-10 mx-auto flex h-full max-w-[1320px] flex-col px-5 pt-[calc(var(--nav-h)+22px)] sm:px-8 lg:justify-center lg:pt-0 lg:pb-16">
@@ -386,10 +387,10 @@ export function Hero() {
             type="button"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="pressable flex h-8 shrink-0 items-center gap-1.5 rounded-[9px] px-2.5 text-[12.5px] font-medium text-ink2 hover:bg-bg4/60 hover:text-ink"
-            aria-label={`Switch to ${mood === 'dusk' ? 'day' : 'dusk'}`}
+            aria-label={`Switch to ${mood === 'night' ? 'day' : 'night'}`}
           >
-            {mood === 'dusk' ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
-            <span className="max-sm:sr-only">{mood === 'dusk' ? 'Dusk' : 'Day'}</span>
+            {mood === 'night' ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
+            <span className="max-sm:sr-only">{mood === 'night' ? 'Night' : 'Day'}</span>
           </button>
         </div>
       </div>

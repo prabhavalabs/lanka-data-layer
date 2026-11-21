@@ -5,54 +5,55 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject, type React
 import * as THREE from 'three'
 import type { Landmark } from '@/api/types'
 import { geo, type Place, type Polyline } from '@/lib/geo'
+import { hazeRate } from './haze'
 import { Landmarks } from './Landmarks'
 import { Maritime } from './Maritime'
 import type { Port } from './maritimeData'
-import { buildTerrain, K, ORIGIN, toXZ, type Terrain } from './terrain'
+import { SCENE_THEMES, SceneThemeContext, type SceneTheme } from './sceneTheme'
+import { BEVEL, buildTerrain, K, ORIGIN, PLINTH, SUMMIT, toXZ, type Terrain } from './terrain'
 
-export type Mood = 'dusk' | 'day'
+export type Mood = 'night' | 'day'
 export type HeroLayers = { landmarks: boolean; maritime: boolean; population: boolean; rail: boolean }
 
-type Palette = {
-  zenith: string; horizon: string; glow: string; sunColor: string; sunIntensity: number; sunDir: [number, number, number]
-  hemiSky: string; hemiGround: string; hemiIntensity: number
-  deep: string; mid: string; shallow: string; foam: string; skyReflect: string
-  cloud: string; cloudOpacity: number; exposure: number; grid: number
-}
-const PALETTES: Record<Mood, Palette> = {
-  dusk: {
-    zenith: '#0b0e12', horizon: '#2e2744', glow: '#ec7f5e', sunColor: '#ffb07a', sunIntensity: 3.2, sunDir: [-0.8, 0.4, 0.12],
-    hemiSky: '#6a78b8', hemiGround: '#3a2a36', hemiIntensity: 1.25,
-    deep: '#060d18', mid: '#0c2a44', shallow: '#2b9aa0', foam: '#ffe6d6', skyReflect: '#6d5a86',
-    cloud: '#f2a58c', cloudOpacity: 0.34, exposure: 1.05, grid: 0.028,
-  },
-  day: {
-    zenith: '#a9d2f2', horizon: '#eef6fb', glow: '#fff6e0', sunColor: '#fff3df', sunIntensity: 3.0, sunDir: [-0.42, 0.78, 0.38],
-    hemiSky: '#cfe6ff', hemiGround: '#6d7a5a', hemiIntensity: 1.25,
-    deep: '#0d5f93', mid: '#1a86b8', shallow: '#5fd6cf', foam: '#ffffff', skyReflect: '#dff0fb',
-    cloud: '#ffffff', cloudOpacity: 0.7, exposure: 1.0, grid: 0.07,
-  },
-}
+const N = SCENE_THEMES.dark, D = SCENE_THEMES.light
 
-const col = (hex: string) => new THREE.Color(hex)
-const mixCol = (out: THREE.Color, a: string, b: string, t: number) => out.set(a).lerp(_c.set(b), t)
+// Every theme colour is parsed once. The frame loop only ever blends two parsed colours.
+const parsed = new Map<string, THREE.Color>()
+const C = (hex: string) => {
+  let c = parsed.get(hex)
+  if (!c) parsed.set(hex, (c = new THREE.Color(hex)))
+  return c
+}
+/** out = night → day at t */
+const tween = (out: THREE.Color, night: string, day: string, t: number) => out.lerpColors(C(night), C(day), t)
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+const tweenDir = (out: THREE.Vector3, night: readonly number[], day: readonly number[], t: number) =>
+  out.set(lerp(night[0], day[0], t), lerp(night[1], day[1], t), lerp(night[2], day[2], t)).normalize()
 const _c = new THREE.Color()
 const _v = new THREE.Vector3()
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-const sunDirAt = (t: number, out: THREE.Vector3) => out.set(lerp(PALETTES.dusk.sunDir[0], PALETTES.day.sunDir[0], t), lerp(PALETTES.dusk.sunDir[1], PALETTES.day.sunDir[1], t), lerp(PALETTES.dusk.sunDir[2], PALETTES.day.sunDir[2], t)).normalize()
+const black = () => new THREE.Color(0, 0, 0)
 
 type MixRef = MutableRefObject<number>
+
+/** A whisper of noise after the colour transform: dark gradients this smooth band on 8-bit panels without it. */
+const DITHER = /* glsl */ `
+  gl_FragColor.rgb += (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;`
 
 /* ---------------- sky ---------------- */
 function Sky({ mix }: { mix: MixRef }) {
   const mat = useRef<THREE.ShaderMaterial>(null)
-  const uniforms = useMemo(() => ({ uZenith: { value: col('#000') }, uHorizon: { value: col('#000') }, uGlow: { value: col('#000') }, uSunDir: { value: new THREE.Vector3() } }), [])
+  // Initial values only. The reconciler copies each uniform into the material, so the frame
+  // loop must write through the material: a number set on this object would never arrive.
+  const uniforms = useMemo(() => ({ uZenith: { value: black() }, uHorizon: { value: black() }, uGlow: { value: black() }, uGlowA: { value: 0 }, uGlowDir: { value: new THREE.Vector3(0, 0, -1) } }), [])
   useFrame(() => {
+    const u = mat.current?.uniforms
+    if (!u) return
     const t = mix.current
-    mixCol(uniforms.uZenith.value, PALETTES.dusk.zenith, PALETTES.day.zenith, t)
-    mixCol(uniforms.uHorizon.value, PALETTES.dusk.horizon, PALETTES.day.horizon, t)
-    mixCol(uniforms.uGlow.value, PALETTES.dusk.glow, PALETTES.day.glow, t)
-    sunDirAt(t, uniforms.uSunDir.value)
+    tween(u.uZenith.value, N.sky.zenith, D.sky.zenith, t)
+    tween(u.uHorizon.value, N.sky.horizon, D.sky.horizon, t)
+    tween(u.uGlow.value, N.sky.glow, D.sky.glow, t)
+    u.uGlowA.value = lerp(N.sky.glowAmount, D.sky.glowAmount, t)
+    tweenDir(u.uGlowDir.value, N.sky.glowDir, D.sky.glowDir, t)
   })
   return (
     <mesh renderOrder={-10} frustumCulled={false}>
@@ -61,7 +62,9 @@ function Sky({ mix }: { mix: MixRef }) {
         ref={mat}
         side={THREE.BackSide}
         depthWrite={false}
+        depthTest={false}
         fog={false}
+        toneMapped={false}
         uniforms={uniforms}
         vertexShader={/* glsl */ `
           varying vec3 vDir;
@@ -70,23 +73,21 @@ function Sky({ mix }: { mix: MixRef }) {
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }`}
         fragmentShader={/* glsl */ `
-          uniform vec3 uZenith, uHorizon, uGlow, uSunDir;
+          uniform vec3 uZenith, uHorizon, uGlow, uGlowDir;
+          uniform float uGlowA;
           varying vec3 vDir;
           void main() {
             vec3 d = normalize(vDir);
             float h = clamp(d.y, 0.0, 1.0);
-            vec3 c = mix(uHorizon, uZenith, pow(smoothstep(0.0, 0.42, h), 0.62));
-            // warm band hugging the horizon, strongest toward the sun's azimuth
+            // leaves the horizon gently, so the sea meets the sky without a drawn line
+            vec3 c = mix(uHorizon, uZenith, smoothstep(0.0, 0.4, h));
+            // one soft bloom on the horizon, behind the island
             vec2 az = normalize(d.xz + 1e-5);
-            vec2 sunAz = normalize(uSunDir.xz);
-            float toward = pow(max(dot(az, sunAz), 0.0), 2.2);
-            float band = exp(-h * 7.0);
-            c = mix(c, uGlow, band * (0.28 + 0.6 * toward));
-            float disc = pow(max(dot(d, normalize(uSunDir)), 0.0), 220.0);
-            c += uGlow * disc * 1.4;
+            float toward = pow(max(dot(az, normalize(uGlowDir.xz)), 0.0), 2.0);
+            c = mix(c, uGlow, exp(-h * 8.0) * uGlowA * (0.35 + 0.65 * toward));
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
             #include <colorspace_fragment>
+            ${DITHER}
           }`}
       />
     </mesh>
@@ -95,6 +96,7 @@ function Sky({ mix }: { mix: MixRef }) {
 
 /* ---------------- ocean ---------------- */
 function Ocean({ terrain, mix, animate }: { terrain: Terrain; mix: MixRef; animate: boolean }) {
+  const mat = useRef<THREE.ShaderMaterial>(null)
   const uniforms = useMemo(() => {
     const b = terrain.meta.bounds
     return {
@@ -104,31 +106,42 @@ function Ocean({ terrain, mix, animate }: { terrain: Terrain; mix: MixRef; anima
       uRange: { value: terrain.meta.range },
       uK: { value: K },
       uOrigin: { value: new THREE.Vector2(ORIGIN.lon, ORIGIN.lat) },
-      uDeep: { value: col('#000') }, uMid: { value: col('#000') }, uShallow: { value: col('#000') }, uFoam: { value: col('#fff') },
-      uSky: { value: col('#000') }, uHorizon: { value: col('#000') }, uGlow: { value: col('#000') }, uSunColor: { value: col('#fff') },
-      uSunDir: { value: new THREE.Vector3(0, 1, 0) },
-      uGrid: { value: 0.05 },
+      uDeep: { value: black() }, uMid: { value: black() }, uShelf: { value: black() }, uLine: { value: black() },
+      uReflect: { value: black() }, uHorizon: { value: black() }, uGlow: { value: black() }, uGlint: { value: black() },
+      uKeyDir: { value: new THREE.Vector3(0, 1, 0) }, uGlowDir: { value: new THREE.Vector3(0, 0, -1) },
+      uGlowA: { value: 0 }, uGlintA: { value: 0 }, uGrid: { value: 0 }, uHaze: { value: 0.05 },
     }
   }, [terrain])
-  useFrame(({ clock }) => {
+  useFrame(({ clock, camera }) => {
+    const u = mat.current?.uniforms
+    if (!u) return
     const t = mix.current
-    if (animate) uniforms.uTime.value = clock.elapsedTime
-    mixCol(uniforms.uDeep.value, PALETTES.dusk.deep, PALETTES.day.deep, t)
-    mixCol(uniforms.uMid.value, PALETTES.dusk.mid, PALETTES.day.mid, t)
-    mixCol(uniforms.uShallow.value, PALETTES.dusk.shallow, PALETTES.day.shallow, t)
-    mixCol(uniforms.uFoam.value, PALETTES.dusk.foam, PALETTES.day.foam, t)
-    mixCol(uniforms.uSky.value, PALETTES.dusk.skyReflect, PALETTES.day.skyReflect, t)
-    mixCol(uniforms.uHorizon.value, PALETTES.dusk.horizon, PALETTES.day.horizon, t)
-    mixCol(uniforms.uSunColor.value, PALETTES.dusk.glow, PALETTES.day.sunColor, t)
-    mixCol(uniforms.uGlow.value, PALETTES.dusk.glow, PALETTES.day.glow, t)
-    sunDirAt(t, uniforms.uSunDir.value)
-    uniforms.uGrid.value = lerp(PALETTES.dusk.grid, PALETTES.day.grid, t)
+    if (animate) u.uTime.value = clock.elapsedTime
+    u.uHaze.value = hazeRate(camera)
+    tween(u.uDeep.value, N.ocean.deep, D.ocean.deep, t)
+    tween(u.uMid.value, N.ocean.mid, D.ocean.mid, t)
+    tween(u.uShelf.value, N.ocean.shelf, D.ocean.shelf, t)
+    tween(u.uLine.value, N.ocean.shoreline, D.ocean.shoreline, t)
+    tween(u.uReflect.value, N.ocean.reflect, D.ocean.reflect, t)
+    tween(u.uGlint.value, N.ocean.glint, D.ocean.glint, t)
+    tween(u.uHorizon.value, N.sky.horizon, D.sky.horizon, t)
+    tween(u.uGlow.value, N.sky.glow, D.sky.glow, t)
+    tweenDir(u.uKeyDir.value, N.light.keyDir, D.light.keyDir, t)
+    tweenDir(u.uGlowDir.value, N.sky.glowDir, D.sky.glowDir, t)
+    u.uGlowA.value = lerp(N.sky.glowAmount, D.sky.glowAmount, t)
+    u.uGlintA.value = lerp(N.ocean.glintAmount, D.ocean.glintAmount, t)
+    u.uGrid.value = lerp(N.ocean.grid, D.ocean.grid, t)
   })
+  // Drawn first and without writing depth: everything else in the scene sits on top of the sea,
+  // so the land needs no skirt under the water and nothing on the surface can z-fight with it.
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} frustumCulled={false}>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} frustumCulled={false} renderOrder={-5}>
       <planeGeometry args={[140, 140, 1, 1]} />
       <shaderMaterial
+        ref={mat}
         uniforms={uniforms}
+        depthWrite={false}
+        toneMapped={false}
         vertexShader={/* glsl */ `
           varying vec3 vWorld;
           void main() {
@@ -138,104 +151,71 @@ function Ocean({ terrain, mix, animate }: { terrain: Terrain; mix: MixRef; anima
           }`}
         fragmentShader={/* glsl */ `
           precision highp float;
-          uniform float uTime, uRange, uK, uGrid;
+          uniform float uTime, uRange, uK, uGrid, uGlowA, uGlintA, uHaze;
           uniform sampler2D uSdf;
           uniform vec4 uBounds;
           uniform vec2 uOrigin;
-          uniform vec3 uDeep, uMid, uShallow, uFoam, uSky, uHorizon, uGlow, uSunColor, uSunDir;
+          uniform vec3 uDeep, uMid, uShelf, uLine, uReflect, uHorizon, uGlow, uGlint, uKeyDir, uGlowDir;
           varying vec3 vWorld;
 
-          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-          float noise(vec2 p) {
-            vec2 i = floor(p), f = fract(p);
-            vec2 u = f * f * (3.0 - 2.0 * f);
-            return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
-          }
-          float swell(vec2 p, float t) {
-            float n = noise(p * 2.6 + vec2(t * 0.11, t * 0.07)) * 0.6;
-            n += noise(p * 6.3 - vec2(t * 0.09, t * 0.14)) * 0.28;
-            n += noise(p * 15.0 + vec2(t * 0.2, -t * 0.12)) * 0.12;
-            return n;
-          }
           // signed distance to the coast in degrees, positive at sea
           float seaDist(vec2 ll) {
             vec2 uv = vec2((ll.x - uBounds.x) / (uBounds.y - uBounds.x), (uBounds.w - ll.y) / (uBounds.w - uBounds.z));
-            float v = texture2D(uSdf, clamp(uv, 0.0, 1.0)).r;
-            float s = (v - 0.5) * 2.0;
-            float d = -sign(s) * s * s * uRange;
+            float s = (texture2D(uSdf, clamp(uv, 0.0, 1.0)).r - 0.5) * 2.0;
             vec2 o = max(vec2(0.0), max(-uv, uv - 1.0));
-            return d + length(o) * 4.0;
+            return -sign(s) * s * s * uRange + length(o) * 4.0;
           }
-          float caustic(vec2 p, float t) {
-            vec2 q = p;
-            float c = 0.0;
-            for (int i = 0; i < 3; i++) {
-              q += vec2(sin(q.y * 1.7 + t * 0.6 + float(i)), cos(q.x * 1.5 - t * 0.5 + float(i) * 1.7)) * 0.42;
-              c += 1.0 / (abs(sin(q.x + q.y)) * 9.0 + 0.6);
-            }
-            return clamp(c * 0.22 - 0.16, 0.0, 1.0);
+          // A few long swells crossing at shallow angles. The slope is analytic: no noise to
+          // shimmer, nothing to alias, and a fraction of the cost of sampling a height field.
+          vec2 swell(vec2 p, float t) {
+            vec2 g = vec2(0.0);
+            vec2 d;
+            float ph;
+            d = vec2(0.80, -0.60); ph = dot(p, d) * 9.5 + t * 0.50 + sin(dot(p, d.yx) * 3.1 + t * 0.07) * 0.6; g += d * cos(ph) * 0.011;
+            d = vec2(0.26, -0.966); ph = dot(p, d) * 15.1 - t * 0.66 + sin(dot(p, d.yx) * 4.3 - t * 0.05) * 0.6 + 1.7; g += d * cos(ph) * 0.011;
+            d = vec2(0.966, -0.26); ph = dot(p, d) * 24.7 + t * 0.92 + sin(dot(p, d.yx) * 6.1) * 0.7 + 4.1; g += d * cos(ph) * 0.011;
+            d = vec2(-0.5, -0.866); ph = dot(p, d) * 39.0 + t * 1.2 + 2.3; g += d * cos(ph) * 0.007;
+            return g;
           }
 
           void main() {
             vec2 p = vWorld.xz;
             vec2 ll = vec2(p.x / uK + uOrigin.x, -p.y + uOrigin.y);
             float d = seaDist(ll);
-            float t = uTime;
+            vec3 toCam = cameraPosition - vWorld;
+            float dist = length(toCam);
+            vec3 v = toCam / dist;
 
-            // depth: turquoise shelf → mid → deep
-            float shelf = smoothstep(0.0, 0.11, d);
-            float deepness = smoothstep(0.06, 0.48, d);
-            vec3 water = mix(uShallow, uMid, shelf);
-            water = mix(water, uDeep, deepness);
+            // depth: a pale shelf hugging the coast, open water, then the deep
+            vec3 water = mix(uMid, uDeep, smoothstep(0.1, 0.85, d));
+            float shelf = 1.0 - smoothstep(0.0, 0.13, d);
+            water = mix(water, uShelf, shelf * shelf * 0.9);
 
-            // surface normal from a small swell field
-            float e = 0.012;
-            float h0 = swell(p, t);
-            float hx = swell(p + vec2(e, 0.0), t);
-            float hz = swell(p + vec2(0.0, e), t);
-            float amp = mix(0.035, 0.11, shelf);
-            vec3 n = normalize(vec3(-(hx - h0) / e * amp, 1.0, -(hz - h0) / e * amp));
-            vec3 v = normalize(cameraPosition - vWorld);
+            // the far water is flattened so it reads as a calm sheet and cannot moiré
+            vec2 g = swell(p, uTime) * exp(-dist * uHaze * 1.7);
+            vec3 n = normalize(vec3(-g.x, 1.0, -g.y));
+            float fres = pow(1.0 - max(dot(n, v), 0.0), 3.0);
+            vec3 c = mix(water, uReflect, fres * 0.5);
+            // the key light on the water: one broad, soft path, no glitter
+            c += uGlint * pow(max(dot(reflect(-v, n), normalize(uKeyDir)), 0.0), 16.0) * uGlintA;
 
-            float fres = pow(1.0 - max(dot(n, v), 0.0), 3.2);
-            vec3 c = mix(water, uSky, fres * 0.62);
+            // survey graticule every half degree. It thins out as its cells get small on screen,
+            // so it is a quiet texture near the island and never a mesh in the distance or on a phone.
+            vec2 gw = max(fwidth(ll * 2.0), vec2(1e-6));
+            vec2 gq = abs(fract(ll * 2.0 - 0.5) - 0.5) / gw;
+            float grid = 1.0 - min(min(gq.x, gq.y), 1.0);
+            float roomy = smoothstep(12.0, 42.0, 1.0 / max(gw.x, gw.y));
+            c = mix(c, uLine, grid * uGrid * roomy * smoothstep(0.06, 0.16, d));
 
-            // sun glitter
-            vec3 hv = normalize(normalize(uSunDir) + v);
-            float spec = pow(max(dot(n, hv), 0.0), 140.0);
-            c += uSunColor * spec * 0.9;
-            // long soft reflection path toward the sun
-            float path = pow(max(dot(reflect(-v, n), normalize(uSunDir)), 0.0), 9.0);
-            c += uSunColor * path * 0.2;
-
-            // caustic light in the shallows
-            float sh = (1.0 - smoothstep(0.0, 0.09, d));
-            c += uShallow * caustic(p * 26.0, t) * sh * 0.55;
-
-            // foam: lines that roll toward shore, plus a soft rim at the waterline
-            float br = noise(p * 11.0 + t * 0.05);
-            float roll = sin(d * 250.0 + t * 1.15 + br * 5.0);
-            float lines = smoothstep(0.72, 0.98, roll) * (1.0 - smoothstep(0.004, 0.05, d)) * smoothstep(0.25, 0.7, br + 0.25);
-            float rim = 1.0 - smoothstep(0.0, 0.0065 + 0.003 * sin(t * 0.8 + br * 6.0), d);
-            c = mix(c, uFoam, clamp(lines * 0.5 + rim * 0.9, 0.0, 1.0));
-
-            // survey graticule every half degree
-            vec2 g = abs(fract(ll * 2.0 - 0.5) - 0.5) / fwidth(ll * 2.0);
-            float grid = 1.0 - min(min(g.x, g.y), 1.0);
-            c = mix(c, uFoam, grid * uGrid * smoothstep(0.02, 0.08, d));
-
-            // distance haze into the horizon
-            float dist = length(cameraPosition - vWorld);
-            float haze = 1.0 - exp(-pow(dist * 0.05, 2.2));
-            // same horizon colour the sky dome paints, so the sea dissolves into it
+            // distance haze: the sea dissolves into exactly the colour the sky paints at the horizon
+            float haze = 1.0 - exp(-pow(dist * uHaze, 2.2));
             vec2 az = normalize(vWorld.xz - cameraPosition.xz);
-            float toward = pow(max(dot(az, normalize(uSunDir.xz)), 0.0), 2.2);
-            vec3 hzc = mix(uHorizon, uGlow, 0.28 + 0.6 * toward);
-            c = mix(c, hzc, clamp(haze, 0.0, 1.0));
+            float toward = pow(max(dot(az, normalize(uGlowDir.xz)), 0.0), 2.0);
+            c = mix(c, mix(uHorizon, uGlow, uGlowA * (0.35 + 0.65 * toward)), clamp(haze, 0.0, 1.0));
 
             gl_FragColor = vec4(c, 1.0);
-            #include <tonemapping_fragment>
             #include <colorspace_fragment>
+            ${DITHER}
           }`}
       />
     </mesh>
@@ -243,33 +223,82 @@ function Ocean({ terrain, mix, animate }: { terrain: Terrain; mix: MixRef; anima
 }
 
 /* ---------------- island ---------------- */
-function Island({ terrain }: { terrain: Terrain }) {
+const f = (n: number) => n.toFixed(5)
+function Island({ terrain, mix }: { terrain: Terrain; mix: MixRef }) {
+  const uniforms = useMemo(
+    () => ({
+      uLow: { value: black() }, uPlain: { value: black() }, uHill: { value: black() }, uHigh: { value: black() }, uSummit: { value: black() },
+      uRim: { value: black() }, uContour: { value: black() }, uContourA: { value: 0 },
+    }),
+    [],
+  )
   const material = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 })
-    // faint contour lines: the terrain reads as a survey sheet, not an illustration
+    // matte, like a milled relief model: colour comes from elevation alone, form from the light
+    const m = new THREE.MeshStandardMaterial({ roughness: 0.86, metalness: 0 })
     m.onBeforeCompile = (shader) => {
-      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying float vElev;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvElev = position.y;')
+      Object.assign(shader.uniforms, uniforms)
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute vec3 aShade;\nvarying float vElev;\nvarying float vSlope;\nvarying vec3 vShade;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvElev = position.y;\nvSlope = 1.0 - normal.y;\nvShade = aShade;')
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying float vElev;')
+        .replace('#include <common>', '#include <common>\nuniform vec3 uLow, uPlain, uHill, uHigh, uSummit, uRim, uContour;\nuniform float uContourA;\nvarying float vElev;\nvarying float vSlope;\nvarying vec3 vShade;')
         .replace(
           '#include <color_fragment>',
-          `#include <color_fragment>
-           float ce = vElev * 42.0;
-           float cl = abs(fract(ce - 0.5) - 0.5) / max(fwidth(ce), 1e-4);
-           float contour = (1.0 - smoothstep(0.0, 1.3, cl)) * smoothstep(0.02, 0.05, vElev);
-           diffuseColor.rgb *= 1.0 - contour * 0.2;`,
+          /* glsl */ `#include <color_fragment>
+           float e = clamp((vElev - ${f(PLINTH)}) / ${f(SUMMIT - PLINTH)}, 0.0, 1.0);
+           vec3 land = mix(uLow, uPlain, smoothstep(0.0, 0.045, e));
+           land = mix(land, uHill, smoothstep(0.035, 0.34, e));
+           land = mix(land, uHigh, smoothstep(0.3, 0.68, e));
+           land = mix(land, uSummit, smoothstep(0.64, 1.0, e));
+           // dry zone a shade paler and warmer than the wet south-west
+           land *= 1.0 + vShade.y * vec3(0.07, 0.045, -0.02);
+           // the foot of the plate's rounded edge takes its own pale tone: that band is the shoreline.
+           // Keyed on distance from the water, not on height, so an islet too small for the full rim still has a green top.
+           land = mix(uRim, land, smoothstep(0.1, 0.27, vShade.z));
+           // hairline contours, only where the ground actually slopes
+           float ce = (vElev - ${f(PLINTH)}) * ${f(1 / 0.0235)};
+           float cl = abs(fract(ce - 0.5) - 0.5) / max(fwidth(ce), 1e-5);
+           float contour = (1.0 - smoothstep(0.25, 1.1, cl)) * smoothstep(0.004, 0.022, vSlope) * smoothstep(0.012, 0.03, vElev - ${f(PLINTH)});
+           land = mix(land, uContour, contour * uContourA);
+           diffuseColor.rgb = land * vShade.x;`,
         )
     }
     return m
-  }, [])
+  }, [uniforms])
   useEffect(() => () => material.dispose(), [material])
+  useFrame(() => {
+    const t = mix.current
+    tween(uniforms.uLow.value, N.land.low, D.land.low, t)
+    tween(uniforms.uPlain.value, N.land.plain, D.land.plain, t)
+    tween(uniforms.uHill.value, N.land.hill, D.land.hill, t)
+    tween(uniforms.uHigh.value, N.land.high, D.land.high, t)
+    tween(uniforms.uSummit.value, N.land.summit, D.land.summit, t)
+    tween(uniforms.uRim.value, N.land.rim, D.land.rim, t)
+    tween(uniforms.uContour.value, N.land.contour, D.land.contour, t)
+    uniforms.uContourA.value = lerp(N.land.contourOpacity, D.land.contourOpacity, t)
+  })
   return <mesh geometry={terrain.geometry} material={material} castShadow receiveShadow />
 }
 
 /* ---------------- draped lines (rivers, rail) ---------------- */
-function Draped({ lines, terrain, color, width, opacity, lift = 0.006 }: { lines: Polyline[]; terrain: Terrain; color: string; width: number; opacity: number; lift?: number }) {
+function Draped({ lines, terrain, color, width, opacity, lift = 0.006, shore = 'stop' }: { lines: Polyline[]; terrain: Terrain; color: string; width: number; opacity: number; lift?: number; /** at the rim: 'stop' ends the line on the plain, 'keep' walks it back onto the plain */ shore?: 'stop' | 'keep' }) {
   const points = useMemo(() => {
     const out: [number, number, number][] = []
+    const edge = BEVEL * 1.05
+    // a point on the rim, moved up the distance field until it stands on the plain
+    const inland = (lon: number, lat: number): [number, number] => {
+      for (let it = 0; it < 4; it++) {
+        const d = terrain.coastDistance(lon, lat)
+        if (d >= edge) break
+        const e = 0.012
+        const gx = terrain.coastDistance(lon + e, lat) - terrain.coastDistance(lon - e, lat)
+        const gy = terrain.coastDistance(lon, lat + e) - terrain.coastDistance(lon, lat - e)
+        const l = Math.hypot(gx, gy) || 1
+        lon += (gx / l) * (edge - d + 0.002)
+        lat += (gy / l) * (edge - d + 0.002)
+      }
+      return [lon, lat]
+    }
     for (const l of lines)
       for (let i = 0; i < l.length - 1; i++) {
         const a = l[i], b = l[i + 1]
@@ -277,21 +306,25 @@ function Draped({ lines, terrain, color, width, opacity, lift = 0.006 }: { lines
         if (terrain.coastDistance(a[0], a[1]) < -0.004 || terrain.coastDistance(b[0], b[1]) < -0.004) continue
         const n = Math.max(1, Math.ceil(Math.hypot((b[0] - a[0]) * K, b[1] - a[1]) / 0.03))
         for (let s = 0; s < n; s++) {
-          const p0 = [a[0] + ((b[0] - a[0]) * s) / n, a[1] + ((b[1] - a[1]) * s) / n]
-          const p1 = [a[0] + ((b[0] - a[0]) * (s + 1)) / n, a[1] + ((b[1] - a[1]) * (s + 1)) / n]
+          let p0: [number, number] = [a[0] + ((b[0] - a[0]) * s) / n, a[1] + ((b[1] - a[1]) * s) / n]
+          let p1: [number, number] = [a[0] + ((b[0] - a[0]) * (s + 1)) / n, a[1] + ((b[1] - a[1]) * (s + 1)) / n]
+          if (shore === 'keep') {
+            p0 = inland(p0[0], p0[1])
+            p1 = inland(p1[0], p1[1])
+          } else if (terrain.coastDistance(p0[0], p0[1]) < edge || terrain.coastDistance(p1[0], p1[1]) < edge) continue
           const [x0, z0] = toXZ(p0[0], p0[1])
           const [x1, z1] = toXZ(p1[0], p1[1])
-          out.push([x0, terrain.heightAt(p0[0], p0[1]) + lift, z0], [x1, terrain.heightAt(p1[0], p1[1]) + lift, z1])
+          out.push([x0, terrain.surfaceAt(p0[0], p0[1]) + lift, z0], [x1, terrain.surfaceAt(p1[0], p1[1]) + lift, z1])
         }
       }
     return out
-  }, [lines, terrain, lift])
+  }, [lines, terrain, lift, shore])
   if (!points.length) return null
   return <Line points={points} segments color={color} lineWidth={width} transparent opacity={opacity} toneMapped={false} depthWrite={false} />
 }
 
 /* ---------------- population columns ---------------- */
-function PopulationColumns({ places, terrain, show }: { places: Place[]; terrain: Terrain; show: boolean }) {
+function PopulationColumns({ places, terrain, show, theme }: { places: Place[]; terrain: Terrain; show: boolean; theme: SceneTheme }) {
   const ref = useRef<THREE.InstancedMesh>(null)
   const grow = useRef(0)
   const data = useMemo(
@@ -307,10 +340,10 @@ function PopulationColumns({ places, terrain, show }: { places: Place[]; terrain
   useEffect(() => {
     const m = ref.current
     if (!m) return
-    const ramp = ['#6650cf', '#8870e6', '#ad9bf2', '#d9d0fb']
+    const ramp = theme.population.ramp
     data.forEach((d, i) => m.setColorAt(i, _c.set(ramp[d.pop > 300000 ? 3 : d.pop > 100000 ? 2 : d.pop > 40000 ? 1 : 0])))
     if (m.instanceColor) m.instanceColor.needsUpdate = true
-  }, [data])
+  }, [data, theme])
   useFrame((_, dt) => {
     const m = ref.current
     if (!m) return
@@ -321,7 +354,8 @@ function PopulationColumns({ places, terrain, show }: { places: Place[]; terrain
       grow.current = target
       m.userData.settled = target
     } else m.userData.settled = -1
-    data.forEach((d, i) => {
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i]
       // tallest first, the rest follow: a short stagger rather than everything at once
       const k = THREE.MathUtils.clamp((grow.current - d.order * 0.45) / 0.55, 0, 1)
       const e = 1 - Math.pow(1 - k, 3)
@@ -329,7 +363,7 @@ function PopulationColumns({ places, terrain, show }: { places: Place[]; terrain
       dummy.scale.set(1, Math.max(0.0001, d.h * e), 1)
       dummy.updateMatrix()
       m.setMatrixAt(i, dummy.matrix)
-    })
+    }
     m.instanceMatrix.needsUpdate = true
     m.visible = grow.current > 0.002
     gl.shadowMap.needsUpdate = true
@@ -337,75 +371,39 @@ function PopulationColumns({ places, terrain, show }: { places: Place[]; terrain
   return (
     <instancedMesh ref={ref} args={[undefined, undefined, data.length]} visible={false} castShadow>
       <cylinderGeometry args={[0.0105, 0.0105, 1, 6]} />
-      <meshStandardMaterial roughness={0.4} emissive="#6046c0" emissiveIntensity={0.55} transparent opacity={0.92} />
+      <meshStandardMaterial roughness={0.4} emissive={theme.population.emissive} emissiveIntensity={0.55} transparent opacity={0.92} />
     </instancedMesh>
   )
 }
 
-/* ---------------- clouds ---------------- */
-function Clouds({ mix, count, animate }: { mix: MixRef; count: number; animate: boolean }) {
-  const group = useRef<THREE.Group>(null)
-  const tex = useMemo(() => {
-    const c = document.createElement('canvas')
-    c.width = c.height = 256
-    const g = c.getContext('2d')!
-    for (let i = 0; i < 14; i++) {
-      const x = 60 + Math.random() * 136, y = 100 + Math.random() * 56, r = 26 + Math.random() * 46
-      const gr = g.createRadialGradient(x, y, 0, x, y, r)
-      gr.addColorStop(0, 'rgba(255,255,255,0.5)')
-      gr.addColorStop(1, 'rgba(255,255,255,0)')
-      g.fillStyle = gr
-      g.fillRect(0, 0, 256, 256)
-    }
-    const t = new THREE.CanvasTexture(c)
-    t.colorSpace = THREE.SRGBColorSpace
-    return t
-  }, [])
-  const material = useMemo(() => new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false }), [tex])
-  const seeds = useMemo(
-    () => Array.from({ length: count }, (_, i) => ({ x: -11 + ((i * 5.37) % 22), y: 1.5 + ((i * 0.77) % 2.2), z: -9 - ((i * 2.93) % 9), s: 2.6 + ((i * 0.91) % 2.4), v: 0.03 + ((i * 0.011) % 0.03) })),
-    [count],
-  )
-  useFrame((_, dt) => {
-    const t = mix.current
-    material.color.set(PALETTES.dusk.cloud).lerp(_c.set(PALETTES.day.cloud), t)
-    material.opacity = lerp(PALETTES.dusk.cloudOpacity, PALETTES.day.cloudOpacity, t)
-    if (!animate || !group.current) return
-    for (const s of group.current.children) {
-      s.position.x += (s.userData.v as number) * dt
-      if (s.position.x > 13) s.position.x = -13
-    }
-  })
-  return (
-    <group ref={group}>
-      {seeds.map((s, i) => (
-        <sprite key={i} material={material} position={[s.x, s.y, s.z]} scale={[s.s * 2.1, s.s * 0.62, 1]} userData={{ v: s.v }} />
-      ))}
-    </group>
-  )
-}
-
 /* ---------------- lights ---------------- */
+// Three lights, the way a product is lit: one soft-shadowed key, a sky/ground fill,
+// and a shadowless rim from behind that separates the far slopes from the sea.
 function Lights({ mix, shadows }: { mix: MixRef; shadows: boolean }) {
-  const sun = useRef<THREE.DirectionalLight>(null)
+  const key = useRef<THREE.DirectionalLight>(null)
+  const rim = useRef<THREE.DirectionalLight>(null)
   const hemi = useRef<THREE.HemisphereLight>(null)
   const gl = useThree((s) => s.gl)
   const last = useRef(-1)
   useFrame(() => {
     const t = mix.current
-    if (sun.current) {
-      sunDirAt(t, _v)
-      sun.current.position.copy(_v).multiplyScalar(9)
-      sun.current.color.set(PALETTES.dusk.sunColor).lerp(_c.set(PALETTES.day.sunColor), t)
-      sun.current.intensity = lerp(PALETTES.dusk.sunIntensity, PALETTES.day.sunIntensity, t)
+    if (key.current) {
+      key.current.position.copy(tweenDir(_v, N.light.keyDir, D.light.keyDir, t)).multiplyScalar(9)
+      tween(key.current.color, N.light.keyColor, D.light.keyColor, t)
+      key.current.intensity = lerp(N.light.keyIntensity, D.light.keyIntensity, t)
+    }
+    if (rim.current) {
+      rim.current.position.copy(tweenDir(_v, N.light.rimDir, D.light.rimDir, t)).multiplyScalar(9)
+      tween(rim.current.color, N.light.rimColor, D.light.rimColor, t)
+      rim.current.intensity = lerp(N.light.rimIntensity, D.light.rimIntensity, t)
     }
     if (hemi.current) {
-      hemi.current.color.set(PALETTES.dusk.hemiSky).lerp(_c.set(PALETTES.day.hemiSky), t)
-      hemi.current.groundColor.set(PALETTES.dusk.hemiGround).lerp(_c.set(PALETTES.day.hemiGround), t)
-      hemi.current.intensity = lerp(PALETTES.dusk.hemiIntensity, PALETTES.day.hemiIntensity, t)
+      tween(hemi.current.color, N.light.hemiSky, D.light.hemiSky, t)
+      tween(hemi.current.groundColor, N.light.hemiGround, D.light.hemiGround, t)
+      hemi.current.intensity = lerp(N.light.hemiIntensity, D.light.hemiIntensity, t)
     }
-    gl.toneMappingExposure = lerp(PALETTES.dusk.exposure, PALETTES.day.exposure, t)
-    // the scene is static: only re-render the shadow map while the sun is moving
+    gl.toneMappingExposure = lerp(N.light.exposure, D.light.exposure, t)
+    // the scene is static: only re-render the shadow map while the key light is moving
     if (shadows && Math.abs(t - last.current) > 0.0005) {
       gl.shadowMap.needsUpdate = true
       last.current = t
@@ -414,12 +412,15 @@ function Lights({ mix, shadows }: { mix: MixRef; shadows: boolean }) {
   return (
     <>
       <hemisphereLight ref={hemi} />
+      <directionalLight ref={rim} />
       <directionalLight
-        ref={sun}
+        ref={key}
         castShadow={shadows}
         shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0006}
-        shadow-normalBias={0.012}
+        shadow-radius={3.2}
+        shadow-intensity={0.86}
+        shadow-bias={-0.0005}
+        shadow-normalBias={0.014}
         shadow-camera-left={-2.6}
         shadow-camera-right={2.6}
         shadow-camera-top={2.9}
@@ -456,7 +457,7 @@ function Rig({ animate, revealed, onFirstFrame }: { animate: boolean; revealed: 
     const cam = camera as THREE.PerspectiveCamera
     const wide = size.width / size.height > 1.15
     if (wide) cam.setViewOffset(size.width, size.height, -size.width * 0.195, -size.height * 0.085, size.width, size.height)
-    else cam.setViewOffset(size.width, size.height, 0, -size.height * 0.27, size.width, size.height)
+    else cam.setViewOffset(size.width, size.height, 0, -size.height * 0.25, size.width, size.height)
     cam.fov = wide ? 44 : 50
     cam.updateProjectionMatrix()
     return () => cam.clearViewOffset()
@@ -495,6 +496,7 @@ function Scene({
   renderCard: (lm: Landmark) => ReactNode; animate: boolean; lowPower: boolean; onFirstFrame: () => void
 }) {
   const mix = useRef(mood === 'day' ? 1 : 0)
+  const theme = SCENE_THEMES[mood === 'day' ? 'light' : 'dark']
   const invalidate = useThree((s) => s.invalidate)
   useFrame((_, dt) => {
     const target = mood === 'day' ? 1 : 0
@@ -511,19 +513,18 @@ function Scene({
   }, [mood, layers, active, port, invalidate, gl])
 
   return (
-    <>
+    <SceneThemeContext.Provider value={theme}>
       <Sky mix={mix} />
       <Lights mix={mix} shadows={!lowPower} />
       <Ocean terrain={terrain} mix={mix} animate={animate} />
-      <Island terrain={terrain} />
-      <Draped lines={rivers} terrain={terrain} color={mood === 'day' ? '#3b8fd0' : '#7fd0e8'} width={1} opacity={mood === 'day' ? 0.6 : 0.3} lift={0.004} />
-      {layers.rail && <Draped lines={rail} terrain={terrain} color={mood === 'day' ? '#b84a12' : '#ffb766'} width={1.7} opacity={0.95} lift={0.011} />}
+      <Island terrain={terrain} mix={mix} />
+      <Draped lines={rivers} terrain={terrain} color={theme.land.river} width={1} opacity={theme.land.riverOpacity} lift={0.0035} />
+      {layers.rail && <Draped lines={rail} terrain={terrain} color={theme.land.rail} width={1.6} opacity={0.95} lift={0.009} shore="keep" />}
       <Maritime terrain={terrain} mix={mix} show={layers.maritime} animate={animate} lowPower={lowPower} activePort={port} onPort={onPort} renderPortCard={renderPortCard} />
-      <PopulationColumns places={places} terrain={terrain} show={layers.population} />
-      {layers.landmarks && <Landmarks items={landmarks} terrain={terrain} active={active} glow={mood === 'dusk' ? 1 : 0} onActive={onActive} onSelect={onSelect} renderCard={renderCard} />}
-      <Clouds mix={mix} count={lowPower ? 4 : 9} animate={animate} />
+      <PopulationColumns places={places} terrain={terrain} show={layers.population} theme={theme} />
+      {layers.landmarks && <Landmarks items={landmarks} terrain={terrain} active={active} glow={theme.landmark.glow} onActive={onActive} onSelect={onSelect} renderCard={renderCard} />}
       <Rig animate={animate} revealed={revealed} onFirstFrame={onFirstFrame} />
-    </>
+    </SceneThemeContext.Provider>
   )
 }
 
@@ -581,11 +582,12 @@ export default function HeroScene(props: HeroSceneProps) {
   if (!assets) return null
   return (
     <Canvas
-      shadows={lowPower ? false : 'soft'}
+      shadows={lowPower ? false : 'percentage'}
       dpr={lowPower ? [1, 1.25] : [1, 1.75]}
       frameloop={paused ? 'never' : animate ? 'always' : 'demand'}
       camera={{ fov: 27, near: 0.1, far: 140, position: [-3.6, 4.6, 7.4] }}
-      gl={{ antialias: true, powerPreference: 'high-performance', alpha: false, stencil: false }}
+      // Neutral tone mapping: albedo reaches the screen close to the hex it was authored as
+      gl={{ antialias: true, powerPreference: 'high-performance', alpha: false, stencil: false, toneMapping: THREE.NeutralToneMapping }}
       onCreated={({ gl }) => {
         gl.shadowMap.autoUpdate = false
         gl.shadowMap.needsUpdate = true

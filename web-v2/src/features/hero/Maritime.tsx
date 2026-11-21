@@ -1,19 +1,24 @@
-// Maritime overlay for the island: shipping lanes on the water with light pulses
-// running along them, a small fleet under way, and a beacon at every port.
+// Maritime overlay for the island: shipping lanes on the water, a small fleet under
+// way, and a marker at every port. Drawn as a data layer, not as scenery: hairlines
+// of constant screen width, one hue, and rank carried by weight.
 //
-// Budget: one ribbon mesh for every lane, one instanced mesh per vessel type, one
-// for all wakes, three for the beacons. The frame loop allocates nothing.
+// Budget: four draw calls (lanes, vessels, port rings, port pins). The frame loop
+// allocates nothing: vessels are two instanced attributes rewritten in place.
 import { Html } from '@react-three/drei'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { FLEET, LANES, PORTS, SPEED, type LaneKind, type Port, type VesselKind } from './maritimeData'
+import { hazeRate } from './haze'
+import { SCENE_THEMES } from './sceneTheme'
 import { K, ORIGIN, toXZ, type Terrain } from './terrain'
 
 type XZ = [number, number]
+/** what a line is drawn as: the three ranks of route, plus the short ties into each harbour */
+type Rank = LaneKind | 'spur'
 type Lane = {
   id: string
-  kind: LaneKind
+  kind: Rank
   n: number
   x: Float32Array
   z: Float32Array
@@ -26,9 +31,8 @@ type Lane = {
   fade: [number, number]
 }
 
-const KIND_INDEX: Record<LaneKind, number> = { trunk: 0, feeder: 1, coastal: 2 }
-const HALF_WIDTH: Record<LaneKind, number> = { trunk: 0.034, feeder: 0.026, coastal: 0.022 }
-const SEA_Y = 0.0034
+const RANK_INDEX: Record<Rank, number> = { trunk: 0, feeder: 1, coastal: 2, spur: 3 }
+const SEA_Y = 0.003
 
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
@@ -75,7 +79,7 @@ function keepAtSea(terrain: Terrain, pts: XZ[], margin: number) {
   }
 }
 
-function makeLane(terrain: Terrain, id: string, kind: LaneKind, xz: XZ[], step: number, margin: number, fade: [number, number] = [0, 0]): Lane {
+function makeLane(terrain: Terrain, id: string, kind: Rank, xz: XZ[], step: number, margin: number, fade: [number, number] = [0, 0]): Lane {
   const pts = spline(xz, step)
   keepAtSea(terrain, pts, margin)
   // relax the kinks the push can leave behind, then make sure relaxing did not cut a corner over land
@@ -102,24 +106,25 @@ function makeLane(terrain: Terrain, id: string, kind: LaneKind, xz: XZ[], step: 
   return { id, kind, n, x, z, tx, tz, cum, total: cum[n - 1], fade }
 }
 
-type Vessel = { lane: number; kind: number; slot: number; s: number; speed: number; dir: 1 | -1; off: number; size: number; seg: number; phase: number }
+type Vessel = { lane: number; s: number; speed: number; dir: 1 | -1; off: number; size: number; trail: number; seg: number }
 type Beacon = { port: Port; x: number; z: number }
 
-const VESSEL_KINDS: VesselKind[] = ['container', 'tanker', 'fishing']
-const VESSEL_SIZE: Record<VesselKind, number> = { container: 0.09, tanker: 0.1, fishing: 0.034 }
-/** the light each type shows at dusk */
-const VESSEL_TINT: Record<VesselKind, string> = { container: '#fff1d6', tanker: '#ffb37a', fishing: '#9dffc4' }
+/** hull length in scene units: one glyph for every vessel, the class only changes its size */
+const VESSEL_SIZE: Record<VesselKind, number> = { container: 0.058, tanker: 0.064, fishing: 0.026 }
+/** wake length, in hull lengths */
+const VESSEL_TRAIL: Record<VesselKind, number> = { container: 2.6, tanker: 2.6, fishing: 0 }
+const MAX_TRAIL = 2.6
 
 function buildMaritime(terrain: Terrain, lowPower: boolean) {
   const lanes: Lane[] = LANES.map((l) =>
-    makeLane(terrain, l.id, l.kind, l.pts.map(([lon, lat]) => toXZ(lon, lat)), l.kind === 'trunk' ? 0.06 : 0.03, l.kind === 'trunk' ? 0.12 : 0.055, l.fade),
+    makeLane(terrain, l.id, l.kind, l.pts.map(([lon, lat]) => toXZ(lon, lat)), l.kind === 'trunk' ? 0.06 : 0.03, l.kind === 'trunk' ? 0.12 : 0.06, l.fade),
   )
   const coastal = lanes.find((l) => l.id === 'coastal')!
 
-  // beacons stand in the harbour mouth; a short spur ties each one to the coasting route
+  // markers stand in the harbour mouth; a short spur ties each one to the coasting route
   const beacons: Beacon[] = PORTS.map((port) => {
     const p: XZ[] = [toXZ(port.lon, port.lat)]
-    keepAtSea(terrain, p, 0.016)
+    keepAtSea(terrain, p, 0.02)
     return { port, x: p[0][0], z: p[0][1] }
   })
   for (const b of beacons) {
@@ -128,220 +133,216 @@ function buildMaritime(terrain: Terrain, lowPower: boolean) {
       const d = Math.hypot(coastal.x[i] - b.x, coastal.z[i] - b.z)
       if (d < bd) { bd = d; best = i }
     }
-    if (bd > 0.02) lanes.push(makeLane(terrain, `spur-${b.port.id}`, 'coastal', [[coastal.x[best], coastal.z[best]], [b.x, b.z]], 0.02, 0.014))
+    if (bd > 0.02) lanes.push(makeLane(terrain, `spur-${b.port.id}`, 'spur', [[coastal.x[best], coastal.z[best]], [b.x, b.z]], 0.02, 0.016))
   }
 
-  /* ---- one ribbon for every lane ---- */
+  /* ---- one strip for every lane: two vertices per sample, pushed apart in screen space by the shader ---- */
   let verts = 0
   for (const l of lanes) verts += l.n * 2
-  const position = new Float32Array(verts * 3), uv = new Float32Array(verts * 2), info = new Float32Array(verts * 3)
+  const position = new Float32Array(verts * 3), line = new Float32Array(verts * 4), info = new Float32Array(verts * 3)
   const index: number[] = []
   let v = 0
   lanes.forEach((l, li) => {
-    const hw = HALF_WIDTH[l.kind]
     for (let i = 0; i < l.n; i++) {
       const s = l.cum[i]
       const fade = (l.fade[0] ? smooth(0, l.fade[0], s) : 1) * (l.fade[1] ? 1 - smooth(l.total - l.fade[1], l.total, s) : 1)
       for (const side of [-1, 1]) {
-        position[v * 3] = l.x[i] - l.tz[i] * hw * side
+        position[v * 3] = l.x[i]
         position[v * 3 + 1] = SEA_Y
-        position[v * 3 + 2] = l.z[i] + l.tx[i] * hw * side
-        uv[v * 2] = s
-        uv[v * 2 + 1] = side
-        info[v * 3] = KIND_INDEX[l.kind]
+        position[v * 3 + 2] = l.z[i]
+        line[v * 4] = l.tx[i]
+        line[v * 4 + 1] = l.tz[i]
+        line[v * 4 + 2] = side
+        line[v * 4 + 3] = s
+        info[v * 3] = RANK_INDEX[l.kind]
         info[v * 3 + 1] = fade
-        info[v * 3 + 2] = (li * 0.37) % 1
+        // where along its cycle this lane's pulse starts, so no two lanes fire together
+        info[v * 3 + 2] = (li * 0.381966) % 1
         if (side === 1 && i < l.n - 1) index.push(v - 1, v, v + 1, v, v + 2, v + 1)
         v++
       }
     }
   })
-  const ribbon = new THREE.BufferGeometry()
-  ribbon.setAttribute('position', new THREE.BufferAttribute(position, 3))
-  ribbon.setAttribute('aUv', new THREE.BufferAttribute(uv, 2))
-  ribbon.setAttribute('aInfo', new THREE.BufferAttribute(info, 3))
-  ribbon.setIndex(index)
+  const strip = new THREE.BufferGeometry()
+  strip.setAttribute('position', new THREE.BufferAttribute(position, 3))
+  strip.setAttribute('aLine', new THREE.BufferAttribute(line, 4))
+  strip.setAttribute('aInfo', new THREE.BufferAttribute(info, 3))
+  strip.setIndex(index)
 
   /* ---- the fleet, seeded so every visit sees the same sea ---- */
   let seed = 20261118
   const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)
   const vessels: Vessel[] = []
-  const counts = [0, 0, 0]
   for (const f of FLEET) {
     const li = lanes.findIndex((l) => l.id === f.lane)
     const lane = lanes[li]
-    const kind = VESSEL_KINDS.indexOf(f.kind)
     const count = lowPower ? Math.ceil(f.count / 2) : f.count
     for (let i = 0; i < count; i++) {
       const fishing = f.kind === 'fishing'
       vessels.push({
         lane: li,
-        kind,
-        slot: counts[kind]++,
-        s: ((i + 0.15 + rnd() * 0.7) / count) * lane.total,
-        speed: SPEED[f.kind] * (0.82 + rnd() * 0.36),
+        s: ((i + 0.2 + rnd() * 0.6) / count) * lane.total,
+        speed: SPEED[f.kind] * (0.88 + rnd() * 0.24),
         dir: f.bothWays && rnd() > 0.5 ? -1 : 1,
-        // fishing boats work the water to seaward of the route; ships hold close to it
-        off: fishing ? 0.012 + rnd() * 0.05 : (rnd() - 0.5) * (lane.kind === 'trunk' ? 0.03 : 0.014),
-        size: VESSEL_SIZE[f.kind] * (lane.kind === 'coastal' && !fishing ? 0.72 : 0.9 + rnd() * 0.24),
+        // fishing boats work the water to seaward of the route; ships hold to the line
+        off: fishing ? 0.014 + rnd() * 0.05 : 0,
+        size: VESSEL_SIZE[f.kind] * (lane.kind === 'coastal' && !fishing ? 0.78 : 1),
+        trail: VESSEL_TRAIL[f.kind],
         seg: 0,
-        phase: rnd() * 6.283,
       })
     }
   }
-  const tint = new Float32Array(vessels.length * 3)
-  const c = new THREE.Color()
-  vessels.forEach((ve, i) => c.set(VESSEL_TINT[VESSEL_KINDS[ve.kind]]).toArray(tint, i * 3))
 
-  return { lanes, beacons, ribbon, vessels, counts, tint }
-}
+  /* ---- vessels: one quad, instanced; the shader turns it to the heading and draws the glyph ---- */
+  const glyph = new THREE.InstancedBufferGeometry()
+  // in hull lengths: x runs astern → ahead with the bow at +0.5, y across
+  const x0 = -0.5 - MAX_TRAIL - 0.1, x1 = 0.66, y = 0.34
+  glyph.setAttribute('position', new THREE.Float32BufferAttribute([x0, -y, 0, x1, -y, 0, x1, y, 0, x0, y, 0], 3))
+  glyph.setIndex([0, 1, 2, 0, 2, 3])
+  /** per vessel: x, z, heading x, heading z */
+  const ship = new THREE.InstancedBufferAttribute(new Float32Array(vessels.length * 4), 4)
+  /** per vessel: hull length (0 hides it), wake length in hull lengths */
+  const meta = new THREE.InstancedBufferAttribute(new Float32Array(vessels.length * 2), 2)
+  ship.setUsage(THREE.DynamicDrawUsage)
+  meta.setUsage(THREE.DynamicDrawUsage)
+  glyph.setAttribute('aShip', ship)
+  glyph.setAttribute('aMeta', meta)
+  glyph.instanceCount = vessels.length
 
-/* ---------------- vessel models: a few flat-shaded solids each ---------------- */
-function solid() {
-  const pos: number[] = [], col: number[] = []
-  const c = new THREE.Color()
-  const tri = (a: number[], b: number[], d: number[]) => {
-    pos.push(...a, ...b, ...d)
-    col.push(c.r, c.g, c.b, c.r, c.g, c.b, c.r, c.g, c.b)
-  }
-  const api = {
-    /** vertical prism over a convex plan given counter-clockwise in (x, z) */
-    prism(plan: XZ[], y0: number, y1: number, color: string) {
-      c.set(color)
-      for (let i = 1; i < plan.length - 1; i++) tri([plan[0][0], y1, plan[0][1]], [plan[i + 1][0], y1, plan[i + 1][1]], [plan[i][0], y1, plan[i][1]])
-      for (let i = 0; i < plan.length; i++) {
-        const a = plan[i], b = plan[(i + 1) % plan.length]
-        tri([a[0], y0, a[1]], [a[0], y1, a[1]], [b[0], y1, b[1]])
-        tri([a[0], y0, a[1]], [b[0], y1, b[1]], [b[0], y0, b[1]])
-      }
-      return api
-    },
-    box(x0: number, x1: number, y0: number, y1: number, hw: number, color: string) {
-      return api.prism([[x0, -hw], [x0, hw], [x1, hw], [x1, -hw]], y0, y1, color)
-    },
-    done() {
-      const g = new THREE.BufferGeometry()
-      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
-      g.computeVertexNormals()
-      return g
-    },
-  }
-  return api
-}
-const hullPlan = (stern: number, shoulder: number, bow: number, hw: number): XZ[] => [[stern, -hw * 0.82], [stern, hw * 0.82], [shoulder, hw], [bow, 0], [shoulder, -hw]]
-
-function vesselGeometries() {
-  // bow points down +x; one unit is the ship's length
-  const container = solid()
-    .prism(hullPlan(-0.5, 0.3, 0.5, 0.085), 0, 0.075, '#22344a')
-    .box(-0.44, -0.33, 0.075, 0.215, 0.07, '#f3efe4')
-    .box(-0.415, -0.385, 0.215, 0.26, 0.02, '#d8446b')
-    .box(-0.28, -0.1, 0.075, 0.15, 0.072, '#d8446b')
-    .box(-0.085, 0.095, 0.075, 0.165, 0.072, '#2b9aa0')
-    .box(0.11, 0.29, 0.075, 0.135, 0.072, '#e8b84a')
-    .done()
-  const tanker = solid()
-    .prism(hullPlan(-0.5, 0.34, 0.5, 0.092), 0, 0.06, '#6b2f27')
-    .box(-0.32, 0.36, 0.06, 0.072, 0.078, '#8a949e')
-    .box(-0.3, 0.34, 0.072, 0.086, 0.012, '#d9dee2')
-    .box(-0.46, -0.35, 0.06, 0.19, 0.07, '#f3efe4')
-    .box(-0.43, -0.4, 0.19, 0.235, 0.022, '#22344a')
-    .done()
-  const fishing = solid()
-    .prism([[-0.5, 0], [-0.26, 0.17], [0.16, 0.17], [0.5, 0], [0.16, -0.17], [-0.26, -0.17]], 0, 0.11, '#2f7fbf')
-    .box(-0.22, 0.04, 0.11, 0.25, 0.1, '#f3efe4')
-    .box(-0.2, 0.02, 0.25, 0.275, 0.115, '#e2733c')
-    .done()
-  return [container, tanker, fishing]
+  return { lanes, beacons, strip, vessels, glyph, ship, meta }
 }
 
 /* ---------------- shaders ---------------- */
 const HAZE = /* glsl */ `
+  uniform float uHaze;
   float seaHaze(vec3 world) {
     float dist = length(cameraPosition - world);
-    return exp(-pow(dist * 0.05, 2.2));
+    return exp(-pow(dist * uHaze, 2.2));
   }`
 
+// Lanes are expanded in screen space: every line keeps its width in pixels from the
+// foreground to the horizon, so nothing thins to a shimmer or fattens near the camera.
 const laneVertex = /* glsl */ `
-  attribute vec2 aUv;
+  attribute vec4 aLine;
   attribute vec3 aInfo;
-  varying vec2 vUv;
+  uniform vec2 uRes;
+  uniform float uPx;
+  varying float vEdge;
+  varying float vHalf;
+  varying float vS;
   varying vec3 vInfo;
   varying vec3 vWorld;
   void main() {
-    vUv = aUv;
-    vInfo = aInfo;
     vec4 w = modelMatrix * vec4(position, 1.0);
     vWorld = w.xyz;
-    gl_Position = projectionMatrix * viewMatrix * w;
+    vec4 c = projectionMatrix * viewMatrix * w;
+    vec4 a = projectionMatrix * viewMatrix * (w + vec4(aLine.x, 0.0, aLine.y, 0.0) * 0.02);
+    vec2 dir = (a.xy / max(a.w, 1e-4) - c.xy / max(c.w, 1e-4)) * uRes;
+    float l = length(dir);
+    dir = l > 1e-6 ? dir / l : vec2(1.0, 0.0);
+    // trunk 1.7 px, feeder 1.25 px, coasting route and spurs 1 px
+    float width = (aInfo.x < 0.5 ? 1.7 : aInfo.x < 1.5 ? 1.25 : 1.0) * uPx;
+    // room either side for the edge to soften and for a pulse to swell the line
+    float reach = width * 0.5 + 1.8 * uPx;
+    c.xy += vec2(-dir.y, dir.x) * aLine.z * reach * 2.0 / uRes * c.w;
+    vEdge = aLine.z * reach;
+    vHalf = width * 0.5;
+    vS = aLine.w;
+    vInfo = aInfo;
+    gl_Position = c;
   }`
 const laneFragment = /* glsl */ `
-  uniform float uTime, uShow, uOpacity;
+  uniform float uTime, uShow, uPx, uPulseA;
   uniform vec3 uColor, uPulse;
-  varying vec2 vUv;
+  uniform vec4 uRank;
+  varying float vEdge;
+  varying float vHalf;
+  varying float vS;
   varying vec3 vInfo;
   varying vec3 vWorld;
   ${HAZE}
   void main() {
-    float a = abs(vUv.y);
-    float fw = fwidth(vUv.y);
-    float trunk = 1.0 - step(0.5, vInfo.x);
-    float coastal = step(1.5, vInfo.x);
-    // a crisp core that never drops below a pixel, inside a soft halo
-    float coreW = 0.13;
-    float core = 1.0 - smoothstep(max(coreW - fw, 0.0), coreW + fw, a);
-    float halo = exp(-a * a * 6.5) * (1.0 - smoothstep(0.75, 1.0, a));
+    float k = vInfo.x;
+    float rank = k < 0.5 ? uRank.x : k < 1.5 ? uRank.y : k < 2.5 ? uRank.z : uRank.w;
+    float coastal = step(1.5, k) * (1.0 - step(2.5, k));
+
+    // Pulses: every lane runs them at the same speed; busier lanes simply carry them closer together.
+    // A soft head with a long tail, and nothing on the harbour spurs.
+    float gap = k < 0.5 ? 6.5 : k < 1.5 ? 4.5 : 9.0;
+    float q = fract((uTime * 0.16 - vS) / gap + vInfo.z);
+    float pulse = (exp(-q * gap / 0.42) + exp(-(1.0 - q) * gap / 0.03)) * (1.0 - step(2.5, k)) * uPulseA;
+    pulse *= mix(1.0, 0.7, coastal);
+
+    float halfW = vHalf + pulse * 0.55 * uPx;
+    float aa = max(fwidth(vEdge), 1e-3);
+    float line = 1.0 - smoothstep(halfW - 0.5 * aa, halfW + 0.5 * aa, abs(vEdge));
     // coasting routes are dashed, the way a chart draws a recommended track
-    float dash = mix(1.0, smoothstep(0.2, 0.26, abs(fract(vUv.x * 9.0) - 0.5)), coastal);
-    float base = mix(0.5, 0.78, trunk) * mix(1.0, 0.82, coastal);
-    // light pulses: a bright head with a tail trailing behind it, travelling with the traffic
-    float speed = mix(0.2, 0.3, trunk);
-    float f = fract(vUv.x * mix(0.62, 0.4, trunk) - uTime * speed * mix(0.62, 0.4, trunk) + vInfo.z);
-    float pulse = pow(f, 11.0) * (1.0 - smoothstep(0.975, 1.0, f));
-    float alpha = core * base * dash + halo * (0.16 + 0.1 * trunk) + pulse * (core * 0.9 + halo * 0.85);
-    vec3 c = mix(uColor, uPulse, clamp(pulse * 1.4, 0.0, 1.0));
-    gl_FragColor = vec4(c, alpha * vInfo.y * uOpacity * uShow * seaHaze(vWorld));
+    float fs = fwidth(vS);
+    float dp = abs(fract(vS / 0.09) - 0.5) * 0.09;
+    float dash = mix(1.0, 1.0 - smoothstep(0.026 - fs, 0.026 + fs, dp), coastal);
+
+    float alpha = line * dash * mix(rank, 1.0, pulse * 0.9);
+    vec3 c = mix(uColor, uPulse, pulse * 0.85);
+    gl_FragColor = vec4(c, alpha * vInfo.y * uShow * seaHaze(vWorld));
     #include <colorspace_fragment>
   }`
 
-const wakeVertex = /* glsl */ `
-  attribute vec3 aTint;
-  varying vec2 vUv;
-  varying vec3 vTint;
+// Vessels are map symbols: a hull plan turned to its heading on screen, at the size the
+// ship would have at that depth. Unlike a decal on the water, it never foreshortens into a blob.
+const vesselVertex = /* glsl */ `
+  attribute vec4 aShip;
+  attribute vec2 aMeta;
+  uniform vec2 uRes;
+  uniform float uPx;
+  varying vec2 vP;
+  varying float vLen;
+  varying float vTrail;
   varying vec3 vWorld;
   void main() {
-    vUv = uv;
-    vTint = aTint;
-    vec4 w = modelMatrix * instanceMatrix * vec4(position, 1.0);
-    vWorld = w.xyz;
-    gl_Position = projectionMatrix * viewMatrix * w;
+    vec3 centre = vec3(aShip.x, ${SEA_Y.toFixed(4)}, aShip.y);
+    vWorld = centre;
+    vec4 c = projectionMatrix * viewMatrix * vec4(centre, 1.0);
+    vec4 a = projectionMatrix * viewMatrix * vec4(centre + vec3(aShip.z, 0.0, aShip.w) * 0.04, 1.0);
+    vec2 dir = (a.xy / max(a.w, 1e-4) - c.xy / max(c.w, 1e-4)) * uRes;
+    float l = length(dir);
+    dir = l > 1e-6 ? dir / l : vec2(1.0, 0.0);
+    float len = max(aMeta.x * projectionMatrix[1][1] / max(c.w, 1e-4) * uRes.y * 0.5, 5.0 * uPx) * step(1e-5, aMeta.x);
+    c.xy += (dir * position.x + vec2(-dir.y, dir.x) * position.y) * len * 2.0 / uRes * c.w;
+    vP = position.xy;
+    vLen = len;
+    vTrail = aMeta.y;
+    gl_Position = c;
   }`
-const wakeFragment = /* glsl */ `
-  uniform float uShow, uWake, uGlow;
-  uniform vec3 uFoam;
-  varying vec2 vUv;
-  varying vec3 vTint;
+const vesselFragment = /* glsl */ `
+  uniform vec3 uColor, uEdge;
+  uniform float uShow;
+  varying vec2 vP;
+  varying float vLen;
+  varying float vTrail;
   varying vec3 vWorld;
   ${HAZE}
   void main() {
-    // u: 0 far astern → 1 ahead of the bow; the hull sits around u = 0.86
-    float along = vUv.x;
-    float across = abs(vUv.y - 0.5) * 2.0;
-    float astern = clamp(along / 0.8, 0.0, 1.0);
-    float width = mix(0.95, 0.2, astern);
-    float inside = 1.0 - smoothstep(width * 0.55, width, across);
-    float arms = smoothstep(width * 0.38, width * 0.7, across) * inside;
-    float wake = (inside * 0.3 + arms * 0.7) * astern * astern * (1.0 - smoothstep(0.78, 0.84, along));
-    // the pool of light a ship throws on the water at dusk
-    vec2 q = vec2((along - 0.86) * 2.6, (vUv.y - 0.5) * 1.2);
-    float glow = exp(-dot(q, q) * 12.0);
-    float alpha = wake * uWake + glow * uGlow;
-    vec3 c = mix(uFoam, vTint, clamp(glow * uGlow * 1.6, 0.0, 1.0));
+    float px = 1.0 / max(vLen, 1.0); // one pixel, in hull lengths
+    float x = vP.x, y = abs(vP.y);
+    // hull plan: full amidships, a long fine entry to the bow, a slightly drawn-in stern
+    float bow = clamp((0.5 - x) * 2.0, 0.0, 1.0);
+    float halfBeam = 0.125 * pow(bow, 0.6) * (0.74 + 0.26 * smoothstep(-0.5, -0.4, x));
+    float d = max(y - halfBeam, max(-0.5 - x, x - 0.5));
+    float hull = 1.0 - smoothstep(-0.55 * px, 0.55 * px, d);
+    // a hairline of the water's own dark around it, so a white hull holds on a pale shelf
+    float keyline = (1.0 - smoothstep(0.5 * px, 2.4 * px, d)) * 0.4;
+    // wake: a single hairline astern, fading out
+    float t = clamp((-0.5 - x) / max(vTrail, 1e-3), 0.0, 1.0);
+    float wake = (1.0 - smoothstep(0.25 * px, 1.05 * px, y)) * (1.0 - t) * (1.0 - t) * step(x, -0.5) * step(1e-3, vTrail) * 0.46;
+    float ink = max(hull, wake);
+    float alpha = max(ink, keyline);
+    vec3 c = mix(uEdge, uColor, clamp(ink / max(alpha, 1e-4), 0.0, 1.0));
     gl_FragColor = vec4(c, alpha * uShow * seaHaze(vWorld));
     #include <colorspace_fragment>
   }`
 
+// Port marker on the water: a core, one fine ring, and a single slow ping. Flat on the
+// sea, so perspective turns it into the ellipse that says "this is on the surface".
 const ringVertex = /* glsl */ `
   attribute float aIdx;
   varying vec2 vUv;
@@ -355,35 +356,47 @@ const ringVertex = /* glsl */ `
     gl_Position = projectionMatrix * viewMatrix * w;
   }`
 const ringFragment = /* glsl */ `
-  uniform float uTime, uShow, uActive;
-  uniform vec3 uColor;
+  uniform float uTime, uShow, uActive, uPing;
+  uniform vec3 uColor, uCore, uHot;
   varying vec2 vUv;
   varying float vIdx;
   varying vec3 vWorld;
   ${HAZE}
-  float ring(float d, float ph) {
-    float w = 0.05 + fwidth(d);
-    return (1.0 - smoothstep(0.0, w, abs(d - ph * 0.92))) * (1.0 - ph) * (1.0 - ph);
-  }
+  float stroke(float x, float px, float w) { return 1.0 - smoothstep(0.0, 1.0, abs(x) / px - w); }
   void main() {
     float d = length(vUv - 0.5) * 2.0;
-    float ph = fract(uTime * 0.3 + vIdx * 0.37);
+    float px = max(fwidth(d), 1e-4);
     float act = 1.0 - step(0.5, abs(vIdx - uActive));
-    float rings = ring(d, ph) + ring(d, fract(ph + 0.5));
-    float pool = exp(-d * d * 30.0) * 0.7;
-    float alpha = rings * (0.55 + 0.45 * act) + pool + act * exp(-d * d * 5.0) * 0.28;
-    gl_FragColor = vec4(uColor, alpha * uShow * seaHaze(vWorld));
+    const float R = 0.36;
+    float ring = stroke(d - R, px, 0.25 + 0.35 * act);
+    // one ping every five seconds, staggered port to port, gone before it has travelled far
+    float ph = fract(uTime * 0.2 + vIdx * 0.381966);
+    float ping = stroke(d - mix(R, 0.95, ph), px, 0.2) * (1.0 - ph) * (1.0 - ph) * 0.5 * uPing;
+    float core = 1.0 - smoothstep(0.11 - px, 0.11 + px, d);
+    float fill = (1.0 - smoothstep(R - px, R + px, d)) * (0.1 + 0.2 * act);
+    float alpha = max(max(ring * (0.8 + 0.2 * act), core), max(ping, fill));
+    vec3 c = mix(mix(uColor, uHot, act), uCore, core);
+    gl_FragColor = vec4(c, alpha * uShow * seaHaze(vWorld));
     #include <colorspace_fragment>
   }`
 
-const _c = new THREE.Color()
-const mixCol = (out: THREE.Color, a: string, b: string, t: number) => out.set(a).lerp(_c.set(b), t)
+const N = SCENE_THEMES.dark.maritime, D = SCENE_THEMES.light.maritime
+const parsed = new Map<string, THREE.Color>()
+const C = (hex: string) => {
+  let c = parsed.get(hex)
+  if (!c) parsed.set(hex, (c = new THREE.Color(hex)))
+  return c
+}
+/** out = night → day at t; both ends are parsed once, never per frame */
+const tween = (out: THREE.Color, night: string, day: string, t: number) => out.lerpColors(C(night), C(day), t)
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+const _size = new THREE.Vector2()
 
 export function Maritime({
   terrain, mix, show, animate, lowPower, activePort, onPort, renderPortCard,
 }: {
   terrain: Terrain
-  /** 0 = dusk, 1 = day */
+  /** 0 = night, 1 = day */
   mix: MutableRefObject<number>
   show: boolean
   animate: boolean
@@ -393,53 +406,43 @@ export function Maritime({
   renderPortCard: (port: Port) => ReactNode
 }) {
   const built = useMemo(() => buildMaritime(terrain, lowPower), [terrain, lowPower])
-  const hulls = useMemo(vesselGeometries, [])
-  const wakeGeo = useMemo(() => {
-    const g = new THREE.PlaneGeometry(5.2, 1.2)
-    g.rotateX(-Math.PI / 2)
-    g.translate(-1.87, 0, 0)
-    g.setAttribute('aTint', new THREE.InstancedBufferAttribute(built.tint, 3))
-    return g
-  }, [built])
   const ringGeo = useMemo(() => {
-    const g = new THREE.PlaneGeometry(0.3, 0.3)
+    const g = new THREE.PlaneGeometry(0.26, 0.26)
     g.rotateX(-Math.PI / 2)
     g.setAttribute('aIdx', new THREE.InstancedBufferAttribute(Float32Array.from(built.beacons, (_, i) => i), 1))
     return g
   }, [built])
+  // the pin: a hairline stem with a small head, turned as one profile
+  const pinGeo = useMemo(() => {
+    const pts: THREE.Vector2[] = [new THREE.Vector2(0.0015, 0), new THREE.Vector2(0.0011, 0.04)]
+    for (let i = 0; i <= 8; i++) {
+      const a = -1.15 + (i / 8) * (Math.PI / 2 + 1.15)
+      pts.push(new THREE.Vector2(Math.cos(a) * 0.0062, 0.0462 + Math.sin(a) * 0.0062))
+    }
+    return new THREE.LatheGeometry(pts, 10)
+  }, [])
   useEffect(
     () => () => {
-      built.ribbon.dispose()
-      wakeGeo.dispose()
+      built.strip.dispose()
+      built.glyph.dispose()
       ringGeo.dispose()
     },
-    [built, wakeGeo, ringGeo],
+    [built, ringGeo],
   )
-  const beaconGeo = useMemo(() => ({ post: new THREE.CylinderGeometry(0.0022, 0.0034, 0.058, 6).translate(0, 0.029, 0), lamp: new THREE.SphereGeometry(0.0085, 10, 8).translate(0, 0.064, 0) }), [])
-  useEffect(
-    () => () => {
-      hulls.forEach((g) => g.dispose())
-      beaconGeo.post.dispose()
-      beaconGeo.lamp.dispose()
-    },
-    [hulls, beaconGeo],
-  )
+  useEffect(() => () => pinGeo.dispose(), [pinGeo])
 
   // Initial uniform values. The frame loop writes through the material refs, never through these
   // objects: under StrictMode the memo can be re-run after the material has taken the first copy.
-  const laneU = useMemo(() => ({ uTime: { value: 0 }, uShow: { value: 0 }, uOpacity: { value: 1 }, uColor: { value: new THREE.Color() }, uPulse: { value: new THREE.Color() } }), [])
-  const wakeU = useMemo(() => ({ uShow: { value: 0 }, uWake: { value: 0.5 }, uGlow: { value: 1 }, uFoam: { value: new THREE.Color() } }), [])
-  const ringU = useMemo(() => ({ uTime: { value: 0 }, uShow: { value: 0 }, uActive: { value: -1 }, uColor: { value: new THREE.Color() } }), [])
+  const laneU = useMemo(() => ({ uHaze: { value: 0.05 }, uTime: { value: 0 }, uShow: { value: 0 }, uPx: { value: 1 }, uPulseA: { value: 1 }, uRes: { value: new THREE.Vector2(1, 1) }, uRank: { value: new THREE.Vector4(1, 1, 1, 1) }, uColor: { value: new THREE.Color() }, uPulse: { value: new THREE.Color() } }), [])
+  const vesselU = useMemo(() => ({ uHaze: { value: 0.05 }, uShow: { value: 0 }, uPx: { value: 1 }, uRes: { value: new THREE.Vector2(1, 1) }, uColor: { value: new THREE.Color() }, uEdge: { value: new THREE.Color() } }), [])
+  const ringU = useMemo(() => ({ uHaze: { value: 0.05 }, uTime: { value: 0 }, uShow: { value: 0 }, uActive: { value: -1 }, uPing: { value: 1 }, uColor: { value: new THREE.Color() }, uCore: { value: new THREE.Color() }, uHot: { value: new THREE.Color() } }), [])
 
   const group = useRef<THREE.Group>(null)
-  const meshes = useRef<(THREE.InstancedMesh | null)[]>([null, null, null])
-  const wake = useRef<THREE.InstancedMesh>(null)
-  const posts = useRef<THREE.InstancedMesh>(null)
-  const lamps = useRef<THREE.InstancedMesh>(null)
+  const pins = useRef<THREE.InstancedMesh>(null)
   const rings = useRef<THREE.InstancedMesh>(null)
-  const lampMat = useRef<THREE.MeshBasicMaterial>(null)
+  const pinMat = useRef<THREE.MeshBasicMaterial>(null)
   const laneMat = useRef<THREE.ShaderMaterial>(null)
-  const wakeMat = useRef<THREE.ShaderMaterial>(null)
+  const vesselMat = useRef<THREE.ShaderMaterial>(null)
   const ringMat = useRef<THREE.ShaderMaterial>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const reveal = useRef(0)
@@ -451,22 +454,21 @@ export function Maritime({
       dummy.rotation.set(0, 0, 0)
       dummy.scale.setScalar(1)
       dummy.updateMatrix()
-      posts.current?.setMatrixAt(i, dummy.matrix)
-      lamps.current?.setMatrixAt(i, dummy.matrix)
-      dummy.position.y = SEA_Y + 0.0006
+      pins.current?.setMatrixAt(i, dummy.matrix)
+      dummy.position.y = SEA_Y + 0.0004
       dummy.updateMatrix()
       rings.current?.setMatrixAt(i, dummy.matrix)
     })
-    for (const m of [posts.current, lamps.current, rings.current]) if (m) m.instanceMatrix.needsUpdate = true
+    for (const m of [pins.current, rings.current]) if (m) m.instanceMatrix.needsUpdate = true
     placed.current = false
   }, [built, dummy])
 
   const activeIndex = built.beacons.findIndex((b) => b.port.id === activePort)
 
-  useFrame(({ clock }, dt) => {
+  useFrame(({ clock, gl, camera }, dt) => {
     const g = group.current
-    const laneU = laneMat.current?.uniforms, wakeU = wakeMat.current?.uniforms, ringU = ringMat.current?.uniforms
-    if (!g || !laneU || !wakeU || !ringU) return
+    const laneU = laneMat.current?.uniforms, vesselU = vesselMat.current?.uniforms, ringU = ringMat.current?.uniforms
+    if (!g || !laneU || !vesselU || !ringU) return
     // fade the whole layer rather than popping it
     const target = show ? 1 : 0
     reveal.current = animate ? reveal.current + (target - reveal.current) * Math.min(1, dt * 5) : target
@@ -477,22 +479,32 @@ export function Maritime({
 
     const t = mix.current
     const time = animate ? clock.elapsedTime : 0
+    const px = gl.getPixelRatio()
+    gl.getDrawingBufferSize(_size)
+    laneU.uHaze.value = vesselU.uHaze.value = ringU.uHaze.value = hazeRate(camera)
     laneU.uTime.value = time
     laneU.uShow.value = r
-    laneU.uOpacity.value = 0.92 - t * 0.14
-    mixCol(laneU.uColor.value, '#7fe6f2', '#f4fbff', t)
-    mixCol(laneU.uPulse.value, '#ffffff', '#ffffff', t)
-    wakeU.uShow.value = r
-    wakeU.uWake.value = 0.34 + t * 0.4
-    wakeU.uGlow.value = 0.95 - t * 0.8
-    mixCol(wakeU.uFoam.value, '#cfeef2', '#ffffff', t)
+    laneU.uPx.value = px
+    laneU.uPulseA.value = animate ? 1 : 0
+    laneU.uRes.value.copy(_size)
+    laneU.uRank.value.set(lerp(N.trunk, D.trunk, t), lerp(N.feeder, D.feeder, t), lerp(N.coastal, D.coastal, t), lerp(N.spur, D.spur, t))
+    tween(laneU.uColor.value, N.lane, D.lane, t)
+    tween(laneU.uPulse.value, N.pulse, D.pulse, t)
+    vesselU.uShow.value = r
+    vesselU.uPx.value = px
+    vesselU.uRes.value.copy(_size)
+    tween(vesselU.uColor.value, N.vessel, D.vessel, t)
+    tween(vesselU.uEdge.value, N.vesselEdge, D.vesselEdge, t)
     ringU.uTime.value = time
     ringU.uShow.value = r
     ringU.uActive.value = activeIndex
-    mixCol(ringU.uColor.value, '#ff7d9f', '#e2386a', t)
-    if (lampMat.current) {
-      mixCol(lampMat.current.color, '#ff8fae', '#e2386a', t)
-      lampMat.current.opacity = r
+    ringU.uPing.value = animate ? 1 : 0
+    tween(ringU.uColor.value, N.port, D.port, t)
+    tween(ringU.uCore.value, N.portCore, D.portCore, t)
+    tween(ringU.uHot.value, N.portActive, D.portActive, t)
+    if (pinMat.current) {
+      tween(pinMat.current.color, N.port, D.port, t)
+      pinMat.current.opacity = r
     }
 
     // vessels: advance along the lane, heading from the lane's tangent
@@ -500,6 +512,7 @@ export function Maritime({
     placed.current = true
     const step = animate ? Math.min(dt, 0.1) : 0
     const { vessels, lanes } = built
+    const ship = built.ship.array as Float32Array, meta = built.meta.array as Float32Array
     for (let i = 0; i < vessels.length; i++) {
       const v = vessels[i]
       const l = lanes[v.lane]
@@ -513,19 +526,20 @@ export function Maritime({
       const u = (s - l.cum[k]) / (l.cum[k + 1] - l.cum[k] || 1)
       const hx = (l.tx[k] + (l.tx[k + 1] - l.tx[k]) * u) * v.dir
       const hz = (l.tz[k] + (l.tz[k + 1] - l.tz[k]) * u) * v.dir
-      // keep to starboard of the track; fishing boats sit to seaward
-      const side = v.off * (l.kind === 'coastal' && v.off > 0.011 ? v.dir : 1)
-      const edge = l.kind === 'trunk' ? 1.2 : 0.12
+      // fishing boats sit to seaward of the coasting route
+      const side = v.off * v.dir
+      // vessels ease in and out at the ends of a lane instead of popping
+      const edge = l.kind === 'trunk' ? 1.2 : 0.14
       const grow = smooth(0, edge, v.s) * (1 - smooth(l.total - edge, l.total, v.s))
-      dummy.position.set(l.x[k] + (l.x[k + 1] - l.x[k]) * u - hz * side, 0.0028 + Math.sin(time * 1.3 + v.phase) * 0.0007, l.z[k] + (l.z[k + 1] - l.z[k]) * u + hx * side)
-      dummy.rotation.set(0, Math.atan2(-hz, hx), 0)
-      dummy.scale.setScalar(Math.max(0.0001, v.size * grow * (0.6 + 0.4 * r)))
-      dummy.updateMatrix()
-      meshes.current[v.kind]?.setMatrixAt(v.slot, dummy.matrix)
-      wake.current?.setMatrixAt(i, dummy.matrix)
+      ship[i * 4] = l.x[k] + (l.x[k + 1] - l.x[k]) * u - hz * side
+      ship[i * 4 + 1] = l.z[k] + (l.z[k + 1] - l.z[k]) * u + hx * side
+      ship[i * 4 + 2] = hx
+      ship[i * 4 + 3] = hz
+      meta[i * 2] = v.size * grow
+      meta[i * 2 + 1] = v.trail
     }
-    for (const m of meshes.current) if (m) m.instanceMatrix.needsUpdate = true
-    if (wake.current) wake.current.instanceMatrix.needsUpdate = true
+    built.ship.needsUpdate = true
+    built.meta.needsUpdate = true
   })
 
   const active = activeIndex >= 0 ? built.beacons[activeIndex] : null
@@ -542,43 +556,26 @@ export function Maritime({
 
   return (
     <group ref={group} visible={false}>
-      <mesh geometry={built.ribbon} frustumCulled={false} renderOrder={2}>
-        <shaderMaterial ref={laneMat} uniforms={laneU} vertexShader={laneVertex} fragmentShader={laneFragment} transparent depthWrite={false} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-4} polygonOffsetUnits={-4} />
+      <mesh geometry={built.strip} frustumCulled={false} renderOrder={2}>
+        <shaderMaterial ref={laneMat} uniforms={laneU} vertexShader={laneVertex} fragmentShader={laneFragment} transparent depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
 
-      <instancedMesh ref={wake} args={[wakeGeo, undefined, built.vessels.length]} frustumCulled={false} renderOrder={3}>
-        <shaderMaterial ref={wakeMat} uniforms={wakeU} vertexShader={wakeVertex} fragmentShader={wakeFragment} transparent depthWrite={false} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-6} polygonOffsetUnits={-6} />
+      <instancedMesh ref={rings} args={[ringGeo, undefined, built.beacons.length]} frustumCulled={false} renderOrder={3}>
+        <shaderMaterial ref={ringMat} uniforms={ringU} vertexShader={ringVertex} fragmentShader={ringFragment} transparent depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
       </instancedMesh>
-      {hulls.map((geo, i) => (
-        <instancedMesh
-          key={i}
-          ref={(m) => {
-            meshes.current[i] = m
-          }}
-          args={[geo, undefined, built.counts[i]]}
-          frustumCulled={false}
-        >
-          <meshStandardMaterial vertexColors flatShading roughness={0.7} metalness={0} />
-        </instancedMesh>
-      ))}
+      <instancedMesh ref={pins} args={[pinGeo, undefined, built.beacons.length]} frustumCulled={false}>
+        <meshBasicMaterial ref={pinMat} toneMapped={false} transparent />
+      </instancedMesh>
 
-      <instancedMesh ref={rings} args={[ringGeo, undefined, built.beacons.length]} frustumCulled={false} renderOrder={4}>
-        <shaderMaterial ref={ringMat} uniforms={ringU} vertexShader={ringVertex} fragmentShader={ringFragment} transparent depthWrite={false} side={THREE.DoubleSide} polygonOffset polygonOffsetFactor={-8} polygonOffsetUnits={-8} />
-      </instancedMesh>
-      <instancedMesh ref={posts} args={[undefined, undefined, built.beacons.length]} frustumCulled={false}>
-        <primitive object={beaconGeo.post} attach="geometry" />
-        <meshStandardMaterial color="#f3efe4" roughness={0.6} />
-      </instancedMesh>
-      <instancedMesh ref={lamps} args={[undefined, undefined, built.beacons.length]} frustumCulled={false}>
-        <primitive object={beaconGeo.lamp} attach="geometry" />
-        <meshBasicMaterial ref={lampMat} toneMapped={false} transparent />
-      </instancedMesh>
+      <mesh geometry={built.glyph} frustumCulled={false} renderOrder={4}>
+        <shaderMaterial ref={vesselMat} uniforms={vesselU} vertexShader={vesselVertex} fragmentShader={vesselFragment} transparent depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+      </mesh>
 
       {show &&
         built.beacons.map((b) => (
           <mesh
             key={b.port.id}
-            position={[b.x, 0.035, b.z]}
+            position={[b.x, 0.03, b.z]}
             onPointerOver={over(b.port.id)}
             onPointerOut={out}
             onClick={(e) => (e.stopPropagation(), onPort(b.port.id))}
@@ -588,7 +585,7 @@ export function Maritime({
           </mesh>
         ))}
       {show && active && (
-        <Html key={active.port.id} position={[active.x, 0.085, active.z]} zIndexRange={[40, 30]} style={{ pointerEvents: 'none' }}>
+        <Html key={active.port.id} position={[active.x, 0.07, active.z]} zIndexRange={[40, 30]} style={{ pointerEvents: 'none' }}>
           {renderPortCard(active.port)}
         </Html>
       )}
