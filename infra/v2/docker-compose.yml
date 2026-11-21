@@ -1,0 +1,52 @@
+# Lanka Data Layer v2 — data platform services (PostgreSQL + PostGIS).
+#
+#   cp infra/v2/.env.example infra/v2/.env   # then set a real password
+#   docker compose -f infra/v2/docker-compose.yml --env-file infra/v2/.env up -d
+#
+# Network rule (same as v1): every port binds 127.0.0.1 only. Host nginx is
+# the only public listener; Postgres is never exposed on 0.0.0.0.
+#
+# The v1 stack (infra/docker-compose.yml: Hono api + lanka.sqlite) keeps
+# running untouched beside this until /v2 reaches parity.
+name: lanka-v2
+
+services:
+  db:
+    # PostgreSQL 18 + PostGIS 3.6.1 on Debian trixie. Multi-arch (amd64 +
+    # arm64) build of the docker-postgis recipe; the official postgis/postgis
+    # tags are amd64-only. Pinned to an exact patch tag — bump deliberately
+    # (a major Postgres upgrade needs pg_upgrade or dump/restore).
+    image: ${POSTGIS_IMAGE:-imresamu/postgis:18-3.6.1-trixie}
+    container_name: lanka-v2-db
+    restart: unless-stopped
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    ports:
+      - "127.0.0.1:${LANKA_PG_PORT:-55432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-lanka}
+      POSTGRES_USER: ${POSTGRES_USER:-lanka}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/v2/.env}
+      POSTGRES_INITDB_ARGS: "--data-checksums --encoding=UTF8 --locale=C.UTF-8"
+    volumes:
+      # PG18 images keep PGDATA under /var/lib/postgresql/<major>/docker.
+      - lanka_pgdata:/var/lib/postgresql
+      - ./postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./postgres/initdb:/docker-entrypoint-initdb.d:ro
+    # Parallel query and hash joins allocate dynamic shared memory in
+    # /dev/shm; Docker's 64 MB default is far too small.
+    shm_size: 1g
+    stop_grace_period: 60s
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 7g
+
+volumes:
+  lanka_pgdata:
+    name: lanka_v2_pgdata
