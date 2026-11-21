@@ -1,0 +1,49 @@
+[workspace]
+resolver = "3"
+members = ["crates/lanka-core", "crates/lanka-ingest", "crates/lanka-server", "crates/lanka-cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "MIT"
+repository = "https://github.com/prabhavalabs/lanka-data-layer"
+publish = false
+
+[workspace.dependencies]
+lanka-core = { path = "crates/lanka-core" }
+lanka-ingest = { path = "crates/lanka-ingest" }
+lanka-server = { path = "crates/lanka-server" }
+
+anyhow = "=1.0.104"
+thiserror = "=2.0.21"
+tokio = { version = "=1.54.1", features = ["macros", "rt-multi-thread", "signal", "fs", "time", "sync"] }
+futures = "=0.3.34"
+bytes = "=1.12.2"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = { version = "=1.0.154", features = ["raw_value"] }
+serde_yaml_ng = "=0.10.0"
+jsonschema = { version = "=0.62.0", default-features = false }
+sqlx = { version = "=0.9.1", default-features = false, features = ["runtime-tokio", "postgres", "macros", "migrate", "json", "chrono"] }
+chrono = { version = "=0.4.45", default-features = false, features = ["std", "clock", "serde"] }
+axum = { version = "=0.8.9", features = ["macros"] }
+tower-http = { version = "=0.7.1", features = ["compression-gzip", "compression-br", "trace", "cors", "timeout"] }
+utoipa = { version = "=6.0.0", features = ["axum_extras", "chrono"] }
+reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "gzip", "json"] }
+sha2 = "=0.11.1"
+hex = "=0.4.3"
+calamine = "=0.38.0"
+clap = { version = "=4.6.9", features = ["derive", "env"] }
+tracing = "=0.1.44"
+tracing-subscriber = { version = "=0.3.23", features = ["env-filter", "json", "fmt"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
