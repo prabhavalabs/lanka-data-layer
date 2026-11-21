@@ -1,0 +1,32 @@
+id: ghsl
+publisher: European Commission Joint Research Centre
+title: Global Human Settlement Layer (GHS-BUILT, GHS-POP, GHS-SMOD) R2023A
+homepage: https://human-settlement.emergency.copernicus.eu/download.php
+access:
+  method: raster
+  endpoint: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: European Commission, Joint Research Centre (JRC), GHSL
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- REGI
+- ENVI
+- SOCI
+datasets:
+- ghsl-built-up
+- ghsl-settlement-model
+- ghsl-population-grid
+priority: P0
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 'HDX mirror: lka-ghsl. Epochs 1975-2030 in 5-year steps.'

@@ -1,0 +1,33 @@
+id: gadm-lka
+publisher: GADM project (UC Davis)
+title: GADM 4.1 Sri Lanka administrative areas
+homepage: https://gadm.org/download_country.html
+access:
+  method: zip
+  endpoint: https://geodata.ucdavis.edu/gadm/gadm4.1/gpkg/gadm41_LKA.gpkg
+  auth: none
+licence:
+  id: gadm-noncommercial
+  status: restricted
+  url: https://gadm.org/license.html
+  attribution: GADM
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - polygon
+  join: spatial
+themes:
+- REGI
+datasets:
+- gadm-gid-crosswalk
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Licence forbids commercial use and redistribution. Use ONLY offline as a name/ID crosswalk to third-party datasets
+  keyed on GADM GID (e.g. Meta RWI, academic datasets). Never publish geometry or attributes.

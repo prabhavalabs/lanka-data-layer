@@ -1,0 +1,35 @@
+id: lk-major-projects
+title: Major infrastructure and development projects
+description: Curated register of major projects (expressways, ports, Port City, airport, Mahaweli, UDA development plan zones,
+  BOI zones) with status and geometry.
+source_ids:
+- rda
+- slpa
+- uda
+- boi
+- aasl-airport
+indicators:
+- id: proj.major_projects
+  label: Major projects
+  unit: count
+  dims:
+  - sector
+  - status
+  geo_levels:
+  - point
+  - polygon
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2010'
+  to: '2026'
+method: LLM-assisted extraction from agency pages and plans; geometry digitised from plans/OSM; human sign-off.
+limits:
+- Status changes fast; announced vs built distinguished.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - projects per district
+publication_class: C

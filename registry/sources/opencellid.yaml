@@ -1,0 +1,27 @@
+id: opencellid
+publisher: Unwired Labs (OpenCelliD)
+title: OpenCelliD cell tower database
+homepage: https://opencellid.org/
+access:
+  method: csv
+  endpoint: https://opencellid.org/ocid/downloads?token={key}&type=mcc&file=413.csv.gz
+  auth: key
+licence:
+  id: cc-by-sa-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by-sa/4.0/
+  attribution: OpenCelliD Project
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- TECH
+datasets:
+- opencellid-towers
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

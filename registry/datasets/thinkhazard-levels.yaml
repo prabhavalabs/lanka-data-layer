@@ -1,0 +1,25 @@
+id: thinkhazard-levels
+title: Hazard levels by district (ThinkHazard!)
+description: Qualitative hazard level (very low to high) for 11 hazards per province/district.
+source_ids:
+- thinkhazard
+indicators:
+- id: haz.th_level
+  label: Hazard level
+  unit: category
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: JSON report per GAUL unit; GAUL names crosswalked.
+limits:
+- Screening-level; uses GAUL boundaries.
+enrichment:
+  joins:
+  - GAUL codes -> p-codes
+publication_class: A

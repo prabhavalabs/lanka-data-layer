@@ -1,0 +1,43 @@
+id: un-wpp-lka
+title: National population estimates and projections (UN WPP)
+description: Population by age/sex, fertility, mortality, migration 1950-2100 for Sri Lanka.
+source_ids:
+- un-wpp
+indicators:
+- id: pop.wpp_total
+  label: Total population (UN WPP)
+  unit: persons
+  dims:
+  - sex
+  - age_group
+  - variant
+  geo_levels:
+  - national
+  period_type: year
+- id: pop.wpp_tfr
+  label: Total fertility rate
+  unit: births per woman
+  geo_levels:
+  - national
+  period_type: year
+- id: pop.wpp_life_expectancy
+  label: Life expectancy at birth
+  unit: years
+  dims:
+  - sex
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1950'
+  to: '2100'
+method: Filter bulk CSVs to LKA (location 144).
+limits:
+- National only.
+- Projections are scenario-based.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - control totals to sanity-check grids
+publication_class: A

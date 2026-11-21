@@ -1,0 +1,24 @@
+id: treasury-provincial-debt
+title: Provincial council debt
+description: Debt of provincial councils by province.
+source_ids:
+- treasury-debt
+indicators:
+- id: debt.provincial
+  label: Provincial council debt
+  unit: LKR million
+  geo_levels:
+  - adm1
+  period_type: quarter
+time_coverage:
+  from: 2020-Q1
+  to: 2026-Q2
+method: PDF tables.
+limits:
+- Small amounts; reporting irregular.
+enrichment:
+  joins:
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - sum to national
+publication_class: B

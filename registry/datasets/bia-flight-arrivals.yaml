@@ -1,0 +1,38 @@
+id: bia-flight-arrivals
+title: International flight arrivals at BIA
+description: Daily scheduled inbound flights by origin airport and airline.
+source_ids:
+- aasl-airport
+- caasl
+indicators:
+- id: air.arrivals_flights
+  label: Inbound flights
+  unit: count
+  dims:
+  - origin
+  - airline
+  geo_levels:
+  - point
+  period_type: day
+- id: air.passengers
+  label: Air passengers
+  unit: persons
+  dims:
+  - airport
+  - direction
+  geo_levels:
+  - point
+  period_type: month
+time_coverage:
+  from: 2024-01
+  to: 2026-11
+method: Repo data + CAASL monthly traffic.
+limits:
+- Schedules, not actual load factors.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - connectivity by origin country vs sltda arrivals
+publication_class: A

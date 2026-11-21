@@ -1,0 +1,30 @@
+id: giga-schools
+publisher: Giga (UNICEF and ITU)
+title: School geolocation and connectivity status
+homepage: https://giga.global/
+access:
+  method: csv
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=sri-lanka-school-geolocation-and-connectivity-status
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Giga (UNICEF/ITU)
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- EDUC
+- TECH
+datasets:
+- giga-schools
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- schools

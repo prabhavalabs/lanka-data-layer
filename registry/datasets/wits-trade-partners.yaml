@@ -1,0 +1,28 @@
+id: wits-trade-partners
+title: Trade by partner and product (WITS)
+description: Annual exports/imports by partner country and HS section.
+source_ids:
+- wits-comtrade
+indicators:
+- id: trade.bilateral
+  label: Trade value by partner and product
+  unit: USD thousand
+  dims:
+  - partner
+  - product
+  - flow
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1990'
+  to: '2024'
+method: WITS SDMX API.
+limits:
+- Mirror-data discrepancies; HS revisions.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - partner and product shares
+publication_class: A

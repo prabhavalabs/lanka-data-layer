@@ -1,0 +1,55 @@
+id: dcs-census-2024-housing
+title: 'Census 2024: housing structure, materials, tenure, occupancy'
+description: Housing units by type, wall/roof/floor materials, tenure, occupancy status and rooms, by district.
+source_ids:
+- dcs-census-2024
+indicators:
+- id: census24.housing_units
+  label: Housing units by structure type
+  unit: count
+  dims:
+  - structure_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.housing_material
+  label: Housing units by principal material
+  unit: count
+  dims:
+  - element
+  - material
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.housing_tenure
+  label: Households by tenure
+  unit: count
+  dims:
+  - tenure
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.vacant_units
+  label: Vacant housing units
+  unit: count
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: PDF table extraction (camelot) + HousingA XLS; reviewed against totals.
+limits:
+- Census reference night 2024; no intercensal updates.
+- District level only in published tables.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - 'derive: share of semi-permanent housing as deprivation proxy'
+publication_class: B

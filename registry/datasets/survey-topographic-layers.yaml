@@ -1,0 +1,16 @@
+id: survey-topographic-layers
+title: Official topographic layers (blocked)
+description: 1:50,000 topographic vectors (contours, settlements, land use, hydrography) if the Survey Department grants an
+  open release.
+source_ids:
+- survey-dept-lk
+indicators: []
+time_coverage: {}
+method: Pending licence; would be ingested as vectors and cross-validated with OSM.
+limits:
+- Not available under an open licence today.
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+publication_class: B

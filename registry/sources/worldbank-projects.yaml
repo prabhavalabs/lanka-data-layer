@@ -1,0 +1,30 @@
+id: worldbank-projects
+publisher: World Bank
+title: World Bank Projects & Operations API (with geocoded locations)
+homepage: https://projects.worldbank.org/en/projects-operations/projects-list?countrycode_exact=LK
+access:
+  method: api
+  endpoint: https://search.worldbank.org/api/v2/projects?format=json&countrycode_exact=LK&rows=500
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: World Bank Projects & Operations
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - national
+  - point
+  join: spatial
+themes:
+- ECON
+- GOVE
+- INTR
+datasets:
+- wb-projects-lka
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

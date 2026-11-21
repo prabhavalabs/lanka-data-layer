@@ -1,0 +1,28 @@
+id: un-sdg-lka
+title: SDG indicators for Sri Lanka
+description: All SDG series with Sri Lanka (M49 144) values.
+source_ids:
+- un-sdg
+indicators:
+- id: sdg.value
+  label: SDG series value
+  unit: various
+  dims:
+  - goal
+  - target
+  - series
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2000'
+  to: '2025'
+method: API pull per series with areaCode=144.
+limits:
+- Mix of national and modelled estimates.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

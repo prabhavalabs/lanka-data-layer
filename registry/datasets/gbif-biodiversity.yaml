@@ -1,0 +1,38 @@
+id: gbif-biodiversity
+title: Species occurrence records
+description: Georeferenced species observations (birds, plants, mammals) for biodiversity indicators.
+source_ids:
+- gbif
+indicators:
+- id: env.species_records
+  label: Occurrence records
+  unit: count
+  dims:
+  - taxon_class
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  period_type: year
+- id: env.species_richness
+  label: Observed species richness
+  unit: species
+  dims:
+  - taxon_class
+  geo_levels:
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '1900'
+  to: '2026'
+method: Download API with licence filter; aggregate to grid.
+limits:
+- Observation effort bias (roads, parks).
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - richness per DS (effort-normalised)
+publication_class: A

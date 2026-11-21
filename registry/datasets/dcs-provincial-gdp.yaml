@@ -1,0 +1,39 @@
+id: dcs-provincial-gdp
+title: Provincial GDP
+description: Gross domestic product and per-capita GDP by province and broad sector.
+source_ids:
+- dcs-national-accounts
+- cbsl-ess
+indicators:
+- id: econ.pgdp
+  label: Provincial GDP, current prices
+  unit: LKR million
+  dims:
+  - sector
+  geo_levels:
+  - adm1
+  period_type: year
+- id: econ.pgdp_per_capita
+  label: Provincial GDP per capita
+  unit: LKR
+  geo_levels:
+  - adm1
+  period_type: year
+- id: econ.pgdp_share
+  label: Province share of national GDP
+  unit: percent
+  geo_levels:
+  - adm1
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: Annual Provincial GDP release (PDF/XLS).
+limits:
+- Province is the finest official level; sub-province output must be modelled.
+enrichment:
+  joins:
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - 'derive: compare with nightlights sum per province to calibrate sub-provincial economic proxy'
+publication_class: B

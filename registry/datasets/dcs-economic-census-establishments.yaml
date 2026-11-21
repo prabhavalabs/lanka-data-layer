@@ -1,0 +1,40 @@
+id: dcs-economic-census-establishments
+title: Non-agricultural establishments and employment
+description: Establishments and persons engaged by industry and DS/district from the 2013/14 Economic Census.
+source_ids:
+- dcs-economic-census
+indicators:
+- id: econ.establishments
+  label: Establishments
+  unit: count
+  dims:
+  - industry
+  - size_class
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: econ.persons_engaged
+  label: Persons engaged
+  unit: persons
+  dims:
+  - industry
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2014'
+method: PDF tables.
+limits:
+- Over a decade old; use overture-places/osm for current proxies.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: B

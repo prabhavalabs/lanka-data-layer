@@ -1,0 +1,32 @@
+id: budget-capital-projects
+title: Capital projects in budget estimates (geocoded)
+description: Named capital projects with allocations, funding source and, where stated, location (district/DS) - geocoded.
+source_ids:
+- treasury-budget-estimates
+- erd
+indicators:
+- id: budget.project_allocation
+  label: Project allocation
+  unit: LKR thousand
+  dims:
+  - project
+  - funding_source
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2020'
+  to: '2026'
+method: LLM-assisted extraction of project tables; location strings geocoded to p-codes; human sign-off.
+limits:
+- Many projects are island-wide or lack location; geocodes are best-effort.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - allocations per district per capita
+publication_class: C

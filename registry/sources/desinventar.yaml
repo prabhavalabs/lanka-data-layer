@@ -1,0 +1,30 @@
+id: desinventar
+publisher: UNDRR DesInventar Sendai (data by DMC)
+title: Sri Lanka disaster loss and damage database
+homepage: https://www.desinventar.net/DesInventar/profiletab.jsp?countrycode=lka
+access:
+  method: csv
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=disaster-loss-and-damage-dataset-for-sri-lanka
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: UNDRR DesInventar, Disaster Management Centre Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm2
+  - adm3
+  join: name_match
+themes:
+- ENVI
+- SOCI
+datasets:
+- desinventar-losses
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'

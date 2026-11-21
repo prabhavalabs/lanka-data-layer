@@ -1,0 +1,29 @@
+id: open-meteo-forecast
+title: Weather forecasts for admin centroids
+description: 7-16 day forecasts (rain, temperature, wind) for each DS centroid, refreshed daily.
+source_ids:
+- open-meteo
+indicators:
+- id: wx.forecast_rain
+  label: Forecast precipitation
+  unit: mm
+  geo_levels:
+  - point
+  - adm3
+  period_type: day
+- id: wx.forecast_tmax
+  label: Forecast max temperature
+  unit: deg C
+  geo_levels:
+  - point
+  - adm3
+  period_type: day
+time_coverage:
+  from: '2026'
+method: Batch API calls per DS centroid.
+limits:
+- Model output, not official Met Dept warnings.
+enrichment:
+  joins:
+  - DS centroid points -> ADM3
+publication_class: A

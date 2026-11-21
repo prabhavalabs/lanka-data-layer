@@ -1,0 +1,34 @@
+id: worldbank-sldu
+publisher: World Bank
+title: Sri Lanka Development Update (biannual)
+homepage: https://www.worldbank.org/en/country/srilanka/publication/sri-lanka-development-update
+access:
+  method: pdf
+  endpoint: https://documents1.worldbank.org/curated/en/099854410052618368/pdf/IDU-b519d848-09f1-47d1-b782-3378e00f3019.pdf
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: World Bank, Sri Lanka Development Update
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- ECON
+- SOCI
+datasets:
+- wb-sldu-outlook
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: April/October editions; includes provincial poverty nowcasts.
+dc_refs:
+- worldbank-economic-outlook
+- worldbank-poverty-estimates
+- worldbank-poverty-province

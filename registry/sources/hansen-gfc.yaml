@@ -1,0 +1,27 @@
+id: hansen-gfc
+publisher: University of Maryland GLAD / Google
+title: Global Forest Change (Hansen et al.)
+homepage: https://glad.earthengine.app/view/global-forest-change
+access:
+  method: raster
+  endpoint: https://storage.googleapis.com/earthenginepartners-hansen/GFC-2024-v1.12/download.html
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Hansen/UMD/Google/USGS/NASA, Global Forest Change
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+datasets:
+- forest-cover-loss
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

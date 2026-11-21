@@ -1,0 +1,29 @@
+id: nuuuwan-lk-cabinet-decisions
+publisher: Nuwan Senaratna (nuuuwan) - data from Cabinet Office
+title: lk_cabinet_decisions
+homepage: https://github.com/nuuuwan/lk_cabinet_decisions
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_cabinet_decisions
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Cabinet Office / Department of Government Information. Parsed/scraped by Nuwan Senaratna (nuuuwan),
+    code MIT.'
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- GOVE
+datasets:
+- cabinet-decisions-geotagged
+priority: P3
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 11k+ cabinet decision documents.

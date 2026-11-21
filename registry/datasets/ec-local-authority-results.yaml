@@ -1,0 +1,45 @@
+id: ec-local-authority-results
+title: Local authority election results 2018 and 2025
+description: Votes and seats by party for each of 339 local authorities (and wards), with turnout.
+source_ids:
+- nuuuwan-lg-election-2025
+- elections-commission
+indicators:
+- id: elec.lg_votes
+  label: Votes by party (LA)
+  unit: votes
+  dims:
+  - election
+  - party
+  geo_levels:
+  - polygon
+  period_type: snapshot
+- id: elec.lg_seats
+  label: Seats by party (LA)
+  unit: seats
+  dims:
+  - election
+  - party
+  geo_levels:
+  - polygon
+  period_type: snapshot
+- id: elec.lg_turnout
+  label: Turnout (LA)
+  unit: percent
+  dims:
+  - election
+  geo_levels:
+  - polygon
+  period_type: snapshot
+time_coverage:
+  from: '2018'
+  to: '2025'
+method: Repo JSON + EC results site.
+limits:
+- LA polygons must be built (union of GN divisions per LA).
+enrichment:
+  joins:
+  - LA name -> LA polygon (union of ADM4 GN units per LA) -> ADM2/ADM1
+  aggregations:
+  - LA -> district -> national
+publication_class: A

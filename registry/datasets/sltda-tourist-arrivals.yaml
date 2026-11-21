@@ -1,0 +1,34 @@
+id: sltda-tourist-arrivals
+title: Tourist arrivals by source country
+description: Weekly/monthly international tourist arrivals by country of residence.
+source_ids:
+- sltda
+- nuuuwan-lk-tourism
+indicators:
+- id: tour.arrivals
+  label: Tourist arrivals
+  unit: persons
+  dims:
+  - source_country
+  geo_levels:
+  - national
+  period_type: month
+- id: tour.arrivals_weekly
+  label: Tourist arrivals (weekly)
+  unit: persons
+  geo_levels:
+  - national
+  period_type: day
+time_coverage:
+  from: 2015-01
+  to: 2026-11
+method: Monthly PDF + weekly repo data.
+limits:
+- Arrivals, not unique visitors.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: earnings per arrival (cbsl-tourism-earnings)'
+publication_class: A

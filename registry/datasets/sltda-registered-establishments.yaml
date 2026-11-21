@@ -1,0 +1,32 @@
+id: sltda-registered-establishments
+title: Registered tourist establishments (geocoded)
+description: List of SLTDA-registered hotels, guest houses, agencies, geocoded.
+source_ids:
+- sltda
+- osm-geofabrik
+- overture-maps
+indicators:
+- id: tour.establishments
+  label: Registered establishments
+  unit: count
+  dims:
+  - type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Scrape registry pages; geocode via address + Overture/OSM match; review.
+limits:
+- Registration is not universal (many homestays unregistered).
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: C

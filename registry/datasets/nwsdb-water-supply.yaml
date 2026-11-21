@@ -1,0 +1,43 @@
+id: nwsdb-water-supply
+title: Piped water connections, coverage and performance
+description: Water connections, pipe-borne coverage by district/province, non-revenue water and operating performance.
+source_ids:
+- nwsdb
+indicators:
+- id: water.connections
+  label: Water supply connections
+  unit: count
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: water.pipe_borne_coverage
+  label: Pipe-borne water coverage
+  unit: percent
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: water.non_revenue_water
+  label: Non-revenue water
+  unit: percent
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: PDF tables reviewed.
+limits:
+- NWSDB schemes only; community water supply excluded.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - 'cross-source: compare with dcs-census-2024-basic-services water source'
+publication_class: B

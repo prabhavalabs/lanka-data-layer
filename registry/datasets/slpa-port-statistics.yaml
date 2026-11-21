@@ -1,0 +1,37 @@
+id: slpa-port-statistics
+title: Port traffic, containers and cargo by port
+description: Ship arrivals, TEU throughput (incl. transshipment) and cargo by port (Colombo, Hambantota, Galle, Trincomalee,
+  KKS).
+source_ids:
+- slpa
+indicators:
+- id: port.teu
+  label: Container throughput
+  unit: TEU
+  dims:
+  - port
+  - movement_type
+  geo_levels:
+  - point
+  period_type: month
+- id: port.ship_arrivals
+  label: Ship arrivals
+  unit: count
+  dims:
+  - port
+  geo_levels:
+  - point
+  period_type: month
+time_coverage:
+  from: 2015-01
+  to: 2026-09
+method: Monthly performance tables.
+limits:
+- Private terminal figures sometimes lag.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: AIS calls from imf-portwatch-lka'
+publication_class: B

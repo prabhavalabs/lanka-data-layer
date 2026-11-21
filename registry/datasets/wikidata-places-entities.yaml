@@ -1,0 +1,31 @@
+id: wikidata-places-entities
+title: Wikidata places, landmarks and institutions
+description: Geocoded Wikidata items in Sri Lanka (towns, temples, schools, hospitals, universities, heritage sites) with
+  QIDs and multilingual names.
+source_ids:
+- wikidata
+indicators:
+- id: places.wikidata_items
+  label: Wikidata items with coordinates
+  unit: count
+  dims:
+  - class
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: SPARQL for items with P17=Q854 and P625 coordinates; classify by P31.
+limits:
+- Coverage biased to notable entities.
+- Coordinates vary in precision.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  - QID crosswalk to OSM (wikidata=* tag) and Overture
+  aggregations:
+  - counts per unit by class
+publication_class: A

@@ -1,0 +1,30 @@
+id: acled
+publisher: ACLED
+title: Armed Conflict Location & Event Data
+homepage: https://acleddata.com/
+access:
+  method: api
+  endpoint: https://acleddata.com/api/acled/read
+  auth: key
+licence:
+  id: acled-terms
+  status: restricted
+  url: https://acleddata.com/terms-of-use/
+  attribution: ACLED
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- JUST
+datasets:
+- acled-events-lka
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'Terms prohibit redistribution of raw data; at most link out or publish derived aggregates if licence permits. Verification
+  2026-11-21: https://acleddata.com/api/acled/read -> HTTP 403 to scripted clients (bot protection). Other access point(s)
+  reachable.'

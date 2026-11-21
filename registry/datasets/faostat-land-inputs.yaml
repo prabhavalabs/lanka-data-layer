@@ -1,0 +1,35 @@
+id: faostat-land-inputs
+title: Land use, fertiliser and pesticide use (FAOSTAT)
+description: Agricultural land, irrigated area, fertiliser nutrients and pesticides.
+source_ids:
+- faostat
+indicators:
+- id: fao.land_use
+  label: Land use area
+  unit: 1000 ha
+  dims:
+  - item
+  geo_levels:
+  - national
+  period_type: year
+- id: fao.fertilizer_use
+  label: Fertiliser nutrient use
+  unit: tonnes
+  dims:
+  - nutrient
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1961'
+  to: '2023'
+method: RL, RFN domains.
+limits:
+- National only.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - context for 2021 fertiliser-ban yield shock
+publication_class: A

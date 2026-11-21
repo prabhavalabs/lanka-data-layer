@@ -1,0 +1,33 @@
+id: iati-datastore
+publisher: IATI Secretariat
+title: IATI Datastore (activities with recipient-country LK)
+homepage: https://iatistandard.org/en/iati-tools-and-resources/iati-datastore/
+access:
+  method: api
+  endpoint: https://api.iatistandard.org/datastore/activity/select?q=recipient_country_code:LK&wt=json
+  auth: key
+licence:
+  id: iati-publisher-licences
+  status: attribution
+  attribution: IATI publishers (licence per publisher, mostly CC BY / ODC-BY / PDDL)
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - national
+  - point
+  join: spatial
+themes:
+- ECON
+- GOVE
+- INTR
+datasets:
+- iati-activities-lka
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Free API key. d-portal (https://d-portal.org/ctrack.html?country=LK) is a keyless view; HDX mirror iati-lka. Filter
+  publishers whose licence is not open.
+dc_refs:
+- lk-initiative-funding

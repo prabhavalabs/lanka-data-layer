@@ -1,0 +1,37 @@
+id: imf-portwatch-lka
+title: Port activity and trade estimates (IMF PortWatch)
+description: Daily port calls and estimated import/export volumes for Colombo, Hambantota, Galle and Trincomalee from AIS.
+source_ids:
+- imf-portwatch
+indicators:
+- id: port.daily_calls
+  label: Port calls
+  unit: count
+  dims:
+  - port
+  - vessel_type
+  geo_levels:
+  - point
+  period_type: day
+- id: port.est_trade_volume
+  label: Estimated trade volume
+  unit: tonnes
+  dims:
+  - port
+  - flow
+  geo_levels:
+  - point
+  period_type: day
+time_coverage:
+  from: 2019-01
+  to: 2026-11
+method: HDX/ArcGIS API pull.
+limits:
+- AIS-modelled estimates.
+enrichment:
+  joins:
+  - ports as points -> ADM4 via J_PT
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: compare with slpa-port-statistics'
+publication_class: A

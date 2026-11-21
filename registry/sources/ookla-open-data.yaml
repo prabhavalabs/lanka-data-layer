@@ -1,0 +1,28 @@
+id: ookla-open-data
+publisher: Ookla
+title: Speedtest by Ookla global fixed and mobile performance tiles
+homepage: https://github.com/teamookla/ookla-open-data
+access:
+  method: api
+  endpoint: s3://ookla-open-data/parquet/performance/
+  auth: none
+licence:
+  id: cc-by-nc-sa-4.0
+  status: restricted
+  url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  attribution: Speedtest by Ookla Global Performance Metrics
+cadence:
+  frequency: quarterly
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- TECH
+datasets:
+- ookla-speed-tiles
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'Non-commercial: internal analysis only, not in open bundles.'

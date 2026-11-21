@@ -1,0 +1,43 @@
+id: moh-health-bulletin-rdhs
+title: Health service indicators by RDHS (Annual Health Bulletin)
+description: Beds, medical officers, nurses, OPD visits, maternal/child indicators by RDHS division.
+source_ids:
+- moh-health
+indicators:
+- id: heal.mo_per_100k
+  label: Medical officers per 100,000
+  unit: per 100k
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: heal.beds_by_rdhs
+  label: Hospital beds
+  unit: count
+  dims:
+  - hospital_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: heal.opd_visits
+  label: OPD visits
+  unit: count
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2023'
+method: PDF table extraction, reviewed.
+limits:
+- RDHS boundaries differ slightly from districts (Kalmunai).
+enrichment:
+  joins:
+  - RDHS/MOH area names -> MOH-area polygons (nuuuwan/lk_moh_regions) -> spatial overlay to ADM3; RDHS ~ district except Kalmunai
+    RDHS (part of Ampara)
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: B

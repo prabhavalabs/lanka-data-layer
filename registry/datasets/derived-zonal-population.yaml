@@ -1,0 +1,43 @@
+id: derived-zonal-population
+title: Harmonised population by admin unit (all grids)
+description: Population per ADM unit from WorldPop, HRSL, GHSL and census with a reconciled best estimate and model-disagreement
+  flag.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: pop.best_estimate
+  label: Best-estimate population
+  unit: persons
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: pop.model_disagreement
+  label: Coefficient of variation across population models
+  unit: ratio
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Zonal sums per model; census-anchored dasymetric reconciliation at GN.
+limits:
+- Best estimate inherits model biases; see disagreement flag.
+enrichment:
+  derived_from:
+  - worldpop-pop-grid
+  - hrsl-population-30m
+  - ghsl-population-grid
+  - dcs-census-2024-gnd
+  - cod-ab-lka-boundaries
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - density per km2 using ADM area from cod-ab-lka-boundaries
+publication_class: A

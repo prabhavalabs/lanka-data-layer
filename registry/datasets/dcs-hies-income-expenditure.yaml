@@ -1,0 +1,51 @@
+id: dcs-hies-income-expenditure
+title: Household income, expenditure and inequality
+description: Mean/median household income and expenditure by district, food share, Gini coefficient and income deciles.
+source_ids:
+- dcs-hies
+- dcs-pocketbook
+indicators:
+- id: hies.mean_household_income
+  label: Mean monthly household income
+  unit: LKR
+  dims:
+  - sector
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: hies.mean_household_expenditure
+  label: Mean monthly household expenditure
+  unit: LKR
+  dims:
+  - category
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: hies.gini_income
+  label: Gini coefficient of household income
+  unit: index
+  geo_levels:
+  - national
+  period_type: year
+- id: hies.food_share
+  label: Food share of expenditure
+  unit: percent
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2006'
+  to: '2024'
+method: PDF tables.
+limits:
+- Nominal values; deflate with NCPI for comparisons.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - survey means, no additive roll-up
+publication_class: B

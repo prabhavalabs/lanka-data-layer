@@ -1,0 +1,31 @@
+id: nuuuwan-lk-census-1971
+publisher: Nuwan Senaratna (nuuuwan) - data from DCS
+title: 'lk_census_1971: Census 1971 tables'
+homepage: https://github.com/nuuuwan/lk_census_1971
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_census_1971
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Census and Statistics, Census 1971. Parsed/scraped by Nuwan Senaratna (nuuuwan), code
+    MIT.'
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  join: pcode
+themes:
+- SOCI
+datasets:
+- dcs-census-historic
+priority: P3
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Historical baseline; units re-based via admin-region-history.

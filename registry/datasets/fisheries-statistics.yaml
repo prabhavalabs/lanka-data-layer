@@ -1,0 +1,46 @@
+id: fisheries-statistics
+title: Fish production, fleet and fisher population by district
+description: Marine and inland fish production, boats by type, fishers and landing sites by fisheries district.
+source_ids:
+- fisheries-ministry
+- dcs-pocketbook
+indicators:
+- id: agri.fish_production_district
+  label: Fish production
+  unit: tonnes
+  dims:
+  - fishery_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: agri.fishing_boats
+  label: Fishing boats
+  unit: count
+  dims:
+  - boat_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: agri.fisher_population
+  label: Active fishers
+  unit: persons
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2010'
+  to: '2025'
+method: Annual statistics report PDFs (repo mirror), reviewed.
+limits:
+- Fisheries districts mostly align with coastal districts.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - 'cross-source: cyclone/monsoon exposure of fishing communities'
+publication_class: B

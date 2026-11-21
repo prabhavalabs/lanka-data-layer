@@ -1,0 +1,30 @@
+id: ntc
+publisher: National Transport Commission
+title: NTC operational statistics and route permits
+homepage: https://www.ntc.gov.lk/
+access:
+  method: pdf
+  endpoint: https://ntc.gov.lk/corporate/pdf/2025/stat/Stat2025-EN.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: National Transport Commission
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- TRAN
+datasets:
+- ntc-bus-statistics
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- public-transport-capacity
+- road-crashes-fatalities

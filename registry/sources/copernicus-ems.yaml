@@ -1,0 +1,27 @@
+id: copernicus-ems
+publisher: Copernicus Emergency Management Service
+title: CEMS rapid mapping activations
+homepage: https://mapping.emergency.copernicus.eu/activations/
+access:
+  method: zip
+  endpoint: https://mapping.emergency.copernicus.eu/activations/
+  auth: none
+licence:
+  id: copernicus-ems-terms
+  status: attribution
+  url: https://emergency.copernicus.eu/mapping/ems/terms-and-conditions
+  attribution: Copernicus Emergency Management Service (c) European Union
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- observed-flood-extents
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

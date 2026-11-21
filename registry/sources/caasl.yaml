@@ -1,0 +1,26 @@
+id: caasl
+publisher: Civil Aviation Authority of Sri Lanka
+title: Air transport statistics
+homepage: https://www.caa.lk/
+access:
+  method: pdf
+  endpoint: https://www.caa.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Civil Aviation Authority of Sri Lanka
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- TRAN
+datasets:
+- bia-flight-arrivals
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

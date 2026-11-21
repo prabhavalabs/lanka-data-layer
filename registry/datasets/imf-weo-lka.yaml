@@ -1,0 +1,27 @@
+id: imf-weo-lka
+title: IMF World Economic Outlook series (Sri Lanka)
+description: 'WEO macro series and projections: growth, inflation, debt, current account.'
+source_ids:
+- imf-data
+indicators:
+- id: imf.weo_value
+  label: WEO series value
+  unit: various
+  dims:
+  - series
+  - vintage
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1980'
+  to: '2030'
+method: DataMapper API per indicator.
+limits:
+- Projections revised each April/October.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

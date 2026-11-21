@@ -1,0 +1,36 @@
+id: climate-trace-emissions
+title: Greenhouse gas emissions by sector and asset
+description: Facility- and sector-level GHG and air pollutant emissions estimates (power plants, cement, ports, roads).
+source_ids:
+- climate-trace
+indicators:
+- id: env.ghg_co2e
+  label: GHG emissions
+  unit: t CO2e
+  dims:
+  - sector
+  - gas
+  geo_levels:
+  - national
+  - point
+  period_type: year
+- id: env.asset_emissions
+  label: Emissions per asset
+  unit: t CO2e
+  dims:
+  - asset_type
+  geo_levels:
+  - point
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: HDX/API CSVs; assets to points.
+limits:
+- Modelled from remote sensing; uncertainty large for small assets.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - emissions per district (assets) and per capita
+publication_class: A

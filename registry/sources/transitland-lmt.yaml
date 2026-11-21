@@ -1,0 +1,30 @@
+id: transitland-lmt
+publisher: Lanka Metro Transit (via Transitland)
+title: Lanka Metro Transit GTFS + GTFS-Realtime
+homepage: https://www.transit.land/feeds/f-lanka~metro~transit
+access:
+  method: gtfs
+  endpoint: https://www.transit.land/feeds/f-lanka~metro~transit
+  auth: none
+licence:
+  id: gtfs-licence-unstated
+  status: permission_unclear
+  attribution: Lanka Metro Transit
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - point
+  - line
+  join: spatial
+themes:
+- TRAN
+datasets:
+- lk-gtfs-feeds
+priority: P1
+effort: S
+status: planned
+notes: 'Only known public GTFS in Sri Lanka (Colombo/Gampaha operator) with RT feed (f-lanka~metro~transit~rt). Licence not
+  stated on feed. transit.land web pages return 403 to scripts; use the Transitland REST API (free key) or the operator''s
+  direct feed URL. Verification 2026-11-21: https://www.transit.land/feeds/f-lanka~metro~transit -> HTTP 403 to scripted clients
+  (bot protection).'

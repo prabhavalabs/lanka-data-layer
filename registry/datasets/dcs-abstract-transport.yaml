@@ -1,0 +1,59 @@
+id: dcs-abstract-transport
+title: 'Transport statistics: roads, vehicles, ports, crashes'
+description: Road length by class and province, new vehicle registrations, port traffic and cargo, and road accidents.
+source_ids:
+- dcs-statistical-abstract
+indicators:
+- id: tran.road_length_km
+  label: Road length by class
+  unit: km
+  dims:
+  - road_class
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+- id: tran.new_vehicle_registrations
+  label: New vehicle registrations
+  unit: count
+  dims:
+  - vehicle_class
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.port_cargo_tonnes
+  label: Cargo handled by port
+  unit: tonnes
+  dims:
+  - port
+  - cargo_type
+  geo_levels:
+  - national
+  - point
+  period_type: year
+- id: tran.road_accidents
+  label: Road accidents and fatalities
+  unit: count
+  dims:
+  - severity
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2010'
+  to: '2024'
+method: Abstract ch.7 tables 7.1-7.15.
+limits:
+- Crash counts from police records; under-reporting of minor crashes.
+enrichment:
+  joins:
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  - ports as points (osm/ourairports-style port layer)
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'derive: fatalities per 100k and per vehicle'
+publication_class: B

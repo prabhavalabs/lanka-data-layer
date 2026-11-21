@@ -1,0 +1,43 @@
+id: cbsl-exchange-rates
+title: Exchange rates (daily indicative, monthly average, end-month)
+description: LKR exchange rates against major currencies.
+source_ids:
+- cbsl-exchange-rates
+indicators:
+- id: fx.rate_daily
+  label: Indicative exchange rate
+  unit: LKR per unit
+  dims:
+  - currency
+  geo_levels:
+  - national
+  period_type: day
+- id: fx.rate_monthly_avg
+  label: Monthly average exchange rate
+  unit: LKR per unit
+  dims:
+  - currency
+  geo_levels:
+  - national
+  period_type: month
+- id: fx.rate_end_month
+  label: End-of-month exchange rate
+  unit: LKR per unit
+  dims:
+  - currency
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2000-01
+  to: 2026-11
+method: XLSX workbooks.
+limits:
+- Indicative middle rates, not transaction rates.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - used to convert USD series to LKR
+publication_class: A

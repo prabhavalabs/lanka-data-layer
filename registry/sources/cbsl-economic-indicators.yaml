@@ -1,0 +1,28 @@
+id: cbsl-economic-indicators
+publisher: Central Bank of Sri Lanka
+title: Weekly economic indicators and PMI
+homepage: https://www.cbsl.gov.lk/en/statistics/economic-indicators
+access:
+  method: pdf
+  endpoint: https://www.cbsl.gov.lk/en/statistics/economic-indicators
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Central Bank of Sri Lanka, weekly economic indicators
+cadence:
+  frequency: weekly
+  expected_lag_days: 7
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- cbsl-weekly-indicators
+- cbsl-pmi
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'

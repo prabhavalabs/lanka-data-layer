@@ -1,0 +1,27 @@
+id: undp-hdr
+publisher: UNDP Human Development Report Office
+title: Human Development Index data
+homepage: https://hdr.undp.org/data-center
+access:
+  method: csv
+  endpoint: https://hdr.undp.org/data-center/documentation-and-downloads
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: UNDP Human Development Report Office
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- SOCI
+datasets:
+- undp-hdi-lka
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

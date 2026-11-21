@@ -1,0 +1,27 @@
+id: slr-timetable
+title: Railway timetable (derived GTFS)
+description: Stations and scheduled train services between all station pairs, rendered as GTFS.
+source_ids:
+- slr
+- osm-geofabrik
+indicators:
+- id: tran.train_services_per_day
+  label: Scheduled trains per station per day
+  unit: trains/day
+  dims:
+  - line
+  geo_levels:
+  - point
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Scrape schedule search, geocode stations to OSM stations, emit GTFS stop_times.
+limits:
+- Delays/cancellations not captured.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - trains per day per DS
+  - input to derived-transit-access
+publication_class: B

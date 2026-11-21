@@ -1,0 +1,56 @@
+id: dcs-census-2024-education-literacy
+title: 'Census 2024: literacy, language, digital literacy'
+description: Literacy rate, language ability (Sinhala/Tamil/English), computer and digital literacy by district.
+source_ids:
+- dcs-census-2024
+indicators:
+- id: census24.literacy_rate
+  label: Literacy rate
+  unit: percent
+  dims:
+  - sex
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.language_ability
+  label: Population able to speak/read/write language
+  unit: persons
+  dims:
+  - language
+  - skill
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.computer_literacy
+  label: Computer literacy rate
+  unit: percent
+  dims:
+  - sex
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.digital_literacy
+  label: Digital literacy rate
+  unit: percent
+  dims:
+  - sex
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: PDF extraction, reviewed.
+limits:
+- Census reference night 2024; no intercensal updates.
+- Self-reported ability.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+publication_class: B

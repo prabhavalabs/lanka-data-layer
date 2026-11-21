@@ -1,0 +1,25 @@
+id: acled-events-lka
+title: Political violence and protest events (link-only)
+description: 'ACLED events: protests, riots, violence against civilians.'
+source_ids:
+- acled
+indicators:
+- id: conf.acled_events
+  label: ACLED events
+  unit: count
+  dims:
+  - event_type
+  geo_levels:
+  - point
+  - adm2
+  period_type: month
+time_coverage:
+  from: '2010'
+  to: '2026'
+method: Not ingested into open bundles.
+limits:
+- Restricted licence.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+publication_class: A

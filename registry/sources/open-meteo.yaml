@@ -1,0 +1,28 @@
+id: open-meteo
+publisher: Open-Meteo
+title: Open-Meteo forecast and historical weather APIs
+homepage: https://open-meteo.com/
+access:
+  method: api
+  endpoint: https://archive-api.open-meteo.com/v1/archive
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Weather data by Open-Meteo.com
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: grid
+themes:
+- ENVI
+datasets:
+- open-meteo-forecast
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Free non-commercial API tier; commercial use requires subscription or self-hosting the open-source server.

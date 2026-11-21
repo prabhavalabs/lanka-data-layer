@@ -1,0 +1,24 @@
+id: treasury-women-msme-finance
+title: Women-led MSME finance indicators
+description: Credit access and lending indicators for women-led micro, small and medium enterprises.
+source_ids:
+- treasury-publications
+indicators:
+- id: fin.women_msme_credit
+  label: Credit to women-led MSMEs
+  unit: LKR million
+  dims:
+  - lender_type
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2022'
+  to: '2025'
+method: PDF tables.
+limits:
+- One-off reporting; definitions vary by lender.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+publication_class: B

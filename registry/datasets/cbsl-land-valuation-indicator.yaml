@@ -1,0 +1,26 @@
+id: cbsl-land-valuation-indicator
+title: Land Valuation Indicator (Colombo district)
+description: Semi-annual index of residential, commercial and industrial land values in Colombo district.
+source_ids:
+- cbsl-real-estate
+indicators:
+- id: re.lvi
+  label: Land valuation indicator
+  unit: index
+  dims:
+  - land_use
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: '1998'
+  to: '2025'
+method: News release tables.
+limits:
+- Colombo district only; valuation-based, not transactions.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

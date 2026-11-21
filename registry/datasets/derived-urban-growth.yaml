@@ -1,0 +1,42 @@
+id: derived-urban-growth
+title: Urban expansion 1975-2030
+description: Built-up growth rates, urban-extent change and densification per DS/district from GHSL epochs and building footprints.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: urb.builtup_growth
+  label: Built-up surface growth per 5-year epoch
+  unit: percent
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: urb.land_consumption_ratio
+  label: Land consumption rate / population growth rate (SDG 11.3.1)
+  unit: ratio
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  period_type: year
+time_coverage:
+  from: '1975'
+  to: '2030'
+method: Epoch differencing; SDG 11.3.1 method.
+limits:
+- Inherits GHSL detection limits.
+enrichment:
+  derived_from:
+  - ghsl-built-up
+  - ghsl-population-grid
+  - google-open-buildings
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

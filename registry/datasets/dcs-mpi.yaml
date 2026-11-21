@@ -1,0 +1,43 @@
+id: dcs-mpi
+title: Multidimensional Poverty Index by district
+description: 'DCS/OPHI national MPI (2019 HIES) by district: headcount, intensity, deprivation contributions.'
+source_ids:
+- dcs-hies
+- ophi-mpi
+indicators:
+- id: pov.mpi
+  label: Multidimensional Poverty Index
+  unit: index 0-1
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: pov.mpi_headcount
+  label: MPI headcount ratio
+  unit: percent
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: pov.mpi_indicator_deprivation
+  label: Censored headcount by indicator
+  unit: percent
+  dims:
+  - indicator
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2019'
+  to: '2024'
+method: Parse DCS MPI report tables; global MPI from OPHI for comparison.
+limits:
+- Different indicator set from global MPI.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - no additive roll-up
+publication_class: B

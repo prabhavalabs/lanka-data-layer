@@ -1,0 +1,73 @@
+id: dcs-pocketbook-agriculture
+title: 'Agriculture compendium: crops, livestock, fisheries, food balance'
+description: Extent and production of major crops, cost of production, livestock and fish production, paddy irrigation sources,
+  per-capita food and nutrient availability.
+source_ids:
+- dcs-pocketbook
+indicators:
+- id: agri.crop_extent
+  label: Crop extent
+  unit: ha
+  dims:
+  - crop
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.crop_production
+  label: Crop production
+  unit: tonnes
+  dims:
+  - crop
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.cost_of_production
+  label: Cost of production per hectare
+  unit: LKR/ha
+  dims:
+  - crop
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.livestock_production
+  label: Livestock product output
+  unit: tonnes
+  dims:
+  - product
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.fish_production
+  label: Fish production
+  unit: tonnes
+  dims:
+  - fishery_type
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.paddy_irrigation_share
+  label: Paddy area by water source
+  unit: percent
+  dims:
+  - water_source
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.calorie_availability
+  label: Per-capita calorie availability
+  unit: kcal/day
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: Pocket Book PDF tables, reviewed.
+limits:
+- National totals; see dcs-paddy-statistics / fisheries for district detail.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

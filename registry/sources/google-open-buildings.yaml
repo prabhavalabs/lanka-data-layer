@@ -1,0 +1,29 @@
+id: google-open-buildings
+publisher: Google Research
+title: Open Buildings v3 and 2.5D Temporal
+homepage: https://sites.research.google/gr/open-buildings/
+access:
+  method: csv
+  endpoint: https://openbuildings-public-dot-gweb-research.uw.r.appspot.com/public/tiles.geojson
+  auth: none
+licence:
+  id: cc-by-4.0+odbl
+  status: attribution
+  url: https://sites.research.google/gr/open-buildings/#license
+  attribution: Google Open Buildings (CC BY 4.0 / ODbL)
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  - raster
+  join: grid
+themes:
+- REGI
+- SOCI
+datasets:
+- google-open-buildings
+priority: P0
+effort: M
+status: planned
+verified_at: '2026-11-21'

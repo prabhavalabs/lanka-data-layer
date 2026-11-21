@@ -1,0 +1,49 @@
+id: dcs-dhs-2016-district
+title: DHS 2016 district indicators
+description: Fertility, contraception, antenatal care, child stunting/wasting, anaemia, and household amenity indicators by
+  district.
+source_ids:
+- dcs-dhs
+- dhs-program
+indicators:
+- id: dhs.tfr
+  label: Total fertility rate
+  unit: births per woman
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: dhs.stunting_u5
+  label: Stunting, children under 5
+  unit: percent
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: dhs.wasting_u5
+  label: Wasting, children under 5
+  unit: percent
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: dhs.anc4_coverage
+  label: Women with 4+ antenatal visits
+  unit: percent
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2016'
+method: PDF table extraction; confidence intervals carried where published.
+limits:
+- Survey estimates with sampling error; district CIs are wide.
+- 2016 vintage.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - no additive roll-up (survey rates)
+publication_class: B

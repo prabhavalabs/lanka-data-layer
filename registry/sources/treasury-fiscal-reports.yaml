@@ -1,0 +1,31 @@
+id: treasury-fiscal-reports
+publisher: Ministry of Finance
+title: Fiscal Strategy Statement and mid-year/final budget position reports
+homepage: https://www.treasury.gov.lk/web/fiscal-strategy-statement
+access:
+  method: pdf
+  endpoint: https://www.treasury.gov.lk/web/fiscal-strategy-statement
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Finance, Planning and Economic Development, Fiscal Strategy Statement
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+- GOVE
+datasets:
+- treasury-fiscal-performance
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- treasury-fiscal-performance
+- treasury-fiscal-in-year
+- treasury-financial-soundness

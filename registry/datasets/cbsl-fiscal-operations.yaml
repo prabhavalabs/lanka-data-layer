@@ -1,0 +1,48 @@
+id: cbsl-fiscal-operations
+title: Government fiscal operations, revenue and debt (CBSL)
+description: Annual summary of government revenue by tax type, expenditure, overall balance and central government debt stock.
+source_ids:
+- cbsl-statistical-tables
+indicators:
+- id: fisc.revenue
+  label: Government revenue
+  unit: LKR million
+  dims:
+  - revenue_type
+  geo_levels:
+  - national
+  period_type: year
+- id: fisc.expenditure
+  label: Government expenditure
+  unit: LKR million
+  dims:
+  - expenditure_type
+  geo_levels:
+  - national
+  period_type: year
+- id: fisc.overall_balance_gdp
+  label: Overall fiscal balance
+  unit: percent of GDP
+  geo_levels:
+  - national
+  period_type: year
+- id: fisc.cg_debt
+  label: Central government debt
+  unit: LKR million
+  dims:
+  - debt_type
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1990'
+  to: '2025'
+method: Sheets 3.01, 3.02, 3.05.
+limits:
+- Annual; for in-year use treasury-fiscal-performance.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

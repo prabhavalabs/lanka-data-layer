@@ -1,0 +1,40 @@
+id: wb-projects-lka
+title: World Bank projects in Sri Lanka (geocoded)
+description: All IBRD/IDA projects with commitments, sectors, status and project location points.
+source_ids:
+- worldbank-projects
+indicators:
+- id: aid.wb_commitment
+  label: World Bank commitment
+  unit: USD
+  dims:
+  - project
+  - sector
+  - status
+  geo_levels:
+  - national
+  - point
+  period_type: year
+- id: aid.wb_project_locations
+  label: Project location count
+  unit: count
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '1954'
+  to: '2026'
+method: API pull; 'locations' array to points.
+limits:
+- Location points are indicative of project sites, not footprints.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - commitments per district (split equally across locations)
+  - 'cross-source: aid per capita vs poverty'
+publication_class: A

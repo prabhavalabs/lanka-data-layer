@@ -1,0 +1,38 @@
+id: auditor-general-findings
+title: Audit findings by entity (incl. local authorities)
+description: Structured index of audit opinions and key quantified findings (unsettled advances, idle assets, losses) per
+  audited entity.
+source_ids:
+- naosl
+indicators:
+- id: audit.opinion
+  label: Audit opinion type
+  unit: category
+  dims:
+  - entity
+  geo_levels:
+  - national
+  - polygon
+  period_type: year
+- id: audit.findings_value
+  label: Value of quantified audit findings
+  unit: LKR million
+  dims:
+  - entity
+  - finding_type
+  geo_levels:
+  - national
+  - polygon
+  period_type: year
+time_coverage:
+  from: '2018'
+  to: '2025'
+method: LLM-assisted extraction from PDFs; human sign-off per report.
+limits:
+- Findings are allegations of irregularity, not proven loss.
+enrichment:
+  joins:
+  - entity -> LA polygon / province / ministry crosswalk
+  aggregations:
+  - findings per LA per capita
+publication_class: C

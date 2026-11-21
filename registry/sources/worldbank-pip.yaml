@@ -1,0 +1,27 @@
+id: worldbank-pip
+publisher: World Bank
+title: Poverty and Inequality Platform API
+homepage: https://pip.worldbank.org/
+access:
+  method: api
+  endpoint: https://api.worldbank.org/pip/v1/pip?country=LKA&format=json
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: World Bank, Poverty and Inequality Platform
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- SOCI
+datasets:
+- wb-pip-poverty
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

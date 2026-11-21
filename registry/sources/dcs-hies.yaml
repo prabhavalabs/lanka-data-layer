@@ -1,0 +1,37 @@
+id: dcs-hies
+publisher: Department of Census and Statistics, Sri Lanka
+title: Household Income and Expenditure Survey (HIES) and poverty indicators
+homepage: https://www.statistics.gov.lk/IncomeAndExpenditure/StaticalInformation
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/abstract2025/CHAP4/4.6.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, HIES
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- SOCI
+- ECON
+datasets:
+- dcs-hies-poverty
+- dcs-hies-income-expenditure
+- dcs-mpi
+priority: P0
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: HIES rounds 2012/13, 2016, 2019, 2023/24 (district poverty). Official poverty line updated monthly by DCS.
+dc_refs:
+- poverty-headcount-district
+- poverty-depth-severity
+- household-expenditure
+- household-income-inequality

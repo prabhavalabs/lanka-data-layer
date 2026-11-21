@@ -1,0 +1,27 @@
+id: cbsl-pmi
+title: Purchasing Managers' Index
+description: Monthly manufacturing and services PMI.
+source_ids:
+- cbsl-economic-indicators
+indicators:
+- id: econ.pmi
+  label: PMI
+  unit: index (50=neutral)
+  dims:
+  - sector
+  - component
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2015-01
+  to: 2026-10
+method: PDF release.
+limits:
+- Diffusion index from survey.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

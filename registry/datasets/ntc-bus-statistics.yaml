@@ -1,0 +1,49 @@
+id: ntc-bus-statistics
+title: Bus fleet, routes, passengers and crashes (NTC)
+description: Private and SLTB bus fleet, route permits, passenger-km and bus-involved crashes by province.
+source_ids:
+- ntc
+indicators:
+- id: tran.bus_fleet
+  label: Buses in operation
+  unit: count
+  dims:
+  - operator
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+- id: tran.route_permits
+  label: Route permits
+  unit: count
+  dims:
+  - route_type
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+- id: tran.bus_crashes
+  label: Bus-involved crashes
+  unit: count
+  dims:
+  - severity
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables.
+limits:
+- Permits are not observed service.
+enrichment:
+  joins:
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - buses per 10k population
+publication_class: B

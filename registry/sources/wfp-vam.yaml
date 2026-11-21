@@ -1,0 +1,32 @@
+id: wfp-vam
+publisher: World Food Programme (VAM / HDX)
+title: WFP food prices and subnational climate indicators
+homepage: https://data.humdata.org/dataset/wfp-food-prices-for-sri-lanka
+access:
+  method: csv
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=wfp-food-prices-for-sri-lanka
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: World Food Programme
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - adm2
+  - point
+  join: pcode
+themes:
+- AGRI
+- ECON
+- ENVI
+datasets:
+- wfp-food-prices
+- wfp-rainfall-ndvi-subnational
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Also lka-rainfall-subnational and lka-ndvi-subnational (CC BY, dekadal at ADM2 with p-codes).

@@ -1,0 +1,26 @@
+id: company-registrations
+title: Company registrations (business formation)
+description: Registered companies by type and registration date (~164k).
+source_ids:
+- nuuuwan-lk-eroc
+indicators:
+- id: econ.new_companies
+  label: New company registrations
+  unit: count
+  dims:
+  - company_type
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: '1990'
+  to: '2026'
+method: Repo TSV aggregated by month and type.
+limits:
+- No registered address -> no geography; names only.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

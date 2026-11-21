@@ -1,0 +1,32 @@
+id: erd
+publisher: External Resources Department, Ministry of Finance
+title: ERD foreign financing information
+homepage: https://www.erd.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.erd.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: External Resources Department
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- ECON
+- GOVE
+- INTR
+datasets:
+- budget-capital-projects
+- erd-foreign-financing
+priority: P2
+effort: M
+status: planned
+notes: 'Commitments/disbursements by development partner; nuuuwan/erd_gov_lk has an older scraper. Verification 2026-11-21:
+  https://www.erd.gov.lk/ -> redirect loop for scripted clients; https://www.erd.gov.lk/index.php -> redirect loop for scripted
+  clients.'

@@ -1,0 +1,29 @@
+id: dynamic-world
+publisher: Google / World Resources Institute
+title: Dynamic World near-real-time land cover
+homepage: https://dynamicworld.app/
+access:
+  method: api
+  endpoint: https://developers.google.com/earth-engine/datasets/catalog/GOOGLE_DYNAMICWORLD_V1
+  auth: key
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Dynamic World, Google & WRI
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+- AGRI
+datasets:
+- dynamic-world-annual
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Requires an Earth Engine export step (service account).

@@ -1,0 +1,40 @@
+id: dcs-gdp-by-industry
+title: GDP by industry (current and constant prices)
+description: Annual and quarterly gross value added by ISIC activity, current and constant (2015) prices, and growth rates.
+source_ids:
+- dcs-national-accounts
+indicators:
+- id: econ.gdp_current
+  label: GDP at current market prices
+  unit: LKR million
+  geo_levels:
+  - national
+  period_type: quarter
+- id: econ.gva_by_industry
+  label: Gross value added by industry
+  unit: LKR million
+  dims:
+  - industry
+  - price_basis
+  geo_levels:
+  - national
+  period_type: quarter
+- id: econ.gdp_growth_real
+  label: Real GDP growth
+  unit: percent
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: '2015'
+  to: '2026'
+method: Parse quarterly release tables and Abstract ch.10.
+limits:
+- Subject to revision; base-year changes break series.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: sector shares; per-capita GDP with dcs-midyear-population-district'
+publication_class: B

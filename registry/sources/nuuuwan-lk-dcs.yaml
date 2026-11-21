@@ -1,0 +1,28 @@
+id: nuuuwan-lk-dcs
+publisher: Nuwan Senaratna (nuuuwan) - data from DCS
+title: 'lk_dcs: parsed DCS releases (CCPI, NCPI ...)'
+homepage: https://github.com/nuuuwan/lk_dcs
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_dcs
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Census and Statistics. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- dcs-ccpi
+- dcs-ncpi
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Daily-checked parsed CSVs; use as machine-readable cross-check for our own PDF parsers.

@@ -1,0 +1,31 @@
+id: esa-worldcover
+publisher: European Space Agency (WorldCover consortium)
+title: ESA WorldCover 10 m 2020/2021
+homepage: https://esa-worldcover.org/en/data-access
+access:
+  method: raster
+  endpoint: https://esa-worldcover.s3.eu-central-1.amazonaws.com/
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: ESA WorldCover project / Contains modified Copernicus Sentinel data
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+- AGRI
+datasets:
+- worldcover-land-cover
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- land-cover-grid
+- land-cover-district

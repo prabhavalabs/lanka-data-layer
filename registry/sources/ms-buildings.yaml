@@ -1,0 +1,27 @@
+id: ms-buildings
+publisher: Microsoft
+title: Global ML Building Footprints
+homepage: https://github.com/microsoft/GlobalMLBuildingFootprints
+access:
+  method: csv
+  endpoint: https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv
+  auth: none
+licence:
+  id: odbl-1.0
+  status: attribution
+  url: https://opendatacommons.org/licenses/odbl/1-0/
+  attribution: Microsoft Global ML Building Footprints
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- REGI
+datasets:
+- ms-building-footprints
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

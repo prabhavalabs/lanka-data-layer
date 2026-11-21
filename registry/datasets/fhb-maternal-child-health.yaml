@@ -1,0 +1,40 @@
+id: fhb-maternal-child-health
+title: Maternal and child health and nutrition (FHB)
+description: Maternal deaths, low birth weight, growth monitoring (underweight/stunting/wasting) by RDHS.
+source_ids:
+- fhb
+indicators:
+- id: heal.maternal_mortality_ratio
+  label: Maternal mortality ratio
+  unit: per 100k live births
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: heal.low_birth_weight
+  label: Low birth weight
+  unit: percent
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: heal.child_underweight
+  label: Underweight children under 5 (growth monitoring)
+  unit: percent
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: PDF tables.
+limits:
+- Programme data from clinic attendees.
+enrichment:
+  joins:
+  - RDHS/MOH area names -> MOH-area polygons (nuuuwan/lk_moh_regions) -> spatial overlay to ADM3; RDHS ~ district except Kalmunai
+    RDHS (part of Ampara)
+  aggregations:
+  - rates by RDHS
+publication_class: B

@@ -1,0 +1,34 @@
+id: cbsl-neer-reer
+title: Nominal and real effective exchange rate indices
+description: NEER and REER indices (5- and 24-currency baskets).
+source_ids:
+- cbsl-exchange-rates
+indicators:
+- id: fx.neer
+  label: NEER index
+  unit: index
+  dims:
+  - basket
+  geo_levels:
+  - national
+  period_type: month
+- id: fx.reer
+  label: REER index
+  unit: index
+  dims:
+  - basket
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2017-01
+  to: 2026-10
+method: IF_REER.xlsx.
+limits:
+- Basket weights revised periodically.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

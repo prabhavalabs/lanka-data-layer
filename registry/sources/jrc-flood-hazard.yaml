@@ -1,0 +1,27 @@
+id: jrc-flood-hazard
+publisher: European Commission Joint Research Centre
+title: Global river flood hazard maps
+homepage: https://data.jrc.ec.europa.eu/collection/id-0054
+access:
+  method: raster
+  endpoint: https://data.jrc.ec.europa.eu/dataset/jrc-floods-floodmapgl_rp100y-tif
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: European Commission JRC, Global flood hazard maps
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+datasets:
+- jrc-river-flood-hazard
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'

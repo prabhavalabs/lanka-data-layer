@@ -1,0 +1,24 @@
+id: cbsl-workers-remittances
+title: Workers' remittances
+description: Monthly workers' remittance inflows.
+source_ids:
+- cbsl-statistical-tables
+indicators:
+- id: econ.remittances_usd
+  label: Workers' remittances
+  unit: USD million
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2009-01
+  to: 2026-09
+method: Sheet 2.14.2.
+limits:
+- Formal channels only.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

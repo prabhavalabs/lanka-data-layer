@@ -1,0 +1,38 @@
+id: treasury-debt
+publisher: Ministry of Finance (Public Debt Management Office)
+title: Quarterly Debt Bulletin
+homepage: https://www.treasury.gov.lk/web/quarterly-debt-bulletin-erd
+access:
+  method: pdf
+  endpoint: https://www.treasury.gov.lk/web/quarterly-debt-bulletin-erd
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Finance, Planning and Economic Development, Quarterly Debt Bulletin
+cadence:
+  frequency: quarterly
+  expected_lag_days: 90
+geo:
+  levels:
+  - national
+  - adm1
+  join: none
+themes:
+- ECON
+- GOVE
+datasets:
+- treasury-public-debt
+- treasury-guarantees
+- treasury-provincial-debt
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- treasury-public-debt
+- treasury-domestic-debt
+- treasury-external-creditors
+- treasury-guarantees
+- treasury-letters-of-comfort
+- treasury-province-debt

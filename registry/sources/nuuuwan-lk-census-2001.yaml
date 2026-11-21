@@ -1,0 +1,31 @@
+id: nuuuwan-lk-census-2001
+publisher: Nuwan Senaratna (nuuuwan) - data from DCS
+title: 'lk_census_2001: Census 2001 tables'
+homepage: https://github.com/nuuuwan/lk_census_2001
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_census_2001
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Census and Statistics, Census 2001. Parsed/scraped by Nuwan Senaratna (nuuuwan), code
+    MIT.'
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  join: pcode
+themes:
+- SOCI
+datasets:
+- dcs-census-historic
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 2001 census excluded most of Northern and Eastern provinces.

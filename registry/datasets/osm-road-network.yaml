@@ -1,0 +1,45 @@
+id: osm-road-network
+title: Road network by class (OSM)
+description: All highways from motorway (expressways) to tracks/footways with surface, lanes, names and refs (A/B road numbers).
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tran.osm_road_km
+  label: Road length by class
+  unit: km
+  dims:
+  - highway_class
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  - line
+  period_type: snapshot
+- id: tran.osm_road_density
+  label: Road density
+  unit: km/km2
+  dims:
+  - highway_class
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: osmium tags-filter highway=*, split at ADM4 boundaries, length in EPSG:5235.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+- Road class in OSM is not the RDA legal class.
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - density per km2 using ADM area from cod-ab-lka-boundaries
+  - 'derive: routing graph for travel-time products'
+publication_class: A

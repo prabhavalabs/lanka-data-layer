@@ -1,0 +1,27 @@
+id: aqueduct-water-risk
+title: Water stress and risk indicators
+description: Baseline and projected water stress, drought and flood risk at sub-basin level.
+source_ids:
+- wri-aqueduct
+indicators:
+- id: water.baseline_stress
+  label: Baseline water stress
+  unit: score 0-5
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2019'
+  to: '2080'
+method: GeoPackage; area-weighted to ADM.
+limits:
+- Sub-basin resolution.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+publication_class: A

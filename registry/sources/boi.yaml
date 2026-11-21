@@ -1,0 +1,30 @@
+id: boi
+publisher: Board of Investment of Sri Lanka
+title: BOI export processing zones and industrial parks
+homepage: https://investsrilanka.com/
+access:
+  method: html
+  endpoint: https://investsrilanka.com/zones/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Board of Investment of Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  - polygon
+  join: spatial
+themes:
+- ECON
+datasets:
+- lk-major-projects
+- boi-zones
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- boi-zones

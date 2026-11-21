@@ -1,0 +1,26 @@
+id: treasury-revenue-outturn
+title: Revenue outturn by tax and budget head
+description: Annual revenue outturn by tax type vs budget.
+source_ids:
+- treasury-annual-report
+indicators:
+- id: fisc.revenue_outturn
+  label: Revenue outturn
+  unit: LKR million
+  dims:
+  - tax_type
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables.
+limits:
+- Cash basis.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

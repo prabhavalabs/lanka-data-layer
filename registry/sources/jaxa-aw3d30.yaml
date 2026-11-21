@@ -1,0 +1,29 @@
+id: jaxa-aw3d30
+publisher: Japan Aerospace Exploration Agency
+title: ALOS World 3D 30 m (AW3D30)
+homepage: https://portal.opentopography.org/raster?opentopoID=OTALOS.112016.4326.2
+access:
+  method: raster
+  endpoint: https://portal.opentopography.org/raster?opentopoID=OTALOS.112016.4326.2
+  auth: manual
+licence:
+  id: jaxa-aw3d30-terms
+  status: attribution
+  url: https://earth.jaxa.jp/policy/en.html
+  attribution: (c) JAXA
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+datasets:
+- aw3d30-dsm
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Free with registration; attribution required. JAXA EORC AW3D30 pages moved (404 on 2026-11-21); OpenTopography hosts
+  AW3D30 with JAXA terms (https://earth.jaxa.jp/policy/en.html).

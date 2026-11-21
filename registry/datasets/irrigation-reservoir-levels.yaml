@@ -1,0 +1,26 @@
+id: irrigation-reservoir-levels
+title: Major reservoir storage
+description: Water storage and percentage full of major irrigation reservoirs.
+source_ids:
+- irrigation-dept
+indicators:
+- id: water.reservoir_storage_pct
+  label: Reservoir storage (percent of capacity)
+  unit: percent
+  dims:
+  - reservoir
+  geo_levels:
+  - point
+  period_type: day
+time_coverage:
+  from: 2024-01
+  to: 2026-11
+method: Scrape reservoir status pages/PDFs.
+limits:
+- Publication irregular; Mahaweli reservoirs reported separately.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'cross-source: storage vs hydropower generation (nso) and Yala season sowing'
+publication_class: B

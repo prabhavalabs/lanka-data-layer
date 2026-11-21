@@ -1,0 +1,27 @@
+id: eos-rs
+publisher: Earth Observatory of Singapore - Remote Sensing Lab
+title: Damage proxy and flood proxy maps
+homepage: https://eos-rs-products.earthobservatory.sg/
+access:
+  method: zip
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=eos-rs-sri-lanka-cyclone-ditwah-dec-2025
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Earth Observatory of Singapore Remote Sensing Lab, contains modified Copernicus Sentinel data
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+datasets:
+- observed-flood-extents
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

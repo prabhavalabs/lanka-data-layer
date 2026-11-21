@@ -1,0 +1,30 @@
+id: dhs-program
+publisher: ICF / The DHS Program
+title: DHS Program API (Sri Lanka)
+homepage: https://dhsprogram.com/
+access:
+  method: api
+  endpoint: https://api.dhsprogram.com/rest/dhs/data?countryIds=LK&f=json
+  auth: none
+licence:
+  id: dhs-terms
+  status: attribution
+  url: https://dhsprogram.com/Data/Terms-of-Use.cfm
+  attribution: The DHS Program, ICF
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- HEAL
+datasets:
+- dcs-dhs-2016-district
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Only the 1987 Sri Lanka DHS is in the DHS Program catalogue; HDX mirrors dhs-subnational-data-for-sri-lanka. Aggregate
+  indicators citable; microdata needs registration.

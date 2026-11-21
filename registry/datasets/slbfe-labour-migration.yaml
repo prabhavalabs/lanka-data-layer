@@ -1,0 +1,40 @@
+id: slbfe-labour-migration
+title: Foreign employment departures
+description: Departures for foreign employment by destination country, skill level, sex and district of origin.
+source_ids:
+- slbfe
+- dcs-pocketbook
+indicators:
+- id: migr.departures
+  label: Departures for foreign employment
+  unit: persons
+  dims:
+  - sex
+  - skill
+  - destination
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: migr.departures_per_1000
+  label: Departures per 1,000 working-age population
+  unit: per 1,000
+  geo_levels:
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2000'
+  to: '2025'
+method: Annual statistical report PDF tables; monthly provisional figures from press releases.
+limits:
+- Counts registrations, not actual migrants; informal migration excluded.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'cross-source: remittances (cbsl-workers-remittances) vs departures'
+publication_class: B

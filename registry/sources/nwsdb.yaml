@@ -1,0 +1,35 @@
+id: nwsdb
+publisher: National Water Supply and Drainage Board
+title: NWSDB annual report and statistics
+homepage: https://www.waterboard.lk/
+access:
+  method: pdf
+  endpoint: https://drive.google.com/uc?export=download&id=1WV-EGoscAYLqNtk9obb48-RRz2dcllIB
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: National Water Supply and Drainage Board
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- ENVI
+- SOCI
+datasets:
+- nwsdb-water-supply
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 'Annual report hosted on Google Drive (link from waterboard.lk). waterboard.lk returned 403 to scripted requests; the
+  annual-report Google Drive file is reachable. Verification 2026-11-21: https://www.waterboard.lk/ -> HTTP 403 to scripted
+  clients (bot protection). Other access point(s) reachable.'
+dc_refs:
+- water-supply-connections-coverage
+- water-operating-performance

@@ -1,0 +1,39 @@
+id: nso-electricity-generation
+title: Electricity generation by source (daily and 15-minute)
+description: System demand and generation by source (hydro, coal, oil, wind, solar, biomass) at 15-minute and daily resolution.
+source_ids:
+- nso-gensum
+indicators:
+- id: ener.generation_mwh
+  label: Electricity generation
+  unit: MWh
+  dims:
+  - source
+  geo_levels:
+  - national
+  period_type: day
+- id: ener.demand_mw_15min
+  label: System demand (15-min)
+  unit: MW
+  geo_levels:
+  - national
+  period_type: day
+- id: ener.renewable_share
+  label: Renewable share of generation
+  unit: percent
+  geo_levels:
+  - national
+  period_type: day
+time_coverage:
+  from: 2023-01
+  to: 2026-11
+method: Poll API, store raw JSON, aggregate.
+limits:
+- Grid-connected generation only; rooftop solar behind the meter invisible.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: hydro generation vs reservoir levels and CHIRPS rainfall'
+publication_class: A

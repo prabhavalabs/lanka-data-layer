@@ -1,0 +1,29 @@
+id: fewsnet
+publisher: FEWS NET
+title: Acute food insecurity classification (IPC-compatible)
+homepage: https://fews.net/
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=sri-lanka-acute-food-insecurity-classification
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: FEWS NET
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - adm2
+  - polygon
+  join: spatial
+themes:
+- AGRI
+- SOCI
+datasets:
+- fewsnet-food-insecurity
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

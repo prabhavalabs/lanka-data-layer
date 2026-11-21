@@ -1,0 +1,28 @@
+id: nbro-landslide-hazard-zones
+title: Landslide hazard zonation (NBRO, pending access)
+description: Landslide hazard zone polygons (low/moderate/high/very high) for landslide-prone districts.
+source_ids:
+- nbro
+indicators:
+- id: haz.landslide_zone_area
+  label: Area by landslide hazard class
+  unit: ha
+  dims:
+  - hazard_class
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage: {}
+method: Pending licence; would be ingested as polygons, overlaid with population grid.
+limits:
+- Not openly available; status blocked.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - population/buildings in high hazard zones
+publication_class: B

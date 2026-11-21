@@ -1,0 +1,33 @@
+id: meteo-climate-normals
+title: Station climate normals
+description: Monthly mean rainfall and temperature normals at principal stations.
+source_ids:
+- meteo
+- dcs-pocketbook
+indicators:
+- id: wx.normal_rain
+  label: Normal monthly rainfall
+  unit: mm
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: month
+- id: wx.normal_temp
+  label: Normal monthly mean temperature
+  unit: deg C
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: month
+time_coverage:
+  from: '1991'
+  to: '2020'
+method: Pocket Book/Met Dept tables.
+limits:
+- Station points only.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+publication_class: B

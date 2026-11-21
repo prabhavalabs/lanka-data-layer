@@ -1,0 +1,27 @@
+id: global-wind-atlas
+publisher: DTU / World Bank / ESMAP
+title: Global Wind Atlas
+homepage: https://globalwindatlas.info/
+access:
+  method: raster
+  endpoint: https://globalwindatlas.info/api/gis/country/LKA/power-density/100
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Global Wind Atlas 3, DTU/World Bank
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENER
+datasets:
+- wind-power-density
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

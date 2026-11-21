@@ -1,0 +1,28 @@
+id: gdacs
+publisher: European Commission JRC / UN OCHA
+title: Global Disaster Alert and Coordination System
+homepage: https://www.gdacs.org/
+access:
+  method: api
+  endpoint: https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?country=LKA
+  auth: none
+licence:
+  id: gdacs-terms
+  status: attribution
+  url: https://www.gdacs.org/About/termsofuse.aspx
+  attribution: GDACS
+cadence:
+  frequency: realtime
+geo:
+  levels:
+  - point
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- gdacs-alerts
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

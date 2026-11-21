@@ -1,0 +1,68 @@
+id: dcs-pocketbook
+publisher: Department of Census and Statistics, Sri Lanka
+title: Statistical Pocket Book
+homepage: https://www.statistics.gov.lk/Publication/PocketBook2026
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Publication/PocketBook2026
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Statistical Pocket Book
+cadence:
+  frequency: annual
+  expected_lag_days: 150
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- ECON
+- SOCI
+- AGRI
+- GOVE
+datasets:
+- dcs-vital-statistics
+- slbfe-labour-migration
+- dcs-gdp-expenditure
+- dcs-lfs-annual-subnational
+- dcs-hies-poverty
+- dcs-hies-income-expenditure
+- dcs-pocketbook-agriculture
+- dcs-pocketbook-prices-wages
+- dcs-pocketbook-sector-services
+- dcs-pocketbook-social-services
+- dcs-pocketbook-trade-indices
+- dmt-vehicle-registrations
+- exam-results-district
+- fisheries-statistics
+- meteo-climate-normals
+- dmc-situation-report-impacts
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Broad annual compendium; prefer primary agency sources where available and use Pocket Book as fallback/cross-check.
+dc_refs:
+- crop-area-production
+- crop-production-costs
+- livestock-production
+- paddy-irrigation
+- fisheries-production-capacity
+- food-nutrient-availability
+- building-material-prices
+- minimum-wage-indices
+- energy-supply-consumption
+- telecom-services
+- transport-passengers-freight
+- tourism-activity
+- government-health-services
+- school-resources
+- school-examination-results
+- vocational-training
+- local-government-services
+- natural-disaster-impacts
+- external-trade-indices

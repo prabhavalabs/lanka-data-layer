@@ -1,0 +1,50 @@
+id: dcs-hies-poverty
+title: Poverty headcount, depth and severity by district
+description: Official poverty headcount index, poverty gap and squared gap by district and sector (urban/rural/estate).
+source_ids:
+- dcs-hies
+- dcs-pocketbook
+indicators:
+- id: pov.headcount_ratio
+  label: Poverty headcount ratio (official line)
+  unit: percent
+  dims:
+  - sector
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: pov.poverty_gap
+  label: Poverty gap index
+  unit: percent
+  geo_levels:
+  - national
+  period_type: year
+- id: pov.squared_gap
+  label: Squared poverty gap
+  unit: percent
+  geo_levels:
+  - national
+  period_type: year
+- id: pov.poor_population
+  label: Population below poverty line
+  unit: persons
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2002'
+  to: '2024'
+method: PDF tables; reviewed.
+limits:
+- Survey rounds are 3-5 years apart.
+- District estimates have wide CIs; Northern districts excluded before 2009.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - counts of poor roll up; rates recomputed
+  - 'derive: small-area poverty model with census + nightlights + access (Tier 2)'
+publication_class: B

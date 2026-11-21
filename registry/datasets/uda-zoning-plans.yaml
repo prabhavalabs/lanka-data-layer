@@ -1,0 +1,26 @@
+id: uda-zoning-plans
+title: Urban development plan zones
+description: Zoning (density, use) from UDA development plans for declared urban areas.
+source_ids:
+- uda
+indicators:
+- id: urb.zone_area
+  label: Zoned area by zone type
+  unit: ha
+  dims:
+  - zone_type
+  geo_levels:
+  - polygon
+  period_type: snapshot
+time_coverage:
+  from: '2025'
+  to: '2035'
+method: Georeference plan maps; LLM-assisted extraction of zoning regulations; human sign-off.
+limits:
+- Plan maps not published as GIS; digitising is approximate.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - zoned capacity vs current built-up (ghsl)
+publication_class: C

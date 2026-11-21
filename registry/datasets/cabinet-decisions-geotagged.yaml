@@ -1,0 +1,30 @@
+id: cabinet-decisions-geotagged
+title: Cabinet decisions (geotagged index)
+description: Index of cabinet decisions with ministry, topic, amounts and mentioned places geotagged to p-codes.
+source_ids:
+- nuuuwan-lk-cabinet-decisions
+indicators:
+- id: gov.cabinet_decisions
+  label: Cabinet decisions mentioning a unit
+  unit: count
+  dims:
+  - topic
+  geo_levels:
+  - national
+  - adm2
+  period_type: month
+time_coverage:
+  from: '2010'
+  to: '2026'
+method: LLM-assisted entity extraction (places, amounts, ministries) + human sign-off on samples.
+limits:
+- Decisions are approvals, not implementation.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - decisions per district per year
+publication_class: C

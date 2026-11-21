@@ -1,0 +1,38 @@
+id: overture-buildings
+title: Conflated building footprints (Overture)
+description: Buildings conflated from OSM, Microsoft and Google with heights where known.
+source_ids:
+- overture-maps
+indicators:
+- id: built.overture_buildings
+  label: Buildings
+  unit: count
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: built.overture_footprint_m2
+  label: Building footprint area
+  unit: m2
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+  to: '2026'
+method: DuckDB -> grid cell aggregates.
+limits:
+- Mixed vintages in conflation.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - density per km2 using ADM area from cod-ab-lka-boundaries
+publication_class: A

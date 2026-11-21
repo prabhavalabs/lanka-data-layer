@@ -1,0 +1,33 @@
+id: dcs-population-vital
+publisher: Department of Census and Statistics, Sri Lanka
+title: Mid-year population estimates and vital statistics
+homepage: https://www.statistics.gov.lk/Population/StaticalInformation/VitalStatistics
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/abstract2025/CHAP2/2.1a.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics / Registrar General's Department
+cadence:
+  frequency: annual
+  expected_lag_days: 270
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- SOCI
+- HEAL
+datasets:
+- dcs-midyear-population-district
+- dcs-vital-statistics
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- population-estimates-district
+- vital-statistics

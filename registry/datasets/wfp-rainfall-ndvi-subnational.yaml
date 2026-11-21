@@ -1,0 +1,36 @@
+id: wfp-rainfall-ndvi-subnational
+title: Dekadal rainfall and NDVI by district (WFP)
+description: 10-day rainfall, rainfall anomaly, NDVI and NDVI anomaly per ADM2 from CHIRPS and MODIS.
+source_ids:
+- wfp-vam
+indicators:
+- id: clim.wfp_rainfall_dekad
+  label: Dekadal rainfall
+  unit: mm
+  geo_levels:
+  - adm2
+  period_type: day
+- id: clim.wfp_rainfall_anomaly
+  label: Rainfall anomaly vs long-term mean
+  unit: percent
+  geo_levels:
+  - adm2
+  period_type: day
+- id: env.wfp_ndvi_anomaly
+  label: NDVI anomaly
+  unit: percent
+  geo_levels:
+  - adm2
+  period_type: day
+time_coverage:
+  from: 1981-01
+  to: 2026-11
+method: HDX CSVs keyed by ADM2 p-code.
+limits:
+- District averages hide intra-district variation; use chirps-rainfall for grid.
+enrichment:
+  joins:
+  - 'native p-codes: direct join to admin_units (ADM0-ADM4)'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

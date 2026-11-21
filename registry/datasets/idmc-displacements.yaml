@@ -1,0 +1,28 @@
+id: idmc-displacements
+title: Internal displacements (disasters and conflict)
+description: New displacements by event (floods, cyclones) and stock of IDPs.
+source_ids:
+- idmc
+indicators:
+- id: disp.new_displacements
+  label: New internal displacements
+  unit: persons
+  dims:
+  - cause
+  - hazard
+  geo_levels:
+  - national
+  - point
+  period_type: year
+time_coverage:
+  from: '2008'
+  to: '2025'
+method: HDX CSVs (IDU events with lat/lon).
+limits:
+- Event figures are estimates from reports.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

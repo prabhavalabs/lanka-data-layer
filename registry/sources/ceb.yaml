@@ -1,0 +1,30 @@
+id: ceb
+publisher: Ceylon Electricity Board
+title: CEB Statistical Digest
+homepage: https://www.ceb.lk/
+access:
+  method: pdf
+  endpoint: https://ceb.lk/front_img/img_reports/1783568926SD-2025-Finalized-(Web-Edition).pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ceylon Electricity Board
+cadence:
+  frequency: annual
+  expected_lag_days: 200
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- ENER
+datasets:
+- ceb-statistical-digest
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- electricity-customers-sales

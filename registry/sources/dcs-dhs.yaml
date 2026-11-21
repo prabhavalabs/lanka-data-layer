@@ -1,0 +1,30 @@
+id: dcs-dhs
+publisher: Department of Census and Statistics, Sri Lanka
+title: Sri Lanka Demographic and Health Survey 2016
+homepage: https://www.statistics.gov.lk/Health/StaticalInformation/DemographicAndHealthSurvey-2016
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Health/StaticalInformation/DemographicAndHealthSurvey-2016
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Sri Lanka DHS 2016
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- HEAL
+- SOCI
+datasets:
+- dcs-dhs-2016-district
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: District-level estimates for fertility, maternal/child health, nutrition, domestic violence. Next DHS round expected;
+  microdata via NADA.

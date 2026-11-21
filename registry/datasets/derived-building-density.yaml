@@ -1,0 +1,42 @@
+id: derived-building-density
+title: Building density and growth
+description: Buildings per km2, footprint share and 2016-2023 growth per GN, with OSM completeness ratio.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: built.density
+  label: Buildings per km2
+  unit: per km2
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: built.osm_completeness
+  label: OSM building completeness
+  unit: percent
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Grid aggregates.
+limits:
+- ML false positives.
+enrichment:
+  derived_from:
+  - google-open-buildings
+  - overture-buildings
+  - osm-buildings
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - density per km2 using ADM area from cod-ab-lka-boundaries
+publication_class: A

@@ -1,0 +1,60 @@
+id: osm-geofabrik
+publisher: OpenStreetMap contributors (extract by Geofabrik GmbH)
+title: OpenStreetMap Sri Lanka daily extract
+homepage: https://download.geofabrik.de/asia/sri-lanka.html
+access:
+  method: osm_pbf
+  endpoint: https://download.geofabrik.de/asia/sri-lanka-latest.osm.pbf
+  auth: none
+licence:
+  id: odbl-1.0
+  status: attribution
+  url: https://opendatacommons.org/licenses/odbl/1-0/
+  attribution: (c) OpenStreetMap contributors
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  - line
+  - polygon
+  join: spatial
+themes:
+- TRAN
+- REGI
+- ENVI
+- SOCI
+datasets:
+- osm-road-network
+- osm-rail-network
+- osm-pois-amenities
+- osm-tourism-attractions
+- osm-parks-greenspace
+- osm-trails-cycling
+- osm-buildings
+- osm-waterways-waterbodies
+- osm-protected-areas
+- osm-places
+- osm-routing-graph
+- slr-timetable
+- rda-national-roads
+- moh-health-institutions
+- boi-zones
+- sltda-registered-establishments
+priority: P0
+effort: M
+status: active
+verified_at: '2026-11-21'
+notes: 'Replaces Overpass pulls and the ceylon-hub seed copy. HOT export mirrors on HDX (hotosm_lka_*). ODbL share-alike:
+  OSM-derived tables shipped in separate files.'
+dc_refs:
+- expressways
+- hospitals
+- schools
+- workplaces
+- attractions
+- waterfalls
+- parks
+- trails
+- cycling
+- osm_foot_graph

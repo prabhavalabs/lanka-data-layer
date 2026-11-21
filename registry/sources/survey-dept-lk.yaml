@@ -1,0 +1,30 @@
+id: survey-dept-lk
+publisher: Survey Department of Sri Lanka
+title: Survey Department topographic and cadastral data
+homepage: https://www.survey.gov.lk/
+access:
+  method: html
+  endpoint: https://www.survey.gov.lk/
+  auth: manual
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Survey Department of Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - line
+  - polygon
+  - raster
+  join: spatial
+themes:
+- REGI
+datasets:
+- survey-topographic-layers
+priority: P3
+effort: L
+status: blocked
+verified_at: '2026-11-21'
+notes: 1:50k/1:10k topographic layers are sold, not openly licensed. Ask for an open-data release; until then rely on OSM,
+  COD-AB and nuuuwan/survey_gov_lk metadata.

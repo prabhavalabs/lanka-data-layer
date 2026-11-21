@@ -1,0 +1,28 @@
+id: dcs-economic-census
+publisher: Department of Census and Statistics, Sri Lanka
+title: Economic Census 2013/14
+homepage: https://www.statistics.gov.lk/Industry/StaticalInformation/EconomicCensus
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Industry/StaticalInformation/EconomicCensus
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Economic Census
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - national
+  - adm2
+  - adm3
+  join: name_match
+themes:
+- ECON
+datasets:
+- dcs-economic-census-establishments
+priority: P3
+effort: M
+status: planned
+verified_at: '2026-11-21'

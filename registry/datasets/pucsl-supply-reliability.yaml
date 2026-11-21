@@ -1,0 +1,36 @@
+id: pucsl-supply-reliability
+title: Electricity supply interruptions (SAIDI/SAIFI)
+description: Average interruption duration and frequency per customer by distribution licensee and province/area.
+source_ids:
+- pucsl
+indicators:
+- id: ener.saidi
+  label: SAIDI
+  unit: minutes/customer
+  dims:
+  - licensee
+  geo_levels:
+  - adm1
+  - polygon
+  period_type: quarter
+- id: ener.saifi
+  label: SAIFI
+  unit: interruptions/customer
+  dims:
+  - licensee
+  geo_levels:
+  - adm1
+  - polygon
+  period_type: quarter
+time_coverage:
+  from: 2024-Q3
+  to: 2026-Q1
+method: XLS parse.
+limits:
+- Self-reported by utilities.
+enrichment:
+  joins:
+  - distribution area names -> province/area crosswalk
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

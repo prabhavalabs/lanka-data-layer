@@ -1,0 +1,33 @@
+id: moe-school-census
+publisher: Ministry of Education, Statistics Branch
+title: Annual School Census reports
+homepage: https://moe.gov.lk/en/report/
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Resource/en/Education/School_Census/Annual_School_Census_SummaryReport_2025.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Education
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- EDUC
+datasets:
+- moe-school-census
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 'District and education-zone tables; no school-by-school list is published (use Giga + OSM for points). Verification
+  2026-11-21: https://moe.gov.lk/en/report/ -> connection timed out (no response; .gov.lk hosts often drop non-Sri-Lankan
+  traffic - re-verify from an LK vantage point). Other access point(s) reachable.'
+dc_refs:
+- school-resources

@@ -1,0 +1,32 @@
+id: dcs-pocketbook-trade-indices
+title: External trade volume/price indices
+description: Export and import volume, unit value and terms-of-trade indices.
+source_ids:
+- dcs-pocketbook
+indicators:
+- id: trade.terms_of_trade
+  label: Terms of trade index
+  unit: index
+  geo_levels:
+  - national
+  period_type: year
+- id: trade.volume_index
+  label: Trade volume index
+  unit: index
+  dims:
+  - flow
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2010'
+  to: '2025'
+method: PDF tables.
+limits:
+- Index base changes.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

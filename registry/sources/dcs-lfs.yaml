@@ -1,0 +1,39 @@
+id: dcs-lfs
+publisher: Department of Census and Statistics, Sri Lanka
+title: Labour Force Survey (quarterly and annual reports)
+homepage: https://www.statistics.gov.lk/LabourForce/StaticalInformation
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Resource/en/LabourForce/Annual_Reports/LFS2025.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Labour Force Survey
+cadence:
+  frequency: quarterly
+  expected_lag_days: 120
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- ECON
+- SOCI
+datasets:
+- dcs-lfs-quarterly
+- dcs-lfs-annual-subnational
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- labour-employment-profile-history
+- labour-force-sex-history
+- labour-force
+- informal-sector-employment-district
+- unemployment-by-province
+- employment-by-industry
+- employment-by-occupation

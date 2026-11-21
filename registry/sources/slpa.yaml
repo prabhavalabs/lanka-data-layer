@@ -1,0 +1,28 @@
+id: slpa
+publisher: Sri Lanka Ports Authority
+title: SLPA port performance statistics
+homepage: https://www.slpa.lk/
+access:
+  method: pdf
+  endpoint: https://www.slpa.lk/port-colombo/performance
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Sri Lanka Ports Authority
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- TRAN
+- ECON
+datasets:
+- lk-major-projects
+- slpa-port-statistics
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

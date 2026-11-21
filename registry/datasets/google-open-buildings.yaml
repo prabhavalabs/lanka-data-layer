@@ -1,0 +1,52 @@
+id: google-open-buildings
+title: Building footprints and annual building presence (Google)
+description: ~6M building polygons with confidence; 2.5D temporal layer gives building presence/height 2016-2023.
+source_ids:
+- google-open-buildings
+indicators:
+- id: built.gob_count
+  label: Buildings (Google)
+  unit: count
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: built.gob_area_m2
+  label: Building footprint area (Google)
+  unit: m2
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: built.gob_temporal_presence
+  label: Building presence fraction (2.5D)
+  unit: fraction
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '2016'
+  to: '2023'
+method: S2 tile CSVs filtered to LKA; confidence >= 0.7; aggregated to canonical grid.
+limits:
+- ML-detected; false positives on rocks/greenhouses.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: building growth 2016-2023 per GN'
+publication_class: A

@@ -1,0 +1,32 @@
+id: cyclone-tracks
+title: Cyclone tracks affecting Sri Lanka
+description: North Indian Ocean cyclone tracks passing within 300 km of Sri Lanka with wind speeds.
+source_ids:
+- ibtracs
+indicators:
+- id: haz.cyclone_tracks
+  label: Cyclone tracks within 300 km
+  unit: count
+  geo_levels:
+  - line
+  period_type: year
+- id: haz.max_wind_near_lk
+  label: Max sustained wind within 300 km
+  unit: knots
+  dims:
+  - storm
+  geo_levels:
+  - line
+  period_type: snapshot
+time_coverage:
+  from: '1880'
+  to: '2025'
+method: Filter NI basin by distance buffer.
+limits:
+- Track positions 3-hourly; wind field not modelled.
+enrichment:
+  joins:
+  - track buffer overlay with ADM2
+  aggregations:
+  - cyclone return frequency per coastal district
+publication_class: A

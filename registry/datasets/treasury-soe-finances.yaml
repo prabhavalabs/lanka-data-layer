@@ -1,0 +1,35 @@
+id: treasury-soe-finances
+title: State-owned enterprise finances
+description: Revenue, profit/loss, assets and liabilities of the 52 strategic SOEs and sector totals.
+source_ids:
+- treasury-annual-report
+indicators:
+- id: soe.profit
+  label: SOE profit/loss
+  unit: LKR million
+  dims:
+  - soe
+  - sector
+  geo_levels:
+  - national
+  period_type: year
+- id: soe.liabilities
+  label: SOE total liabilities
+  unit: LKR million
+  dims:
+  - soe
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables.
+limits:
+- Unaudited figures for latest year.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - sector totals
+publication_class: B

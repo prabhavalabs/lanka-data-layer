@@ -1,0 +1,29 @@
+id: heigit-road-surface
+title: Road surface (paved/unpaved) prediction
+description: ML-predicted surface type for OSM roads from street-level imagery.
+source_ids:
+- heigit
+indicators:
+- id: tran.paved_share
+  label: Share of road length paved
+  unit: percent
+  geo_levels:
+  - line
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: Join predictions to OSM way ids.
+limits:
+- Predictions; imagery coverage uneven.
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'derive: all-weather access index per GN'
+publication_class: A

@@ -1,0 +1,31 @@
+id: imf-data
+publisher: International Monetary Fund
+title: IMF DataMapper / WEO and IMF data portal
+homepage: https://www.imf.org/en/Countries/LKA
+access:
+  method: api
+  endpoint: https://www.imf.org/external/datamapper/api/v1/NGDP_RPCH/LKA
+  auth: none
+licence:
+  id: imf-terms
+  status: permission_unclear
+  url: https://www.imf.org/en/About/copyright-and-terms
+  attribution: International Monetary Fund
+cadence:
+  frequency: quarterly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- imf-weo-lka
+priority: P2
+effort: S
+status: planned
+notes: 'IMF terms permit reuse of data with attribution but restrict some commercial redistribution; treat as amber until
+  confirmed. imf.org and the DataMapper API returned HTTP 403 to scripted requests on 2026-11-21 (bot protection); use browser-like
+  client or IMF SDMX 3.0 API (api.imf.org) with backoff. Verification 2026-11-21: https://www.imf.org/en/Countries/LKA ->
+  HTTP 403 to scripted clients (bot protection); https://www.imf.org/external/datamapper/api/v1/NGDP_RPCH/LKA -> HTTP 403
+  to scripted clients (bot protection).'

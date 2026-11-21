@@ -1,0 +1,27 @@
+id: jrc-gsw
+publisher: European Commission JRC / Google
+title: Global Surface Water Explorer
+homepage: https://global-surface-water.appspot.com/
+access:
+  method: raster
+  endpoint: https://storage.googleapis.com/global-surface-water/downloads2021/
+  auth: none
+licence:
+  id: jrc-gsw-terms
+  status: attribution
+  url: https://global-surface-water.appspot.com/faq
+  attribution: EC JRC/Google, Pekel et al. 2016
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+datasets:
+- jrc-surface-water
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

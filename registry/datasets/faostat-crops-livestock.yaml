@@ -1,0 +1,28 @@
+id: faostat-crops-livestock
+title: Crop and livestock production (FAOSTAT)
+description: Area harvested, yield and production per crop; livestock numbers and products.
+source_ids:
+- faostat
+indicators:
+- id: fao.crop_production
+  label: Crop production
+  unit: tonnes
+  dims:
+  - item
+  - element
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1961'
+  to: '2024'
+method: QCL domain.
+limits:
+- Mix of official and FAO estimates (flagged).
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: open mirror for dcs-pocketbook-agriculture'
+publication_class: A

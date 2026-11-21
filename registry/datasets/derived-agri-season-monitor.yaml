@@ -1,0 +1,33 @@
+id: derived-agri-season-monitor
+title: Crop-season monitor by district
+description: Maha/Yala season rainfall, NDVI anomaly, reservoir storage and paddy sown/harvested ratio in one district panel.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: agri.season_stress_index
+  label: Season stress index
+  unit: index
+  dims:
+  - season
+  geo_levels:
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2001'
+  to: '2026'
+method: Standardised components averaged; compared with crop-failure ratio.
+limits:
+- Indicative; not a yield forecast.
+enrichment:
+  derived_from:
+  - chirps-rainfall
+  - modis-ndvi
+  - irrigation-reservoir-levels
+  - dcs-paddy-statistics
+  - wfp-rainfall-ndvi-subnational
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

@@ -1,0 +1,30 @@
+id: naosl
+publisher: National Audit Office of Sri Lanka (Auditor General)
+title: Auditor General reports
+homepage: https://www.naosl.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.naosl.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: National Audit Office of Sri Lanka
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - polygon
+  join: name_match
+themes:
+- GOVE
+- JUST
+datasets:
+- auditor-general-findings
+priority: P2
+effort: L
+status: planned
+notes: 'Annual reports plus per-entity audit reports (ministries, SOEs, local authorities, provincial councils). Verification
+  2026-11-21: https://www.naosl.gov.lk/ -> connection timed out (no response; .gov.lk hosts often drop non-Sri-Lankan traffic
+  - re-verify from an LK vantage point).'

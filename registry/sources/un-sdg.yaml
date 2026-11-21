@@ -1,0 +1,30 @@
+id: un-sdg
+publisher: UN Statistics Division
+title: UN SDG Global Database API
+homepage: https://unstats.un.org/sdgs/dataportal
+access:
+  method: api
+  endpoint: https://unstats.un.org/sdgapi/v1/sdg/Series/List
+  auth: none
+licence:
+  id: un-terms
+  status: attribution
+  url: https://www.un.org/en/about-us/terms-of-use
+  attribution: United Nations Statistics Division
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- SOCI
+- ENVI
+- HEAL
+- EDUC
+datasets:
+- un-sdg-lka
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

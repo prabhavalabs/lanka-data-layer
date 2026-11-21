@@ -1,0 +1,31 @@
+id: opencellid-towers
+title: Mobile cell sites (crowd-sourced)
+description: Approximate cell tower locations by radio type (GSM/UMTS/LTE/NR) for MCC 413.
+source_ids:
+- opencellid
+indicators:
+- id: tech.cell_sites
+  label: Cell sites
+  unit: count
+  dims:
+  - radio
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Download MCC 413 file; dedupe.
+limits:
+- Crowd-sourced positions are estimates; urban bias.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'derive: 4G/5G coverage proxy per GN (pop within 3 km of LTE site)'
+publication_class: A

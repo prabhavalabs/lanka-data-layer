@@ -1,0 +1,28 @@
+id: transparency-intl
+publisher: Transparency International
+title: Corruption Perceptions Index
+homepage: https://www.transparency.org/en/cpi
+access:
+  method: csv
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=lka-corruption-perceptions-index
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Transparency International, CPI
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- GOVE
+- INTR
+datasets:
+- ti-cpi-lka
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

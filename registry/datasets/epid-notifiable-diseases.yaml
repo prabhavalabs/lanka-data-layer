@@ -1,0 +1,38 @@
+id: epid-notifiable-diseases
+title: Notifiable disease cases by RDHS, weekly
+description: Weekly notified cases of dengue, leptospirosis, typhoid, hepatitis, chickenpox, etc. by RDHS division.
+source_ids:
+- epid-unit
+indicators:
+- id: heal.notified_cases
+  label: Notified cases
+  unit: count
+  dims:
+  - disease
+  geo_levels:
+  - adm2
+  period_type: day
+- id: heal.notified_rate
+  label: Notified cases per 100,000
+  unit: per 100k
+  dims:
+  - disease
+  geo_levels:
+  - adm2
+  period_type: day
+time_coverage:
+  from: 2010-01
+  to: 2026-11
+method: Weekly PDF table parse (fixed layout); class B review.
+limits:
+- Notification under-counts; week dates are reporting weeks.
+enrichment:
+  joins:
+  - RDHS/MOH area names -> MOH-area polygons (nuuuwan/lk_moh_regions) -> spatial overlay to ADM3; RDHS ~ district except Kalmunai
+    RDHS (part of Ampara)
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: leptospirosis vs paddy calendar and rainfall'
+publication_class: B

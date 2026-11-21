@@ -1,0 +1,30 @@
+id: chirps
+publisher: Climate Hazards Center, UC Santa Barbara
+title: CHIRPS v2.0 rainfall
+homepage: https://www.chc.ucsb.edu/data/chirps
+access:
+  method: raster
+  endpoint: https://data.chc.ucsb.edu/products/CHIRPS/v2.0/
+  auth: none
+licence:
+  id: cc0-1.0
+  status: open
+  url: https://creativecommons.org/publicdomain/zero/1.0/
+  attribution: Funk et al. 2015, CHIRPS, Climate Hazards Center UCSB
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+- AGRI
+datasets:
+- chirps-rainfall
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Public domain dedication (CC0). Daily, pentad, dekad and monthly global GeoTIFFs; CHIRPS v3 rolling out. CHIRPS v3.0
+  is published alongside v2.0 under https://data.chc.ucsb.edu/products/CHIRPS/; plan migration.

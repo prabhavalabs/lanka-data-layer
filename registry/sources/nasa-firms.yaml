@@ -1,0 +1,27 @@
+id: nasa-firms
+publisher: NASA FIRMS
+title: Fire Information for Resource Management System
+homepage: https://firms.modaps.eosdis.nasa.gov/
+access:
+  method: api
+  endpoint: https://firms.modaps.eosdis.nasa.gov/api/country/csv/{MAP_KEY}/VIIRS_SNPP_NRT/LKA/10
+  auth: key
+licence:
+  id: public-domain
+  status: open
+  attribution: NASA FIRMS (MODIS/VIIRS active fire)
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+datasets:
+- firms-active-fires
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Free MAP_KEY. HDX mirrors South Asia files.

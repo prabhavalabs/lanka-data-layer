@@ -1,0 +1,45 @@
+id: dcs-census-2024-gnd
+title: Census 2024 GN-division profile
+description: Population, sex, age bands and households for all ~14,000 GN divisions.
+source_ids:
+- nuuuwan-lk-census-2024
+- dcs-census-2024
+indicators:
+- id: census24.gnd_pop
+  label: Population (GN)
+  unit: persons
+  dims:
+  - sex
+  geo_levels:
+  - adm4
+  period_type: snapshot
+- id: census24.gnd_age_band
+  label: Population by broad age band (GN)
+  unit: persons
+  dims:
+  - age_band
+  geo_levels:
+  - adm4
+  period_type: snapshot
+- id: census24.gnd_households
+  label: Households (GN)
+  unit: count
+  geo_levels:
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: Pull repo TSVs; map GN ids via gnd-id-crosswalk; validate DS sums against official DS tables.
+limits:
+- Census reference night 2024; no intercensal updates.
+- GN totals may not add exactly to DS totals where ids failed to match.
+enrichment:
+  derived_from:
+  - gnd-id-crosswalk
+  joins:
+  - gnd-id-crosswalk -> ADM4 p-codes
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'derive: GN density, census vs grid model residuals'
+publication_class: B

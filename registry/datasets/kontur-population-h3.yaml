@@ -1,0 +1,29 @@
+id: kontur-population-h3
+title: Population on H3 hexagons (Kontur)
+description: Fused GHSL/HRSL/OSM-based population on 400 m H3 cells; useful cross-check and H3 interop.
+source_ids:
+- kontur-population
+indicators:
+- id: pop.kontur_h3
+  label: Population per H3 r8 cell
+  unit: persons
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2023'
+method: Hexagon centroids assigned to ADM4; sums.
+limits:
+- Derived product of other grids; adds no independent signal.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

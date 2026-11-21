@@ -1,0 +1,39 @@
+id: dengue-weekly-cases
+title: Dengue cases by district and MOH area, weekly
+description: Weekly reported dengue cases by district (and MOH area where available), with incidence per 100k.
+source_ids:
+- ndcu-dengue
+- nuuuwan-lk-dengue
+indicators:
+- id: heal.dengue_cases
+  label: Dengue cases
+  unit: count
+  geo_levels:
+  - adm2
+  - polygon
+  period_type: day
+- id: heal.dengue_incidence
+  label: Dengue incidence per 100,000
+  unit: per 100k
+  geo_levels:
+  - adm2
+  - polygon
+  period_type: day
+time_coverage:
+  from: 2010-01
+  to: 2026-11
+method: Scrape + repo history; MOH names to moh-area-boundaries.
+limits:
+- Reported cases; testing intensity varies.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  - RDHS/MOH area names -> MOH-area polygons (nuuuwan/lk_moh_regions) -> spatial overlay to ADM3; RDHS ~ district except Kalmunai
+    RDHS (part of Ampara)
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: lagged rainfall (chirps) and urban density -> outbreak risk'
+publication_class: A

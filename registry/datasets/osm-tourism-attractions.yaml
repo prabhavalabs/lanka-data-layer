@@ -1,0 +1,29 @@
+id: osm-tourism-attractions
+title: Attractions, viewpoints, waterfalls, heritage (OSM)
+description: Tourism attractions, viewpoints, waterfalls, archaeological sites, museums, beaches.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tour.osm_attractions
+  label: Attractions by type
+  unit: count
+  dims:
+  - type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: tourism=*, natural=waterfall/beach, historic=* filters.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

@@ -1,0 +1,37 @@
+id: dcs-abstract-justice
+title: Crime, courts and prisons (Abstract)
+description: Grave crimes by type and police division, court cases, prison admissions.
+source_ids:
+- dcs-statistical-abstract
+- police-lk
+indicators:
+- id: just.grave_crimes
+  label: Grave crimes reported
+  unit: count
+  dims:
+  - crime_type
+  geo_levels:
+  - national
+  - polygon
+  period_type: year
+- id: just.prison_admissions
+  label: Prison admissions
+  unit: count
+  dims:
+  - status
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2010'
+  to: '2024'
+method: Abstract tables + Police grave crime statistics.
+limits:
+- Police divisions do not align with districts; recorded crime reflects reporting behaviour.
+enrichment:
+  joins:
+  - police division names -> police division polygons (OSM police boundaries where mapped) -> ADM2 overlay
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: B

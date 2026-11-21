@@ -1,0 +1,27 @@
+id: unicef-lka
+title: Child and maternal indicators (UNICEF)
+description: Child mortality, nutrition, immunisation, education and protection indicators.
+source_ids:
+- unicef-data
+indicators:
+- id: unicef.value
+  label: UNICEF indicator
+  unit: various
+  dims:
+  - indicator
+  - sex
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1990'
+  to: '2025'
+method: SDMX CSV.
+limits:
+- National only.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

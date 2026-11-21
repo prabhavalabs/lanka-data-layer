@@ -1,0 +1,26 @@
+id: aw3d30-dsm
+title: ALOS World 3D DSM 30 m
+description: Optical-stereo DSM; best alternative where Copernicus DEM has artefacts.
+source_ids:
+- jaxa-aw3d30
+indicators:
+- id: terrain.aw3d30_elevation
+  label: Elevation (AW3D30)
+  unit: m
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2006'
+  to: '2011'
+method: Tile download after registration.
+limits:
+- DSM; voids in cloudy areas filled from other DEMs.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+publication_class: A

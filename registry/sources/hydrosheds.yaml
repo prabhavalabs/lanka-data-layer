@@ -1,0 +1,28 @@
+id: hydrosheds
+publisher: WWF / McGill HydroLab
+title: HydroSHEDS (HydroRIVERS, HydroBASINS)
+homepage: https://www.hydrosheds.org/
+access:
+  method: zip
+  endpoint: https://data.hydrosheds.org/file/HydroRIVERS/HydroRIVERS_v10_as_shp.zip
+  auth: none
+licence:
+  id: hydrosheds-licence
+  status: attribution
+  url: https://www.hydrosheds.org/terms-of-use
+  attribution: Lehner & Grill 2013, HydroSHEDS
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - line
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- hydrosheds-rivers-basins
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

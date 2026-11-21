@@ -1,0 +1,28 @@
+id: unosat
+publisher: UNITAR-UNOSAT
+title: UNOSAT satellite-detected water extents
+homepage: https://unosat.org/products/
+access:
+  method: zip
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=unosat-live-web-map-cyclone-ditwah-and-floods-in-sri-lanka-november-2025
+  auth: none
+licence:
+  id: cc-by-sa-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by-sa/4.0/
+  attribution: UNITAR-UNOSAT
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- observed-flood-extents
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Older products (2014-2016) are 'hdx-other'; recent ones CC BY-SA.

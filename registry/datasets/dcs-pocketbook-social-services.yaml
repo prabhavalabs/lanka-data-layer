@@ -1,0 +1,59 @@
+id: dcs-pocketbook-social-services
+title: Health services, schools, exams, local services, disasters (Pocket Book)
+description: Government health service summary, school resources, GCE examination pass rates, vocational training, local government
+  services and natural disaster impacts.
+source_ids:
+- dcs-pocketbook
+indicators:
+- id: pb.health_institutions
+  label: Government health institutions
+  unit: count
+  dims:
+  - type
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.exam_pass_rate
+  label: GCE O/L and A/L pass rates
+  unit: percent
+  dims:
+  - exam
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.vocational_trainees
+  label: Vocational trainees
+  unit: persons
+  dims:
+  - provider
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.local_services
+  label: Local authority service counts
+  unit: count
+  dims:
+  - service
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.disaster_affected
+  label: Persons affected by natural disasters
+  unit: persons
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables.
+limits:
+- National summaries only.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

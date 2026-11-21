@@ -1,0 +1,31 @@
+id: wb-cckp
+publisher: World Bank
+title: Climate Change Knowledge Portal (CMIP6 projections)
+homepage: https://climateknowledgeportal.worldbank.org/country/sri-lanka
+access:
+  method: api
+  endpoint: https://cckpapi.worldbank.org/cckp/v1/
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: World Bank Climate Change Knowledge Portal
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  - raster
+  join: pcode
+themes:
+- ENVI
+datasets:
+- cckp-climate-projections
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'CCKP web returns 403 to scripts; API base reachable. Verification 2026-11-21: https://climateknowledgeportal.worldbank.org/country/sri-lanka
+  -> HTTP 403 to scripted clients (bot protection). Other access point(s) reachable.'

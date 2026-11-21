@@ -1,0 +1,28 @@
+id: wdpa
+publisher: UNEP-WCMC and IUCN
+title: World Database on Protected Areas (Protected Planet)
+homepage: https://www.protectedplanet.net/country/LKA
+access:
+  method: zip
+  endpoint: https://www.protectedplanet.net/country/LKA
+  auth: none
+licence:
+  id: wdpa-terms
+  status: restricted
+  url: https://www.protectedplanet.net/en/legal
+  attribution: UNEP-WCMC and IUCN, Protected Planet
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- wdpa-protected-areas
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Terms prohibit redistribution and commercial use; keep OSM protected areas as the open layer and link to WDPA.

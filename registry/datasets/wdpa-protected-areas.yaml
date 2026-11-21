@@ -1,0 +1,25 @@
+id: wdpa-protected-areas
+title: Protected areas (WDPA, link-only)
+description: Legally designated protected areas with IUCN category and designation year.
+source_ids:
+- wdpa
+indicators:
+- id: env.wdpa_area
+  label: Protected area (WDPA)
+  unit: ha
+  dims:
+  - iucn_cat
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Internal QA against osm-protected-areas only.
+limits:
+- 'Restricted licence: not republished.'
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+publication_class: A

@@ -1,0 +1,38 @@
+id: police-road-accidents
+title: Road traffic accidents by police division
+description: Fatal, grievous and minor road accidents and fatalities by police division and road user type.
+source_ids:
+- police-lk
+- dcs-statistical-abstract
+indicators:
+- id: tran.accidents_fatal
+  label: Fatal road accidents
+  unit: count
+  dims:
+  - road_user
+  geo_levels:
+  - national
+  - polygon
+  - adm2
+  period_type: year
+- id: tran.fatalities_per_100k
+  label: Road fatalities per 100,000
+  unit: per 100k
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables; police divisions crosswalked to districts.
+limits:
+- Police divisions do not nest in districts.
+enrichment:
+  joins:
+  - police division -> district crosswalk
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'cross-source: crash rate vs road length and vehicle fleet'
+publication_class: B

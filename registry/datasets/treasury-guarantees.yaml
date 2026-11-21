@@ -1,0 +1,34 @@
+id: treasury-guarantees
+title: Government guarantees and letters of comfort
+description: Outstanding treasury guarantees and letters of comfort by SOE beneficiary.
+source_ids:
+- treasury-debt
+indicators:
+- id: debt.guarantees
+  label: Outstanding guarantees
+  unit: LKR million
+  dims:
+  - beneficiary
+  geo_levels:
+  - national
+  period_type: quarter
+- id: debt.letters_of_comfort
+  label: Letters of comfort issued
+  unit: LKR million
+  dims:
+  - beneficiary
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: 2020-Q1
+  to: 2026-Q2
+method: PDF tables.
+limits:
+- Contingent liabilities only as disclosed.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

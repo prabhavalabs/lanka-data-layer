@@ -1,0 +1,31 @@
+id: rda
+publisher: Road Development Authority
+title: RDA national road network and expressways
+homepage: https://www.rda.gov.lk/
+access:
+  method: html
+  endpoint: https://www.rda.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Road Development Authority
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - line
+  join: name_match
+themes:
+- TRAN
+datasets:
+- rda-national-roads
+- lk-major-projects
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: A/B class road lists with lengths by province; expressway interchanges. No open GIS download.
+dc_refs:
+- developments

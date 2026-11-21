@@ -1,0 +1,30 @@
+id: harti-food-prices
+title: Daily food commodity prices (HARTI)
+description: Wholesale and retail prices of rice, vegetables, fruit, fish, pulses at major markets and dedicated economic
+  centres.
+source_ids:
+- harti
+indicators:
+- id: price.harti_daily
+  label: Commodity price
+  unit: LKR/kg
+  dims:
+  - commodity
+  - market
+  - pricetype
+  geo_levels:
+  - point
+  period_type: day
+time_coverage:
+  from: 2015-01
+  to: 2026-11
+method: Daily PDF bulletin parsed (fixed layout), reviewed weekly.
+limits:
+- Major markets only; quality grades vary.
+enrichment:
+  joins:
+  - market names -> geocoded market points -> ADM4
+  aggregations:
+  - weekly/monthly averages
+  - 'derive: farm-gate to retail margin (Dambulla vs Colombo)'
+publication_class: B

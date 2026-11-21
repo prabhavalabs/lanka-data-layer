@@ -1,0 +1,29 @@
+id: osm-trails-cycling
+title: Walking trails and cycle routes (OSM)
+description: Hiking paths, footways and cycleways/cycle routes.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tran.osm_trail_km
+  label: Trail and cycleway length
+  unit: km
+  dims:
+  - type
+  geo_levels:
+  - line
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: highway=path/footway/cycleway + route relations.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

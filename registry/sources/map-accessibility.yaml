@@ -1,0 +1,28 @@
+id: map-accessibility
+publisher: Malaria Atlas Project (University of Oxford / Telethon Kids)
+title: Global accessibility and friction surfaces
+homepage: https://malariaatlas.org/
+access:
+  method: raster
+  endpoint: https://data.malariaatlas.org/maps?layers=Accessibility:202001_Global_Motorized_Travel_Time_to_Healthcare
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Weiss et al. 2018/2020, Malaria Atlas Project
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- HEAL
+- TRAN
+datasets:
+- map-travel-time-surfaces
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

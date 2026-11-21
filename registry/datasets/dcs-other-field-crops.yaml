@@ -1,0 +1,39 @@
+id: dcs-other-field-crops
+title: Other field crops extent and production by district
+description: Maize, green gram, cowpea, chilli, onion, potato and other OFC extent/production by district and season.
+source_ids:
+- dcs-agriculture
+indicators:
+- id: agri.ofc_extent
+  label: OFC extent
+  unit: ha
+  dims:
+  - crop
+  - season
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: agri.ofc_production
+  label: OFC production
+  unit: tonnes
+  dims:
+  - crop
+  - season
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2005'
+  to: '2025'
+method: HTML/XLS tables.
+limits:
+- Estimates from crop-cutting surveys and extension reports.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+publication_class: B

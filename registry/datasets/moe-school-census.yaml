@@ -1,0 +1,58 @@
+id: moe-school-census
+title: Schools, students and teachers by district and zone
+description: Government schools by type (1AB, 1C, Type 2, Type 3), students, teachers, pupil-teacher ratios, small schools
+  by district/zone.
+source_ids:
+- moe-school-census
+indicators:
+- id: educ.gov_schools
+  label: Government schools
+  unit: count
+  dims:
+  - school_type
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: educ.students
+  label: Students
+  unit: count
+  dims:
+  - grade_band
+  - sex
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: educ.teachers
+  label: Teachers
+  unit: count
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: educ.small_schools
+  label: Schools with fewer than 50 students
+  unit: count
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables, reviewed.
+limits:
+- Education zones cross district lines in a few cases.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  - education zone -> district crosswalk
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - students per school-age child (worldpop-age-sex) per district
+publication_class: B

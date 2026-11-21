@@ -1,0 +1,28 @@
+id: landscan
+publisher: Oak Ridge National Laboratory
+title: LandScan Global population (ambient, 1 km)
+homepage: https://landscan.ornl.gov/
+access:
+  method: raster
+  endpoint: https://landscan.ornl.gov/
+  auth: manual
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: LandScan Global, Oak Ridge National Laboratory
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- SOCI
+datasets:
+- landscan-ambient-population
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Annual releases since 2000 are CC BY 4.0; download behind a simple form.

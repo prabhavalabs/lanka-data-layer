@@ -1,0 +1,29 @@
+id: treasury-budget-estimates
+publisher: Ministry of Finance, National Budget Department
+title: Annual Budget Estimates
+homepage: https://www.treasury.gov.lk/web/budget-estimates
+access:
+  method: pdf
+  endpoint: https://www.treasury.gov.lk/web/budget-estimates
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Finance, Planning and Economic Development, Budget Estimates
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: name_match
+themes:
+- GOVE
+- ECON
+datasets:
+- budget-estimates-heads
+- budget-capital-projects
+priority: P1
+effort: L
+status: planned
+verified_at: '2026-11-21'
+notes: Heads/programmes/projects in large PDFs (Vol I-III); nuuuwan/lk_budget_2025 parses one year.

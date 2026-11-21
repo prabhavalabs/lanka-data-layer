@@ -1,0 +1,50 @@
+id: derived-facility-coverage
+title: Population within 15/30/60 minutes of services
+description: Share and count of population within travel-time thresholds of each facility type, with gap lists of the least-served
+  GN divisions.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: acc.pop_within
+  label: Population within threshold
+  unit: persons
+  dims:
+  - facility_type
+  - mode
+  - threshold
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: acc.share_within
+  label: Share of population within threshold
+  unit: percent
+  dims:
+  - facility_type
+  - mode
+  - threshold
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: 'Threshold travel-time grid x population (age-specific: school-age for schools, 60+ for hospitals).'
+limits:
+- Same limits as travel-time product.
+enrichment:
+  derived_from:
+  - derived-travel-time-facilities
+  - worldpop-age-sex
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - least-served ranking per district
+publication_class: A

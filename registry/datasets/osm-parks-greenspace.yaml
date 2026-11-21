@@ -1,0 +1,38 @@
+id: osm-parks-greenspace
+title: Parks and green space (OSM)
+description: Parks, gardens, playgrounds, recreation grounds as polygons.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: env.osm_park_area
+  label: Park area
+  unit: ha
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: env.park_area_per_capita
+  label: Park area per resident
+  unit: m2/person
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: leisure=park/garden/playground polygons.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'derive: population within 10-min walk of a park'
+publication_class: A

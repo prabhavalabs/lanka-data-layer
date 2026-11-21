@@ -1,0 +1,44 @@
+id: worldcover-land-cover
+title: Land cover 10 m (ESA WorldCover)
+description: 11-class land cover (tree, shrub, grass, cropland, built-up, bare, water, wetland, mangrove) for 2020 and 2021.
+source_ids:
+- esa-worldcover
+indicators:
+- id: lc.class_share
+  label: Land cover class share
+  unit: percent
+  dims:
+  - lc_class
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: lc.class_area
+  label: Land cover class area
+  unit: ha
+  dims:
+  - lc_class
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '2020'
+  to: '2021'
+method: COG tiles N06E078..N09E081; class fractions per canonical cell; zonal area.
+limits:
+- Two years only; 2020 and 2021 use different algorithms (not a change product).
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

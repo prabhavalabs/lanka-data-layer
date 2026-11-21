@@ -1,0 +1,34 @@
+id: treasury-province-transfers
+title: Transfers to provincial councils
+description: Central government transfers (block grants, PSDG, criteria-based grants) to each provincial council.
+source_ids:
+- treasury-annual-report
+indicators:
+- id: fisc.pc_transfers
+  label: Transfers to provincial councils
+  unit: LKR million
+  dims:
+  - grant_type
+  geo_levels:
+  - adm1
+  period_type: year
+- id: fisc.pc_transfers_per_capita
+  label: Transfers per capita
+  unit: LKR
+  geo_levels:
+  - adm1
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables.
+limits:
+- Allocations vs disbursements differ.
+enrichment:
+  joins:
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'cross-source: per-capita transfers vs poverty rates'
+publication_class: B

@@ -1,0 +1,28 @@
+id: ourairports
+publisher: OurAirports
+title: OurAirports open data
+homepage: https://ourairports.com/data/
+access:
+  method: csv
+  endpoint: https://davidmegginson.github.io/ourairports-data/airports.csv
+  auth: none
+licence:
+  id: public-domain
+  status: open
+  attribution: OurAirports
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- TRAN
+datasets:
+- ourairports-lka
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'Verification 2026-11-21: https://ourairports.com/data/ -> connection timed out (no response; .gov.lk hosts often drop
+  non-Sri-Lankan traffic - re-verify from an LK vantage point). Other access point(s) reachable.'

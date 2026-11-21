@@ -1,0 +1,36 @@
+id: moh-health
+publisher: Ministry of Health, Sri Lanka
+title: 'MoH statistics: IMMR and Annual Health Bulletin'
+homepage: https://www.health.gov.lk/
+access:
+  method: xlsx
+  endpoint: https://www.health.gov.lk/wp-content/uploads/2025/12/IMMR-Report-2024-final.xlsx
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Health, Medical Statistics Unit
+cadence:
+  frequency: annual
+  expected_lag_days: 300
+geo:
+  levels:
+  - national
+  - adm2
+  - point
+  join: name_match
+themes:
+- HEAL
+datasets:
+- moh-immr
+- moh-health-bulletin-rdhs
+- moh-health-institutions
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Annual Health Bulletin (PDF) has RDHS-level tables and the list of government health institutions.
+dc_refs:
+- inpatient-morbidity-mortality
+- government-health-services
+- hospitals

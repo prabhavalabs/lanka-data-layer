@@ -1,0 +1,30 @@
+id: harti
+publisher: Hector Kobbekaduwa Agrarian Research and Training Institute
+title: HARTI daily food commodity prices bulletin
+homepage: https://www.harti.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.harti.gov.lk/index.php/en/market-information/data-food-commodities-bulletin
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: HARTI
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: name_match
+themes:
+- AGRI
+- ECON
+datasets:
+- harti-food-prices
+priority: P1
+effort: M
+status: planned
+notes: 'Daily wholesale/retail prices at Dambulla, Pettah, Narahenpita, Marandagahamula and regional economic centres. Verification
+  2026-11-21: https://www.harti.gov.lk/ -> connection timed out (no response; .gov.lk hosts often drop non-Sri-Lankan traffic
+  - re-verify from an LK vantage point); https://www.harti.gov.lk/index.php/en/market-information/data-food-commodities-bulletin
+  -> connection timed out (no response; .gov.lk hosts often drop non-Sri-Lankan traffic - re-verify from an LK vantage point).'

@@ -1,0 +1,31 @@
+id: geoboundaries-lka
+publisher: William & Mary geoLab (geoBoundaries)
+title: geoBoundaries Sri Lanka gbOpen ADM0-ADM4
+homepage: https://www.geoboundaries.org/
+access:
+  method: api
+  endpoint: https://www.geoboundaries.org/api/current/gbOpen/LKA/ALL/
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: geoBoundaries (Runfola et al. 2020)
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - polygon
+  join: spatial
+themes:
+- REGI
+datasets:
+- cod-ab-lka-boundaries
+priority: P0
+effort: S
+status: active
+verified_at: '2026-11-21'
+notes: Currently used for ADM0-ADM2 geometry; kept as fallback and for cross-checking COD-AB slivers.

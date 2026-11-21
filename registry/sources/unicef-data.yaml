@@ -1,0 +1,31 @@
+id: unicef-data
+publisher: UNICEF
+title: UNICEF Data Warehouse (SDMX)
+homepage: https://data.unicef.org/
+access:
+  method: api
+  endpoint: https://sdmx.data.unicef.org/ws/public/sdmxapi/rest/data/UNICEF,GLOBAL_DATAFLOW,1.0/LKA..?format=csv
+  auth: none
+licence:
+  id: unicef-terms
+  status: attribution
+  url: https://data.unicef.org/terms-of-use/
+  attribution: UNICEF Data Warehouse
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- SOCI
+- HEAL
+- EDUC
+datasets:
+- unicef-lka
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'data.unicef.org returns 403 to scripts; SDMX endpoint answers 200. Verification 2026-11-21: https://data.unicef.org/
+  -> HTTP 403 to scripted clients (bot protection). Other access point(s) reachable.'

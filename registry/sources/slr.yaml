@@ -1,0 +1,30 @@
+id: slr
+publisher: Sri Lanka Railways
+title: Train schedules and station list (e-services)
+homepage: https://railway.gov.lk/
+access:
+  method: html
+  endpoint: https://eservices.railway.gov.lk/schedule/searchTrain.action
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Sri Lanka Railways
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  - line
+  join: spatial
+themes:
+- TRAN
+datasets:
+- slr-timetable
+priority: P1
+effort: M
+status: planned
+notes: 'HTML schedule search; build a GTFS-like table by enumerating station pairs politely. nuuuwan/lk_train_scheduler and
+  railway_lk_timetables are prior art. Verification 2026-11-21: https://railway.gov.lk/ -> connection timed out (no response;
+  .gov.lk hosts often drop non-Sri-Lankan traffic - re-verify from an LK vantage point); https://eservices.railway.gov.lk/schedule/searchTrain.action
+  -> connection timed out (no response; .gov.lk hosts often drop non-Sri-Lankan traffic - re-verify from an LK vantage point).'

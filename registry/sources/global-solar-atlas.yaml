@@ -1,0 +1,27 @@
+id: global-solar-atlas
+publisher: World Bank / ESMAP / Solargis
+title: Global Solar Atlas
+homepage: https://globalsolaratlas.info/download/sri-lanka
+access:
+  method: raster
+  endpoint: https://globalsolaratlas.info/download/sri-lanka
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Global Solar Atlas 2.0, Solargis/World Bank
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENER
+datasets:
+- solar-pv-potential
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

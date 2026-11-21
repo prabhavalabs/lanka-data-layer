@@ -1,0 +1,48 @@
+id: era5-land-climate
+title: Temperature, humidity, soil moisture (ERA5-Land, 0.1 deg)
+description: Hourly-to-monthly 2 m temperature, dew point, precipitation, soil moisture, evaporation 1950-present.
+source_ids:
+- copernicus-cds
+indicators:
+- id: clim.t2m_mean
+  label: Mean 2 m air temperature
+  unit: deg C
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: month
+- id: clim.t2m_max_days_35
+  label: Days with Tmax >= 35 C
+  unit: days
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: year
+- id: clim.soil_moisture
+  label: Volumetric soil moisture (top layer)
+  unit: m3/m3
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: month
+time_coverage:
+  from: 1950-01
+  to: 2026-10
+method: CDS API monthly means + daily stats; zonal means.
+limits:
+- ~9 km reanalysis; biased in complex terrain.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - population-weighted means per unit using worldpop-pop-grid as weights (cell value x cell population / unit population)
+  - 'derive: heat exposure = hot days x population'
+publication_class: A

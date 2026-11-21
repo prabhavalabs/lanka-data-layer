@@ -1,0 +1,28 @@
+id: emdat
+publisher: CRED / UCLouvain
+title: EM-DAT international disaster database
+homepage: https://www.emdat.be/
+access:
+  method: xlsx
+  endpoint: https://public.emdat.be/
+  auth: key
+licence:
+  id: emdat-terms
+  status: restricted
+  url: https://doc.emdat.be/docs/legal/terms-of-use/
+  attribution: EM-DAT, CRED/UCLouvain
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ENVI
+datasets:
+- emdat-lka
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Non-commercial; registration. HDX has country profile summaries only.

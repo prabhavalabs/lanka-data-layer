@@ -1,0 +1,26 @@
+id: dcs-ppi
+title: Producer Price Index (PPI)
+description: Quarterly producer price index for agriculture, manufacturing and utilities.
+source_ids:
+- dcs-prices
+indicators:
+- id: econ.ppi_index
+  label: Producer price index
+  unit: index
+  dims:
+  - sector
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: 2013-Q4
+  to: 2026-Q3
+method: PDF release tables.
+limits:
+- Index only; weights changed in rebasing.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

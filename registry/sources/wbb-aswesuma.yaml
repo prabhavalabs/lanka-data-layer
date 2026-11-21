@@ -1,0 +1,29 @@
+id: wbb-aswesuma
+publisher: Welfare Benefits Board
+title: Aswesuma welfare benefit programme
+homepage: https://www.wbb.gov.lk/
+access:
+  method: html
+  endpoint: https://www.wbb.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Welfare Benefits Board
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm2
+  - adm3
+  join: name_match
+themes:
+- SOCI
+datasets:
+- aswesuma-beneficiaries
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Beneficiary counts by DS division released periodically (PDF/HTML). Individual lists are personal data - never ingest.

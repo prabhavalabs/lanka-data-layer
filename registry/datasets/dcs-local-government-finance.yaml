@@ -1,0 +1,45 @@
+id: dcs-local-government-finance
+title: Local authority revenue and expenditure
+description: Revenue (rates, grants, licences) and expenditure (recurrent/capital) for municipal councils, urban councils
+  and pradeshiya sabhas.
+source_ids:
+- dcs-statistical-abstract
+indicators:
+- id: lgov.revenue
+  label: Local authority revenue
+  unit: LKR thousand
+  dims:
+  - revenue_type
+  geo_levels:
+  - national
+  - polygon
+  period_type: year
+- id: lgov.expenditure
+  label: Local authority expenditure
+  unit: LKR thousand
+  dims:
+  - expenditure_type
+  geo_levels:
+  - national
+  - polygon
+  period_type: year
+- id: lgov.revenue_per_capita
+  label: LA revenue per resident
+  unit: LKR
+  geo_levels:
+  - polygon
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: Abstract ch.15 tables 15.4-15.7.
+limits:
+- LA boundaries not in COD-AB; requires LA polygon layer (from elections LG 2025 geography).
+enrichment:
+  joins:
+  - LA names -> LA polygons (local-authority boundary layer from elections-commission) -> spatial overlay to ADM3
+  aggregations:
+  - LA -> district -> province (sum)
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: B

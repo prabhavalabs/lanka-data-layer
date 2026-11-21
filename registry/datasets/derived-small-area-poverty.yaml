@@ -1,0 +1,42 @@
+id: derived-small-area-poverty
+title: Small-area poverty estimates (DS/GN)
+description: Model-based poverty headcount for DS and GN divisions combining HIES district estimates with census, nightlights,
+  access and building covariates.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: pov.sae_headcount
+  label: Modelled poverty headcount
+  unit: percent
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: year
+- id: pov.sae_ci_width
+  label: 95% interval width
+  unit: percentage points
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '2019'
+  to: '2024'
+method: Fay-Herriot / EBP small-area estimation, benchmarked to district totals.
+limits:
+- Model estimates with wide intervals; never use for individual targeting.
+enrichment:
+  derived_from:
+  - dcs-hies-poverty
+  - dcs-census-2024-gnd
+  - viirs-nightlights
+  - derived-travel-time-facilities
+  - google-open-buildings
+  - aswesuma-beneficiaries
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

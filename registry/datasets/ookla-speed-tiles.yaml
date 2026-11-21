@@ -1,0 +1,28 @@
+id: ookla-speed-tiles
+title: Internet speeds (link-only)
+description: Quarterly average download/upload speed and tests per zoom-16 tile.
+source_ids:
+- ookla-open-data
+indicators:
+- id: tech.ookla_download_mbps
+  label: Average download speed
+  unit: Mbps
+  dims:
+  - network_type
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: quarter
+time_coverage:
+  from: 2019-Q1
+  to: 2026-Q2
+method: Parquet tiles to grid.
+limits:
+- Restricted licence; test-taker bias.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+publication_class: A

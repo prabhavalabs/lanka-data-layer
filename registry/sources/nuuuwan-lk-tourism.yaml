@@ -1,0 +1,26 @@
+id: nuuuwan-lk-tourism
+publisher: Nuwan Senaratna (nuuuwan) - data from SLTDA
+title: lk_tourism weekly arrival reports
+homepage: https://github.com/nuuuwan/lk_tourism
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_tourism
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Sri Lanka Tourism Development Authority. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- sltda-tourist-arrivals
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
