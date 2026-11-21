@@ -6,10 +6,12 @@ import * as THREE from 'three'
 import type { Landmark } from '@/api/types'
 import { geo, type Place, type Polyline } from '@/lib/geo'
 import { Landmarks } from './Landmarks'
+import { Maritime } from './Maritime'
+import type { Port } from './maritimeData'
 import { buildTerrain, K, ORIGIN, toXZ, type Terrain } from './terrain'
 
 export type Mood = 'dusk' | 'day'
-export type HeroLayers = { landmarks: boolean; population: boolean; rail: boolean }
+export type HeroLayers = { landmarks: boolean; maritime: boolean; population: boolean; rail: boolean }
 
 type Palette = {
   zenith: string; horizon: string; glow: string; sunColor: string; sunIntensity: number; sunDir: [number, number, number]
@@ -430,11 +432,14 @@ function Lights({ mix, shadows }: { mix: MixRef; shadows: boolean }) {
 }
 
 /* ---------------- camera rig ---------------- */
-function Rig({ animate, onFirstFrame }: { animate: boolean; onFirstFrame: () => void }) {
+const INTRO_S = 3.2
+function Rig({ animate, revealed, onFirstFrame }: { animate: boolean; revealed: boolean; onFirstFrame: () => void }) {
   const { camera, size } = useThree()
   const pointer = useRef({ x: 0, y: 0 })
   const eased = useRef({ x: 0, y: 0 })
   const first = useRef(false)
+  // arrival: the camera starts high and wide, then settles onto its orbit as the scene fades in
+  const intro = useRef(animate ? 0 : 1)
 
   useEffect(() => {
     const on = (e: PointerEvent) => {
@@ -450,7 +455,7 @@ function Rig({ animate, onFirstFrame }: { animate: boolean; onFirstFrame: () => 
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera
     const wide = size.width / size.height > 1.15
-    if (wide) cam.setViewOffset(size.width, size.height, -size.width * 0.185, -size.height * 0.13, size.width, size.height)
+    if (wide) cam.setViewOffset(size.width, size.height, -size.width * 0.195, -size.height * 0.085, size.width, size.height)
     else cam.setViewOffset(size.width, size.height, 0, -size.height * 0.27, size.width, size.height)
     cam.fov = wide ? 44 : 50
     cam.updateProjectionMatrix()
@@ -463,9 +468,11 @@ function Rig({ animate, onFirstFrame }: { animate: boolean; onFirstFrame: () => 
     eased.current.x += (pointer.current.x - eased.current.x) * k
     eased.current.y += (pointer.current.y - eased.current.y) * k
     const t = animate ? clock.elapsedTime : 0
-    const az = (wide ? 0.5 : 0.3) + (animate ? Math.sin(t * 0.07) * 0.075 + eased.current.x * 0.05 : 0)
-    const polar = (wide ? 1.135 : 1.02) + (animate ? Math.sin(t * 0.05 + 1.3) * 0.012 + eased.current.y * 0.018 : 0)
-    const r = wide ? 5.45 : 8.6
+    if (revealed && intro.current < 1) intro.current = Math.min(1, intro.current + Math.min(dt, 0.05) / INTRO_S)
+    const away = (1 - intro.current) ** 4 // ease-out quart, measured from the resting pose
+    const az = (wide ? 0.5 : 0.3) + (animate ? Math.sin(t * 0.07) * 0.075 + eased.current.x * 0.05 : 0) - away * 0.34
+    const polar = (wide ? 1.135 : 1.02) + (animate ? Math.sin(t * 0.05 + 1.3) * 0.012 + eased.current.y * 0.018 : 0) - away * 0.3
+    const r = (wide ? 5.7 : 8.6) * (1 + away * 0.42)
     // azimuth is measured from due south, turning toward the west
     camera.position.set(-Math.sin(az) * Math.sin(polar) * r, Math.cos(polar) * r, Math.cos(az) * Math.sin(polar) * r + 0.1)
     camera.lookAt(0.04, 0.02, 0.1)
@@ -479,8 +486,10 @@ function Rig({ animate, onFirstFrame }: { animate: boolean; onFirstFrame: () => 
 
 /* ---------------- scene ---------------- */
 function Scene({
-  terrain, landmarks, places, rail, rivers, mood, layers, active, onActive, onSelect, renderCard, animate, lowPower, onFirstFrame,
+  terrain, landmarks, places, rail, rivers, mood, layers, active, onActive, onSelect, renderCard, port, onPort, renderPortCard, animate, lowPower, revealed, onFirstFrame,
 }: {
+  revealed: boolean
+  port: string | null; onPort: (id: string | null) => void; renderPortCard: (port: Port) => ReactNode
   terrain: Terrain; landmarks: Landmark[]; places: Place[]; rail: Polyline[]; rivers: Polyline[]
   mood: Mood; layers: HeroLayers; active: string | null; onActive: (id: string | null) => void; onSelect: (id: string) => void
   renderCard: (lm: Landmark) => ReactNode; animate: boolean; lowPower: boolean; onFirstFrame: () => void
@@ -499,7 +508,7 @@ function Scene({
   useEffect(() => {
     gl.shadowMap.needsUpdate = true
     invalidate()
-  }, [mood, layers, active, invalidate, gl])
+  }, [mood, layers, active, port, invalidate, gl])
 
   return (
     <>
@@ -509,10 +518,11 @@ function Scene({
       <Island terrain={terrain} />
       <Draped lines={rivers} terrain={terrain} color={mood === 'day' ? '#3b8fd0' : '#7fd0e8'} width={1} opacity={mood === 'day' ? 0.6 : 0.3} lift={0.004} />
       {layers.rail && <Draped lines={rail} terrain={terrain} color={mood === 'day' ? '#b84a12' : '#ffb766'} width={1.7} opacity={0.95} lift={0.011} />}
+      <Maritime terrain={terrain} mix={mix} show={layers.maritime} animate={animate} lowPower={lowPower} activePort={port} onPort={onPort} renderPortCard={renderPortCard} />
       <PopulationColumns places={places} terrain={terrain} show={layers.population} />
       {layers.landmarks && <Landmarks items={landmarks} terrain={terrain} active={active} glow={mood === 'dusk' ? 1 : 0} onActive={onActive} onSelect={onSelect} renderCard={renderCard} />}
       <Clouds mix={mix} count={lowPower ? 4 : 9} animate={animate} />
-      <Rig animate={animate} onFirstFrame={onFirstFrame} />
+      <Rig animate={animate} revealed={revealed} onFirstFrame={onFirstFrame} />
     </>
   )
 }
@@ -525,9 +535,16 @@ export type HeroSceneProps = {
   onActive: (id: string | null) => void
   onSelect: (id: string) => void
   renderCard: (lm: Landmark) => ReactNode
+  port: string | null
+  onPort: (id: string | null) => void
+  renderPortCard: (port: Port) => ReactNode
+  /** load milestones for the loader's status line: 1 fetching, 2 building, 3 compiling */
+  onStage: (stage: number) => void
   /** false → static render (prefers-reduced-motion) */
   animate: boolean
   lowPower: boolean
+  /** the loader has handed over: start the camera's arrival move */
+  revealed: boolean
   /** pause the render loop entirely (hero scrolled out of view / tab hidden) */
   paused: boolean
   onReady: () => void
@@ -535,18 +552,23 @@ export type HeroSceneProps = {
 }
 
 export default function HeroScene(props: HeroSceneProps) {
-  const { landmarks, mood, layers, active, onActive, onSelect, renderCard, animate, lowPower, paused, onReady, onError } = props
+  const { landmarks, mood, layers, active, onActive, onSelect, renderCard, port, onPort, renderPortCard, onStage, animate, lowPower, revealed, paused, onReady, onError } = props
   const [assets, setAssets] = useState<{ terrain: Terrain; places: Place[]; rail: Polyline[]; rivers: Polyline[] } | null>(null)
 
   useEffect(() => {
     let alive = true
-    Promise.all([buildTerrain(lowPower ? 'low' : 'high'), geo.places(), geo.rail(), geo.rivers()])
-      .then(([terrain, places, rail, rivers]) => alive && setAssets({ terrain, places, rail, rivers }))
+    onStage(1)
+    Promise.all([buildTerrain(lowPower ? 'low' : 'high', () => alive && onStage(2)), geo.places(), geo.rail(), geo.rivers()])
+      .then(([terrain, places, rail, rivers]) => {
+        if (!alive) return
+        onStage(3)
+        setAssets({ terrain, places, rail, rivers })
+      })
       .catch(() => alive && onError())
     return () => {
       alive = false
     }
-  }, [lowPower, onError])
+  }, [lowPower, onError, onStage])
 
   useEffect(
     () => () => {
@@ -570,9 +592,10 @@ export default function HeroScene(props: HeroSceneProps) {
         gl.setClearColor('#0b0e12')
       }}
       fallback={null}
+      onPointerMissed={() => onPort(null)}
       style={{ touchAction: 'pan-y' }}
     >
-      <Scene {...assets} landmarks={landmarks} mood={mood} layers={layers} active={active} onActive={onActive} onSelect={onSelect} renderCard={renderCard} animate={animate} lowPower={lowPower} onFirstFrame={onReady} />
+      <Scene {...assets} landmarks={landmarks} mood={mood} layers={layers} active={active} onActive={onActive} onSelect={onSelect} renderCard={renderCard} port={port} onPort={onPort} renderPortCard={renderPortCard} animate={animate} lowPower={lowPower} revealed={revealed} onFirstFrame={onReady} />
     </Canvas>
   )
 }

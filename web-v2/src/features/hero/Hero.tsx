@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, ArrowUpRight, Landmark as LandmarkIcon, Moon, Search, Sun, TrainFront, UsersRound } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Landmark as LandmarkIcon, Moon, Search, Ship, Sun, TrainFront, UsersRound } from 'lucide-react'
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { landmarksQuery, statsQuery } from '@/api/queries'
@@ -11,9 +11,16 @@ import { geo } from '@/lib/geo'
 import { fmtCoord } from '@/lib/format'
 import { useInView, useMediaQuery, useReducedMotion, useTheme } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
+import { HeroLoader } from './HeroLoader'
 import type { HeroLayers } from './HeroScene'
+import type { Port } from './maritimeData'
 
 const HeroScene = lazy(() => import('./HeroScene'))
+
+/** Design-review switch (dev only): `/?hero=loading` holds the loader, `/?hero=fallback` shows the no-WebGL poster. */
+const REVIEW = import.meta.env.DEV ? new URLSearchParams(window.location.search).get('hero') : null
+/** The loader stays up at least this long so it reads as a beat, not a flicker. */
+const MIN_LOADER_MS = 850
 
 function webglAvailable() {
   try {
@@ -37,35 +44,42 @@ class Boundary extends Component<{ onError: () => void; children: ReactNode }, {
   }
 }
 
-/** Static poster: the real coastline as SVG. Shown while the 3D chunk loads, and as the WebGL fallback. */
-function Poster({ dim }: { dim: boolean }) {
-  const { data } = useQuery({ queryKey: ['geo', 'country'], queryFn: geo.country, staleTime: Infinity })
-  const d = useMemo(() => {
-    if (!data) return ''
-    // plain equirectangular fit into a 300 × 520 box
-    const x = (lon: number) => ((lon - 79.45) / 2.6) * 300
-    const y = (lat: number) => ((9.95 - lat) / 4.15) * 520
-    return data.rings.map((r) => 'M' + r.map(([lon, lat]) => `${x(lon).toFixed(1)} ${y(lat).toFixed(1)}`).join('L') + 'Z').join('')
-  }, [data])
+/** What sits behind the scene before it paints: a brand-tinted sky and a faint survey grid. */
+function Backdrop({ dim }: { dim: boolean }) {
   return (
     <div className={cn('absolute inset-0 overflow-hidden transition-opacity duration-700', dim ? 'opacity-0' : 'opacity-100')} aria-hidden>
       <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_70%_60%,color-mix(in_oklab,var(--brand)_16%,var(--bg))_0%,var(--bg)_62%)]" />
       <div className="hairline-grid absolute inset-0 [mask-image:radial-gradient(70%_60%_at_68%_55%,black,transparent)]" />
-      <svg viewBox="0 0 300 520" className="absolute top-[52%] left-1/2 h-[74%] -translate-x-1/2 -translate-y-1/2 lg:left-[69%]">
-        <defs>
-          <linearGradient id="poster-land" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#7fbf5c" />
-            <stop offset="0.55" stopColor="#2f7a45" />
-            <stop offset="1" stopColor="#1d5236" />
-          </linearGradient>
-          <filter id="poster-glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="9" />
-          </filter>
-        </defs>
-        <path d={d} fill="#2b9aa0" opacity="0.4" filter="url(#poster-glow)" />
-        <path d={d} fill="url(#poster-land)" stroke="#e6d3a3" strokeWidth="1.2" strokeLinejoin="round" />
-      </svg>
     </div>
+  )
+}
+
+/** Static poster: the real coastline as SVG. Only shown when WebGL is unavailable or the scene fails. */
+function Poster() {
+  const { data } = useQuery({ queryKey: ['geo', 'country'], queryFn: geo.country, staleTime: Infinity })
+  const d = useMemo(() => {
+    if (!data) return ''
+    // equirectangular with cos(lat) correction, fitted to a 323 × 520 box
+    const s = 520 / 4.15
+    const x = (lon: number) => (lon - 79.45) * Math.cos((7.85 * Math.PI) / 180) * s
+    const y = (lat: number) => (9.95 - lat) * s
+    return data.rings.map((r) => 'M' + r.map(([lon, lat]) => `${x(lon).toFixed(1)} ${y(lat).toFixed(1)}`).join('L') + 'Z').join('')
+  }, [data])
+  return (
+    <svg viewBox="0 0 323 520" className="absolute top-[52%] left-1/2 h-[74%] -translate-x-1/2 -translate-y-1/2 [animation:fade-up_700ms_var(--ease-out)_both] lg:left-[69%]" aria-hidden>
+      <defs>
+        <linearGradient id="poster-land" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#7fbf5c" />
+          <stop offset="0.55" stopColor="#2f7a45" />
+          <stop offset="1" stopColor="#1d5236" />
+        </linearGradient>
+        <filter id="poster-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="9" />
+        </filter>
+      </defs>
+      <path d={d} fill="#2b9aa0" opacity="0.4" filter="url(#poster-glow)" />
+      <path d={d} fill="url(#poster-land)" stroke="#e6d3a3" strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
   )
 }
 
@@ -105,6 +119,46 @@ function LandmarkCard({ lm }: { lm: Landmark }) {
   )
 }
 
+function PortCard({ port }: { port: Port }) {
+  return (
+    <div className="pointer-events-none flex w-0 flex-col items-center">
+      <div className="flex -translate-y-full flex-col items-center [animation:fade-up_200ms_var(--ease-out)]">
+        <div className="glass w-[252px] rounded-[14px] p-3.5 text-left">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="truncate font-mono text-[10.5px] text-ink3">Port · {port.role}</div>
+              <div className="mt-0.5 text-[15px] leading-tight font-semibold tracking-[-0.015em] text-ink">{port.name.en}</div>
+            </div>
+            <PcodePlate code={port.locode} size="sm" />
+          </div>
+          <div className="mt-1.5 flex flex-wrap gap-x-2 text-[12.5px] leading-snug text-ink2">
+            <span lang="si">{port.name.si}</span>
+            <span className="text-ink3">·</span>
+            <span lang="ta">{port.name.ta}</span>
+          </div>
+          <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-glass-line pt-2.5">
+            {[
+              ['In port', String(port.inPort)],
+              ['Arrivals 24 h', String(port.arrivals24h)],
+              ['Draught', port.draught],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0">
+                <dt className="truncate text-[10.5px] text-ink3">{label}</dt>
+                <dd className="t-num mt-0.5 truncate text-[12.5px] font-medium text-ink">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-2.5 flex items-center justify-between font-mono text-[10.5px] text-ink3">
+            <span>{fmtCoord(port.lat, port.lon)}</span>
+            <span>mock AIS</span>
+          </div>
+        </div>
+        <div className="h-6 w-px bg-gradient-to-b from-[var(--brand-ink)] to-transparent" />
+      </div>
+    </div>
+  )
+}
+
 const TOUR = ['sigiriya', 'lotus-tower', 'temple-tooth', 'ruwanwelisaya', 'sri-pada', 'nallur', 'trinco', 'nine-arch', 'galle-fort']
 const EXAMPLES = ['Colombo', 'LK2127', '10250', '6.93, 79.84']
 
@@ -118,10 +172,15 @@ export function Hero() {
   const { data: landmarks = [] } = useQuery(landmarksQuery())
   const { data: stats } = useQuery(statsQuery())
 
-  const [layers, setLayers] = useState<HeroLayers>({ landmarks: true, population: false, rail: false })
+  // Maritime is on from the start: it gives the open sea in the foreground something to do and never covers land.
+  const [layers, setLayers] = useState<HeroLayers>({ landmarks: true, maritime: true, population: false, rail: false })
   const [active, setActive] = useState<string | null>(null)
+  const [port, setPort] = useState<string | null>(null)
+  const [stage, setStage] = useState(0)
   const [ready, setReady] = useState(false)
-  const [failed, setFailed] = useState(() => !webglAvailable())
+  const [loaderGone, setLoaderGone] = useState(false)
+  const [failed, setFailed] = useState(() => REVIEW === 'fallback' || !webglAvailable())
+  const mountedAt = useRef(performance.now())
   const lastTouch = useRef(0)
   const [ref, visible] = useInView<HTMLElement>({ once: false, margin: '0px' })
   const [tabVisible, setTabVisible] = useState(true)
@@ -163,18 +222,36 @@ export function Hero() {
     lastTouch.current = performance.now()
     setActive(id)
   }, [])
-  const onReady = useCallback(() => setReady(true), [])
+  // first frame is on the glass: hand over from the loader, but never so fast that it only flickers
+  const onReady = useCallback(() => {
+    window.setTimeout(() => setReady(true), Math.max(0, MIN_LOADER_MS - (performance.now() - mountedAt.current)))
+  }, [])
   const onError = useCallback(() => setFailed(true), [])
+  const onStage = useCallback((s: number) => setStage((cur) => Math.max(cur, s)), [])
+  const onPort = useCallback((id: string | null) => {
+    lastTouch.current = performance.now()
+    setPort(id)
+  }, [])
   const renderCard = useCallback((lm: Landmark) => <LandmarkCard lm={lm} />, [])
+  const renderPortCard = useCallback((p: Port) => <PortCard port={p} />, [])
+  // keep the loader mounted through its exit, then drop it so nothing keeps spinning under the scene
+  useEffect(() => {
+    if (!ready) return
+    const id = window.setTimeout(() => setLoaderGone(true), 800)
+    return () => window.clearTimeout(id)
+  }, [ready])
 
-  const toggle = (k: keyof HeroLayers) =>
+  const toggle = (k: keyof HeroLayers) => {
+    if (k === 'maritime') setPort(null)
     setLayers((l) => {
       lastTouch.current = performance.now()
       return { ...l, [k]: !l[k] }
     })
+  }
 
   const chips: { k: keyof HeroLayers; label: string; Icon: typeof Sun }[] = [
     { k: 'landmarks', label: 'Landmarks', Icon: LandmarkIcon },
+    { k: 'maritime', label: 'Maritime', Icon: Ship },
     { k: 'population', label: 'Population', Icon: UsersRound },
     { k: 'rail', label: 'Rail', Icon: TrainFront },
   ]
@@ -183,8 +260,9 @@ export function Hero() {
     <section ref={ref} className="relative isolate h-[100svh] max-h-[1080px] min-h-[660px] overflow-hidden bg-bg" aria-label="Sri Lanka, live">
       {/* scene */}
       <div className="absolute inset-0">
-        <Poster dim={ready && !failed} />
-        {!failed && (
+        <Backdrop dim={ready && !failed} />
+        {failed && <Poster />}
+        {!failed && REVIEW !== 'loading' && (
           <div className={cn('absolute inset-0 transition-opacity duration-1000 ease-out', ready ? 'opacity-100' : 'opacity-0')}>
             <Boundary onError={onError}>
               <Suspense fallback={null}>
@@ -192,10 +270,15 @@ export function Hero() {
                   landmarks={landmarks}
                   mood={mood}
                   layers={layers}
-                  active={active}
+                  active={port ? null : active}
                   onActive={onActive}
                   onSelect={onSelect}
                   renderCard={renderCard}
+                  port={port}
+                  onPort={onPort}
+                  renderPortCard={renderPortCard}
+                  onStage={onStage}
+                  revealed={ready}
                   animate={!reduced}
                   lowPower={lowPower}
                   paused={!visible || !tabVisible}
@@ -206,6 +289,7 @@ export function Hero() {
             </Boundary>
           </div>
         )}
+        {!failed && !loaderGone && <HeroLoader stage={REVIEW === 'loading' ? 2 : stage} done={ready} hold={REVIEW === 'loading' ? 64 : undefined} />}
       </div>
 
       {/* legibility: a soft wash behind the headline, and a fade into the page below */}
@@ -284,6 +368,7 @@ export function Hero() {
               key={k}
               type="button"
               aria-pressed={layers[k]}
+              title={label}
               onClick={() => toggle(k)}
               disabled={failed}
               className={cn(
@@ -292,7 +377,8 @@ export function Hero() {
               )}
             >
               <Icon className="size-3.5" />
-              {label}
+              {/* phones: only the layers that are on keep their label, so the whole bar fits */}
+              <span className={cn(!layers[k] && 'max-sm:sr-only')}>{label}</span>
             </button>
           ))}
           <span className="mx-1 h-4 w-px shrink-0 bg-glass-line" />

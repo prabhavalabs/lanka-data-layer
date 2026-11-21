@@ -412,6 +412,271 @@
   transform: none;
 }
 
+/* ---------------- footer skyline ---------------- */
+.skyline {
+  color: color-mix(in oklab, var(--ink3) 78%, transparent);
+}
+.skyline svg {
+  stroke-width: 1.35;
+}
+.skyline-grid {
+  opacity: 0.38;
+  stroke-width: 1;
+}
+.skyline-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 3200ms var(--ease-in-out);
+}
+.skyline-part {
+  opacity: 0;
+  transition: opacity 700ms var(--ease-out) var(--d, 0ms);
+}
+.skyline-detail {
+  opacity: 0.8;
+  stroke-width: 1.05;
+}
+.skyline-faint {
+  opacity: 0.5;
+  stroke-width: 1;
+}
+.skyline-point {
+  fill: currentColor;
+  stroke: none;
+}
+.skyline-point-accent {
+  fill: var(--brand);
+  stroke: none;
+}
+.skyline-halo {
+  stroke: var(--brand);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+.skyline-label text {
+  fill: var(--ink3);
+  stroke: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.skyline-label .skyline-lat {
+  opacity: 0.62;
+  letter-spacing: 0.02em;
+}
+.skyline[data-in="true"] .skyline-line {
+  stroke-dashoffset: 0;
+}
+.skyline[data-in="true"] .skyline-part {
+  opacity: 1;
+}
+@media (max-width: 639px) {
+  .skyline svg {
+    stroke-width: 2;
+  }
+  .skyline-detail,
+  .skyline-faint,
+  .skyline-grid {
+    stroke-width: 1.6;
+  }
+}
+
+/* ---------------- hero loader: glass cube on a turntable ---------------- */
+.hero-loader {
+  --s: 56px;
+  --stage: 132px;
+  position: absolute;
+  top: 73%;
+  left: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  /* exit: the cube opens out into the scene it was standing in for */
+  transition:
+    opacity 480ms var(--ease-out),
+    transform 720ms var(--ease-out),
+    filter 480ms var(--ease-out);
+  animation: hero-loader-in 520ms var(--ease-out) 100ms backwards;
+}
+@media (min-width: 1024px) {
+  .hero-loader {
+    --s: 76px;
+    --stage: 176px;
+    top: 51%;
+    left: 69%;
+  }
+}
+.hero-loader.is-done {
+  opacity: 0;
+  transform: scale(1.22);
+  filter: blur(5px);
+}
+.hero-loader-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--stage);
+  height: var(--stage);
+  perspective: 620px;
+  transform-style: preserve-3d;
+  animation: hero-float 3.6s ease-in-out infinite alternate;
+}
+.hero-loader-glow {
+  position: absolute;
+  inset: -34%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--brand) 30%, transparent), transparent 72%);
+  transform: translateZ(-120px);
+}
+.hero-loader-shadow {
+  position: absolute;
+  width: calc(var(--s) * 1.9);
+  height: calc(var(--s) * 1.9);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.42), transparent 78%);
+  transform: translateY(calc(var(--s) * 0.92)) rotateX(68deg);
+}
+.light .hero-loader-shadow {
+  background: radial-gradient(closest-side, rgb(20 24 28 / 0.2), transparent 78%);
+}
+.hero-cube {
+  position: relative;
+  width: var(--s);
+  height: var(--s);
+  transform-style: preserve-3d;
+  animation: hero-cube-spin 5.2s linear infinite;
+}
+.hero-cube-face {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in oklab, var(--ink) 52%, transparent);
+  background: linear-gradient(135deg, color-mix(in oklab, var(--brand) 20%, transparent), color-mix(in oklab, var(--ink) 4%, transparent) 64%);
+  box-shadow: inset 0 0 calc(var(--s) * 0.32) color-mix(in oklab, var(--brand) 18%, transparent);
+}
+.hero-cube-face.is-front {
+  transform: translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-back {
+  transform: rotateY(180deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-right {
+  transform: rotateY(90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-left {
+  transform: rotateY(-90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-top {
+  transform: rotateX(90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-core {
+  --s: 24px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2);
+  transform-style: preserve-3d;
+  animation: hero-core-spin 3.1s linear infinite;
+}
+.hero-cube-core .hero-cube-face {
+  border-color: color-mix(in oklab, var(--brand-ink) 90%, white);
+  background: color-mix(in oklab, var(--brand) 62%, transparent);
+  box-shadow: 0 0 16px color-mix(in oklab, var(--brand) 70%, transparent);
+}
+.hero-cube-orbit {
+  position: absolute;
+  inset: 6%;
+  border: 1px dashed color-mix(in oklab, var(--ink) 26%, transparent);
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  animation: hero-orbit 7s linear infinite;
+}
+.hero-cube-orbit > span {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--brand-ink);
+  box-shadow: 0 0 10px 1px var(--brand);
+}
+.hero-loader-readout {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink3);
+  white-space: nowrap;
+}
+.hero-loader-label {
+  color: var(--ink2);
+}
+.hero-loader-track {
+  position: relative;
+  width: 148px;
+  height: 1px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--ink3) 34%, transparent);
+}
+.hero-loader-track > span {
+  position: absolute;
+  inset: 0;
+  background: var(--brand-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms linear;
+}
+@keyframes hero-loader-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+@keyframes hero-cube-spin {
+  from {
+    transform: rotateX(-22deg) rotateY(-45deg);
+  }
+  to {
+    transform: rotateX(-22deg) rotateY(315deg);
+  }
+}
+@keyframes hero-core-spin {
+  from {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(360deg) rotateY(-360deg);
+  }
+}
+@keyframes hero-orbit {
+  from {
+    transform: rotateX(68deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(68deg) rotateZ(360deg);
+  }
+}
+@keyframes hero-float {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
+
 /* ---------------- drawers / overlays ---------------- */
 @keyframes overlay-in {
   from {
@@ -532,6 +797,39 @@
   }
   .pressable:active {
     transform: none;
+  }
+  /* hero loader: nothing spins, the cube rests at its three-quarter view and simply fades */
+  .hero-cube,
+  .hero-cube-core,
+  .hero-cube-orbit,
+  .hero-loader-stage,
+  .hero-loader {
+    animation: none;
+  }
+  .hero-cube {
+    transform: rotateX(-22deg) rotateY(-45deg);
+  }
+  .hero-cube-core {
+    transform: rotateX(18deg) rotateY(30deg);
+  }
+  .hero-cube-orbit {
+    transform: rotateX(68deg);
+  }
+  .hero-loader.is-done {
+    transform: none;
+    filter: none;
+  }
+  /* skyline: no pen travel, the finished drawing simply fades in */
+  .skyline-line {
+    stroke-dashoffset: 0;
+    opacity: 0;
+    transition: opacity 400ms ease;
+  }
+  .skyline[data-in="true"] .skyline-line {
+    opacity: 1;
+  }
+  .skyline-part {
+    transition: opacity 400ms ease;
   }
 }
 @media (prefers-reduced-transparency: reduce) {

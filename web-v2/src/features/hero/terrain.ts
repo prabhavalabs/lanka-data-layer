@@ -75,8 +75,13 @@ function loadImageData(src: string): Promise<ImageData> {
   })
 }
 
-export async function buildTerrain(detail: 'high' | 'low'): Promise<Terrain> {
+export async function buildTerrain(detail: 'high' | 'low', onAssets?: () => void): Promise<Terrain> {
   const [{ rings }, meta, img] = await Promise.all([geo.country(), geo.sdfMeta(), loadImageData('/geo/coast-sdf.png')])
+  if (onAssets) {
+    // the build below is synchronous: report the milestone and let it paint first
+    onAssets()
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  }
   const { width: W, height: H, bounds: B, range: RANGE } = meta
 
   // decode sqrt-encoded signed distance into a float field
