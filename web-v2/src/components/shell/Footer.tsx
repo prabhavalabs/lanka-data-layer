@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import { Logo } from '@/components/common/bits'
+import { FooterSkyline } from './FooterSkyline'
 
 const COLS: { h: string; links: [string, string][] }[] = [
   { h: 'Product', links: [['Explore map', '/explore'], ['Area profiles', '/area/LK11'], ['Data catalogue', '/data'], ['Indicators', '/explore']] },
@@ -9,8 +10,10 @@ const COLS: { h: string; links: [string, string][] }[] = [
 
 export function Footer() {
   return (
-    <footer className="relative border-t border-line bg-bg2/40">
-      <div className="mx-auto max-w-[1240px] px-5 pt-14 pb-10 sm:px-8">
+    <footer className="relative">
+      <FooterSkyline />
+      <div className="bg-bg2/40">
+      <div className="mx-auto max-w-[1240px] px-5 pt-9 pb-10 sm:px-8 sm:pt-12">
         <div className="grid gap-10 md:grid-cols-[1.3fr_2fr]">
           <div>
             <Logo />
@@ -51,6 +54,7 @@ export function Footer() {
             <span>Code MIT · data under each source's licence</span>
           </div>
         </div>
+      </div>
       </div>
     </footer>
   )
