@@ -53,7 +53,7 @@
      poster when there is no WebGL). Mirrors sky.horizon in src/features/hero/sceneTheme.ts; keep the two in step. */
   --hero-haze: #18364f;
 
-  /* code panels stay dark in both themes */
+  /* code panels (light overrides in :root.light) */
   --code-bg: #090c10;
   --code-line: #1a2029;
   --code-ink: #dfe6ed;
@@ -99,6 +99,18 @@
   --chart-axis: #98a2ab;
 
   --hero-haze: #cfe4f4;
+
+  /* code panels follow the theme */
+  --code-bg: #f5f6f5;
+  --code-line: #e3e6e5;
+  --code-ink: #1c2329;
+  --code-ink2: #4f5b66;
+  --code-ink3: #8a949c;
+  --tok-key: #1f5fbf;
+  --tok-str: #12784a;
+  --tok-num: #a35a00;
+  --tok-kw: #c22f5a;
+  --tok-com: #8a949c;
 }
 
 :root {
@@ -754,11 +766,31 @@
   animation: shimmer 1.4s linear infinite;
 }
 
-/* thin scrollbars inside panels */
+/* thin scrollbars inside panels: invisible until the panel is hovered or focused */
 .scroll-thin {
   scrollbar-width: thin;
-  scrollbar-color: var(--line2) transparent;
+  scrollbar-color: transparent transparent;
   overscroll-behavior: contain;
+  transition: scrollbar-color 0.2s ease-out;
+}
+.scroll-thin:hover,
+.scroll-thin:focus-within {
+  scrollbar-color: var(--line2) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+.scroll-thin:hover::-webkit-scrollbar-thumb,
+.scroll-thin:focus-within::-webkit-scrollbar-thumb {
+  background: var(--line2);
 }
 
 /* MapLibre chrome re-skinned */

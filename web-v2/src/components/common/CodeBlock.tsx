@@ -1,5 +1,5 @@
-import { Check, Copy } from 'lucide-react'
-import { Fragment, type ReactNode } from 'react'
+import { Check, Copy, WrapText } from 'lucide-react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { useCopy } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
 
@@ -68,9 +68,15 @@ function highlight(code: string, lang: Lang): ReactNode[] {
   return out
 }
 
-export function Code({ code, lang = 'bash', className }: { code: string; lang?: Lang; className?: string }) {
+export function Code({ code, lang = 'bash', className, wrap = false }: { code: string; lang?: Lang; className?: string; wrap?: boolean }) {
   return (
-    <pre className={cn('scroll-thin overflow-x-auto font-mono text-[12.5px] leading-[1.7] text-code-ink', className)}>
+    <pre
+      className={cn(
+        'scroll-thin font-mono text-[12.5px] leading-[1.7] text-code-ink',
+        wrap ? 'overflow-x-hidden break-words whitespace-pre-wrap' : 'overflow-x-auto',
+        className,
+      )}
+    >
       <code>
         {highlight(code, lang).map((n, i) => (
           <Fragment key={i}>{n}</Fragment>
@@ -80,9 +86,27 @@ export function Code({ code, lang = 'bash', className }: { code: string; lang?: 
   )
 }
 
-/** Code panel. Stays dark in both themes. */
-export function CodeBlock({ code, lang = 'bash', title, className, copy = true }: { code: string; lang?: Lang; title?: ReactNode; className?: string; copy?: boolean }) {
+const iconBtn =
+  'pressable grid size-7 place-items-center rounded-md border border-code-line bg-code-bg/90 text-code-ink3 opacity-0 backdrop-blur transition-opacity duration-150 group-hover:opacity-100 hover:text-code-ink focus-visible:opacity-100 pointer-coarse:opacity-100'
+
+/** Code panel. Follows the page theme; long lines scroll (scrollbar on hover) or wrap via the toggle. */
+export function CodeBlock({
+  code,
+  lang = 'bash',
+  title,
+  className,
+  copy = true,
+  wrap: wrapDefault = false,
+}: {
+  code: string
+  lang?: Lang
+  title?: ReactNode
+  className?: string
+  copy?: boolean
+  wrap?: boolean
+}) {
   const [copied, doCopy] = useCopy()
+  const [wrap, setWrap] = useState(wrapDefault)
   return (
     <div className={cn('group relative overflow-hidden rounded-xl border border-code-line bg-code-bg', className)}>
       {title && (
@@ -90,16 +114,24 @@ export function CodeBlock({ code, lang = 'bash', title, className, copy = true }
           {title}
         </div>
       )}
-      <Code code={code} lang={lang} className="px-4 py-3.5" />
+      <Code code={code} lang={lang} wrap={wrap} className="px-4 py-3.5" />
+      <div className={cn('absolute right-2 flex gap-1.5', title ? 'top-11' : 'top-2')}>
+        <button
+          type="button"
+          onClick={() => setWrap((w) => !w)}
+          aria-pressed={wrap}
+          aria-label={wrap ? 'Scroll long lines' : 'Wrap long lines'}
+          title={wrap ? 'Scroll long lines' : 'Wrap long lines'}
+          className={cn(iconBtn, wrap && 'text-code-ink')}
+        >
+          <WrapText className="size-3.5" />
+        </button>
       {copy && (
         <button
           type="button"
           onClick={() => doCopy(code.replace(/^[$›]\s/gm, ''))}
           aria-label={copied ? 'Copied' : 'Copy code'}
-          className={cn(
-            'pressable absolute right-2 grid size-7 place-items-center rounded-md border border-code-line bg-code-bg/90 text-code-ink3 opacity-0 backdrop-blur transition-opacity duration-150 group-hover:opacity-100 hover:text-code-ink focus-visible:opacity-100 pointer-coarse:opacity-100',
-            title ? 'top-11' : 'top-2',
-          )}
+          className={cn(iconBtn, 'relative')}
         >
           <span className={cn('absolute transition-[opacity,filter,transform] duration-200', copied ? 'scale-90 opacity-0 blur-[2px]' : 'opacity-100')}>
             <Copy className="size-3.5" />
@@ -109,6 +141,7 @@ export function CodeBlock({ code, lang = 'bash', title, className, copy = true }
           </span>
         </button>
       )}
+      </div>
     </div>
   )
 }
