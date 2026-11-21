@@ -1,0 +1,30 @@
+id: archaeology-dept
+publisher: Department of Archaeology, Sri Lanka
+title: Gazetted archaeological protected monuments and reserves
+homepage: https://www.archaeology.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.archaeology.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Archaeology, Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  - adm3
+  join: name_match
+themes:
+- SOCI
+datasets:
+- protected-monuments
+priority: P2
+effort: M
+status: planned
+notes: 'Protected monuments/ancient sites are declared by Gazette under the Antiquities Ordinance, listed by district and
+  DS division with village names; no coordinates - geocode via GN/village name + Wikidata/OSM historic=*. Verification 2026-11-21:
+  https://www.archaeology.gov.lk/ -> connection timed out (no response; .gov.lk hosts often drop non-Sri-Lankan traffic -
+  re-verify from an LK vantage point).'

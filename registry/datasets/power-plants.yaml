@@ -1,0 +1,42 @@
+id: power-plants
+title: Power plants by technology, capacity and status
+description: Unit-level power plants (operating, construction, announced) with capacity, technology, owner and start year.
+source_ids:
+- gem-power-tracker
+- osm-geofabrik
+indicators:
+- id: ener.gem_plant_capacity_mw
+  label: Installed capacity
+  unit: MW
+  dims:
+  - technology
+  - status
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: ener.gem_plant_count
+  label: Power plants
+  unit: count
+  dims:
+  - technology
+  - status
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: 1950
+  to: 2026
+method: GEM tracker rows for LKA; reconcile with CEB statistical digest plant list and OSM power=plant.
+limits:
+- Small rooftop and mini-hydro under GEM thresholds are missing; CEB digest totals used as control.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - MW per district by technology
+publication_class: B

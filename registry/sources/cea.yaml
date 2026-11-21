@@ -1,0 +1,33 @@
+id: cea
+publisher: Central Environmental Authority, Sri Lanka
+title: National Environmental (Noise Control) Regulations and environmental zoning
+homepage: https://www.cea.lk/
+access:
+  method: pdf
+  endpoint: https://www.cea.lk/web/images/pdf/acts-regulations/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Central Environmental Authority
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  - adm4
+  join: spatial
+themes:
+- ENVI
+- GOVE
+datasets:
+- noise-control-zones
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Gazette 924/12 (1996, amended 1997) defines silent zones (100 m around courts, hospitals, schools, places of worship,
+  etc.) and permissible noise levels by zone type; we encode the rule and generate zones from facility points.
+dc_refs:
+- silent_zone
+- noise_ordinance

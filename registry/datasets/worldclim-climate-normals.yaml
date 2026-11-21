@@ -1,0 +1,52 @@
+id: worldclim-climate-normals
+title: Climate normals 1970-2000 (WorldClim 2.1)
+description: Monthly temperature, rainfall, solar radiation, wind and vapour pressure normals plus 19 bioclimatic variables,
+  zonal means per admin unit.
+source_ids:
+- worldclim
+indicators:
+- id: clim.wc_tavg
+  label: Mean temperature (normal)
+  unit: degC
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: month
+- id: clim.wc_prec
+  label: Precipitation (normal)
+  unit: mm
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: month
+- id: clim.wc_bio
+  label: Bioclimatic variable
+  unit: varies
+  dims:
+  - bio_var
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: 1970
+  to: 2000
+method: Download 30 arc-sec GeoTIFFs; area-weighted zonal mean per ADM4; roll-up by area weights.
+limits:
+- Interpolated station climatology (thin-plate splines); weak in data-sparse highlands and the North; not a time series.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted mean per unit
+publication_class: A

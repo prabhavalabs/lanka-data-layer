@@ -1,0 +1,52 @@
+id: derived-development-index
+title: Composite local development index (GN/DS)
+description: Composite of education, health access, basic services, housing quality, connectivity, night-lights and poverty,
+  with domain sub-indices and rank uncertainty.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: dev.composite_index
+  label: Composite development index
+  unit: index 0-100
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: year
+- id: dev.domain_index
+  label: Domain sub-index
+  unit: index 0-100
+  dims:
+  - domain
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: year
+- id: dev.rank_ci
+  label: Rank 90% interval
+  unit: ranks
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: 2024
+  to: 2026
+method: 'OECD/JRC Handbook on Constructing Composite Indicators (2008): normalise, PCA-informed weights, geometric aggregation;
+  Monte Carlo sensitivity for rank intervals.'
+limits:
+- Index depends on chosen indicators and weights; publish domain scores and sensitivity, not a single ranking.
+enrichment:
+  derived_from:
+  - dcs-census-2024-gnd
+  - dcs-census-2024-basic-services
+  - derived-facility-coverage
+  - derived-small-area-poverty
+  - viirs-nightlights
+  - derived-market-access
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

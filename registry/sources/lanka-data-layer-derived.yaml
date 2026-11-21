@@ -49,6 +49,15 @@ datasets:
 - derived-service-gap-index
 - derived-agri-season-monitor
 - derived-forest-loss-zonal
+- derived-intercensal-population
+- derived-harmonised-boundary-series
+- derived-dasymetric-disaggregation
+- derived-tourism-pressure-index
+- derived-investment-density
+- derived-development-index
+- derived-market-access
+- derived-multi-hazard-exposure
+- derived-attractions-register
 priority: P1
 effort: L
 status: planned

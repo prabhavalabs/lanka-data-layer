@@ -28,6 +28,7 @@ themes:
 datasets:
 - wikidata-admin-crosswalk
 - wikidata-places-entities
+- protected-monuments
 priority: P0
 effort: S
 status: planned

@@ -41,6 +41,12 @@ datasets:
 - moh-health-institutions
 - boi-zones
 - sltda-registered-establishments
+- world-heritage-sites
+- protected-monuments
+- courthouses
+- noise-control-zones
+- power-plants
+- rda-expressway-programme
 priority: P0
 effort: M
 status: active

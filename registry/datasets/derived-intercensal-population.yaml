@@ -1,0 +1,49 @@
+id: derived-intercensal-population
+title: Intercensal and projected population by GN (2012-2030)
+description: Annual GN-level population 2012-2030 interpolated between Census 2012 and 2024 on 2024 boundaries, constrained
+  to DCS district mid-year estimates; projected to 2030 by cohort-component at district and ratio-share below.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: pop.intercensal_total
+  label: Population (intercensal / projected)
+  unit: persons
+  dims:
+  - sex
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  - raster
+  period_type: year
+- id: pop.intercensal_ci
+  label: Interval half-width
+  unit: persons
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: 2012
+  to: 2030
+method: Geometric (exponential) interpolation per GN on harmonised 2024 boundaries; raked (iterative proportional fitting)
+  to DCS district mid-year estimates; ratio-to-trend shares for 2025-2030 under UN WPP / DCS projection controls.
+limits:
+- Assumes smooth growth between censuses; shocks (2022 crisis, emigration, Ditwah 2025) appear only via district controls.
+- GN splits/merges since 2012 carry crosswalk uncertainty (flagged).
+enrichment:
+  derived_from:
+  - dcs-census-2012
+  - dcs-census-2024-gnd
+  - dcs-midyear-population-district
+  - gnd-id-crosswalk
+  - admin-region-history
+  - un-wpp-lka
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

@@ -1,0 +1,29 @@
+id: world-heritage-sites
+title: UNESCO World Heritage sites and buffer zones
+description: Inscribed and tentative World Heritage properties in Sri Lanka with core and buffer-zone geometry where published.
+source_ids:
+- unesco-whc
+- osm-geofabrik
+indicators:
+- id: heritage.whs_sites
+  label: World Heritage properties
+  unit: count
+  dims:
+  - category
+  - status
+  geo_levels:
+  - point
+  - polygon
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: 1982
+  to: 2026
+method: UNESCO list (XML/KML) + OSM heritage=1 boundary relations; Wikidata P757 for ids.
+limits:
+- Buffer zones are not legally harmonised with UDA/Archaeology reserves.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+publication_class: B

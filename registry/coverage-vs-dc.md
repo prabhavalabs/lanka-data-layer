@@ -1,6 +1,6 @@
 # Coverage vs developing-country.org
 
-dc catalogue snapshot: 140 datasets (2026-10/11). **139 mapped to our datasets, 1 excluded with reason.** Many dc tables are merged into fewer, richer datasets of ours (e.g. 4 paddy tables -> `dcs-paddy-statistics`; 10 metro analyses -> `derived-transit-access`). We reuse dc's knowledge of upstream URLs, never their data.
+dc catalogue snapshot: 140 datasets (2026-10/11). **139 mapped to our datasets, 1 excluded with reason.** Re-checked live on 2026-11-21: sitemap still lists the same 140 `/data` slugs; the explore app's `/api/catalog` lists 160 layers, of which 14 have no `/data` page (see *Explore-only layers* below). Dataset-by-dataset parity costing: `docs/data/dc-parity.csv`. Many dc tables are merged into fewer, richer datasets of ours (e.g. 4 paddy tables -> `dcs-paddy-statistics`; 10 metro analyses -> `derived-transit-access`). We reuse dc's knowledge of upstream URLs, never their data.
 
 ## Mapping
 
@@ -8,9 +8,9 @@ dc catalogue snapshot: 140 datasets (2026-10/11). **139 mapped to our datasets, 
 |---|---|---|---|---|---|
 | `administrative-units-district` | Administrative units by district | `cod-ab-lka-boundaries` | `hdx-cod-ab-lka` | attribution |  |
 | `agricultural-production-index` | Agricultural production index | `dcs-agri-production-index` | `dcs-agriculture` | permission_unclear |  |
-| `attractions` | Visitor attractions | `osm-tourism-attractions` | `osm-geofabrik` | attribution |  |
+| `attractions` | Visitor attractions | `osm-tourism-attractions`, `derived-attractions-register` | `osm-geofabrik` | attribution | plus conflated register (OSM + Overture + Wikidata + UNESCO + gazetted monuments) |
 | `bank-branches-density` | Bank branches and banking density | `cbsl-bank-branches` | `cbsl-ess` | permission_unclear |  |
-| `boi-zones` | Board of Investment zones | `boi-zones` | `boi` | permission_unclear |  |
+| `boi-zones` | Board of Investment zones | `boi-zones`, `boi-fdi-inflows`, `boi-enterprises` | `boi` | permission_unclear | plus BOI FDI/approvals and enterprise list + land bank |
 | `building-construction-district` | Building construction by district | `dcs-building-construction` | `dcs-statistical-abstract` | permission_unclear |  |
 | `building-material-prices` | Building material retail prices | `dcs-pocketbook-prices-wages` | `dcs-pocketbook` | permission_unclear |  |
 | `ccpi-monthly` | Colombo Consumer Price Index | `dcs-ccpi` | `dcs-prices` | permission_unclear |  |
@@ -40,7 +40,7 @@ dc catalogue snapshot: 140 datasets (2026-10/11). **139 mapped to our datasets, 
 | `employment-by-occupation` | Employment by occupation | `dcs-lfs-annual-subnational` | `dcs-lfs` | permission_unclear |  |
 | `energy-supply-consumption` | Energy supply and consumption | `dcs-pocketbook-sector-services` | `dcs-pocketbook` | permission_unclear |  |
 | `exchange-rates-monthly` | Monthly exchange rates | `cbsl-exchange-rates` | `cbsl-exchange-rates` | permission_unclear |  |
-| `expressways` | Expressways | `osm-road-network` | `osm-geofabrik` | attribution |  |
+| `expressways` | Expressways | `osm-road-network`, `rda-expressway-programme` | `osm-geofabrik` | attribution | status (open/under construction/proposed), dates, length, interchanges |
 | `external-trade-indices` | External trade indices | `dcs-pocketbook-trade-indices` | `dcs-pocketbook` | permission_unclear |  |
 | `fisheries-production-capacity` | Fisheries production and capacity | `dcs-pocketbook-agriculture` | `dcs-pocketbook` | permission_unclear |  |
 | `food-nutrient-availability` | Food and nutrient availability | `dcs-pocketbook-agriculture` | `dcs-pocketbook` | permission_unclear |  |
@@ -147,9 +147,34 @@ dc catalogue snapshot: 140 datasets (2026-10/11). **139 mapped to our datasets, 
 | `worldbank-poverty-estimates` | Poverty estimates and forecasts | `wb-sldu-outlook` | `worldbank-sldu` | attribution |  |
 | `worldbank-poverty-province` | Provincial poverty estimates | `wb-sldu-outlook` | `worldbank-sldu` | attribution |  |
 
+## Explore-only layers (live `/api/catalog`, 2026-11-21)
+
+The explore app's 160 layers map onto the 140 `/data` datasets except these 14. Several are listed by dc but not ingested by them.
+
+| dc layer | dc title | Our dataset(s) | Primary source | Licence status | Note |
+|---|---|---|---|---|---|
+| `roads` | Roads by tier | `osm-road-network` | `osm-geofabrik` | attribution | v1 roads layer already live |
+| `water` | Water bodies | `osm-waterways-waterbodies` | `osm-geofabrik` | attribution | v1 waterways layer already live |
+| `terrain` | Terrain / elevation | `copernicus-dem-terrain`, `nasadem` | `copernicus-dem` | attribution | dc uses AWS Terrain Tiles (SRTM 2000) |
+| `climate` | Climate normals | `worldclim-climate-normals` | `worldclim` | attribution | added 2026-11-21 |
+| `clinic_moh` | MoH clinics | `moh-health-institutions` | `moh-health` | permission_unclear | dc: "not ingested" |
+| `courthouse` | Courthouses | `courthouses` | `moj-courts` | permission_unclear | added 2026-11-21; dc: "not ingested" |
+| `silent_zone` | Silent zones | `noise-control-zones` | `cea` | permission_unclear | added 2026-11-21; rule-generated zones |
+| `noise_ordinance` | Noise Control Regulations 1996 | `noise-control-zones` | `cea` | permission_unclear | added 2026-11-21 |
+| `sun` | Sun & shadow | excluded: client-side SunCalc computation, not data | | | |
+| `stepper` | Stepper curated spots | excluded: restricted third-party adapter | | | |
+| `prospects`, `analyses`, `data_views`, `regions` | platform user/session records | excluded: dc runtime state, not public datasets | | | |
+
+## Registry additions 2026-11-21 (dc parity and value-add)
+
+- Sources (7): `worldclim`, `unesco-whc`, `archaeology-dept`, `moj-courts`, `cea`, `gem-power-tracker`, `meta-rwi` (restricted, internal QA only). Updated: `boi` (monthly performance, downloads, land bank endpoints), `rda` (project-map GeoJSON for A/B class roads), `osm-geofabrik`, `wikidata`, `lanka-data-layer-derived`.
+- Datasets for dc parity (6): `worldclim-climate-normals`, `courthouses`, `noise-control-zones`, `rda-expressway-programme`, `boi-fdi-inflows`, `boi-enterprises`.
+- Datasets dc lacks (13): `world-heritage-sites`, `protected-monuments`, `power-plants`, `meta-rwi-wealth-index`, and derived `derived-intercensal-population`, `derived-harmonised-boundary-series`, `derived-dasymetric-disaggregation`, `derived-tourism-pressure-index`, `derived-investment-density`, `derived-development-index`, `derived-market-access`, `derived-multi-hazard-exposure`, `derived-attractions-register`.
+- Registry now: 174 sources, 263 datasets, 512 indicators (validated with `lanka registry validate`).
+
 ## Our additions that dc lacks
 
-160 datasets (of 244) and 111 sources (of 167) have no dc equivalent.
+160 datasets (of 244) and 111 sources (of 167) had no dc equivalent before the 2026-11-21 additions; with them, 173 of 263 datasets and 115 of 174 sources (the additions listed above are not repeated in the theme lists below).
 
 **AGRI** (12): `dcs-census-of-agriculture`, `dcs-other-field-crops`, `derived-agri-season-monitor`, `faostat-crops-livestock`, `faostat-food-security`, `faostat-land-inputs`, `fewsnet-food-insecurity`, `fisheries-statistics`, `harti-food-prices`, `soilgrids-properties`, `tea-production-exports`, `wfp-food-prices`
 

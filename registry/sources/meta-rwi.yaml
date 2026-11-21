@@ -1,0 +1,31 @@
+id: meta-rwi
+publisher: Meta Data for Good
+title: Relative Wealth Index (2.4 km tiles)
+homepage: https://dataforgood.facebook.com/dfg/tools/relative-wealth-index
+access:
+  method: csv
+  endpoint: https://data.humdata.org/dataset/relative-wealth-index
+  auth: none
+licence:
+  id: cc-by-nc-4.0
+  status: restricted
+  url: https://creativecommons.org/licenses/by-nc/4.0/
+  attribution: Meta Data for Good, Relative Wealth Index (Chi et al. 2022, PNAS)
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  - adm3
+  - adm4
+  join: grid
+themes:
+- SOCI
+- ECON
+datasets:
+- meta-rwi-wealth-index
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'Non-commercial licence: internal validation covariate for small-area poverty only; never redistributed.'

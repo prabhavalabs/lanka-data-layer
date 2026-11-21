@@ -22,9 +22,14 @@ themes:
 datasets:
 - lk-major-projects
 - boi-zones
-priority: P2
-effort: S
+- boi-fdi-inflows
+- boi-enterprises
+priority: P1
+effort: M
 status: planned
 verified_at: '2026-11-21'
 dc_refs:
 - boi-zones
+notes: Zones page lists EPZs/industrial parks (no open GIS). Monthly performance page https://investsrilanka.com/home/media/monthly-performance/
+  (FDI, approvals, employment), annual reports under https://investsrilanka.com/home/download/, land bank https://investsrilanka.com/home/available-lands/.
+  Verified 2026-11-21.

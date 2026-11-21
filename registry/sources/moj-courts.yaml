@@ -1,0 +1,31 @@
+id: moj-courts
+publisher: Ministry of Justice / Judicial Service Commission, Sri Lanka
+title: Courts register (Supreme, Appeal, High, District, Magistrate, Primary courts)
+homepage: https://www.moj.gov.lk/
+access:
+  method: html
+  endpoint: https://www.jsc.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Justice, Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  - adm2
+  join: name_match
+themes:
+- GOVE
+datasets:
+- courthouses
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Court list by judicial zone; geometry from OSM amenity=courthouse matched by name/town. dc lists 'courthouse' as an
+  explore layer but has not ingested it. jsc.gov.lk timed out on 2026-11-21 (moj.gov.lk reachable).
+dc_refs:
+- courthouse

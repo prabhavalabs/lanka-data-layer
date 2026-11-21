@@ -1,0 +1,41 @@
+id: derived-attractions-register
+title: Conflated visitor attractions register
+description: One deduplicated attractions register (heritage, nature, religious, beaches, viewpoints, waterfalls, museums)
+  conflating OSM, Overture, Wikidata, UNESCO and gazetted monuments, each with ADM4 p-code and source lineage.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: tour.attractions
+  label: Attractions
+  unit: count
+  dims:
+  - category
+  - designation
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: 2026
+method: Entity resolution (name similarity + 250 m distance + Wikidata QID) across inputs; designation from UNESCO/Archaeology;
+  per-attribute provenance.
+limits:
+- Volunteered inputs; popularity/visitor counts are not available at site level.
+enrichment:
+  derived_from:
+  - osm-tourism-attractions
+  - overture-places
+  - wikidata-places-entities
+  - world-heritage-sites
+  - protected-monuments
+  - osm-protected-areas
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

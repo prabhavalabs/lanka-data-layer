@@ -1,0 +1,46 @@
+id: derived-harmonised-boundary-series
+title: Series harmonised to 2024 admin boundaries
+description: Every sub-national series (census 2001/2012, HIES, LFS, elections, agriculture) re-expressed on the 2024 ADM1-ADM4
+  boundaries through population-weighted crosswalks.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: harm.value
+  label: Harmonised value
+  unit: varies
+  dims:
+  - indicator
+  - source_boundary_vintage
+  geo_levels:
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: harm.allocation_share
+  label: Crosswalk allocation share
+  unit: ratio
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: 1981
+  to: 2026
+method: Areal-weighted then population-weighted (building-count / GHSL) crosswalk between boundary vintages (Logan et al.
+  2014 LTDB-style interpolation); counts reallocated, rates recomputed.
+limits:
+- Reallocation assumes uniform within-unit distribution of the weight layer; shares < 0.95 flagged.
+enrichment:
+  derived_from:
+  - admin-region-history
+  - gnd-id-crosswalk
+  - cod-ab-lka-boundaries
+  - google-open-buildings
+  - ghsl-population-grid
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

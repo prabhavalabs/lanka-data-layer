@@ -1,0 +1,45 @@
+id: boi-fdi-inflows
+title: BOI foreign direct investment and project approvals
+description: FDI inflows, approved/contracted projects and employment by sector, country of origin and zone, from BOI monthly
+  performance and annual reports.
+source_ids:
+- boi
+indicators:
+- id: econ.boi_fdi_usd
+  label: FDI realised (BOI)
+  unit: USD million
+  dims:
+  - sector
+  - origin_country
+  geo_levels:
+  - national
+  period_type: quarter
+- id: econ.boi_projects
+  label: BOI projects approved/contracted
+  unit: count
+  dims:
+  - stage
+  - sector
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: econ.boi_employment
+  label: Employment in BOI enterprises
+  unit: persons
+  dims:
+  - sector
+  geo_levels:
+  - national
+  - polygon
+  period_type: year
+time_coverage:
+  from: 2010
+  to: 2026
+method: Parse BOI monthly performance pages and annual-report tables (PDF); cross-check FDI against CBSL BoP.
+limits:
+- BOI FDI covers BOI-registered enterprises only (not all FDI); district split published only for some years.
+enrichment:
+  joins:
+  - district names -> ADM2 p-codes via registry/crosswalks
+publication_class: B
