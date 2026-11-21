@@ -46,6 +46,13 @@ export type ModelDef = {
    * site to fit on the land. The scene nudges the model inland until it does.
    */
   inland?: number
+  /**
+   * Coastal models: the compass bearing (degrees, 0 = north, 90 = east) that +z points down, for a headland
+   * whose direction is a matter of record. Default: straight out to the nearest open water.
+   */
+  bearing?: number
+  /** where the model is sited, [lon, lat], when that is not the landmark's own coordinate (a harbour's pin is in the bay, its rock is on the point) */
+  site?: [number, number]
   /** flip the model left-to-right when placing it (a coastal model whose bay belongs on the other side) */
   mirror?: boolean
   /** review harness only: camera azimuth (degrees, in the model's frame) that matches how the hero sees a coastal model */

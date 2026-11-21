@@ -18,9 +18,11 @@ import * as THREE from 'three'
 import { Kit, apron, blob, curve, fbm, hipRoof, palm, rng, smooth, tree, type Paint } from '../kit'
 import type { BuildCtx, Built, Mover } from '../types'
 
-const Z0 = -0.05, Z1 = 0.24
-const halfW = (z: number) => curve([[Z0, 0.085], [-0.01, 0.062], [0.045, 0.036], [0.1, 0.044], [0.16, 0.058], [0.205, 0.05], [0.228, 0.03], [Z1, 0.008]], z)
-const crest = (z: number) => curve([[Z0, 0], [-0.01, 0.004], [0.045, 0.026], [0.1, 0.058], [0.16, 0.098], [0.21, 0.112], [Z1, 0.104]], z)
+// The rock begins just behind the fort wall. Everything landward of that is the real coast: the model
+// brings no ground of its own to lay over the bay behind the town.
+const Z0 = -0.014, Z1 = 0.24
+const halfW = (z: number) => curve([[Z0, 0.064], [-0.01, 0.062], [0.045, 0.036], [0.1, 0.044], [0.16, 0.058], [0.205, 0.05], [0.228, 0.03], [Z1, 0.008]], z)
+const crest = (z: number) => curve([[Z0, 0], [-0.01, 0.003], [0.045, 0.026], [0.1, 0.058], [0.16, 0.098], [0.21, 0.112], [Z1, 0.104]], z)
 /** spine wanders a little so the promontory is not a ruler */
 const spine = (z: number) => 0.012 * Math.sin((z - Z0) * 11)
 
@@ -60,7 +62,8 @@ export function buildTrincomalee(ctx: BuildCtx): Built {
   const SEA = ctx.sea
 
   /* ---- the town's ground behind the shore ---- */
-  apron(k, blob(0.2, 0.105, 0.08, 5), (p) => ({ c: 'ground', c2: 'sand', t: smooth(-0.03, -0.004, p.z) * 0.8 }), { cz: -0.108, seg: 30, rings: 5 })
+  // kept to the strip behind the fort and the harbour sheds: the bay behind the town is the real one, and stays open water
+  apron(k, blob(0.125, 0.05, 0.08, 5), (p) => ({ c: 'ground', c2: 'sand', t: smooth(-0.03, -0.004, p.z) * 0.8 }), { cx: -0.05, cz: -0.05, seg: 30, rings: 5 })
 
   /* ---- Swami Rock ---- */
   const NU = 34, NV = 16
@@ -147,8 +150,8 @@ export function buildTrincomalee(ctx: BuildCtx): Built {
   k.box(0.0085, 0.011, 0.0104, 'iron', { p: [spine(wallZ), 0.004, wallZ] })
   k.box(0.023, 0.0022, 0.012, { c: 'stone' }, { p: [spine(wallZ), 0.023, wallZ] })
   // the road up the spine to the temple
-  for (let i = 0; i < 16; i++) {
-    const z0 = -0.03 + i * 0.0125, z1 = z0 + 0.0125
+  for (let i = 0; i < 15; i++) {
+    const z0 = -0.0125 + i * 0.0125, z1 = z0 + 0.0125
     const x0 = spine(z0) - 0.004 * Math.sin(i), x1 = spine(z1) - 0.004 * Math.sin(i + 1)
     const y0 = Math.max(0.0034, topAt(z0, -0.05) + 0.0016), y1 = Math.max(0.0034, topAt(z1, -0.05) + 0.0016)
     k.quad([x0 + 0.0042, y0, z0], [x0 - 0.0042, y0, z0], [x1 - 0.0042, y1, z1], [x1 + 0.0042, y1, z1], 'path')
@@ -246,17 +249,23 @@ export function buildTrincomalee(ctx: BuildCtx): Built {
   k.box(0.0095, 0.0025 - SEA, 0.07, quay, { p: [-0.118, SEA, 0.026] })
   k.box(0.034, 0.0025 - SEA, 0.0095, quay, { p: [-0.106, SEA, 0.056] })
   for (const z of [0.004, 0.03, 0.056]) k.add(new THREE.OctahedronGeometry(0.0015, 0), { c: 'light', glow: 1.5, phase: 0.2 + z * 7 }, { p: [-0.118, 0.008, z] })
+  // What stands on the shore rides the real ground, each piece as a whole: on the land it sits on the land,
+  // and a piece whose foot falls in the bay is left out rather than left floating.
+  k.drape = 1
   // China Bay's oil tanks
-  for (const [x, z, r] of [[-0.152, -0.03, 0.0105], [-0.128, -0.045, 0.0105], [-0.155, -0.058, 0.0105], [-0.105, -0.026, 0.008]] as const) {
-    k.cyl(r, r, 0.0105, 12, { c: 'white', c2: 'stone', t: 0.25, k: (p) => 0.84 + 0.16 * smooth(0, 0.01, p.y) }, { p: [x, 0.0015, z] })
-    k.cone(r, 0.0022, 12, 'whiteShade', { p: [x, 0.012, z] })
-  }
+  for (const [x, z, r] of [[-0.152, -0.03, 0.0105], [-0.128, -0.045, 0.0105], [-0.155, -0.058, 0.0105], [-0.105, -0.026, 0.008]] as const)
+    k.rigidAt(x, z, () => {
+      k.cyl(r, r, 0.0105, 12, { c: 'white', c2: 'stone', t: 0.25, k: (p) => 0.84 + 0.16 * smooth(0, 0.01, p.y) }, { p: [x, 0.0015, z] })
+      k.cone(r, 0.0022, 12, 'whiteShade', { p: [x, 0.012, z] })
+    })
   // harbour sheds
-  for (const [x, z] of [[-0.085, -0.02], [-0.064, -0.034]] as const) {
-    k.box(0.022, 0.006, 0.011, { c: 'cream', glow: 0.12 }, { p: [x, 0.0015, z], r: [0, 0.2, 0] })
-    hipRoof(k, 0.024, 0.013, 0.004, 0.016, 'roof', { p: [x, 0.0075, z], r: [0, 0.2, 0] })
-  }
-  for (const [x, z] of [[0.09, -0.03], [0.12, -0.05], [0.06, -0.06], [-0.03, -0.05], [0.15, -0.03]] as const) palm(k, x, z, 0.03 + rand() * 0.01, 0.15 + rand() * 0.15, rand() * 6, 'palmTrunk', 'palmLeaf', 0.0015)
+  for (const [x, z] of [[-0.085, -0.02], [-0.064, -0.034]] as const)
+    k.rigidAt(x, z, () => {
+      k.box(0.022, 0.006, 0.011, { c: 'cream', glow: 0.12 }, { p: [x, 0.0015, z], r: [0, 0.2, 0] })
+      hipRoof(k, 0.024, 0.013, 0.004, 0.016, 'roof', { p: [x, 0.0075, z], r: [0, 0.2, 0] })
+    })
+  for (const [x, z] of [[0.09, -0.03], [0.12, -0.05], [0.06, -0.06], [-0.03, -0.05], [0.15, -0.03], [-0.19, -0.04], [-0.2, -0.075]] as const) palm(k, x, z, 0.03 + rand() * 0.01, 0.15 + rand() * 0.15, rand() * 6, 'palmTrunk', 'palmLeaf', 0.0015)
+  k.drape = 0
   // fishing boats drawn up by the quay
   for (const [x, z, ry, c] of [[-0.09, 0.03, 0.4, 'koneBlue'], [-0.078, 0.012, 1.2, 'red'], [-0.14, 0.04, -0.3, 'white']] as const) {
     k.prism([[-0.008, -0.0022], [0.006, -0.0022], [0.0105, 0], [0.006, 0.0022], [-0.008, 0.0022]], 0, 0.0028, c, { p: [x, SEA, z], r: [0, ry, 0] })

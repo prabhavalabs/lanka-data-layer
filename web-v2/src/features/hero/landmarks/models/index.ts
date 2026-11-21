@@ -43,7 +43,9 @@ export const MODELS: Record<string, ModelDef> = {
   'lotus-tower': {
     id: 'lotus-tower',
     scale: 0.95,
-    inland: 0.066,
+    // the tower stands a little way in from the shore, so the harbour beacon has the water in front of it to itself
+    inland: 0.122,
+    ring: 0.112,
     build: buildLotusTower,
     yaw: 0.2,
     notes: [
@@ -131,8 +133,11 @@ export const MODELS: Record<string, ModelDef> = {
     scale: 0.95,
     build: buildTrincomalee,
     shore: 0,
-    // the simplified coast has no inner harbour here: swing the rock square to the shore and put the bay on its open side
-    yaw: 0.6,
+    // The landmark's own coordinate is the harbour. The rock stands on the coast it really stands on, just north of the
+    // town, running out east-north-east; at this size it is as large as the whole bay, so it is seated a few kilometres up
+    // the shore and Koddiyar Bay and the inner harbour stay open water in its lee, where the port beacon is.
+    site: [81.23, 8.61],
+    bearing: 68,
     mirror: true,
     view: 150,
     notes: [

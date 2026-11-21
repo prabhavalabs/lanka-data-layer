@@ -64,12 +64,15 @@ function tokens(th: SceneTheme) {
     red: sig('#c2402f', '#a84a44'),
 
     /* ---- Sigiriya: iron-stained gneiss ---- */
-    sigOchre: sig('#cf9460', '#b08a6c'),
-    sigRust: sig('#b8683c', '#9a6a52'),
-    sigPale: sig('#e2bd8c', '#c4ae92'),
-    sigStreak: sig('#5a4b45', '#4b4a4d'),
-    sigGrey: sig('#8f8478', '#7f8280'),
-    sigMirror: sig('#eab56e', '#cfa878'),
+    // The one signature colour that keeps its chroma at night. The moon key is cool and the rock's walls face away
+    // from it under their own overhang: at the usual night values the ochre fell to a dull brown, so these stay warm
+    // and the rock adds a little light of its own (see `glow` in the model).
+    sigOchre: sig('#cf9460', '#cf9a62'),
+    sigRust: sig('#b8683c', '#b4683e'),
+    sigPale: sig('#e2bd8c', '#e6c594'),
+    sigStreak: sig('#5a4b45', '#54443c'),
+    sigGrey: sig('#8f8478', '#958a7c'),
+    sigMirror: sig('#eab56e', '#eab871'),
 
     /* ---- Sri Pada ---- */
     peakRock: sig('#8d8a7c', '#7d8580'),

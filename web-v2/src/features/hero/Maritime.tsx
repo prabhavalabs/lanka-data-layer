@@ -5,12 +5,14 @@
 // Budget: four draw calls (lanes, vessels, port rings, port pins). The frame loop
 // allocates nothing: vessels are two instanced attributes rewritten in place.
 import { Html } from '@react-three/drei'
-import { useFrame, type ThreeEvent } from '@react-three/fiber'
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type ReactNode } from 'react'
 import * as THREE from 'three'
-import { FLEET, LANES, PORTS, SPEED, type LaneKind, type Port, type VesselKind } from './maritimeData'
+import type { Focus } from './camera'
+import { FLEET, LANES, portKey, PORTS, SPEED, type LaneKind, type Port, type VesselKind } from './maritimeData'
 import { hazeRate } from './haze'
 import { SCENE_THEMES } from './sceneTheme'
+import { CARD_ABOVE, placeCard, useStage, type CardPlacement } from './stage'
 import { K, ORIGIN, toXZ, type Terrain } from './terrain'
 
 type XZ = [number, number]
@@ -33,6 +35,14 @@ type Lane = {
 
 const RANK_INDEX: Record<Rank, number> = { trunk: 0, feeder: 1, coastal: 2, spur: 3 }
 const SEA_Y = 0.003
+/** half the side of a port marker's quad, in scene units; its ring is drawn at 0.36 of that */
+const BEACON_HALF = 0.13
+const BEACON_RING = BEACON_HALF * 0.36
+/** how far offshore a beacon stands (degrees): its ring, and a hair of water round it */
+const BEACON_CLEAR = BEACON_RING + 0.008
+/** the port card's box, for placement. Phones drop the last row. */
+const CARD = { w: 252, h: 186 }
+const CARD_PHONE = { w: 252, h: 152 }
 
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
@@ -121,10 +131,11 @@ function buildMaritime(terrain: Terrain, lowPower: boolean) {
   )
   const coastal = lanes.find((l) => l.id === 'coastal')!
 
-  // markers stand in the harbour mouth; a short spur ties each one to the coasting route
+  // markers stand in the harbour mouth, far enough out that the whole ring lies on the water;
+  // a short spur ties each one to the coasting route
   const beacons: Beacon[] = PORTS.map((port) => {
     const p: XZ[] = [toXZ(port.lon, port.lat)]
-    keepAtSea(terrain, p, 0.02)
+    keepAtSea(terrain, p, BEACON_CLEAR)
     return { port, x: p[0][0], z: p[0][1] }
   })
   for (const b of beacons) {
@@ -393,7 +404,7 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 const _size = new THREE.Vector2()
 
 export function Maritime({
-  terrain, mix, show, animate, lowPower, activePort, onPort, renderPortCard,
+  terrain, mix, show, animate, lowPower, activePort, focus = null, onPort, renderPortCard,
 }: {
   terrain: Terrain
   /** 0 = night, 1 = day */
@@ -402,12 +413,25 @@ export function Maritime({
   animate: boolean
   lowPower: boolean
   activePort: string | null
-  onPort: (id: string | null) => void
-  renderPortCard: (port: Port) => ReactNode
+  /** what the camera is leaning toward, so the card can be placed for where the camera will be */
+  focus?: Focus | null
+  onPort: (id: string | null, touch?: boolean) => void
+  renderPortCard: (port: Port, at: CardPlacement) => ReactNode
 }) {
   const built = useMemo(() => buildMaritime(terrain, lowPower), [terrain, lowPower])
+  const stage = useStage()
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
+  const width = useThree((s) => s.size.width), height = useThree((s) => s.size.height)
+  // the beacons are on the stage while the layer is: the rig can lean toward one, and landmark cards keep off them
+  useEffect(() => {
+    if (!stage || !show) return
+    for (const b of built.beacons) stage.anchors.set(portKey(b.port.id), { x: b.x, y: 0, z: b.z, r: BEACON_RING, h: 0.055 })
+    return () => {
+      for (const b of built.beacons) stage.anchors.delete(portKey(b.port.id))
+    }
+  }, [built, stage, show])
   const ringGeo = useMemo(() => {
-    const g = new THREE.PlaneGeometry(0.26, 0.26)
+    const g = new THREE.PlaneGeometry(BEACON_HALF * 2, BEACON_HALF * 2)
     g.rotateX(-Math.PI / 2)
     g.setAttribute('aIdx', new THREE.InstancedBufferAttribute(Float32Array.from(built.beacons, (_, i) => i), 1))
     return g
@@ -543,9 +567,16 @@ export function Maritime({
   })
 
   const active = activeIndex >= 0 ? built.beacons[activeIndex] : null
+  const activeId = show && active ? active.port.id : null
+  // solved once per card, for the pose the camera is heading to
+  const at = useMemo(
+    () => (activeId && stage ? placeCard(stage, camera, width, height, portKey(activeId), focus, animate, width < 640 ? CARD_PHONE : CARD) : CARD_ABOVE),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeId, focus?.id, focus?.kind, animate, width, height, stage],
+  )
   const over = (id: string) => (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
-    onPort(id)
+    onPort(id, e.pointerType === 'touch')
     document.body.style.cursor = 'pointer'
   }
   const out = (e: ThreeEvent<PointerEvent>) => {
@@ -578,15 +609,15 @@ export function Maritime({
             position={[b.x, 0.03, b.z]}
             onPointerOver={over(b.port.id)}
             onPointerOut={out}
-            onClick={(e) => (e.stopPropagation(), onPort(b.port.id))}
+            onClick={(e) => (e.stopPropagation(), onPort(b.port.id, true))}
           >
             <sphereGeometry args={[0.075, 10, 8]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
         ))}
       {show && active && (
-        <Html key={active.port.id} position={[active.x, 0.07, active.z]} zIndexRange={[40, 30]} style={{ pointerEvents: 'none' }}>
-          {renderPortCard(active.port)}
+        <Html key={active.port.id} position={[active.x, 0.062, active.z]} zIndexRange={[40, 30]} style={{ pointerEvents: 'none' }}>
+          {renderPortCard(active.port, at)}
         </Html>
       )}
     </group>

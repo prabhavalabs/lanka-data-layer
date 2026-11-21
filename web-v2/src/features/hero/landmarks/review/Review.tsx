@@ -116,9 +116,11 @@ function InScene({ id, theme, rot, elev, zoom }: { id: string; theme: SceneTheme
     }
   }, [])
   const lm = LANDMARKS.find((l) => l.id === id)!
+  // a model sited away from its landmark's coordinate (a harbour's rock) is looked at where it stands
+  const [lon, lat] = MODELS[id].site ?? [lm.lon, lm.lat]
   useEffect(() => {
     gl.toneMapping = THREE.NeutralToneMapping
-    const [x, z] = toXZ(lm.lon, lm.lat)
+    const [x, z] = toXZ(lon, lat)
     const az = 0.5 + (rot * Math.PI) / 180, el = (elev * Math.PI) / 180
     const d = 1.5 / zoom
     const target = new THREE.Vector3(x, 0.08, z)
@@ -127,9 +129,9 @@ function InScene({ id, theme, rot, elev, zoom }: { id: string; theme: SceneTheme
     camera.far = 60
     camera.lookAt(target)
     camera.updateProjectionMatrix()
-  }, [camera, gl, lm, rot, elev, zoom])
+  }, [camera, gl, lon, lat, rot, elev, zoom])
   const L = theme.light
-  const [tx, tz] = toXZ(lm.lon, lm.lat)
+  const [tx, tz] = toXZ(lon, lat)
   return (
     <SceneThemeContext.Provider value={theme}>
       <color attach="background" args={[theme.sky.horizon]} />

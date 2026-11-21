@@ -49,14 +49,9 @@
   --chart-grid: rgba(255, 255, 255, 0.07);
   --chart-axis: #56626e;
 
-  /* hero scene, as CSS: what the backdrop and the no-WebGL poster paint before (or instead of)
-     the 3D island. Mirrors src/features/hero/sceneTheme.ts; keep the two in step. */
+  /* hero scene, as CSS: the horizon haze the backdrop paints before the 3D island does (and behind the
+     poster when there is no WebGL). Mirrors sky.horizon in src/features/hero/sceneTheme.ts; keep the two in step. */
   --hero-haze: #18364f;
-  --hero-shelf: #1b5169;
-  --hero-land: #478b67;
-  --hero-land-hi: #a8c9a2;
-  --hero-land-lo: #2f6a4e;
-  --hero-rim: #c2dccd;
 
   /* code panels stay dark in both themes */
   --code-bg: #090c10;
@@ -104,11 +99,6 @@
   --chart-axis: #98a2ab;
 
   --hero-haze: #cfe4f4;
-  --hero-shelf: #78c6e2;
-  --hero-land: #9bcd85;
-  --hero-land-hi: #e0e9c8;
-  --hero-land-lo: #7fb777;
-  --hero-rim: #fbf3dc;
 }
 
 :root {

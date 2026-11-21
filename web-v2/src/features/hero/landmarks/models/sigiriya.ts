@@ -87,7 +87,9 @@ export function buildSigiriya(): Built {
         ['sigStreak', streak * 0.85],
       ],
       // soft contact shadow where the wall meets the trees
-      k: 0.78 + 0.22 * smooth(0.04, 0.3, v),
+      k: 0.8 + 0.2 * smooth(0.04, 0.3, v),
+      // at night the rock holds a little of its own warmth, the way it does under its floodlights: the walls stay ochre in the moon's shadow
+      glow: -0.12,
     }
   }
   const NU = 72, NV = 15

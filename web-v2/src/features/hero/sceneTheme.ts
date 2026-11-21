@@ -145,9 +145,10 @@ export type SceneTheme = {
     emissive: string
   }
   population: {
-    /** sequential ramp, low → high */
+    /** one hue, sequential, fewest residents → most. It runs away from the land's own tone: lighter at night, deeper by day. */
     ramp: [string, string, string, string]
-    emissive: string
+    /** keyline round a needle's head, so heads stay separate where towns crowd together */
+    halo: string
   }
 }
 
@@ -207,7 +208,7 @@ const dark: SceneTheme = {
   },
   label: { ink: '#e8edf2', muted: '#9aa7b4', halo: '#0b0e12' },
   landmark: { glow: 1, stone: '#d5d6cc', roof: '#b06a5c', metal: '#e6c26a', foliage: '#4f8f68', base: '#6aa67a', emissive: '#ffd49a' },
-  population: { ramp: ['#5b4fc4', '#7f6ee0', '#a797f0', '#d6cdfb'], emissive: '#5a45bd' },
+  population: { ramp: ['#6f5fe0', '#9383f2', '#bcaefb', '#f1edff'], halo: '#14233a' },
 }
 
 // Day: high, soft sun; a clear mid-blue sea so the pale island stays the figure. The sky
@@ -265,7 +266,7 @@ const light: SceneTheme = {
   },
   label: { ink: '#14181c', muted: '#515c66', halo: '#fbfbfa' },
   landmark: { glow: 0, stone: '#ece8dc', roof: '#b9654f', metal: '#e2b64c', foliage: '#5d9a63', base: '#aedb9c', emissive: '#ffd49a' },
-  population: { ramp: ['#6650cf', '#8870e6', '#ad9bf2', '#d9d0fb'], emissive: '#6046c0' },
+  population: { ramp: ['#9a88ec', '#7b63de', '#5b3fca', '#3c22a0'], halo: '#ffffff' },
 }
 
 export const SCENE_THEMES: Record<SceneThemeName, SceneTheme> = { dark, light }

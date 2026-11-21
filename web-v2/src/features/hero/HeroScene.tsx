@@ -5,31 +5,23 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject, type React
 import * as THREE from 'three'
 import type { Landmark } from '@/api/types'
 import { geo, type Place, type Polyline } from '@/lib/geo'
+import { DRIFT, isWide, leanFor, LOOK, orbit, PARALLAX, poseCamera, RESPONSE, REST, springTo, type Focus } from './camera'
 import { hazeRate } from './haze'
 import { Landmarks } from './Landmarks'
 import { Maritime } from './Maritime'
 import type { Port } from './maritimeData'
-import { SCENE_THEMES, SceneThemeContext, type SceneTheme } from './sceneTheme'
+import { Population } from './Population'
+import { Rivers } from './Rivers'
+import { SCENE_THEMES, SceneThemeContext } from './sceneTheme'
+import { StageContext, useStage, type Anchor, type CardPlacement, type SafeRect, type Stage } from './stage'
 import { BEVEL, buildTerrain, K, ORIGIN, PLINTH, SUMMIT, toXZ, type Terrain } from './terrain'
+import { lerp, tween, tweenDir } from './tween'
 
 export type Mood = 'night' | 'day'
 export type HeroLayers = { landmarks: boolean; maritime: boolean; population: boolean; rail: boolean }
 
 const N = SCENE_THEMES.dark, D = SCENE_THEMES.light
 
-// Every theme colour is parsed once. The frame loop only ever blends two parsed colours.
-const parsed = new Map<string, THREE.Color>()
-const C = (hex: string) => {
-  let c = parsed.get(hex)
-  if (!c) parsed.set(hex, (c = new THREE.Color(hex)))
-  return c
-}
-/** out = night → day at t */
-const tween = (out: THREE.Color, night: string, day: string, t: number) => out.lerpColors(C(night), C(day), t)
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-const tweenDir = (out: THREE.Vector3, night: readonly number[], day: readonly number[], t: number) =>
-  out.set(lerp(night[0], day[0], t), lerp(night[1], day[1], t), lerp(night[2], day[2], t)).normalize()
-const _c = new THREE.Color()
 const _v = new THREE.Vector3()
 const black = () => new THREE.Color(0, 0, 0)
 
@@ -280,8 +272,8 @@ function Island({ terrain, mix }: { terrain: Terrain; mix: MixRef }) {
   return <mesh geometry={terrain.geometry} material={material} castShadow receiveShadow />
 }
 
-/* ---------------- draped lines (rivers, rail) ---------------- */
-function Draped({ lines, terrain, color, width, opacity, lift = 0.006, shore = 'stop' }: { lines: Polyline[]; terrain: Terrain; color: string; width: number; opacity: number; lift?: number; /** at the rim: 'stop' ends the line on the plain, 'keep' walks it back onto the plain */ shore?: 'stop' | 'keep' }) {
+/* ---------------- draped lines (rail) ---------------- */
+function Draped({ lines, terrain, color, width, opacity, lift = 0.006 }: { lines: Polyline[]; terrain: Terrain; color: string; width: number; opacity: number; lift?: number }) {
   const points = useMemo(() => {
     const out: [number, number, number][] = []
     const edge = BEVEL * 1.05
@@ -306,74 +298,18 @@ function Draped({ lines, terrain, color, width, opacity, lift = 0.006, shore = '
         if (terrain.coastDistance(a[0], a[1]) < -0.004 || terrain.coastDistance(b[0], b[1]) < -0.004) continue
         const n = Math.max(1, Math.ceil(Math.hypot((b[0] - a[0]) * K, b[1] - a[1]) / 0.03))
         for (let s = 0; s < n; s++) {
-          let p0: [number, number] = [a[0] + ((b[0] - a[0]) * s) / n, a[1] + ((b[1] - a[1]) * s) / n]
-          let p1: [number, number] = [a[0] + ((b[0] - a[0]) * (s + 1)) / n, a[1] + ((b[1] - a[1]) * (s + 1)) / n]
-          if (shore === 'keep') {
-            p0 = inland(p0[0], p0[1])
-            p1 = inland(p1[0], p1[1])
-          } else if (terrain.coastDistance(p0[0], p0[1]) < edge || terrain.coastDistance(p1[0], p1[1]) < edge) continue
+          // a line that runs along the shore is walked back onto the plain rather than down the rim
+          const p0 = inland(a[0] + ((b[0] - a[0]) * s) / n, a[1] + ((b[1] - a[1]) * s) / n)
+          const p1 = inland(a[0] + ((b[0] - a[0]) * (s + 1)) / n, a[1] + ((b[1] - a[1]) * (s + 1)) / n)
           const [x0, z0] = toXZ(p0[0], p0[1])
           const [x1, z1] = toXZ(p1[0], p1[1])
           out.push([x0, terrain.surfaceAt(p0[0], p0[1]) + lift, z0], [x1, terrain.surfaceAt(p1[0], p1[1]) + lift, z1])
         }
       }
     return out
-  }, [lines, terrain, lift, shore])
+  }, [lines, terrain, lift])
   if (!points.length) return null
   return <Line points={points} segments color={color} lineWidth={width} transparent opacity={opacity} toneMapped={false} depthWrite={false} />
-}
-
-/* ---------------- population columns ---------------- */
-function PopulationColumns({ places, terrain, show, theme }: { places: Place[]; terrain: Terrain; show: boolean; theme: SceneTheme }) {
-  const ref = useRef<THREE.InstancedMesh>(null)
-  const grow = useRef(0)
-  const data = useMemo(
-    () =>
-      places.slice(0, 70).map((p, i) => {
-        const [x, z] = toXZ(p.lon, p.lat)
-        return { x, z, y: terrain.heightAt(p.lon, p.lat), h: 0.035 + Math.sqrt(p.pop) / 1900, order: i / 70, pop: p.pop }
-      }),
-    [places, terrain],
-  )
-  const dummy = useMemo(() => new THREE.Object3D(), [])
-  const gl = useThree((s) => s.gl)
-  useEffect(() => {
-    const m = ref.current
-    if (!m) return
-    const ramp = theme.population.ramp
-    data.forEach((d, i) => m.setColorAt(i, _c.set(ramp[d.pop > 300000 ? 3 : d.pop > 100000 ? 2 : d.pop > 40000 ? 1 : 0])))
-    if (m.instanceColor) m.instanceColor.needsUpdate = true
-  }, [data, theme])
-  useFrame((_, dt) => {
-    const m = ref.current
-    if (!m) return
-    const target = show ? 1 : 0
-    if (Math.abs(grow.current - target) < 0.001 && m.userData.settled === target) return
-    grow.current += (target - grow.current) * Math.min(1, dt * (show ? 2.6 : 7))
-    if (Math.abs(grow.current - target) < 0.001) {
-      grow.current = target
-      m.userData.settled = target
-    } else m.userData.settled = -1
-    for (let i = 0; i < data.length; i++) {
-      const d = data[i]
-      // tallest first, the rest follow: a short stagger rather than everything at once
-      const k = THREE.MathUtils.clamp((grow.current - d.order * 0.45) / 0.55, 0, 1)
-      const e = 1 - Math.pow(1 - k, 3)
-      dummy.position.set(d.x, d.y + (d.h * e) / 2, d.z)
-      dummy.scale.set(1, Math.max(0.0001, d.h * e), 1)
-      dummy.updateMatrix()
-      m.setMatrixAt(i, dummy.matrix)
-    }
-    m.instanceMatrix.needsUpdate = true
-    m.visible = grow.current > 0.002
-    gl.shadowMap.needsUpdate = true
-  })
-  return (
-    <instancedMesh ref={ref} args={[undefined, undefined, data.length]} visible={false} castShadow>
-      <cylinderGeometry args={[0.0105, 0.0105, 1, 6]} />
-      <meshStandardMaterial roughness={0.4} emissive={theme.population.emissive} emissiveIntensity={0.55} transparent opacity={0.92} />
-    </instancedMesh>
-  )
 }
 
 /* ---------------- lights ---------------- */
@@ -434,13 +370,34 @@ function Lights({ mix, shadows }: { mix: MixRef; shadows: boolean }) {
 
 /* ---------------- camera rig ---------------- */
 const INTRO_S = 3.2
-function Rig({ animate, revealed, onFirstFrame }: { animate: boolean; revealed: boolean; onFirstFrame: () => void }) {
+/**
+ * Design-review switch (dev only): `/?view=lon,lat[,lean[,az,polar]]` parks the camera on a
+ * point, leaned in by `lean` (0 … 0.9), optionally from another bearing. No drift, no intro.
+ */
+const DEV_VIEW = import.meta.env.DEV
+  ? (() => {
+      const v = new URLSearchParams(window.location.search).get('view')?.split(',').map(Number)
+      if (!v || v.length < 2 || v.some((n) => !Number.isFinite(n))) return null
+      const [x, z] = toXZ(v[0], v[1])
+      return { point: new THREE.Vector3(x, 0.03, z), lean: v[2] ?? 0.6, az: v[3], polar: v[4] }
+    })()
+  : null
+const _rest = new THREE.Vector3()
+
+function Rig({ animate, revealed, focus, onFirstFrame }: { animate: boolean; revealed: boolean; focus: Focus | null; onFirstFrame: () => void }) {
   const { camera, size } = useThree()
+  const stage = useStage()
   const pointer = useRef({ x: 0, y: 0 })
   const eased = useRef({ x: 0, y: 0 })
   const first = useRef(false)
   // arrival: the camera starts high and wide, then settles onto its orbit as the scene fades in
   const intro = useRef(animate ? 0 : 1)
+  // focus: how far the camera has leaned in, how far a tall screen has slid the subject to its spot, and the point it leans toward.
+  // Springs, so a new target bends the move instead of restarting it.
+  const lean = useRef({ x: 0, v: 0 })
+  const pull = useRef({ x: 0, v: 0 })
+  const px = useRef({ x: 0, v: 0 }), py = useRef({ x: 0, v: 0 }), pz = useRef({ x: 0, v: 0 })
+  const point = useRef(new THREE.Vector3())
 
   useEffect(() => {
     const on = (e: PointerEvent) => {
@@ -455,31 +412,63 @@ function Rig({ animate, revealed, onFirstFrame }: { animate: boolean; revealed: 
   // wide screens: push the island to the right so the headline has clear sky
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera
-    const wide = size.width / size.height > 1.15
+    const wide = isWide(size.width, size.height)
     if (wide) cam.setViewOffset(size.width, size.height, -size.width * 0.195, -size.height * 0.085, size.width, size.height)
     else cam.setViewOffset(size.width, size.height, 0, -size.height * 0.25, size.width, size.height)
-    cam.fov = wide ? 44 : 50
+    cam.fov = REST[wide ? 'wide' : 'tall'].fov
     cam.updateProjectionMatrix()
     return () => cam.clearViewOffset()
   }, [camera, size.width, size.height])
 
   useFrame(({ clock }, dt) => {
-    const wide = size.width / size.height > 1.15
+    const cam = camera as THREE.PerspectiveCamera
+    const shape = isWide(size.width, size.height) ? 'wide' : 'tall'
+    const rest = REST[shape]
+    if (!first.current) {
+      first.current = true
+      onFirstFrame()
+    }
+    if (DEV_VIEW) {
+      orbit(_rest, DEV_VIEW.az ?? rest.az, DEV_VIEW.polar ?? rest.polar, rest.r)
+      poseCamera(cam, _rest, LOOK, DEV_VIEW.point, DEV_VIEW.lean, 0)
+      return
+    }
+    const h = Math.min(dt, 0.05)
     const k = Math.min(1, dt * 2.2)
     eased.current.x += (pointer.current.x - eased.current.x) * k
     eased.current.y += (pointer.current.y - eased.current.y) * k
     const t = animate ? clock.elapsedTime : 0
-    if (revealed && intro.current < 1) intro.current = Math.min(1, intro.current + Math.min(dt, 0.05) / INTRO_S)
+    if (revealed && intro.current < 1) intro.current = Math.min(1, intro.current + h / INTRO_S)
     const away = (1 - intro.current) ** 4 // ease-out quart, measured from the resting pose
-    const az = (wide ? 0.5 : 0.3) + (animate ? Math.sin(t * 0.07) * 0.075 + eased.current.x * 0.05 : 0) - away * 0.34
-    const polar = (wide ? 1.135 : 1.02) + (animate ? Math.sin(t * 0.05 + 1.3) * 0.012 + eased.current.y * 0.018 : 0) - away * 0.3
-    const r = (wide ? 5.7 : 8.6) * (1 + away * 0.42)
+    const az = rest.az + (animate ? Math.sin(t * 0.07) * DRIFT.az + eased.current.x * PARALLAX.az : 0) - away * 0.34
+    const polar = rest.polar + (animate ? Math.sin(t * 0.05 + 1.3) * DRIFT.polar + eased.current.y * PARALLAX.polar : 0) - away * 0.3
     // azimuth is measured from due south, turning toward the west
-    camera.position.set(-Math.sin(az) * Math.sin(polar) * r, Math.cos(polar) * r, Math.cos(az) * Math.sin(polar) * r + 0.1)
-    camera.lookAt(0.04, 0.02, 0.1)
-    if (!first.current) {
-      first.current = true
-      onFirstFrame()
+    orbit(_rest, az, polar, rest.r * (1 + away * 0.42))
+
+    // lean toward whatever has the focus. Reduced motion renders on demand and never moves the camera.
+    const a = animate && focus ? stage?.anchors.get(focus.id) : undefined
+    const amount = a && focus ? leanFor(shape, focus.kind, a.h) : 0
+    const response = a && focus && amount > 0 ? RESPONSE[focus.kind] : RESPONSE.release
+    if (a && amount > 0) {
+      const y = a.y + a.h * 0.45
+      if (lean.current.x < 0.004) {
+        // leaving rest: start from the new subject, not from wherever the last one was
+        px.current.x = a.x
+        py.current.x = y
+        pz.current.x = a.z
+        px.current.v = py.current.v = pz.current.v = 0
+      } else {
+        springTo(px.current, a.x, response, h)
+        springTo(py.current, y, response, h)
+        springTo(pz.current, a.z, response, h)
+      }
+    }
+    springTo(lean.current, amount, response, h)
+    springTo(pull.current, amount > 0 && shape === 'tall' ? 1 : 0, response, h)
+    if (lean.current.x > 0.0005) poseCamera(cam, _rest, LOOK, point.current.set(px.current.x, py.current.x, pz.current.x), lean.current.x, pull.current.x)
+    else {
+      cam.position.copy(_rest)
+      cam.lookAt(LOOK)
     }
   })
   return null
@@ -487,13 +476,14 @@ function Rig({ animate, revealed, onFirstFrame }: { animate: boolean; revealed: 
 
 /* ---------------- scene ---------------- */
 function Scene({
-  terrain, landmarks, places, rail, rivers, mood, layers, active, onActive, onSelect, renderCard, port, onPort, renderPortCard, animate, lowPower, revealed, onFirstFrame,
+  terrain, landmarks, places, rail, rivers, mood, layers, active, focus, getSafe, onActive, onSelect, renderCard, port, onPort, renderPortCard, animate, lowPower, revealed, onFirstFrame,
 }: {
   revealed: boolean
-  port: string | null; onPort: (id: string | null) => void; renderPortCard: (port: Port) => ReactNode
+  port: string | null; onPort: (id: string | null) => void; renderPortCard: (port: Port, at: CardPlacement) => ReactNode
   terrain: Terrain; landmarks: Landmark[]; places: Place[]; rail: Polyline[]; rivers: Polyline[]
-  mood: Mood; layers: HeroLayers; active: string | null; onActive: (id: string | null) => void; onSelect: (id: string) => void
-  renderCard: (lm: Landmark) => ReactNode; animate: boolean; lowPower: boolean; onFirstFrame: () => void
+  mood: Mood; layers: HeroLayers; active: string | null; focus: Focus | null; getSafe: () => SafeRect | null
+  onActive: (id: string | null) => void; onSelect: (id: string) => void
+  renderCard: (lm: Landmark, at: CardPlacement) => ReactNode; animate: boolean; lowPower: boolean; onFirstFrame: () => void
 }) {
   const mix = useRef(mood === 'day' ? 1 : 0)
   const theme = SCENE_THEMES[mood === 'day' ? 'light' : 'dark']
@@ -512,18 +502,24 @@ function Scene({
     invalidate()
   }, [mood, layers, active, port, invalidate, gl])
 
+  // one registry of everything that stands on the scene, shared by the rig (what to lean toward) and the cards (what not to cover)
+  const anchors = useMemo(() => new Map<string, Anchor>(), [])
+  const stage = useMemo<Stage>(() => ({ anchors, safe: getSafe }), [anchors, getSafe])
+
   return (
     <SceneThemeContext.Provider value={theme}>
-      <Sky mix={mix} />
-      <Lights mix={mix} shadows={!lowPower} />
-      <Ocean terrain={terrain} mix={mix} animate={animate} />
-      <Island terrain={terrain} mix={mix} />
-      <Draped lines={rivers} terrain={terrain} color={theme.land.river} width={1} opacity={theme.land.riverOpacity} lift={0.0035} />
-      {layers.rail && <Draped lines={rail} terrain={terrain} color={theme.land.rail} width={1.6} opacity={0.95} lift={0.009} shore="keep" />}
-      <Maritime terrain={terrain} mix={mix} show={layers.maritime} animate={animate} lowPower={lowPower} activePort={port} onPort={onPort} renderPortCard={renderPortCard} />
-      <PopulationColumns places={places} terrain={terrain} show={layers.population} theme={theme} />
-      {layers.landmarks && <Landmarks items={landmarks} terrain={terrain} active={active} glow={theme.landmark.glow} onActive={onActive} onSelect={onSelect} renderCard={renderCard} />}
-      <Rig animate={animate} revealed={revealed} onFirstFrame={onFirstFrame} />
+      <StageContext.Provider value={stage}>
+        <Sky mix={mix} />
+        <Lights mix={mix} shadows={!lowPower} />
+        <Ocean terrain={terrain} mix={mix} animate={animate} />
+        <Island terrain={terrain} mix={mix} />
+        <Rivers lines={rivers} terrain={terrain} mix={mix} />
+        {layers.rail && <Draped lines={rail} terrain={terrain} color={theme.land.rail} width={1.6} opacity={0.95} lift={0.009} />}
+        <Maritime terrain={terrain} mix={mix} show={layers.maritime} animate={animate} lowPower={lowPower} activePort={port} focus={focus} onPort={onPort} renderPortCard={renderPortCard} />
+        <Population places={places} terrain={terrain} mix={mix} show={layers.population} animate={animate} />
+        {layers.landmarks && <Landmarks items={landmarks} terrain={terrain} active={active} focus={focus} animate={animate} glow={theme.landmark.glow} onActive={onActive} onSelect={onSelect} renderCard={renderCard} />}
+        <Rig animate={animate} revealed={revealed} focus={focus} onFirstFrame={onFirstFrame} />
+      </StageContext.Provider>
     </SceneThemeContext.Provider>
   )
 }
@@ -533,12 +529,18 @@ export type HeroSceneProps = {
   mood: Mood
   layers: HeroLayers
   active: string | null
+  /** what the camera leans toward: a landmark id or `port:<id>`. Null: the camera rests. */
+  focus: Focus | null
+  /** the part of the canvas a card may open into, read each time a card opens */
+  getSafe: () => SafeRect | null
   onActive: (id: string | null) => void
   onSelect: (id: string) => void
-  renderCard: (lm: Landmark) => ReactNode
+  renderCard: (lm: Landmark, at: CardPlacement) => ReactNode
   port: string | null
   onPort: (id: string | null) => void
-  renderPortCard: (port: Port) => ReactNode
+  renderPortCard: (port: Port, at: CardPlacement) => ReactNode
+  /** a click or tap that landed on nothing */
+  onMiss: () => void
   /** load milestones for the loader's status line: 1 fetching, 2 building, 3 compiling */
   onStage: (stage: number) => void
   /** false → static render (prefers-reduced-motion) */
@@ -552,8 +554,43 @@ export type HeroSceneProps = {
   onError: () => void
 }
 
+/**
+ * Design-review switch (dev only): `/?hero=glfail` lets the availability probe in the shell pass and then
+ * refuses the renderer its context, which is how a blocklisted or exhausted GPU actually fails.
+ */
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('hero') === 'glfail') {
+  const real = HTMLCanvasElement.prototype.getContext
+  HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, type: string, ...rest: unknown[]) {
+    return /webgl/.test(type) ? null : (real as (...a: unknown[]) => unknown).call(this, type, ...rest)
+  } as typeof real
+}
+
+/**
+ * Phones start at a sharper pixel ratio than they used to and give it back if they cannot hold
+ * the frame rate: two steps of a quarter, measured over fifty frames each, never while paused.
+ */
+function Governor() {
+  const setDpr = useThree((s) => s.setDpr)
+  const m = useRef({ n: 0, t: 0, skip: 45, steps: 0 })
+  useFrame((state, dt) => {
+    const a = m.current
+    if (a.steps >= 2 || state.frameloop !== 'always' || dt > 0.25) return
+    if (a.skip > 0) return void a.skip--
+    a.n++
+    a.t += dt
+    if (a.n < 50) return
+    const slow = a.t / a.n > 1 / 42
+    a.n = a.t = 0
+    if (!slow) return
+    a.steps++
+    a.skip = 30
+    setDpr(Math.max(1, state.viewport.dpr - 0.25))
+  })
+  return null
+}
+
 export default function HeroScene(props: HeroSceneProps) {
-  const { landmarks, mood, layers, active, onActive, onSelect, renderCard, port, onPort, renderPortCard, onStage, animate, lowPower, revealed, paused, onReady, onError } = props
+  const { landmarks, mood, layers, active, focus, getSafe, onActive, onSelect, renderCard, port, onPort, renderPortCard, onMiss, onStage, animate, lowPower, revealed, paused, onReady, onError } = props
   const [assets, setAssets] = useState<{ terrain: Terrain; places: Place[]; rail: Polyline[]; rivers: Polyline[] } | null>(null)
 
   useEffect(() => {
@@ -583,7 +620,7 @@ export default function HeroScene(props: HeroSceneProps) {
   return (
     <Canvas
       shadows={lowPower ? false : 'percentage'}
-      dpr={lowPower ? [1, 1.25] : [1, 1.75]}
+      dpr={lowPower ? [1, 1.5] : [1, 1.75]}
       frameloop={paused ? 'never' : animate ? 'always' : 'demand'}
       camera={{ fov: 27, near: 0.1, far: 140, position: [-3.6, 4.6, 7.4] }}
       // Neutral tone mapping: albedo reaches the screen close to the hex it was authored as
@@ -592,12 +629,15 @@ export default function HeroScene(props: HeroSceneProps) {
         gl.shadowMap.autoUpdate = false
         gl.shadowMap.needsUpdate = true
         gl.setClearColor('#0b0e12')
+        // a lost context (GPU reset, a phone reclaiming memory) hands over to the poster instead of leaving a blank canvas
+        gl.domElement.addEventListener('webglcontextlost', onError, { once: true })
       }}
       fallback={null}
-      onPointerMissed={() => onPort(null)}
+      onPointerMissed={onMiss}
       style={{ touchAction: 'pan-y' }}
     >
-      <Scene {...assets} landmarks={landmarks} mood={mood} layers={layers} active={active} onActive={onActive} onSelect={onSelect} renderCard={renderCard} port={port} onPort={onPort} renderPortCard={renderPortCard} animate={animate} lowPower={lowPower} revealed={revealed} onFirstFrame={onReady} />
+      <Scene {...assets} landmarks={landmarks} mood={mood} layers={layers} active={active} focus={focus} getSafe={getSafe} onActive={onActive} onSelect={onSelect} renderCard={renderCard} port={port} onPort={onPort} renderPortCard={renderPortCard} animate={animate} lowPower={lowPower} revealed={revealed} onFirstFrame={onReady} />
+      {lowPower && <Governor />}
     </Canvas>
   )
 }

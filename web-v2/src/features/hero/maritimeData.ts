@@ -17,11 +17,14 @@ export type Port = {
   draught: string
 }
 
+/** how a port is named on the hero's stage (the registry of things the camera can lean toward), next to the landmark ids */
+export const portKey = (id: string) => `port:${id}`
+
 export const PORTS: Port[] = [
   { id: 'colombo', locode: 'LKCMB', name: { en: 'Colombo', si: 'කොළඹ', ta: 'கொழும்பு' }, role: 'Container hub', lon: 79.835, lat: 6.95, inPort: 42, arrivals24h: 31, draught: '18.0 m' },
   { id: 'hambantota', locode: 'LKHBA', name: { en: 'Hambantota', si: 'හම්බන්තොට', ta: 'அம்பாந்தோட்டை' }, role: 'Ro-ro and bunkering', lon: 81.11, lat: 6.115, inPort: 9, arrivals24h: 7, draught: '17.0 m' },
   { id: 'galle', locode: 'LKGAL', name: { en: 'Galle', si: 'ගාල්ල', ta: 'காலி' }, role: 'Regional port', lon: 80.225, lat: 6.025, inPort: 4, arrivals24h: 2, draught: '7.3 m' },
-  { id: 'trincomalee', locode: 'LKTRR', name: { en: 'Trincomalee', si: 'ත්‍රිකුණාමලය', ta: 'திருகோணமலை' }, role: 'Natural harbour, bulk', lon: 81.27, lat: 8.545, inPort: 11, arrivals24h: 5, draught: '13.0 m' },
+  { id: 'trincomalee', locode: 'LKTRR', name: { en: 'Trincomalee', si: 'ත්‍රිකුණාමලය', ta: 'திருகோணமலை' }, role: 'Natural harbour, bulk', lon: 81.262, lat: 8.512, inPort: 11, arrivals24h: 5, draught: '13.0 m' },
   { id: 'kankesanthurai', locode: 'LKKNK', name: { en: 'Kankesanthurai', si: 'කන්කසන්තුරේ', ta: 'காங்கேசன்துறை' }, role: 'Cargo and ferry', lon: 80.04, lat: 9.82, inPort: 3, arrivals24h: 2, draught: '8.0 m' },
   { id: 'oluvil', locode: 'LKOLU', name: { en: 'Oluvil', si: 'ඔලුවිල්', ta: 'ஒலுவில்' }, role: 'Fishery harbour', lon: 81.865, lat: 7.29, inPort: 2, arrivals24h: 1, draught: '8.0 m' },
   { id: 'point-pedro', locode: 'LKPPE', name: { en: 'Point Pedro', si: 'පේදුරු තුඩුව', ta: 'பருத்தித்துறை' }, role: 'Fishery harbour', lon: 80.235, lat: 9.835, inPort: 6, arrivals24h: 4, draught: '3.5 m' },

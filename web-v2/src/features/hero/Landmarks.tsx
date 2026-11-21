@@ -12,10 +12,12 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
 import type { Landmark } from '@/api/types'
+import type { Focus } from './camera'
 import { getBuilt, LandmarkMesh, useLandmarkClock } from './landmarks/LandmarkMesh'
 import { MODELS } from './landmarks/models'
 import type { ModelDef } from './landmarks/types'
 import { useSceneTheme } from './sceneTheme'
+import { CARD_ABOVE, placeCard, useStage, type CardPlacement } from './stage'
 import { BEVEL, K, ORIGIN, PLINTH, toXZ, type Terrain } from './terrain'
 
 /** rose accent of the page, used for the active ring */
@@ -37,6 +39,8 @@ type Placement = {
   body: THREE.BufferGeometry | null
   ring: THREE.BufferGeometry
   hitR: number
+  /** radius of what the eye takes for the landmark, in world units: most of its footprint, apron included */
+  mass: number
   /** model height in world units */
   top: number
 }
@@ -53,21 +57,30 @@ function groundAt(terrain: Terrain, x: number, z: number) {
 function place(lm: Landmark, def: ModelDef, terrain: Terrain, heroYaw: number): Placement {
   const scale = def.scale ?? 1
   const flip = def.mirror ? -1 : 1
-  let [x, z] = toXZ(lm.lon, lm.lat)
+  let [x, z] = toXZ(...(def.site ?? [lm.lon, lm.lat]))
   let yaw = heroYaw + (def.yaw ?? 0)
 
   if (def.shore !== undefined) {
-    // face the nearest open water: −∇(distance inland), sampled wide enough to ignore creeks
-    const e = 0.07
     const d = (dx: number, dz: number) => terrain.coastDistance(lonAt(x + dx), latAt(z + dz))
-    let sx = -(d(e, 0) - d(-e, 0)), sz = -(d(0, e) - d(0, -e))
-    const len = Math.hypot(sx, sz) || 1
-    sx /= len
-    sz /= len
+    let sx: number, sz: number
+    if (def.bearing !== undefined) {
+      // a headland whose direction is a matter of record: +z points down that compass bearing (north is −z, east is +x)
+      sx = Math.sin((def.bearing * Math.PI) / 180)
+      sz = -Math.cos((def.bearing * Math.PI) / 180)
+    } else {
+      // face the nearest open water: −∇(distance inland), sampled wide enough to ignore creeks
+      const e = 0.07
+      sx = -(d(e, 0) - d(-e, 0))
+      sz = -(d(0, e) - d(0, -e))
+      const len = Math.hypot(sx, sz) || 1
+      sx /= len
+      sz /= len
+    }
     yaw = Math.atan2(sx, sz) + (def.yaw ?? 0)
     // slide along that bearing until the model's waterline lies on the real one
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       const off = d(0, 0) - def.shore * scale
+      if (Math.abs(off) < 0.0015) break
       x += sx * off
       z += sz * off
     }
@@ -191,14 +204,16 @@ function place(lm: Landmark, def: ModelDef, terrain: Terrain, heroYaw: number): 
   const ring = new THREE.BufferGeometry()
   ring.setAttribute('position', new THREE.BufferAttribute(ringPos, 3))
 
-  return { x, z, y, yaw, scale, flip, sea, body, ring, hitR, top: box.max.y * scale }
+  return { x, z, y, yaw, scale, flip, sea, body, ring, hitR, mass: Math.max(hitR, reach * 0.62), top: box.max.y * scale }
 }
 
-function Pin({ lm, at, active, onActive, onSelect }: { lm: Landmark; at: Placement; active: boolean; onActive: (id: string | null) => void; onSelect: (id: string) => void }) {
+function Pin({ lm, at, active, minHit, onActive, onSelect }: { lm: Landmark; at: Placement; active: boolean; /** smallest radius of the hit target, world units */ minHit: number; onActive: (id: string | null, touch?: boolean) => void; onSelect: (id: string, touch?: boolean) => void }) {
   const def = MODELS[lm.id]
   const group = useRef<THREE.Group>(null)
   const ring = useRef<THREE.Mesh>(null)
   const lift = useRef(0)
+  // a click does not say what made it everywhere: remember the pointer that went down
+  const touch = useRef(false)
   const gl = useThree((s) => s.gl)
   const frameloop = useThree((s) => s.frameloop)
   const pop = def.pop ?? 0.1
@@ -226,13 +241,14 @@ function Pin({ lm, at, active, onActive, onSelect }: { lm: Landmark; at: Placeme
     }
   })
 
+  // a finger has no hover: on touch the tap alone decides, so these two only report it
   const over = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
-    onActive(lm.id)
+    onActive(lm.id, e.pointerType === 'touch')
     document.body.style.cursor = 'pointer'
   }
-  const out = () => {
-    onActive(null)
+  const out = (e: ThreeEvent<PointerEvent>) => {
+    onActive(null, e.pointerType === 'touch')
     document.body.style.cursor = ''
   }
   useEffect(() => () => void (document.body.style.cursor = ''), [])
@@ -247,17 +263,23 @@ function Pin({ lm, at, active, onActive, onSelect }: { lm: Landmark; at: Placeme
         <LandmarkMesh id={lm.id} sea={at.sea} body={at.body} />
       </group>
       {/* hit target: never drawn, still raycast */}
-      <mesh position={[0, at.y + hitH / 2 - 0.01, 0]} visible={false} onPointerOver={over} onPointerOut={out} onClick={(e) => (e.stopPropagation(), onSelect(lm.id))}>
-        <cylinderGeometry args={[at.hitR * 0.78, at.hitR * 0.9, hitH, 12]} />
+      <mesh position={[0, at.y + hitH / 2 - 0.01, 0]} visible={false} onPointerOver={over} onPointerOut={out} onPointerDown={(e) => void (touch.current = e.pointerType === 'touch')} onClick={(e) => (e.stopPropagation(), onSelect(lm.id, touch.current))}>
+        <cylinderGeometry args={[Math.max(at.hitR * 0.78, minHit), Math.max(at.hitR * 0.9, minHit), hitH, 12]} />
       </mesh>
     </group>
   )
 }
 
+/** the landmark card's box, for placement: its width is fixed, its height is the tallest it gets (a name that wraps). Phones drop the last row. */
+const CARD = { w: 236, h: 204 }
+const CARD_PHONE = { w: 236, h: 168 }
+
 export function Landmarks({
   items,
   terrain,
   active,
+  focus = null,
+  animate = true,
   onActive,
   onSelect,
   renderCard,
@@ -265,16 +287,23 @@ export function Landmarks({
   items: Landmark[]
   terrain: Terrain
   active: string | null
+  /** what the camera is leaning toward, so a card can be placed for where the camera will be */
+  focus?: Focus | null
+  /** false: the camera never moves (reduced motion) */
+  animate?: boolean
   /** theme.landmark.glow. Kept for the caller's sake: the layer reads the whole scene theme from context and eases the glow itself. */
   glow?: number
-  onActive: (id: string | null) => void
-  onSelect: (id: string) => void
-  renderCard: (lm: Landmark) => ReactNode
+  onActive: (id: string | null, touch?: boolean) => void
+  onSelect: (id: string, touch?: boolean) => void
+  renderCard: (lm: Landmark, at: CardPlacement) => ReactNode
 }) {
   useLandmarkClock(useSceneTheme().name)
+  const stage = useStage()
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
+  const width = useThree((s) => s.size.width), height = useThree((s) => s.size.height)
 
   // models present their signature side to the camera: the rig sits ~0.5 rad west of south on wide screens, ~0.3 on tall ones
-  const wide = useThree((s) => s.size.width / s.size.height > 1.15)
+  const wide = width / height > 1.15
   const heroYaw = wide ? -0.5 : -0.3
 
   const placed = useMemo(() => {
@@ -294,19 +323,35 @@ export function Landmarks({
     },
     [placed],
   )
+  // tell the stage where everything stands: the rig leans toward these, and cards keep clear of them
+  useEffect(() => {
+    if (!stage) return
+    for (const [id, p] of placed) stage.anchors.set(id, { x: p.x, y: p.y, z: p.z, r: p.mass, h: p.top })
+    return () => {
+      for (const id of placed.keys()) stage.anchors.delete(id)
+    }
+  }, [placed, stage])
 
   const current = items.find((l) => l.id === active)
   const where = current ? placed.get(current.id) : undefined
   const pop = current ? (MODELS[current.id]?.pop ?? 0.1) : 0
+  const currentId = where ? current!.id : null
+  // solved once per card, for the pose the camera is heading to
+  const at = useMemo(
+    () => (currentId && stage ? placeCard(stage, camera, width, height, currentId, focus, animate, width < 640 ? CARD_PHONE : CARD, pop) : CARD_ABOVE),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentId, focus?.id, focus?.kind, animate, width, height, stage, placed],
+  )
   return (
     <group>
       {items.map((lm) => {
         const at = placed.get(lm.id)
-        return at ? <Pin key={lm.id} lm={lm} at={at} active={lm.id === active} onActive={onActive} onSelect={onSelect} /> : null
+        // on a tall screen the island is small and the pointer is a finger: no landmark is a smaller target than a fingertip
+        return at ? <Pin key={lm.id} lm={lm} at={at} active={lm.id === active} minHit={wide ? 0 : 0.21} onActive={onActive} onSelect={onSelect} /> : null
       })}
       {current && where && (
         <Html key={current.id} position={[where.x, where.y + where.top * (1 + pop) + 0.03, where.z]} zIndexRange={[30, 20]} style={{ pointerEvents: 'none' }}>
-          {renderCard(current)}
+          {renderCard(current, at)}
         </Html>
       )}
     </group>
