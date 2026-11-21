@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Equal, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type AnimationEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { areaProfileQuery, indicatorSeriesQuery } from '@/api/queries'
 import type { Area } from '@/api/types'
 import { PcodePlate } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { fmtValue } from '@/lib/format'
-import type { Theme } from '@/lib/hooks'
-import { cn } from '@/lib/utils'
+import { useReducedMotion, type Theme } from '@/lib/hooks'
 import { fmtBare, isSum, LEVEL_NAME, ordinal, SELECT_HEX, unitSuffix, type MapModel } from './model'
 import { sharesScale, TimeSeries } from './TimeSeries'
+import { useSheetDrag } from './useSheetDrag'
 
 /** The source names carry an administrative suffix ("… District") that the English name already drops. */
 const siName = (s: string) => s.replace(/\s+(දිස්ත්|පළාත)\S*$/u, '')
@@ -228,50 +228,93 @@ export function AreaDrawer({
   if (pcode && pcode !== shown) setShown(pcode)
   if (pcode && instant) setInstant(false)
 
+  // gone at once, with no exit animation: for Esc, and for a sheet that has already been dragged off the screen
+  const dismiss = useCallback(() => {
+    setInstant(true)
+    setShown(null)
+    onClose()
+  }, [onClose])
   useEffect(() => {
     if (!pcode) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented) return
       // leave Esc to any open menu, select or dialog
       if (document.querySelector('[role="dialog"], [role="listbox"], [data-radix-popper-content-wrapper]')) return
-      setInstant(true)
-      setShown(null)
-      onClose()
+      dismiss()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [pcode, onClose])
+  }, [pcode, dismiss])
 
   if (!shown || (!pcode && instant)) return null
   const state = pcode ? 'open' : 'closed'
+  const onAnimationEnd = (e: AnimationEvent<HTMLElement>) => {
+    if (e.target === e.currentTarget && !pcode) setShown(null)
+  }
+  const close = (
+    <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close area details" className="absolute top-3.5 right-3.5 z-10 max-md:size-11 max-md:top-2 max-md:right-2">
+      <X />
+    </Button>
+  )
+  const body = <Body key={shown} pcode={shown} model={model} areas={areas} theme={theme} year={year} onYear={onYear} />
+  const footer = (
+    <div className="border-t border-glass-line px-5 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+      <Button asChild size="lg" className="w-full">
+        <Link to={`/area/${shown}`}>
+          Open profile
+          <ArrowRight />
+        </Link>
+      </Button>
+    </div>
+  )
+  if (mobile)
+    return (
+      <AreaSheet state={state} onAnimationEnd={onAnimationEnd} onDismiss={dismiss} close={close} footer={footer}>
+        {body}
+      </AreaSheet>
+    )
+  return (
+    <aside data-state={state} onAnimationEnd={onAnimationEnd} aria-label="Area details" className="explore-drawer glass absolute top-[68px] right-4 bottom-4 z-40 flex w-[380px] flex-col overflow-hidden rounded-2xl">
+      {close}
+      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">{body}</div>
+      {footer}
+    </aside>
+  )
+}
+
+/**
+ * The phone's version: a bottom sheet that can be thrown away. It is dragged by its handle, or by its
+ * content once that is scrolled to the start; let go past half-way, or flick it, and it leaves.
+ */
+function AreaSheet({ state, onAnimationEnd, onDismiss, close, footer, children }: { state: 'open' | 'closed'; onAnimationEnd: (e: AnimationEvent<HTMLElement>) => void; onDismiss: () => void; close: ReactNode; footer: ReactNode; children: ReactNode }) {
+  const sheet = useRef<HTMLElement>(null)
+  const scroller = useRef<HTMLDivElement>(null)
+  const reducedMotion = useReducedMotion()
+  const { handlers } = useSheetDrag(sheet, scroller, {
+    detents: () => [0, sheet.current?.offsetHeight ?? 0],
+    initial: 1,
+    reducedMotion,
+    onSettle: (i) => {
+      if (i === 0) onDismiss()
+    },
+  })
   return (
     <aside
+      ref={sheet}
       data-state={state}
-      onAnimationEnd={(e) => {
-        if (e.target === e.currentTarget && !pcode) setShown(null)
-      }}
+      onAnimationEnd={onAnimationEnd}
       aria-label="Area details"
-      className={cn(
-        'glass z-40 flex flex-col overflow-hidden',
-        mobile
-          ? 'explore-sheet explore-solid fixed inset-x-0 bottom-0 h-[62dvh] rounded-t-[20px] border-x-0 border-b-0'
-          : 'explore-drawer absolute top-[68px] right-4 bottom-4 w-[380px] rounded-2xl',
-      )}
+      {...handlers}
+      className="explore-sheet explore-solid glass fixed inset-x-0 bottom-0 z-40 flex h-[62dvh] flex-col overflow-hidden rounded-t-[20px] border-x-0 border-b-0 will-change-transform"
     >
-      <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close area details" className="absolute top-3.5 right-3.5 z-10 max-md:size-11 max-md:top-2 max-md:right-2">
-        <X />
-      </Button>
-      <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
-        <Body key={shown} pcode={shown} model={model} areas={areas} theme={theme} year={year} onYear={onYear} />
+      <div className="absolute inset-x-0 top-0 z-10 flex h-6 cursor-grab touch-none items-start justify-center pt-2 [[data-dragging]_&]:cursor-grabbing" aria-hidden>
+        <span className="h-1 w-9 rounded-full bg-line2 transition-[background-color,width] duration-200 ease-[var(--ease-out)] [[data-dragging]_&]:w-11 [[data-dragging]_&]:bg-ink3" />
       </div>
-      <div className="border-t border-glass-line px-5 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-        <Button asChild size="lg" className="w-full">
-          <Link to={`/area/${shown}`}>
-            Open profile
-            <ArrowRight />
-          </Link>
-        </Button>
+      {close}
+      <div ref={scroller} className="scroll-thin min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain">
+        {children}
       </div>
+      {footer}
     </aside>
   )
 }

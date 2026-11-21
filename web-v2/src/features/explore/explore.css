@@ -76,9 +76,13 @@
   background-image: repeating-linear-gradient(135deg, var(--ink3) 0 1px, transparent 1px 4px);
   background-color: var(--bg3);
 }
-/* large mobile sheets: more body than the floating panels, so map colour does not bleed through */
+/* Large mobile sheets are solid: map labels must not ghost through a surface that holds controls.
+   That also means no backdrop blur, which a dragged sheet would have to recompute over the map
+   on every frame. */
 .explore-solid {
-  background: color-mix(in oklab, var(--bg) 93%, transparent);
+  background: var(--bg);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .explore-map .maplibregl-ctrl-bottom-right {

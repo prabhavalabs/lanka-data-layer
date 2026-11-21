@@ -10,7 +10,8 @@
     "lint": "tsc -b --noEmit",
     "preview": "vite preview",
     "geo": "node scripts/build-geo.mjs",
-    "logo": "node scripts/build-logo.mjs"
+    "logo": "node scripts/build-logo.mjs",
+    "poster": "node scripts/build-poster.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",

@@ -121,6 +121,8 @@ export default function Explore() {
   const [licences, setLicences] = useState<LicenceFilter>({ open: true, attribution: true, unclear: true })
   const [layers, setLayers] = useState<LayerState>({ rail: true, rivers: false, protected: false, places: true })
   const [panelOpen, setPanelOpen] = useState(true)
+  // how much of the mobile sheet is showing once it has come to rest: the map keeps the island clear of it
+  const [sheetRest, setSheetRest] = useState(SHEET_PEEK)
   const [tab, setTab] = useState('controls')
   const [playing, setPlaying] = useState(false)
   const [hover, setHover] = useState<string | null>(null)
@@ -200,8 +202,8 @@ export default function Explore() {
     () =>
       desktop
         ? { top: 72, bottom: 24, left: panelOpen ? 364 : 16, right: selected ? 404 : 16 }
-        : { top: 60, bottom: selected ? Math.round(window.innerHeight * 0.62) + 4 : SHEET_PEEK + 8, left: 8, right: 8 },
-    [desktop, panelOpen, selected],
+        : { top: 60, bottom: selected ? Math.round(window.innerHeight * 0.62) + 4 : sheetRest + 8, left: 8, right: 8 },
+    [desktop, panelOpen, selected, sheetRest],
   )
 
   const controls: ControlsProps = {
@@ -255,7 +257,7 @@ export default function Explore() {
   return (
     <div
       className="relative h-[100dvh] w-full overflow-hidden bg-bg"
-      style={{ '--inset-r': desktop && selected ? '396px' : '0px', '--inset-b': desktop ? '0px' : `calc(${SHEET_PEEK}px + env(safe-area-inset-bottom))` } as React.CSSProperties}
+      style={{ '--inset-r': desktop && selected ? '396px' : '0px', '--inset-b': desktop ? '0px' : sheetRest > SHEET_PEEK + 60 ? `${sheetRest}px` : `calc(${SHEET_PEEK}px + env(safe-area-inset-bottom))` } as React.CSSProperties}
     >
       <h1 className="sr-only">Explore the map</h1>
       <ExploreMap
@@ -343,7 +345,7 @@ export default function Explore() {
           />
         </>
       ) : (
-        <MobileSheet model={model} year={year} playing={playing} onPlay={onPlay} reducedMotion={reducedMotion}>
+        <MobileSheet model={model} year={year} playing={playing} onPlay={onPlay} reducedMotion={reducedMotion} onRest={setSheetRest}>
           <div className="flex px-3 pt-3">
             <SearchField />
           </div>
