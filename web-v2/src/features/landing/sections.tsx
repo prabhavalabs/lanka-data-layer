@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { fmtCompact, fmtInt, fmtValue } from '@/lib/format'
 import { useInView, useReducedMotion, useTheme } from '@/lib/hooks'
 import { ramp } from '@/lib/palettes'
+import { SITE } from '@/lib/site'
 import { CLI_SESSION, MCP_CALL, MCP_CONFIG, MCP_RESULT, REST_REQUEST, REST_RESPONSE } from '@/lib/snippets'
 import { cn } from '@/lib/utils'
 
@@ -90,7 +91,7 @@ const PILLARS = [
 export function Pillars() {
   return (
     <Section>
-      <div className="grid gap-12 lg:grid-cols-[1fr_1.25fr] lg:gap-20">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1.25fr] lg:gap-20">
         <Reveal>
           <Eyebrow>What it is</Eyebrow>
           <h2 className="t-h1 mt-5">What is true of this place, where did the number come from, and can I have the file?</h2>
@@ -99,7 +100,7 @@ export function Pillars() {
           </p>
           <p className="mt-6 text-sm text-ink3">Self-hosted, open infrastructure: our own servers, Postgres and Rust, no third-party lock-in.</p>
         </Reveal>
-        <ol className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
+        <ol className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
           {PILLARS.map((p, i) => (
             <Reveal as="li" key={p.n} i={i} className="bg-bg p-6 sm:p-7">
               <div className="flex items-center justify-between">
@@ -149,7 +150,7 @@ export function ProvenanceShowcase() {
   return (
     <div className="border-y border-line bg-bg2/40">
       <Section>
-        <div ref={ref} className="grid gap-12 lg:grid-cols-[0.9fr_1.2fr] lg:gap-16">
+        <div ref={ref} className="grid grid-cols-1 gap-12 lg:grid-cols-[0.9fr_1.2fr] lg:gap-16">
           <Reveal>
             <Eyebrow>Every number traceable</Eyebrow>
             <h2 className="t-h1 mt-5">Each number opens to the page it was printed on.</h2>
@@ -183,7 +184,7 @@ export function ProvenanceShowcase() {
           </Reveal>
 
           <Reveal i={1} className="ticks relative self-center rounded-2xl border border-line bg-bg p-4 sm:p-6">
-            <div className="grid gap-3 sm:grid-cols-[1fr_1.15fr] sm:gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1.15fr] sm:gap-4">
               <div className={cn('rounded-xl border bg-bg2 p-4 transition-[opacity,border-color,box-shadow] duration-300', on(0), ring(0))}>
                 <div className="flex items-center justify-between">
                   <span className="t-label">Population · 2024</span>
@@ -257,8 +258,8 @@ export function Interfaces() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="rest" className="w-full">
-            <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-              <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+              <div className="flex min-w-0 flex-col gap-4">
                 <CodeBlock title={<Dots label="request" />} code={REST_REQUEST} />
                 <Facts items={[['No key', 'Anonymous for every read. Rate-limited per IP.'], ['One envelope', 'success, payload, meta. meta carries source, licence and completeness.'], ['OpenAPI 3.1', 'Generated from the server, with a typed client on npm.']]} />
               </div>
@@ -266,8 +267,8 @@ export function Interfaces() {
             </div>
           </TabsContent>
           <TabsContent value="mcp" className="w-full">
-            <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-              <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+              <div className="flex min-w-0 flex-col gap-4">
                 <CodeBlock title={<Dots label="connect" />} code={MCP_CONFIG} />
                 <CodeBlock title={<Dots label="tools/call" />} code={MCP_CALL} lang="json" />
                 <Facts items={[['Ten tools, fixed', 'Read-only, idempotent, with ready-to-send next calls.'], ['Provenance in every result', 'A model can cite the page, not just the site.']]} />
@@ -276,9 +277,9 @@ export function Interfaces() {
             </div>
           </TabsContent>
           <TabsContent value="cli" className="w-full">
-            <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
               <CodeBlock title={<Dots label="zsh" />} code={CLI_SESSION} />
-              <div className="flex flex-col gap-4">
+              <div className="flex min-w-0 flex-col gap-4">
                 <Facts
                   items={[
                     ['geocode-csv', 'Attach official p-codes to a spreadsheet of coordinates. Over a million rows a second on a laptop.'],
@@ -329,7 +330,7 @@ export function Themes() {
           </div>
           <p className="max-w-[40ch] text-[14.5px] text-ink2">Each theme has its own colour ramp, checked for colour-vision deficiency. The accent colour is never used for data.</p>
         </Reveal>
-        <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {themes.map((t, i) => (
             <Reveal as="li" key={t.id} i={i % 4}>
               <Link to={`/data?theme=${t.id}`} className="pressable group surface flex h-full flex-col p-5 hover:border-line2 hover:bg-bg2">
@@ -360,7 +361,7 @@ export function AreaTeaser() {
   const { data: a } = useQuery(areaProfileQuery('LK11'))
   return (
     <Section>
-      <div className="grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+      <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
         <Reveal>
           <Eyebrow>Area profiles</Eyebrow>
           <h2 className="t-h1 mt-5">A page for every one of 14,417 places.</h2>
@@ -387,7 +388,7 @@ export function AreaTeaser() {
 
         <Reveal i={1}>
           <Link to="/area/LK11" className="pressable group block overflow-hidden rounded-2xl border border-line bg-bg2 shadow-soft hover:border-line2" aria-label="Open the Colombo area profile">
-            <div className="grid sm:grid-cols-[1fr_190px]">
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_190px]">
               <div className="p-6 sm:p-7">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11.5px] text-ink3">
                   <span>Sri Lanka</span>
@@ -463,7 +464,7 @@ export function CatalogueTeaser() {
             {(rows.length ? rows : Array.from({ length: 6 }, () => null)).map((d, i) =>
               d ? (
                 <li key={d.id}>
-                  <Link to={`/data/${d.id}`} className="group grid items-center gap-x-4 gap-y-2 px-5 py-4 transition-colors duration-150 hover:bg-bg2 md:grid-cols-[1.6fr_1fr_0.7fr_0.8fr_96px]">
+                  <Link to={`/data/${d.id}`} className="group grid grid-cols-1 items-center gap-x-4 gap-y-2 px-5 py-4 transition-colors duration-150 hover:bg-bg2 md:grid-cols-[1.6fr_1fr_0.7fr_0.8fr_96px]">
                     <span className="min-w-0">
                       <span className="flex items-center gap-2 text-[14.5px] font-medium text-ink">
                         <span className="truncate">{d.title}</span>
@@ -506,7 +507,7 @@ export function Honesty() {
   ]
   return (
     <Section>
-      <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
         <Reveal>
           <Eyebrow>Licence honesty</Eyebrow>
           <h2 className="t-h1 mt-5">We say what we do not know.</h2>
@@ -562,7 +563,7 @@ export function Closing() {
           <h2 className="t-display mx-auto max-w-[16ch]">Start with a place.</h2>
           <p className="t-lead mx-auto mt-6 max-w-[44ch]">Search any town, p-code or postal code, or pull the whole dataset to your own machine.</p>
           <div className="mx-auto mt-9 max-w-[520px] text-left">
-            <CodeBlock code={`$ curl -fsSL https://lankadatalayer.org/install.sh | sh\n$ lanka pull core && lanka area LK11`} />
+            <CodeBlock code={`$ curl -fsSL ${SITE}/install.sh | sh\n$ lanka pull core && lanka area LK11`} />
           </div>
           <div className="mt-7 flex flex-wrap justify-center gap-2.5">
             <Button size="lg" variant="brand" asChild>

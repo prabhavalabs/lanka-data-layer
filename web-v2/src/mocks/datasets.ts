@@ -1,6 +1,7 @@
 // Mock dataset catalogue. Publishers and licence situations are realistic;
 // row counts, hashes, versions and preview values are artificial.
 import type { Dataset, DatasetDetail, LicenceStatus, ThemeId } from '@/api/types'
+import { SITE } from '@/lib/site'
 
 const LIC = {
   unclear: { id: 'lk-gov-unstated', label: 'No stated licence', status: 'unclear' as LicenceStatus },
@@ -10,6 +11,25 @@ const LIC = {
   cc0: { id: 'CC0-1.0', label: 'CC0 1.0', status: 'open' as LicenceStatus },
   pd: { id: 'public-domain', label: 'Public domain', status: 'open' as LicenceStatus },
 }
+
+/** Where each publisher keeps its material. Real addresses: a source link that leads nowhere teaches nobody to check it. */
+const PUBLISHER_URL: [match: string, url: string][] = [
+  ['Census and Statistics', 'https://www.statistics.gov.lk/'],
+  ['Survey Department', 'https://www.survey.gov.lk/'],
+  ['OCHA', 'https://data.humdata.org/dataset/cod-ab-lka'],
+  ['Sri Lanka Post', 'https://slpost.gov.lk/'],
+  ['Election Commission', 'https://elections.gov.lk/'],
+  ['Ministry of Health', 'https://www.health.gov.lk/'],
+  ['Ministry of Education', 'https://moe.gov.lk/'],
+  ['ESA WorldCover', 'https://esa-worldcover.org/'],
+  ['GHSL', 'https://human-settlement.emergency.copernicus.eu/'],
+  ['Wildlife Conservation', 'https://www.dwc.gov.lk/'],
+  ['CHIRPS', 'https://www.chc.ucsb.edu/data/chirps'],
+  ['Black Marble', 'https://blackmarble.gsfc.nasa.gov/'],
+  ['OpenStreetMap', 'https://www.openstreetmap.org/'],
+]
+/** A derived dataset's source is its own page here. */
+const sourceUrl = (publisher: string, id: string) => PUBLISHER_URL.find(([m]) => publisher.includes(m))?.[1] ?? `${SITE}/data/${id}`
 
 type Seed = [id: string, title: string, summary: string, theme: ThemeId, publisher: string, publisherType: Dataset['publisherType'], lic: keyof typeof LIC, cadence: string, levels: string[], rows: number, indicators: number, vintage: string, updated: string, freshness: Dataset['freshness'], formats: string[], sizeMb: number]
 
@@ -130,9 +150,9 @@ export function datasetDetail(id: string): DatasetDetail {
     ],
     limits: LIMITS[base.id] ?? GENERIC_LIMITS,
     sources: [
-      { n: 1, title: isCensus ? 'Census of Population and Housing 2024 — Preliminary Report (PDF)' : `${base.title} — primary release`, publisher: base.publisher.split(' · ')[0], url: 'https://example.org/source', licence: base.licence.label, status: base.licence.status, retrieved: base.updated, sha256: hex(base.id + 'a', 64) },
-      { n: 2, title: isCensus ? 'Population by GN division, district workbooks (XLSX × 25)' : 'Supplementary tables and metadata', publisher: base.publisher.split(' · ').slice(-1)[0], url: 'https://example.org/source-2', licence: base.licence.label, status: base.licence.status, retrieved: base.updated, sha256: hex(base.id + 'b', 64) },
-      { n: 3, title: 'Administrative boundaries COD-AB, used for p-code joins', publisher: 'OCHA / Survey Department', url: 'https://example.org/cod-ab', licence: 'CC BY 3.0 IGO', status: 'attribution', retrieved: '2026-10-30', sha256: hex(base.id + 'c', 64) },
+      { n: 1, title: isCensus ? 'Census of Population and Housing 2024 — Preliminary Report (PDF)' : `${base.title} — primary release`, publisher: base.publisher.split(' · ')[0], url: sourceUrl(base.publisher.split(' · ')[0], base.id), licence: base.licence.label, status: base.licence.status, retrieved: base.updated, sha256: hex(base.id + 'a', 64) },
+      { n: 2, title: isCensus ? 'Population by GN division, district workbooks (XLSX × 25)' : 'Supplementary tables and metadata', publisher: base.publisher.split(' · ').slice(-1)[0], url: sourceUrl(base.publisher.split(' · ').slice(-1)[0], base.id), licence: base.licence.label, status: base.licence.status, retrieved: base.updated, sha256: hex(base.id + 'b', 64) },
+      { n: 3, title: 'Administrative boundaries COD-AB, used for p-code joins', publisher: 'OCHA / Survey Department', url: sourceUrl('OCHA', base.id), licence: 'CC BY 3.0 IGO', status: 'attribution', retrieved: '2026-10-30', sha256: hex(base.id + 'c', 64) },
     ],
     columns,
     preview,

@@ -1,7 +1,8 @@
 // Example calls shown on the landing page, dataset pages and /developers.
 // They follow the planned v2 surface (REST, MCP tools, `lanka` CLI); output values are artificial.
+import { API, DOWNLOADS, MCP, SITE } from './site'
 
-export const REST_REQUEST = `$ curl https://api.lankadatalayer.org/v2/areas/LK11`
+export const REST_REQUEST = `$ curl ${API}/areas/LK11`
 
 export const REST_RESPONSE = `{
   "success": true,
@@ -28,7 +29,7 @@ export const REST_RESPONSE = `{
   }
 }`
 
-export const MCP_CONFIG = `$ claude mcp add --transport http lanka https://api.lankadatalayer.org/mcp
+export const MCP_CONFIG = `$ claude mcp add --transport http lanka ${MCP}
 # anonymous and read-only: no key, no account`
 
 export const MCP_CALL = `{
@@ -71,12 +72,12 @@ $ lanka area LK11 --md | head -4
   density          3,397   per km²
   households       641,203`
 
-export const CLI_INSTALL = `$ curl -fsSL https://lankadatalayer.org/install.sh | sh
+export const CLI_INSTALL = `$ curl -fsSL ${SITE}/install.sh | sh
 $ brew install prabhavalabs/tap/lanka
 $ npx @lanka-data-layer/cli area LK11`
 
 export const DUCKDB = `select pcode, population
-from 'https://data.lankadatalayer.org/latest/parquet/census-2024.parquet'
+from '${DOWNLOADS}/census-2024.parquet'
 where level = 3
 order by population desc
 limit 10;`

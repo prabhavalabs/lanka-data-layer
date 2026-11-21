@@ -1,11 +1,12 @@
 import { ArrowRight, Bot, Braces, Download, Terminal } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Eyebrow, Reveal } from '@/components/common/bits'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { CLI_COMMANDS, CLI_INSTALL, CLI_SESSION, DUCKDB, MCP_CALL, MCP_CONFIG, MCP_RESULT, MCP_TOOLS, REST_ENDPOINTS, REST_REQUEST, REST_RESPONSE } from '@/lib/snippets'
+import { SITE_HOST } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -18,7 +19,7 @@ const NAV = [
 function Part({ id, n, title, lead, children }: { id: string; n: string; title: string; lead: ReactNode; children: ReactNode }) {
   return (
     <section id={id} className="scroll-mt-28 border-t border-line py-16 sm:py-20">
-      <Reveal className="grid gap-6 lg:grid-cols-[1fr_1.4fr] lg:gap-14">
+      <Reveal className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1.4fr] lg:gap-14">
         <div>
           <Eyebrow n={n}>{id === 'bulk' ? 'downloads' : id}</Eyebrow>
           <h2 className="t-h2 mt-4">{title}</h2>
@@ -64,7 +65,7 @@ const Method = ({ m }: { m: string }) => <span className={cn('inline-block w-10 
 export default function Developers() {
   return (
     <div className="mx-auto max-w-[1240px] px-5 pt-28 pb-10 sm:px-8 sm:pt-32">
-      <header className="grid gap-10 pb-14 lg:grid-cols-[1.15fr_1fr] lg:items-end">
+      <header className="grid grid-cols-1 gap-10 pb-14 lg:grid-cols-[1.15fr_1fr] lg:items-end">
         <div>
           <Eyebrow>Developers</Eyebrow>
           <h1 className="t-h1 mt-5">Read-only, anonymous, and the same data everywhere.</h1>
@@ -82,21 +83,29 @@ export default function Developers() {
         </div>
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line">
           {[
-            ['Base URL', 'api.lankadatalayer.org/v2'],
-            ['MCP endpoint', 'api.lankadatalayer.org/mcp'],
+            ['Base URL', `${SITE_HOST}/v2`],
+            ['MCP endpoint', `${SITE_HOST}/mcp`],
             ['Rate limit', '10 req/s, burst 40'],
             ['Hosting', 'Self-hosted, Rust + Postgres'],
           ].map(([k, v]) => (
             <div key={k} className="bg-bg2 p-4">
               <dt className="text-[12px] text-ink3">{k}</dt>
-              <dd className="mt-1.5 font-mono text-[12.5px] break-all text-ink">{v}</dd>
+              {/* an address may wrap after a dot or a slash, never in the middle of a word; <wbr> adds no character to what is copied */}
+              <dd className="mt-1.5 font-mono text-[12.5px] [overflow-wrap:anywhere] text-ink">
+                {v.split(/(?<=[./])/).map((part, i) => (
+                  <Fragment key={i}>
+                    {i > 0 && <wbr />}
+                    {part}
+                  </Fragment>
+                ))}
+              </dd>
             </div>
           ))}
         </dl>
       </header>
 
       <Part id="rest" n="01" title="REST API v2" lead="One envelope for every response: success, payload and meta. meta carries the data version, the sources, the licence status and a completeness note, plus ready-made links to the next useful call.">
-        <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="space-y-4">
             <CodeBlock title="request" code={REST_REQUEST} />
             <RefTable
@@ -115,7 +124,7 @@ export default function Developers() {
       </Part>
 
       <Part id="mcp" n="02" title="MCP server" lead="Ten read-only tools over streamable HTTP, with no sign-in. Every result carries provenance, licences, completeness and the calls a model is likely to want next. The same server runs locally over stdio with lanka mcp.">
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="space-y-4">
             <CodeBlock title="connect" code={MCP_CONFIG} />
             <CodeBlock title="tools/call" code={MCP_CALL} lang="json" />
@@ -138,7 +147,7 @@ export default function Developers() {
       </Part>
 
       <Part id="cli" n="03" title="The lanka CLI" lead="One binary, offline first. It reads the artifacts you pulled, so it is fast and works without a connection. geocode-csv is the reason most people install it: official p-codes on a spreadsheet of coordinates, in seconds.">
-        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
           <CodeBlock title="zsh" code={CLI_SESSION} />
           <div className="space-y-4">
             <CodeBlock title="install" code={CLI_INSTALL} />
@@ -154,7 +163,7 @@ export default function Developers() {
       </Part>
 
       <Part id="bulk" n="04" title="Bulk files" lead="Every release is a set of immutable, checksummed files: SQLite, Parquet, GeoParquet, PMTiles and cloud-optimised GeoTIFF. Query them in place or take the lot.">
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <CodeBlock title="duckdb" code={DUCKDB} lang="sql" />
           <CodeBlock
             title="release layout"

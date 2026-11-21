@@ -1,7 +1,7 @@
 export function AreaSkeleton() {
   return (
     <div aria-busy="true" aria-label="Loading area profile">
-      <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_268px]">
+      <div className="grid grid-cols-1 gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_268px]">
         <div>
           <div className="skeleton h-3.5 w-52" />
           <div className="skeleton mt-8 h-3 w-28" />
@@ -31,7 +31,7 @@ export function AreaSkeleton() {
           </div>
         ))}
       </div>
-      <div className="mt-16 grid gap-px overflow-hidden rounded-[14px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-16 grid grid-cols-1 gap-px overflow-hidden rounded-[14px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="bg-bg2 p-5">
             <div className="skeleton h-3 w-28" />

@@ -59,7 +59,7 @@ export function RankSection({ profile }: { profile: AreaProfile }) {
             ]}
           />
         </div>
-        <div className="mt-5 grid gap-px overflow-hidden rounded-[14px] border border-line bg-line shadow-[var(--shadow-sm)] sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-[14px] border border-line bg-line shadow-[var(--shadow-sm)] sm:grid-cols-2 lg:grid-cols-3">
           {profile.ranks.map((r) => (
             <RankCell key={r.indicator} item={r} profile={profile} />
           ))}

@@ -14,7 +14,7 @@ export function Footer() {
       <FooterSkyline />
       <div className="bg-bg2/40">
       <div className="mx-auto max-w-[1240px] px-5 pt-9 pb-10 sm:px-8 sm:pt-12">
-        <div className="grid gap-10 md:grid-cols-[1.3fr_2fr]">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.3fr_2fr]">
           <div>
             <Logo />
             <p className="mt-4 max-w-[34ch] text-sm text-ink2">Every Sri Lankan fact with a location, a source and a download. Self-hosted, open infrastructure.</p>

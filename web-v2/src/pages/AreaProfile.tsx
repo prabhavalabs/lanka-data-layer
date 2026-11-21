@@ -43,7 +43,7 @@ export default function AreaProfile() {
           <div className="mt-16">
             <RankSection profile={data} />
           </div>
-          <div className="mt-16 grid gap-x-10 lg:grid-cols-[132px_minmax(0,1fr)]">
+          <div className="mt-16 grid grid-cols-1 gap-x-10 lg:grid-cols-[132px_minmax(0,1fr)]">
             <SectionNav />
             <div className="flex min-w-0 flex-col gap-8">
               <PeopleSection profile={data} />

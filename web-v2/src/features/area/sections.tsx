@@ -42,7 +42,7 @@ export function PeopleSection({ profile }: { profile: AreaProfile }) {
       source={`Source: Dept. of Census and Statistics · Census ${last.year} (provisional), Census ${first.year} (final) · ${profile.meta.data_version}`}
       href={`/explore?indicator=age.65plus&area=${area.pcode}`}
     >
-      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="min-w-0">
           <ChartTitle sub="Share of all residents in each five-year band">Age structure by sex</ChartTitle>
           {view === 'chart' ? (
@@ -141,7 +141,7 @@ export function LandSection({ profile }: { profile: AreaProfile }) {
       source={`Source: ESA WorldCover 10 m (2025) · GHSL built-up surface R2023A, 2030 is a model projection · ${profile.meta.data_version}`}
       href={`/explore?indicator=built.share&area=${profile.area.pcode}`}
     >
-      <div className="grid gap-x-10 gap-y-9 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-9 lg:grid-cols-2">
         <div className="min-w-0">
           <ChartTitle sub="Share of land area, 2025">Land cover</ChartTitle>
           <StackBar segments={segs} ariaLabel={`Land cover shares: ${segs.map((s) => `${s.label} ${s.share.toFixed(0)}%`).join(', ')}`} />
@@ -204,7 +204,7 @@ export function ClimateSection({ profile }: { profile: AreaProfile }) {
       source={`Source: CHIRPS v2.0 rainfall, ERA5-Land 2 m temperature · 2025 against 1991–2020 normals · ${profile.meta.data_version}`}
       href={`/explore?indicator=rain.annual&area=${profile.area.pcode}`}
     >
-      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_190px]">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div className="min-w-0">
           {view === 'chart' ? (
             <>
@@ -254,7 +254,7 @@ export function ElectionsSection({ profile }: { profile: AreaProfile }) {
       href="/data?theme=elections"
       hrefLabel="See election datasets"
     >
-      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_190px]">
+      <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div className="min-w-0">
           <ShareBars rows={rows} valueFmt={fmtInt} valueLabel="Votes" />
           <p className="mt-4 border-l-2 border-line2 pl-3 text-[12.5px] leading-relaxed text-ink2">

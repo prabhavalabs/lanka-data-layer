@@ -94,7 +94,7 @@ export default function Catalogue() {
 
   return (
     <div className="mx-auto max-w-[1240px] px-5 pt-28 pb-24 sm:px-8 sm:pt-32">
-      <header className="grid gap-8 border-b border-line pb-10 lg:grid-cols-[1.2fr_1fr] lg:items-end">
+      <header className="grid grid-cols-1 gap-8 border-b border-line pb-10 lg:grid-cols-[1.2fr_1fr] lg:items-end">
         <div>
           <Eyebrow>Data catalogue</Eyebrow>
           <h1 className="t-h1 mt-5">Every dataset, with its licence and its limits.</h1>
@@ -116,7 +116,7 @@ export default function Catalogue() {
         </dl>
       </header>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[232px_1fr]">
+      <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[232px_1fr]">
         <aside className="hidden lg:block">
           <div className="scroll-thin sticky top-24 max-h-[calc(100dvh-7.5rem)] overflow-y-auto pr-2">{facets}</div>
         </aside>
@@ -188,7 +188,7 @@ export default function Catalogue() {
               ))}
             {rows.map((d) => (
               <li key={d.id} className="border-b border-line last:border-0">
-                <Link to={`/data/${d.id}`} className="group grid gap-x-6 gap-y-3 p-5 transition-colors duration-150 hover:bg-bg3/50 md:grid-cols-[1fr_210px]">
+                <Link to={`/data/${d.id}`} className="group grid grid-cols-1 gap-x-6 gap-y-3 p-5 transition-colors duration-150 hover:bg-bg3/50 md:grid-cols-[1fr_210px]">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-[16px] font-semibold tracking-[-0.015em] text-ink">{d.title}</h2>

@@ -38,7 +38,7 @@ export function AreaHeader({ profile }: { profile: AreaProfile }) {
     )
 
   return (
-    <header className="grid gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_268px]">
+    <header className="grid grid-cols-1 gap-x-12 gap-y-8 lg:grid-cols-[minmax(0,1fr)_268px]">
       <div className="min-w-0">
         <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 font-mono text-[12px] text-ink3">
           <Link to="/explore" className="rounded-sm hover:text-ink">

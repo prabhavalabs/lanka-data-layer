@@ -3,12 +3,13 @@ import { Link } from 'react-router'
 import type { AreaProfile } from '@/api/types'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Eyebrow, LicenceLight, PcodePlate, Reveal } from '@/components/common/bits'
+import { API, SITE } from '@/lib/site'
 import { LEVEL } from './AreaHeader'
 
 export function PostalAndNeighbours({ profile }: { profile: AreaProfile }) {
   const { area, postal, neighbours } = profile
   return (
-    <Reveal className="grid gap-x-12 gap-y-10 lg:grid-cols-2">
+    <Reveal className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-2">
       <section aria-labelledby="postal-title">
         <Eyebrow>Postal codes</Eyebrow>
         <h2 id="postal-title" className="mt-3 text-[15px] font-semibold text-ink">
@@ -52,12 +53,12 @@ const LIMITS = [
 
 export function SourcesAndLimits({ profile }: { profile: AreaProfile }) {
   const { area, meta } = profile
-  const url = `https://lankadatalayer.org/area/${area.pcode}`
+  const url = `${SITE}/area/${area.pcode}`
   const cite = `Lanka Data Layer (2026). ${area.name.en} ${LEVEL[area.level].toLowerCase()} profile, ${area.pcode}. Data version ${meta.data_version}. ${url}`
   const embed = `<iframe src="${url}/embed?v=${meta.data_version}"\n  width="100%" height="520" loading="lazy"\n  title="${area.name.en} — Lanka Data Layer"></iframe>`
   return (
     <Reveal as="section" className="surface ticks shadow-[var(--shadow-sm)]">
-      <div className="grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <div className="p-5 sm:p-7">
           <Eyebrow>Sources and limits</Eyebrow>
           <h2 className="t-h3 mt-3">Where these numbers come from, and where they stop</h2>
@@ -105,7 +106,7 @@ export function SourcesAndLimits({ profile }: { profile: AreaProfile }) {
           <p className="mt-1.5 text-[13.5px] text-ink2">Pinned to data version {meta.data_version}, so a citation keeps pointing at the numbers you read.</p>
           <CodeBlock className="mt-5 [&_pre]:break-words [&_pre]:whitespace-pre-wrap" lang="text" title="cite" code={cite} />
           <CodeBlock className="mt-3" lang="text" title="embed.html" code={embed} />
-          <CodeBlock className="mt-3" lang="bash" title="api" code={`curl https://api.lankadatalayer.org/v2/areas/${area.pcode}`} />
+          <CodeBlock className="mt-3" lang="bash" title="api" code={`curl ${API}/areas/${area.pcode}`} />
         </div>
       </div>
     </Reveal>

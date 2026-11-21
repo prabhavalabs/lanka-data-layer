@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { fmtInt } from '@/lib/format'
 import { useCopy } from '@/lib/hooks'
+import { API, DOWNLOADS } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 function Block({ id, title, kicker, children, className }: { id: string; title: string; kicker?: string; children: ReactNode; className?: string }) {
@@ -27,10 +28,10 @@ function Block({ id, title, kicker, children, className }: { id: string; title: 
 
 function snippets(d: DatasetDetail) {
   return {
-    api: `$ curl "https://api.lankadatalayer.org/v2/datasets/${d.id}"\n$ curl "https://api.lankadatalayer.org/v2/query" \\\n    -d '{"dataset":"${d.id}","filter":{"level":2},"limit":25}'`,
+    api: `$ curl "${API}/datasets/${d.id}"\n$ curl "${API}/query" \\\n    -d '{"dataset":"${d.id}","filter":{"level":2},"limit":25}'`,
     mcp: `{\n  "method": "tools/call",\n  "params": {\n    "name": "describe_dataset",\n    "arguments": { "dataset_id": "${d.id}" }\n  }\n}`,
     cli: `$ lanka pull core\n$ lanka export ${d.id} --format parquet --where "level = 2"\n$ lanka diff ${d.versions[1].dsv} ${d.versions[0].dsv} --dataset ${d.id}`,
-    sql: `select *\nfrom 'https://data.lankadatalayer.org/latest/parquet/${d.id}.parquet'\nlimit 10;`,
+    sql: `select *\nfrom '${DOWNLOADS}/${d.id}.parquet'\nlimit 10;`,
   }
 }
 
@@ -90,7 +91,7 @@ export default function DatasetPage() {
         <span className="text-ink2">{d.id}</span>
       </nav>
 
-      <header className="mt-6 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+      <header className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <h1 className="t-h1 max-w-[20ch]">{d.title}</h1>
           <p className="t-lead mt-5 max-w-[62ch]">{d.summary}</p>
@@ -124,7 +125,7 @@ export default function DatasetPage() {
         ))}
       </dl>
 
-      <div className="mt-12 grid gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-14">
+      <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-14">
         <div className="min-w-0 space-y-12">
           <section id="preview" className="scroll-mt-28">
             <Tabs defaultValue="preview">
@@ -177,7 +178,7 @@ export default function DatasetPage() {
 
           <Block id="contains" title="What it contains">
             <p className="max-w-[68ch] text-[15px] leading-relaxed text-ink2">{d.description}</p>
-            <ul className="mt-5 grid gap-x-8 gap-y-2.5 sm:grid-cols-2">
+            <ul className="mt-5 grid grid-cols-1 gap-x-8 gap-y-2.5 sm:grid-cols-2">
               {d.contains.map((c) => (
                 <li key={c} className="grid grid-cols-[14px_1fr] gap-2.5 text-[14px] text-ink2">
                   <span className="mt-[9px] h-px w-3.5 bg-ink3" />
@@ -188,7 +189,7 @@ export default function DatasetPage() {
           </Block>
 
           <Block id="method" title="How it is made">
-            <ol className="grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
+            <ol className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-2">
               {d.method.map((m, i) => (
                 <li key={m} className="grid grid-cols-[26px_1fr] gap-2 bg-bg2 p-4 text-[14px] leading-relaxed text-ink2">
                   <span className="t-num font-mono text-[11.5px] text-ink3">0{i + 1}</span>
@@ -238,7 +239,7 @@ export default function DatasetPage() {
           <Block id="versions" title="Version history" kicker="row-level diffs">
             <div className="overflow-hidden rounded-xl border border-line bg-bg2">
               {d.versions.map((v, i) => (
-                <div key={v.dsv} className="grid items-center gap-x-4 gap-y-1 border-b border-line px-4 py-3 last:border-0 sm:grid-cols-[176px_92px_1fr_auto]">
+                <div key={v.dsv} className="grid grid-cols-1 items-center gap-x-4 gap-y-1 border-b border-line px-4 py-3 last:border-0 sm:grid-cols-[176px_92px_1fr_auto]">
                   <code className="flex items-center gap-2 text-[12.5px] text-ink">
                     {v.dsv}
                     {i === 0 && <Badge variant="brand">current</Badge>}
