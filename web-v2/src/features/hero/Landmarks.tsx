@@ -1,455 +1,228 @@
-// Procedurally modelled, low-poly landmarks. No downloaded assets: every
-// building is a handful of primitives, placed at its true longitude/latitude.
+// The landmark layer: nine miniatures at their true coordinates.
+//
+// The models themselves live in ./landmarks (one module per landmark, authored in
+// code and baked to a single geometry each). This file only places them on the
+// island, lights them with the scene theme, and handles hover / tap.
+//
+// Draw calls: one per landmark body (9), one per pick ring (9), plus the few parts
+// that move (Nine Arch's train cars, Trincomalee's ship, Galle's light). The hit
+// targets are invisible meshes and are never drawn.
 import { Html } from '@react-three/drei'
-import { useFrame, type ThreeEvent } from '@react-three/fiber'
-import { useMemo, useRef, type ReactNode } from 'react'
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
+import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
 import type { Landmark } from '@/api/types'
-import { toXZ, type Terrain } from './terrain'
+import { getBuilt, LandmarkMesh, useLandmarkClock } from './landmarks/LandmarkMesh'
+import { MODELS } from './landmarks/models'
+import type { ModelDef } from './landmarks/types'
+import { useSceneTheme } from './sceneTheme'
+import { BEVEL, K, ORIGIN, PLINTH, toXZ, type Terrain } from './terrain'
 
-type P = { glow: number }
+/** rose accent of the page, used for the active ring */
+const ACCENT = '#f0668a'
+const RING_SEG = 72
 
-const flat = { flatShading: true, roughness: 0.85, metalness: 0 } as const
-function Mat({ c, e, ei = 0, ...rest }: { c: string; e?: string; ei?: number } & Partial<THREE.MeshStandardMaterialParameters>) {
-  return <meshStandardMaterial color={c} emissive={e ?? '#000000'} emissiveIntensity={ei} {...flat} {...rest} />
+type Placement = {
+  x: number
+  z: number
+  /** world height of the model's ground plane */
+  y: number
+  yaw: number
+  scale: number
+  /** −1 when the model is mirrored left-to-right */
+  flip: 1 | -1
+  /** sea level in model units (relative to the model's ground) */
+  sea: number
+  /** body geometry with its ground vertices settled onto the terrain; null when nothing drapes */
+  body: THREE.BufferGeometry | null
+  ring: THREE.BufferGeometry
+  hitR: number
+  /** model height in world units */
+  top: number
 }
 
-/* ---------------- models (author units = scene units) ---------------- */
+const lonAt = (x: number) => x / K + ORIGIN.lon
+const latAt = (z: number) => ORIGIN.lat - z
 
-function Sigiriya() {
-  return (
-    <group>
-      <mesh position={[0, 0.012, 0]} receiveShadow castShadow>
-        <cylinderGeometry args={[0.085, 0.104, 0.024, 9]} />
-        <Mat c="#4f9450" />
-      </mesh>
-      <mesh position={[0, 0.095, 0]} castShadow receiveShadow rotation={[0, 0.4, 0]}>
-        <cylinderGeometry args={[0.043, 0.06, 0.15, 7]} />
-        <Mat c="#cf8a4e" />
-      </mesh>
-      <mesh position={[0.012, 0.05, 0.02]} castShadow rotation={[0, 1.1, 0.1]}>
-        <cylinderGeometry args={[0.03, 0.05, 0.07, 6]} />
-        <Mat c="#b9753f" />
-      </mesh>
-      <mesh position={[0, 0.173, 0]} rotation={[0, 0.4, 0]}>
-        <cylinderGeometry args={[0.044, 0.044, 0.007, 7]} />
-        <Mat c="#6aa554" />
-      </mesh>
-      <mesh position={[-0.006, 0.181, 0.004]} castShadow>
-        <boxGeometry args={[0.03, 0.009, 0.022]} />
-        <Mat c="#e2d3b0" />
-      </mesh>
-      {[-0.014, 0.014].map((x) => (
-        <mesh key={x} position={[x, 0.03, 0.062]} castShadow>
-          <boxGeometry args={[0.014, 0.012, 0.022]} />
-          <Mat c="#d9b98a" />
-        </mesh>
-      ))}
-    </group>
-  )
+/** the land surface under a world point; a little below the sea when the point is offshore */
+function groundAt(terrain: Terrain, x: number, z: number) {
+  const lon = lonAt(x), lat = latAt(z)
+  return terrain.coastDistance(lon, lat) > 0 ? terrain.surfaceAt(lon, lat) : -0.02
 }
 
-function SriPada({ glow }: P) {
-  return (
-    <group>
-      <mesh position={[0, 0.03, 0]} castShadow receiveShadow rotation={[0, 0.3, 0]}>
-        <coneGeometry args={[0.062, 0.13, 6]} />
-        <Mat c="#55785a" />
-      </mesh>
-      <mesh position={[0, 0.072, 0]} castShadow rotation={[0, 0.3, 0]}>
-        <coneGeometry args={[0.026, 0.056, 6]} />
-        <Mat c="#8d9484" />
-      </mesh>
-      <mesh position={[0, 0.101, 0]} castShadow>
-        <boxGeometry args={[0.013, 0.008, 0.013]} />
-        <Mat c="#f4efe2" e="#ffd9a0" ei={glow * 1.6} />
-      </mesh>
-      <mesh position={[0, 0.109, 0]}>
-        <coneGeometry args={[0.008, 0.008, 4]} />
-        <Mat c="#b5553c" />
-      </mesh>
-      {/* the pilgrim path, lit through the season's nights */}
-      {Array.from({ length: 9 }, (_, i) => {
-        const t = i / 9
-        const a = t * 4.2 + 0.6
-        const r = 0.058 * (1 - t) + 0.006
-        return (
-          <mesh key={i} position={[Math.cos(a) * r, 0.03 - 0.065 + t * 0.13 + 0.004, Math.sin(a) * r]}>
-            <sphereGeometry args={[0.0028, 6, 4]} />
-            <meshBasicMaterial color="#ffd38a" transparent opacity={0.25 + glow * 0.75} toneMapped={false} />
-          </mesh>
-        )
-      })}
-    </group>
-  )
-}
+function place(lm: Landmark, def: ModelDef, terrain: Terrain, heroYaw: number): Placement {
+  const scale = def.scale ?? 1
+  const flip = def.mirror ? -1 : 1
+  let [x, z] = toXZ(lm.lon, lm.lat)
+  let yaw = heroYaw + (def.yaw ?? 0)
 
-function LotusTower({ glow }: P) {
-  const bud = useMemo(() => {
-    const pts = [
-      [0.0, 0.0], [0.012, 0.0], [0.02, 0.006], [0.0235, 0.016], [0.022, 0.028], [0.016, 0.04], [0.009, 0.049], [0.004, 0.054], [0.0, 0.056],
-    ].map(([x, y]) => new THREE.Vector2(x, y))
-    return new THREE.LatheGeometry(pts, 10)
-  }, [])
-  const skyline: [number, number, number, number][] = [
-    [-0.045, 0.02, 0.034, 0.016], [-0.03, -0.022, 0.052, 0.014], [0.034, 0.03, 0.028, 0.018], [0.05, -0.012, 0.044, 0.013], [-0.012, 0.046, 0.022, 0.02], [0.022, -0.04, 0.036, 0.015], [-0.06, -0.012, 0.02, 0.016],
-  ]
-  return (
-    <group>
-      {skyline.map(([x, z, h, w], i) => (
-        <mesh key={i} position={[x, h / 2, z]} castShadow receiveShadow>
-          <boxGeometry args={[w, h, w]} />
-          <Mat c={i % 2 ? '#aebccb' : '#c6d0da'} e="#ffcf8a" ei={glow * (0.25 + (i % 3) * 0.12)} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.006, 0]} castShadow>
-        <cylinderGeometry args={[0.026, 0.03, 0.012, 12]} />
-        <Mat c="#dfe5df" />
-      </mesh>
-      <mesh position={[0, 0.105, 0]} castShadow>
-        <cylinderGeometry args={[0.0062, 0.0125, 0.19, 10]} />
-        <Mat c="#9fd2b4" e="#7dffc0" ei={glow * 0.35} />
-      </mesh>
-      <mesh position={[0, 0.196, 0]} castShadow>
-        <cylinderGeometry args={[0.017, 0.008, 0.012, 10]} />
-        <Mat c="#f0a6dc" e="#ff8ad8" ei={glow * 0.5} />
-      </mesh>
-      <mesh position={[0, 0.2, 0]} geometry={bud} castShadow>
-        <Mat c="#b24fc4" e="#e25cff" ei={glow * 0.9} />
-      </mesh>
-      <mesh position={[0, 0.284, 0]}>
-        <cylinderGeometry args={[0.001, 0.0028, 0.06, 6]} />
-        <Mat c="#e8eef0" />
-      </mesh>
-    </group>
-  )
-}
-
-function Ruwanwelisaya({ glow }: P) {
-  return (
-    <group>
-      <mesh position={[0, 0.005, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.13, 0.01, 0.13]} />
-        <Mat c="#d8cfb8" />
-      </mesh>
-      {[0.056, 0.051, 0.046].map((r, i) => (
-        <mesh key={r} position={[0, 0.014 + i * 0.008, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[r, r + 0.002, 0.008, 20]} />
-          <Mat c="#f1ede2" flatShading={false} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.034, 0]} castShadow scale={[1, 0.94, 1]}>
-        <sphereGeometry args={[0.042, 22, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <Mat c="#f8f5ec" flatShading={false} e="#ffe2b8" ei={glow * 0.22} roughness={0.6} />
-      </mesh>
-      <mesh position={[0, 0.079, 0]} castShadow>
-        <boxGeometry args={[0.019, 0.012, 0.019]} />
-        <Mat c="#f1ede2" />
-      </mesh>
-      <mesh position={[0, 0.107, 0]} castShadow>
-        <coneGeometry args={[0.0085, 0.046, 10]} />
-        <Mat c="#f1ede2" flatShading={false} />
-      </mesh>
-      <mesh position={[0, 0.133, 0]}>
-        <sphereGeometry args={[0.0036, 8, 6]} />
-        <Mat c="#e6b84f" e="#ffcf6a" ei={0.3 + glow} metalness={0.4} roughness={0.4} />
-      </mesh>
-    </group>
-  )
-}
-
-function TempleOfTheTooth({ glow }: P) {
-  return (
-    <group rotation={[0, -0.5, 0]}>
-      {/* Kandy Lake */}
-      <mesh position={[0.02, 0.0015, 0.062]} rotation={[-Math.PI / 2, 0, 0]} scale={[1.5, 0.75, 1]}>
-        <circleGeometry args={[0.045, 24]} />
-        <meshStandardMaterial color="#4aa7cf" roughness={0.25} metalness={0.1} />
-      </mesh>
-      <mesh position={[0, 0.006, 0.022]} castShadow receiveShadow>
-        <boxGeometry args={[0.13, 0.012, 0.012]} />
-        <Mat c="#f3efe4" />
-      </mesh>
-      <mesh position={[0.01, 0.022, -0.012]} castShadow receiveShadow>
-        <boxGeometry args={[0.088, 0.032, 0.05]} />
-        <Mat c="#f3efe4" e="#ffdca8" ei={glow * 0.25} />
-      </mesh>
-      <mesh position={[0.01, 0.05, -0.012]} rotation={[0, Math.PI / 4, 0]} scale={[1.42, 1, 0.86]} castShadow>
-        <coneGeometry args={[0.05, 0.026, 4]} />
-        <Mat c="#a9533b" />
-      </mesh>
-      <mesh position={[0.01, 0.066, -0.012]} castShadow>
-        <boxGeometry args={[0.034, 0.005, 0.022]} />
-        <Mat c="#e6b84f" e="#ffcf6a" ei={0.25 + glow * 0.9} metalness={0.5} roughness={0.35} />
-      </mesh>
-      {/* Paththirippuwa, the octagon */}
-      <mesh position={[-0.05, 0.024, 0.012]} castShadow>
-        <cylinderGeometry args={[0.019, 0.021, 0.048, 8]} />
-        <Mat c="#f8f5ec" e="#ffdca8" ei={glow * 0.3} />
-      </mesh>
-      <mesh position={[-0.05, 0.059, 0.012]} castShadow>
-        <coneGeometry args={[0.029, 0.024, 8]} />
-        <Mat c="#a9533b" />
-      </mesh>
-    </group>
-  )
-}
-
-function GalleFort({ glow }: P) {
-  const beam = useRef<THREE.Group>(null)
-  useFrame((_, dt) => {
-    if (beam.current) beam.current.rotation.y += dt * 0.7
-  })
-  return (
-    <group>
-      <mesh position={[0, 0.009, 0]} castShadow receiveShadow rotation={[0, 0.3, 0]}>
-        <cylinderGeometry args={[0.066, 0.074, 0.018, 6]} />
-        <Mat c="#8e897c" />
-      </mesh>
-      <mesh position={[0, 0.0195, 0]} rotation={[0, 0.3, 0]}>
-        <cylinderGeometry args={[0.058, 0.058, 0.004, 6]} />
-        <Mat c="#6a9c58" />
-      </mesh>
-      {[[-0.02, 0.01], [0.012, -0.02], [-0.008, -0.024], [0.02, 0.016], [-0.03, -0.006]].map(([x, z], i) => (
-        <group key={i} position={[x, 0.021, z]}>
-          <mesh position={[0, 0.005, 0]} castShadow>
-            <boxGeometry args={[0.016, 0.01, 0.012]} />
-            <Mat c="#f0eadb" />
-          </mesh>
-          <mesh position={[0, 0.0135, 0]} rotation={[0, Math.PI / 4, 0]} scale={[1.3, 1, 1]}>
-            <coneGeometry args={[0.0095, 0.007, 4]} />
-            <Mat c="#b5603f" />
-          </mesh>
-        </group>
-      ))}
-      <group position={[0.034, 0.02, 0.034]}>
-        <mesh position={[0, 0.042, 0]} castShadow>
-          <cylinderGeometry args={[0.0062, 0.0105, 0.084, 10]} />
-          <Mat c="#fbf9f2" flatShading={false} />
-        </mesh>
-        <mesh position={[0, 0.086, 0]}>
-          <cylinderGeometry args={[0.0115, 0.0115, 0.0035, 10]} />
-          <Mat c="#3a3f47" />
-        </mesh>
-        <mesh position={[0, 0.094, 0]}>
-          <cylinderGeometry args={[0.006, 0.006, 0.012, 8]} />
-          <meshBasicMaterial color="#fff0b8" toneMapped={false} />
-        </mesh>
-        <mesh position={[0, 0.105, 0]}>
-          <coneGeometry args={[0.0085, 0.01, 8]} />
-          <Mat c="#b5553c" />
-        </mesh>
-        <group ref={beam} position={[0, 0.094, 0]} visible={glow > 0.05}>
-          <mesh position={[0.11, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <coneGeometry args={[0.022, 0.22, 12, 1, true]} />
-            <meshBasicMaterial color="#ffe9a8" transparent opacity={0.045 * glow} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} blending={THREE.AdditiveBlending} />
-          </mesh>
-        </group>
-      </group>
-    </group>
-  )
-}
-
-function NineArch() {
-  const train = useRef<THREE.Group>(null)
-  const geom = useMemo(() => {
-    const W = 0.21, H = 0.07, n = 9, pier = 0.0065
-    const aw = (W - pier * (n + 1)) / n
-    const s = new THREE.Shape()
-    s.moveTo(-W / 2, 0)
-    s.lineTo(W / 2, 0)
-    s.lineTo(W / 2, H)
-    s.lineTo(-W / 2, H)
-    s.closePath()
-    for (let i = 0; i < n; i++) {
-      const x0 = -W / 2 + pier + i * (aw + pier)
-      const r = aw / 2
-      const top = H - 0.016 - r
-      const hole = new THREE.Path()
-      hole.moveTo(x0, -0.001)
-      hole.lineTo(x0, top)
-      hole.absarc(x0 + r, top, r, Math.PI, 0, true)
-      hole.lineTo(x0 + aw, -0.001)
-      hole.closePath()
-      s.holes.push(hole)
+  if (def.shore !== undefined) {
+    // face the nearest open water: −∇(distance inland), sampled wide enough to ignore creeks
+    const e = 0.07
+    const d = (dx: number, dz: number) => terrain.coastDistance(lonAt(x + dx), latAt(z + dz))
+    let sx = -(d(e, 0) - d(-e, 0)), sz = -(d(0, e) - d(0, -e))
+    const len = Math.hypot(sx, sz) || 1
+    sx /= len
+    sz /= len
+    yaw = Math.atan2(sx, sz) + (def.yaw ?? 0)
+    // slide along that bearing until the model's waterline lies on the real one
+    for (let i = 0; i < 4; i++) {
+      const off = d(0, 0) - def.shore * scale
+      x += sx * off
+      z += sz * off
     }
-    const g = new THREE.ExtrudeGeometry(s, { depth: 0.013, bevelEnabled: false, curveSegments: 8 })
-    g.translate(0, 0, -0.0065)
-    return g
-  }, [])
-  useFrame(({ clock }) => {
-    if (train.current) train.current.position.x = Math.sin(clock.elapsedTime * 0.22) * 0.07
-  })
-  return (
-    <group rotation={[0, 0.5, 0]}>
-      <mesh geometry={geom} position={[0, -0.022, 0]} castShadow receiveShadow>
-        <Mat c="#c2b093" />
-      </mesh>
-      <mesh position={[0, 0.0495, 0]}>
-        <boxGeometry args={[0.215, 0.003, 0.016]} />
-        <Mat c="#8c7f6b" />
-      </mesh>
-      <group ref={train} position={[0, 0.056, 0]}>
-        <mesh position={[0.024, 0, 0]} castShadow>
-          <boxGeometry args={[0.02, 0.01, 0.009]} />
-          <Mat c="#c8452f" />
-        </mesh>
-        {[0, -0.022].map((x) => (
-          <mesh key={x} position={[x, 0, 0]} castShadow>
-            <boxGeometry args={[0.02, 0.009, 0.009]} />
-            <Mat c="#2f5f9e" />
-          </mesh>
-        ))}
-      </group>
-    </group>
-  )
+  } else if (def.inland) {
+    // a site that would hang over the water walks uphill on the distance field until it fits (or the land runs out)
+    const need = def.inland * scale, e = 0.03
+    const d = (dx: number, dz: number) => terrain.coastDistance(lonAt(x + dx), latAt(z + dz))
+    for (let i = 0; i < 24; i++) {
+      const here = d(0, 0)
+      if (here >= need) break
+      const gx = d(e, 0) - d(-e, 0), gz = d(0, e) - d(0, -e)
+      const len = Math.hypot(gx, gz)
+      if (len < 1e-4) break
+      const step = Math.min(need - here, 0.012)
+      x += (gx / len) * step
+      z += (gz / len) * step
+    }
+  }
+
+  const built = getBuilt(lm.id, -PLINTH / scale) // bounds only: the footprint does not depend on sea level
+  const box = built.body.boundingBox!
+  const reach = Math.max(Math.abs(box.min.x), box.max.x, Math.abs(box.min.z), box.max.z) * scale
+
+  let y: number
+  if (def.seat === 'rim') {
+    y = 0
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2
+      y += groundAt(terrain, x + Math.cos(a) * reach * 0.95, z + Math.sin(a) * reach * 0.95) / 16
+    }
+  } else {
+    y = Math.max(0.003, terrain.heightAt(lonAt(x), latAt(z)))
+    if (def.seat === 'high' && def.core) {
+      for (const f of [0.5, 1])
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2 + f
+          y = Math.max(y, groundAt(terrain, x + Math.cos(a) * def.core * scale * f, z + Math.sin(a) * def.core * scale * f))
+        }
+    }
+  }
+  const sea = -y / scale
+
+  // settle ground-hugging vertices onto the real terrain
+  const src = getBuilt(lm.id, sea).body
+  const drape = src.getAttribute('drape')
+  let body: THREE.BufferGeometry | null = null
+  if (drape) {
+    body = src.clone()
+    const pos = body.getAttribute('position') as THREE.BufferAttribute
+    const c = Math.cos(yaw), s = Math.sin(yaw)
+    for (let i = 0; i < pos.count; i++) {
+      const w = drape.getX(i)
+      if (w <= 0) continue
+      // sample under the vertex, or under the foot of the object it belongs to
+      const ax = drape.getY(i), az = drape.getZ(i)
+      const free = drape.getW(i) > 0
+      const px = ax * scale * flip, pz = az * scale
+      let wx = x + px * c + pz * s, wz = z - px * s + pz * c
+      let g = groundAt(terrain, wx, wz)
+      // the plate's rounded rim belongs to the shoreline: site ground stops at the top of it
+      const edge = BEVEL + 0.004
+      let d0 = terrain.coastDistance(lonAt(wx), latAt(wz))
+      if (d0 < edge) {
+        if (free) {
+          // a tree or a hut whose foot is in the sea has no business being there. The sea does not write depth,
+          // so sinking it would not hide it: fold the whole object into a point instead.
+          if (d0 < 0.006) {
+            pos.setXYZ(i, ax, 0, az)
+            continue
+          }
+        } else if (w > 0.5) {
+          // ground that runs off the land is drawn back to the edge of the plate, so an apron ends where the coast does
+          for (let it = 0; it < 4 && d0 < edge; it++) {
+            const e = 0.012
+            const gx = terrain.coastDistance(lonAt(wx + e), latAt(wz)) - terrain.coastDistance(lonAt(wx - e), latAt(wz))
+            const gz = terrain.coastDistance(lonAt(wx), latAt(wz + e)) - terrain.coastDistance(lonAt(wx), latAt(wz - e))
+            const len = Math.hypot(gx, gz)
+            if (len < 1e-5) break
+            wx += (gx / len) * (edge + 0.002 - d0)
+            wz += (gz / len) * (edge + 0.002 - d0)
+            d0 = terrain.coastDistance(lonAt(wx), latAt(wz))
+          }
+          const qx = (wx - x) * c - (wz - z) * s, qz = (wx - x) * s + (wz - z) * c
+          pos.setX(i, qx / (scale * flip))
+          pos.setZ(i, qz / scale)
+          g = groundAt(terrain, wx, wz)
+        }
+      }
+      const my = pos.getY(i)
+      const yw = y + my * scale + w * (g - y)
+      // never let the land poke through something that is meant to cover it (buried skirts stay buried)
+      pos.setY(i, (Math.max(yw, w > 0.02 && my >= 0 && g >= 0 ? g + 0.0012 : -1) - y) / scale)
+    }
+    pos.needsUpdate = true
+    body.computeBoundingBox()
+    body.computeBoundingSphere()
+  }
+
+  // pick ring: an ellipse just outside the model's footprint, laid on the land (or the sea) it crosses
+  const c = Math.cos(yaw), s = Math.sin(yaw)
+  const ex = def.ring ?? ((box.max.x - box.min.x) / 2) * 1.03, ez = def.ring ?? ((box.max.z - box.min.z) / 2) * 1.03
+  const ecx = def.ring ? 0 : (box.min.x + box.max.x) / 2, ecz = def.ring ? 0 : (box.min.z + box.max.z) / 2
+  const hitR = Math.min(ex, ez) * scale
+  const ringPos = new Float32Array(RING_SEG * 6 * 3)
+  const at = (a: number, grow: number, o: number) => {
+    const mx = (ecx + Math.cos(a) * (ex + grow)) * scale * flip, mz = (ecz + Math.sin(a) * (ez + grow)) * scale
+    const rx = mx * c + mz * s, rz = -mx * s + mz * c
+    ringPos.set([rx, Math.max(0, groundAt(terrain, x + rx, z + rz)) + 0.0045, rz], o)
+  }
+  const band = 0.0052 / scale
+  for (let i = 0; i < RING_SEG; i++) {
+    const a0 = (i / RING_SEG) * Math.PI * 2, a1 = ((i + 1) / RING_SEG) * Math.PI * 2
+    const o = i * 18
+    at(a0, 0, o)
+    at(a1, band, o + 3)
+    at(a0, band, o + 6)
+    at(a0, 0, o + 9)
+    at(a1, 0, o + 12)
+    at(a1, band, o + 15)
+  }
+  const ring = new THREE.BufferGeometry()
+  ring.setAttribute('position', new THREE.BufferAttribute(ringPos, 3))
+
+  return { x, z, y, yaw, scale, flip, sea, body, ring, hitR, top: box.max.y * scale }
 }
 
-function Nallur({ glow }: P) {
-  const tiers = 7
-  return (
-    <group>
-      <mesh position={[0, 0.004, 0]} receiveShadow castShadow>
-        <boxGeometry args={[0.12, 0.008, 0.09]} />
-        <Mat c="#e8dcc0" />
-      </mesh>
-      {Array.from({ length: 8 }, (_, i) => (
-        <mesh key={i} position={[-0.049 + i * 0.014, 0.019, 0.036]} castShadow>
-          <boxGeometry args={[0.014, 0.022, 0.004]} />
-          <Mat c={i % 2 ? '#f6f1e6' : '#b8402f'} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.019, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.11, 0.022, 0.07]} />
-        <Mat c="#efe6d0" />
-      </mesh>
-      {Array.from({ length: tiers }, (_, i) => {
-        const t = i / (tiers - 1)
-        const w = 0.058 - t * 0.03
-        return (
-          <mesh key={i} position={[0, 0.038 + i * 0.0155, 0.012]} castShadow>
-            <boxGeometry args={[w, 0.0145, w * 0.62]} />
-            <Mat c={i % 2 ? '#d99a3a' : '#edbb52'} e="#ffb84a" ei={glow * 0.35} />
-          </mesh>
-        )
-      })}
-      <mesh position={[0, 0.038 + tiers * 0.0155 + 0.001, 0.012]} rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry args={[0.0095, 0.0095, 0.03, 10, 1, false, 0, Math.PI]} />
-        <Mat c="#edbb52" e="#ffb84a" ei={glow * 0.4} />
-      </mesh>
-      {[-0.009, 0, 0.009].map((x) => (
-        <mesh key={x} position={[x, 0.038 + tiers * 0.0155 + 0.016, 0.012]}>
-          <coneGeometry args={[0.0022, 0.011, 6]} />
-          <Mat c="#f2cf66" e="#ffd76a" ei={0.3 + glow} metalness={0.5} roughness={0.35} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-function Trincomalee({ glow }: P) {
-  const ship = useRef<THREE.Group>(null)
-  useFrame(({ clock }) => {
-    if (!ship.current) return
-    const t = clock.elapsedTime
-    ship.current.position.y = 0.004 + Math.sin(t * 1.1) * 0.0012
-    ship.current.rotation.z = Math.sin(t * 0.8) * 0.03
-  })
-  return (
-    <group>
-      {/* Swami Rock headland */}
-      <mesh position={[0.03, 0.016, -0.03]} scale={[1.3, 0.8, 1]} castShadow receiveShadow>
-        <dodecahedronGeometry args={[0.03, 0]} />
-        <Mat c="#807868" />
-      </mesh>
-      <mesh position={[0.03, 0.042, -0.03]} castShadow>
-        <coneGeometry args={[0.008, 0.016, 4]} />
-        <Mat c="#e9c15a" e="#ffcf6a" ei={glow * 0.6} />
-      </mesh>
-      {/* quay and cranes */}
-      <mesh position={[-0.006, 0.005, 0.03]} castShadow receiveShadow>
-        <boxGeometry args={[0.085, 0.006, 0.016]} />
-        <Mat c="#9aa1a8" />
-      </mesh>
-      {[-0.03, 0.006].map((x) => (
-        <group key={x} position={[x, 0.008, 0.03]}>
-          <mesh position={[0, 0.02, 0]} castShadow>
-            <boxGeometry args={[0.004, 0.04, 0.004]} />
-            <Mat c="#e2733c" />
-          </mesh>
-          <mesh position={[0, 0.039, 0.012]} castShadow>
-            <boxGeometry args={[0.003, 0.003, 0.034]} />
-            <Mat c="#e2733c" />
-          </mesh>
-        </group>
-      ))}
-      {[[-0.012, '#3f7fbf'], [0.0, '#c8452f'], [0.012, '#e8b84a']].map(([x, c]) => (
-        <mesh key={x as number} position={[(x as number) + 0.022, 0.0115, 0.03]} castShadow>
-          <boxGeometry args={[0.01, 0.007, 0.007]} />
-          <Mat c={c as string} />
-        </mesh>
-      ))}
-      {/* a ship riding at anchor in the bay */}
-      <group ref={ship} position={[-0.012, 0.004, 0.058]} rotation={[0, 0.25, 0]}>
-        <mesh castShadow>
-          <boxGeometry args={[0.062, 0.009, 0.014]} />
-          <Mat c="#24364d" />
-        </mesh>
-        <mesh position={[0.036, 0, 0]} rotation={[0, Math.PI / 4, 0]} scale={[1, 1, 1]}>
-          <boxGeometry args={[0.0099, 0.009, 0.0099]} />
-          <Mat c="#24364d" />
-        </mesh>
-        <mesh position={[-0.02, 0.009, 0]} castShadow>
-          <boxGeometry args={[0.014, 0.011, 0.011]} />
-          <Mat c="#f1ede2" e="#ffdca8" ei={glow * 0.7} />
-        </mesh>
-        <mesh position={[-0.021, 0.0185, 0]}>
-          <cylinderGeometry args={[0.0022, 0.0022, 0.008, 6]} />
-          <Mat c="#c8452f" />
-        </mesh>
-        {[0.0, 0.012].map((x) => (
-          <mesh key={x} position={[x + 0.004, 0.0075, 0]}>
-            <boxGeometry args={[0.01, 0.006, 0.01]} />
-            <Mat c={x ? '#3f7fbf' : '#e2733c'} />
-          </mesh>
-        ))}
-      </group>
-    </group>
-  )
-}
-
-const MODELS: Record<string, { C: (p: P) => ReactNode; top: number; scale: number; hit: number; sea?: boolean }> = {
-  sigiriya: { C: Sigiriya, top: 0.19, scale: 1.25, hit: 0.11 },
-  'sri-pada': { C: SriPada, top: 0.12, scale: 1.2, hit: 0.1 },
-  'lotus-tower': { C: LotusTower, top: 0.315, scale: 1.2, hit: 0.085 },
-  ruwanwelisaya: { C: Ruwanwelisaya, top: 0.14, scale: 1.5, hit: 0.1 },
-  'temple-tooth': { C: TempleOfTheTooth, top: 0.085, scale: 1.45, hit: 0.1 },
-  'galle-fort': { C: GalleFort, top: 0.13, scale: 1.4, hit: 0.1 },
-  'nine-arch': { C: NineArch, top: 0.07, scale: 1.3, hit: 0.13 },
-  nallur: { C: Nallur, top: 0.17, scale: 1.35, hit: 0.095 },
-  trinco: { C: Trincomalee, top: 0.06, scale: 1.5, hit: 0.11, sea: true },
-}
-
-function Pin({ lm, terrain, active, glow, onActive, onSelect }: { lm: Landmark; terrain: Terrain; active: boolean; glow: number; onActive: (id: string | null) => void; onSelect: (id: string) => void }) {
-  const model = MODELS[lm.id]
+function Pin({ lm, at, active, onActive, onSelect }: { lm: Landmark; at: Placement; active: boolean; onActive: (id: string | null) => void; onSelect: (id: string) => void }) {
+  const def = MODELS[lm.id]
   const group = useRef<THREE.Group>(null)
   const ring = useRef<THREE.Mesh>(null)
   const lift = useRef(0)
-  const [x, z] = toXZ(lm.lon, lm.lat)
-  const y = Math.max(0.003, terrain.heightAt(lm.lon, lm.lat)) - (lm.id === 'sri-pada' ? 0.03 : 0)
+  const gl = useThree((s) => s.gl)
+  const frameloop = useThree((s) => s.frameloop)
+  const pop = def.pop ?? 0.1
 
-  // spring-ish lift on focus; interruptible because it eases from the live value
+  // lift on focus; eases from the live value, so a fast tour never snaps
   useFrame((_, dt) => {
     const target = active ? 1 : 0
-    lift.current += (target - lift.current) * Math.min(1, dt * 9)
+    const l0 = lift.current
+    if (l0 !== target) {
+      // reduced motion renders on demand: there is no next frame to ease into, so the state lands at once
+      const l = frameloop === 'always' ? l0 + (target - l0) * (1 - Math.exp(-Math.min(dt, 0.05) * 9)) : target
+      lift.current = Math.abs(target - l) < 0.002 ? target : l
+      // the shadow map is redrawn on demand: keep it honest while the model moves
+      if (pop > 0) gl.shadowMap.needsUpdate = true
+    }
     const l = lift.current
     if (group.current) {
-      group.current.position.y = y + l * 0.012
-      group.current.scale.setScalar(model.scale * (1 + l * 0.08))
+      group.current.position.y = at.y + l * pop * 0.12
+      const k = at.scale * (1 + l * pop)
+      group.current.scale.set(k * at.flip, k, k)
     }
     if (ring.current) {
-      ring.current.scale.setScalar(1 + l * 0.35)
-      ;(ring.current.material as THREE.MeshBasicMaterial).opacity = 0.22 + l * 0.7
+      const m = ring.current.material as THREE.MeshBasicMaterial
+      m.opacity = 0.1 + l * 0.8
     }
   })
 
@@ -462,19 +235,20 @@ function Pin({ lm, terrain, active, glow, onActive, onSelect }: { lm: Landmark; 
     onActive(null)
     document.body.style.cursor = ''
   }
+  useEffect(() => () => void (document.body.style.cursor = ''), [])
 
+  const hitH = at.top + 0.05
   return (
-    <group position={[x, 0, z]}>
-      <mesh ref={ring} position={[0, y + 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[model.hit * 0.92, model.hit, 56]} />
-        <meshBasicMaterial color={active ? '#f0668a' : '#ffffff'} transparent opacity={0.22} depthWrite={false} toneMapped={false} />
+    <group position={[at.x, 0, at.z]}>
+      <mesh ref={ring} geometry={at.ring} renderOrder={2}>
+        <meshBasicMaterial color={active ? ACCENT : '#ffffff'} transparent opacity={0.1} depthWrite={false} toneMapped={false} side={THREE.DoubleSide} forceSinglePass />
       </mesh>
-      <group ref={group} position={[0, y, 0]} scale={model.scale}>
-        <model.C glow={glow} />
+      <group ref={group} position={[0, at.y, 0]} rotation={[0, at.yaw, 0]} scale={[at.scale * at.flip, at.scale, at.scale]}>
+        <LandmarkMesh id={lm.id} sea={at.sea} body={at.body} />
       </group>
-      <mesh position={[0, y + model.top * model.scale * 0.5, 0]} onPointerOver={over} onPointerOut={out} onClick={(e) => (e.stopPropagation(), onSelect(lm.id))}>
-        <cylinderGeometry args={[model.hit * 1.05, model.hit * 1.05, model.top * model.scale + 0.04, 10]} />
-        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      {/* hit target: never drawn, still raycast */}
+      <mesh position={[0, at.y + hitH / 2 - 0.01, 0]} visible={false} onPointerOver={over} onPointerOut={out} onClick={(e) => (e.stopPropagation(), onSelect(lm.id))}>
+        <cylinderGeometry args={[at.hitR * 0.78, at.hitR * 0.9, hitH, 12]} />
       </mesh>
     </group>
   )
@@ -484,7 +258,6 @@ export function Landmarks({
   items,
   terrain,
   active,
-  glow,
   onActive,
   onSelect,
   renderCard,
@@ -492,23 +265,47 @@ export function Landmarks({
   items: Landmark[]
   terrain: Terrain
   active: string | null
-  glow: number
+  /** theme.landmark.glow. Kept for the caller's sake: the layer reads the whole scene theme from context and eases the glow itself. */
+  glow?: number
   onActive: (id: string | null) => void
   onSelect: (id: string) => void
   renderCard: (lm: Landmark) => ReactNode
 }) {
+  useLandmarkClock(useSceneTheme().name)
+
+  // models present their signature side to the camera: the rig sits ~0.5 rad west of south on wide screens, ~0.3 on tall ones
+  const wide = useThree((s) => s.size.width / s.size.height > 1.15)
+  const heroYaw = wide ? -0.5 : -0.3
+
+  const placed = useMemo(() => {
+    const out = new Map<string, Placement>()
+    for (const lm of items) {
+      const def = MODELS[lm.id]
+      if (def) out.set(lm.id, place(lm, def, terrain, heroYaw))
+    }
+    return out
+  }, [items, terrain, heroYaw])
+  useEffect(
+    () => () => {
+      for (const p of placed.values()) {
+        p.body?.dispose()
+        p.ring.dispose()
+      }
+    },
+    [placed],
+  )
+
   const current = items.find((l) => l.id === active)
-  const anchor = useMemo(() => {
-    if (!current) return null
-    const [x, z] = toXZ(current.lon, current.lat)
-    const m = MODELS[current.id]
-    return [x, Math.max(0.003, terrain.heightAt(current.lon, current.lat)) + m.top * m.scale + 0.03, z] as [number, number, number]
-  }, [current, terrain])
+  const where = current ? placed.get(current.id) : undefined
+  const pop = current ? (MODELS[current.id]?.pop ?? 0.1) : 0
   return (
     <group>
-      {items.map((lm) => (MODELS[lm.id] ? <Pin key={lm.id} lm={lm} terrain={terrain} active={lm.id === active} glow={glow} onActive={onActive} onSelect={onSelect} /> : null))}
-      {current && anchor && (
-        <Html key={current.id} position={anchor} zIndexRange={[30, 20]} style={{ pointerEvents: 'none' }}>
+      {items.map((lm) => {
+        const at = placed.get(lm.id)
+        return at ? <Pin key={lm.id} lm={lm} at={at} active={lm.id === active} onActive={onActive} onSelect={onSelect} /> : null
+      })}
+      {current && where && (
+        <Html key={current.id} position={[where.x, where.y + where.top * (1 + pop) + 0.03, where.z]} zIndexRange={[30, 20]} style={{ pointerEvents: 'none' }}>
           {renderCard(current)}
         </Html>
       )}
