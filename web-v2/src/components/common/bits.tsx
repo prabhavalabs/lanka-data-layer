@@ -1,0 +1,100 @@
+import { CircleAlert, CircleCheck, CircleHelp, Copy, Check } from 'lucide-react'
+import type { CSSProperties, ReactNode } from 'react'
+import type { LicenceStatus } from '@/api/types'
+import { useCopy, useInView } from '@/lib/hooks'
+import { cn } from '@/lib/utils'
+
+/** The island mark: a simplified silhouette with a locator dot. */
+export function Logo({ className, withWord = true }: { className?: string; withWord?: boolean }) {
+  return (
+    <span className={cn('inline-flex items-center gap-2.5', className)}>
+      <svg viewBox="0 0 24 24" className="size-[22px] shrink-0" aria-hidden>
+        <path d="M11.300 2.200c2.300-.4 4 1.300 4.900 3.800.9 2.500 2.800 4.800 2.800 8.300 0 4.300-2.900 7.500-6.700 7.500-3.600 0-6.300-2.900-6.400-6.900-.1-3.300 1.100-5.800 1.900-8.300.7-2.300 1.600-4.100 3.500-4.400Z" fill="var(--brand)" />
+        <circle cx="13.300" cy="14.200" r="1.900" fill="var(--bg)" />
+      </svg>
+      {withWord && (
+        <span className="text-[14.5px] font-semibold tracking-[-0.02em] text-ink">
+          Lanka <span className="font-normal text-ink2">Data Layer</span>
+        </span>
+      )}
+    </span>
+  )
+}
+
+/** P-code "plate": the stable identifier of a unit, set in mono, copyable. */
+export function PcodePlate({ code, size = 'md', className, copyable = false }: { code: string; size?: 'sm' | 'md' | 'lg'; className?: string; copyable?: boolean }) {
+  const [copied, copy] = useCopy()
+  const cls = cn(
+    't-num inline-flex items-center gap-1.5 rounded-[7px] border border-line2 bg-bg3 font-mono font-medium tracking-[0.04em] text-ink shadow-[inset_0_1px_0_var(--glass-hi)]',
+    size === 'sm' && 'h-[22px] px-1.5 text-[11px]',
+    size === 'md' && 'h-7 px-2 text-[12.5px]',
+    size === 'lg' && 'h-10 rounded-[10px] px-3 text-lg',
+    className,
+  )
+  const inner = (
+    <>
+      <span className="text-ink3">{code.slice(0, 2)}</span>
+      <span className="-ml-1.5">{code.slice(2)}</span>
+    </>
+  )
+  if (!copyable) return <span className={cls}>{inner}</span>
+  return (
+    <button type="button" onClick={() => copy(code)} className={cn(cls, 'pressable hover:border-ink3/60')} aria-label={`Copy p-code ${code}`}>
+      {inner}
+      {copied ? <Check className="size-3.5 text-ok" /> : <Copy className="size-3.5 text-ink3" />}
+    </button>
+  )
+}
+
+const LIGHT: Record<LicenceStatus, { label: string; cls: string; Icon: typeof CircleCheck }> = {
+  open: { label: 'Open', cls: 'text-ok bg-ok-soft', Icon: CircleCheck },
+  attribution: { label: 'Open with attribution', cls: 'text-ok bg-ok-soft', Icon: CircleCheck },
+  unclear: { label: 'Permission unclear', cls: 'text-warn bg-warn-soft', Icon: CircleHelp },
+}
+/** Licence status light: icon + text, never colour alone. */
+export function LicenceLight({ status, label, className }: { status: LicenceStatus; label?: string; className?: string }) {
+  const l = LIGHT[status]
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full py-0.5 pr-2 pl-1.5 text-[11.5px] font-medium whitespace-nowrap', l.cls, className)}>
+      <l.Icon className="size-3.5" />
+      {label ?? l.label}
+    </span>
+  )
+}
+
+export function FreshnessDot({ state }: { state: 'fresh' | 'due' | 'stale' }) {
+  const map = { fresh: ['bg-ok', 'Fresh'], due: ['bg-warn', 'Refresh due'], stale: ['bg-bad', 'Stale'] } as const
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-ink2">
+      <span className={cn('size-1.5 rounded-full', map[state][0])} />
+      {map[state][1]}
+      {state === 'stale' && <CircleAlert className="size-3 text-bad" />}
+    </span>
+  )
+}
+
+/** Fades + lifts children in once, when scrolled into view. `i` staggers siblings. */
+export function Reveal({ children, i = 0, className, as: Tag = 'div' }: { children: ReactNode; i?: number; className?: string; as?: 'div' | 'section' | 'li' | 'span' }) {
+  const [ref, inView] = useInView<HTMLElement>()
+  return (
+    // biome-ignore lint: polymorphic ref
+    <Tag ref={ref as never} data-in={inView} style={{ '--i': i } as CSSProperties} className={cn('reveal', className)}>
+      {children}
+    </Tag>
+  )
+}
+
+/** Section eyebrow: mono coordinate-style label with a hairline. */
+export function Eyebrow({ children, n, className }: { children: ReactNode; n?: string; className?: string }) {
+  return (
+    <div className={cn('flex items-center gap-3 font-mono text-[11.5px] text-ink3', className)}>
+      {n && <span className="t-num text-brand-ink">{n}</span>}
+      <span>{children}</span>
+      <span className="h-px w-10 bg-line2" />
+    </div>
+  )
+}
+
+export function Kbd({ children, className }: { children: ReactNode; className?: string }) {
+  return <kbd className={cn('inline-grid h-5 min-w-5 place-items-center rounded-[5px] border border-line2 bg-bg3 px-1 font-mono text-[10.5px] text-ink2', className)}>{children}</kbd>
+}
