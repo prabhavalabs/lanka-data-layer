@@ -87,9 +87,20 @@ export function Code({ code, lang = 'bash', className, wrap = false }: { code: s
 }
 
 const iconBtn =
-  'pressable grid size-7 place-items-center rounded-md border border-code-line bg-code-bg/90 text-code-ink3 opacity-0 backdrop-blur transition-opacity duration-150 group-hover:opacity-100 hover:text-code-ink focus-visible:opacity-100 pointer-coarse:opacity-100'
+  'pressable grid size-6 place-items-center rounded-md text-code-ink3 transition-colors duration-150 hover:bg-code-line hover:text-code-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-code-ink3'
 
-/** Code panel. Follows the page theme; long lines scroll (scrollbar on hover) or wrap via the toggle. */
+/** Window chrome dots, macOS order: close, minimise, zoom. Decorative. */
+function TrafficLights() {
+  return (
+    <span aria-hidden className="flex shrink-0 gap-1.5">
+      <i className="size-2.5 rounded-full bg-[#ff5f57] ring-1 ring-black/10 ring-inset" />
+      <i className="size-2.5 rounded-full bg-[#febc2e] ring-1 ring-black/10 ring-inset" />
+      <i className="size-2.5 rounded-full bg-[#28c840] ring-1 ring-black/10 ring-inset" />
+    </span>
+  )
+}
+
+/** Code panel with window chrome. Follows the page theme; long lines scroll (scrollbar on hover) or wrap via the toggle. */
 export function CodeBlock({
   code,
   lang = 'bash',
@@ -108,40 +119,40 @@ export function CodeBlock({
   const [copied, doCopy] = useCopy()
   const [wrap, setWrap] = useState(wrapDefault)
   return (
-    <div className={cn('group relative overflow-hidden rounded-xl border border-code-line bg-code-bg', className)}>
-      {title && (
-        <div className="flex h-9 items-center gap-2 border-b border-code-line px-3.5 font-mono text-[11.5px] text-code-ink3">
-          {title}
+    <div className={cn('relative overflow-hidden rounded-xl border border-code-line bg-code-bg', className)}>
+      <div className="flex h-9 items-center gap-3 border-b border-code-line pr-1.5 pl-3.5">
+        <TrafficLights />
+        <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-code-ink3">{title}</span>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setWrap((w) => !w)}
+            aria-pressed={wrap}
+            aria-label={wrap ? 'Scroll long lines' : 'Wrap long lines'}
+            title={wrap ? 'Scroll long lines' : 'Wrap long lines'}
+            className={cn(iconBtn, wrap && 'bg-code-line text-code-ink')}
+          >
+            <WrapText className="size-3.5" />
+          </button>
+          {copy && (
+            <button
+              type="button"
+              onClick={() => doCopy(code.replace(/^[$›]\s/gm, ''))}
+              aria-label={copied ? 'Copied' : 'Copy code'}
+              title={copied ? 'Copied' : 'Copy'}
+              className={cn(iconBtn, 'relative')}
+            >
+              <span className={cn('absolute transition-[opacity,filter,transform] duration-200', copied ? 'scale-90 opacity-0 blur-[2px]' : 'opacity-100')}>
+                <Copy className="size-3.5" />
+              </span>
+              <span className={cn('absolute text-[var(--tok-str)] transition-[opacity,filter,transform] duration-200', copied ? 'opacity-100' : 'scale-90 opacity-0 blur-[2px]')}>
+                <Check className="size-3.5" />
+              </span>
+            </button>
+          )}
         </div>
-      )}
-      <Code code={code} lang={lang} wrap={wrap} className="px-4 py-3.5" />
-      <div className={cn('absolute right-2 flex gap-1.5', title ? 'top-11' : 'top-2')}>
-        <button
-          type="button"
-          onClick={() => setWrap((w) => !w)}
-          aria-pressed={wrap}
-          aria-label={wrap ? 'Scroll long lines' : 'Wrap long lines'}
-          title={wrap ? 'Scroll long lines' : 'Wrap long lines'}
-          className={cn(iconBtn, wrap && 'text-code-ink')}
-        >
-          <WrapText className="size-3.5" />
-        </button>
-      {copy && (
-        <button
-          type="button"
-          onClick={() => doCopy(code.replace(/^[$›]\s/gm, ''))}
-          aria-label={copied ? 'Copied' : 'Copy code'}
-          className={cn(iconBtn, 'relative')}
-        >
-          <span className={cn('absolute transition-[opacity,filter,transform] duration-200', copied ? 'scale-90 opacity-0 blur-[2px]' : 'opacity-100')}>
-            <Copy className="size-3.5" />
-          </span>
-          <span className={cn('absolute text-[var(--tok-str)] transition-[opacity,filter,transform] duration-200', copied ? 'opacity-100' : 'scale-90 opacity-0 blur-[2px]')}>
-            <Check className="size-3.5" />
-          </span>
-        </button>
-      )}
       </div>
+      <Code code={code} lang={lang} wrap={wrap} className="px-4 py-3.5" />
     </div>
   )
 }

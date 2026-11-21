@@ -225,17 +225,6 @@ export function ProvenanceShowcase() {
 }
 
 /* ---------------- interfaces ---------------- */
-const Dots = ({ label }: { label: string }) => (
-  <>
-    <span className="flex gap-1.5">
-      <i className="size-2 rounded-full bg-white/10" />
-      <i className="size-2 rounded-full bg-white/10" />
-      <i className="size-2 rounded-full bg-white/10" />
-    </span>
-    <span className="ml-1.5">{label}</span>
-  </>
-)
-
 export function Interfaces() {
   return (
     <Section>
@@ -260,25 +249,25 @@ export function Interfaces() {
           <TabsContent value="rest" className="w-full">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.8fr_1.2fr]">
               <div className="flex min-w-0 flex-col gap-4">
-                <CodeBlock title={<Dots label="request" />} code={REST_REQUEST} />
+                <CodeBlock title="request" code={REST_REQUEST} />
                 <Facts items={[['No key', 'Anonymous for every read. Rate-limited per IP.'], ['One envelope', 'success, payload, meta. meta carries source, licence and completeness.'], ['OpenAPI 3.1', 'Generated from the server, with a typed client on npm.']]} />
               </div>
-              <CodeBlock title={<Dots label="200 application/json · 14 ms" />} code={REST_RESPONSE} lang="json" />
+              <CodeBlock title="200 application/json · 14 ms" code={REST_RESPONSE} lang="json" />
             </div>
           </TabsContent>
           <TabsContent value="mcp" className="w-full">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.8fr_1.2fr]">
               <div className="flex min-w-0 flex-col gap-4">
-                <CodeBlock title={<Dots label="connect" />} code={MCP_CONFIG} />
-                <CodeBlock title={<Dots label="tools/call" />} code={MCP_CALL} lang="json" />
+                <CodeBlock title="connect" code={MCP_CONFIG} />
+                <CodeBlock title="tools/call" code={MCP_CALL} lang="json" />
                 <Facts items={[['Ten tools, fixed', 'Read-only, idempotent, with ready-to-send next calls.'], ['Provenance in every result', 'A model can cite the page, not just the site.']]} />
               </div>
-              <CodeBlock title={<Dots label="result" />} code={MCP_RESULT} lang="json" />
+              <CodeBlock title="result" code={MCP_RESULT} lang="json" />
             </div>
           </TabsContent>
           <TabsContent value="cli" className="w-full">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-              <CodeBlock title={<Dots label="zsh" />} code={CLI_SESSION} />
+              <CodeBlock title="zsh" code={CLI_SESSION} />
               <div className="flex min-w-0 flex-col gap-4">
                 <Facts
                   items={[

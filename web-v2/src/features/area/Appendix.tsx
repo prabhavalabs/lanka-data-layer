@@ -104,7 +104,7 @@ export function SourcesAndLimits({ profile }: { profile: AreaProfile }) {
           <Eyebrow>Embed / cite</Eyebrow>
           <h3 className="mt-3 text-[15px] font-semibold text-ink">Take this page with you</h3>
           <p className="mt-1.5 text-[13.5px] text-ink2">Pinned to data version {meta.data_version}, so a citation keeps pointing at the numbers you read.</p>
-          <CodeBlock className="mt-5 [&_pre]:break-words [&_pre]:whitespace-pre-wrap" lang="text" title="cite" code={cite} />
+          <CodeBlock className="mt-5" wrap lang="text" title="cite" code={cite} />
           <CodeBlock className="mt-3" lang="text" title="embed.html" code={embed} />
           <CodeBlock className="mt-3" lang="bash" title="api" code={`curl ${API}/areas/${area.pcode}`} />
         </div>
