@@ -40,8 +40,10 @@ function Facets({ data, filters, toggle, themeLabel }: { data: Dataset[]; filter
   return (
     <div className="divide-y divide-line">
       {groups.map((g) => (
-        <fieldset key={g.key} className="py-5 first:pt-0">
-          <legend className="t-label mb-3">{g.title}</legend>
+        <div key={g.key} role="group" aria-labelledby={`fg-${g.key}`} className="pt-5 pb-4 first:pt-0">
+          <h3 id={`fg-${g.key}`} className="t-label mb-1.5 px-1.5">
+            {g.title}
+          </h3>
           <ul className="space-y-0.5">
             {g.options.map((o) => {
               // counts respect every other facet, so a choice never leads to an empty list by surprise
@@ -58,7 +60,7 @@ function Facets({ data, filters, toggle, themeLabel }: { data: Dataset[]; filter
               )
             })}
           </ul>
-        </fieldset>
+        </div>
       ))}
     </div>
   )
@@ -118,7 +120,7 @@ export default function Catalogue() {
 
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[232px_1fr]">
         <aside className="hidden lg:block">
-          <div className="scroll-thin sticky top-24 max-h-[calc(100dvh-7.5rem)] overflow-y-auto pr-2">{facets}</div>
+          <div className="scroll-thin sticky top-24 max-h-[calc(100dvh-7.5rem)] overflow-x-hidden overflow-y-auto pr-2">{facets}</div>
         </aside>
 
         <div className="min-w-0">
@@ -144,7 +146,7 @@ export default function Catalogue() {
               <SheetContent side="bottom" aria-describedby={undefined}>
                 <SheetTitle className="px-5 pt-5 text-[17px] font-semibold">Filters</SheetTitle>
                 <SheetDescription className="sr-only">Narrow the dataset list</SheetDescription>
-                <div className="scroll-thin overflow-y-auto px-5 pt-4 pb-6">{facets}</div>
+                <div className="scroll-thin overflow-x-hidden overflow-y-auto px-5 pt-4 pb-6">{facets}</div>
               </SheetContent>
             </Sheet>
             <div className="w-[168px]">
