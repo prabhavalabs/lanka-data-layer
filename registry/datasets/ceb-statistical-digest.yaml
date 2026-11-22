@@ -1,20 +1,22 @@
 id: ceb-statistical-digest
-title: Electricity customers, sales and plants (CEB)
-description: Customers and sales by tariff category and province/region, power plant list with capacity, losses.
+title: Electricity customers, sales and revenue (CEB)
+description: CEB consumer accounts, electricity sales (GWh) and sales revenue by CEB distribution region and by tariff
+  category, from the CEB Statistical Digest (two years per edition).
 source_ids:
 - ceb
 indicators:
 - id: ener.customers
-  label: Electricity customers
+  label: Electricity consumer accounts
   unit: '{count}'
   measure_type: count
   aggregation: sum
   class: official
   dims:
+  - id: ceb_region
+    codelist: ceb_region
   - tariff_category
   geo_levels:
   - national
-  - adm1
   period_type: year
 - id: ener.sales_gwh
   label: Electricity sales
@@ -23,37 +25,39 @@ indicators:
   aggregation: sum
   class: official
   dims:
+  - id: ceb_region
+    codelist: ceb_region
   - tariff_category
   geo_levels:
   - national
-  - adm1
   period_type: year
-- id: ener.plant_capacity_mw
-  label: Installed capacity
-  unit: MW
+- id: ener.sales_revenue
+  label: Revenue from electricity sales
+  unit: LKR
   measure_type: sum
   aggregation: sum
   class: official
   dims:
-  - plant
-  - id: source
-    codelist: energy_source
+  - id: ceb_region
+    codelist: ceb_region
+  - tariff_category
   geo_levels:
   - national
-  - point
   period_type: year
 time_coverage:
-  from: '2010'
+  from: '2024'
   to: '2025'
-method: PDF tables, reviewed; plant names geocoded.
+method: 'PDF tables of the CEB Statistical Digest read through registry templates (ceb/*-by-region, ceb/*-by-tariff): the
+  two year columns of each table; % change, share and average columns are derived and not published. Revenue printed in
+  LKR million is stored in LKR. Region tables carry tariff_category = total and tariff tables ceb_region = total.'
 limits:
-- CEB distribution regions do not equal provinces exactly.
+- CEB distribution regions are not admin provinces (North Western and Central are split, Colombo City and the Western
+  regions cut across districts); figures are not mapped to p-codes.
+- CEB sales only; LECO's own retail customers appear as one bulk-supply account.
+- The 2025 edition covers 2024-2025; older editions (from 2010) are separate PDFs not yet listed.
 enrichment:
   joins:
-  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
-  - plants -> points
+  - CEB regions -> districts/provinces needs a published area-office crosswalk (not available)
   aggregations:
-  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
-    below district)
-  - kWh per capita per province
+  - 'average price LKR/kWh = revenue / sales, recomputed from the numerators'
 publication_class: B

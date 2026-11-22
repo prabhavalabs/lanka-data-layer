@@ -1,0 +1,25 @@
+# CEB Statistical Digest: number of consumer accounts by tariff category.
+# Rows are tariff categories with their sub-categories (GP, H, IP, GV 1-3: small, medium,
+# large) and a printed total per category, then bulk supply to LECO, street lighting and the
+# grand total (printed "TOTA L"). Two year columns; the other columns are read so that the
+# column ranges separate, and not published (derived).
+id: ceb/accounts-by-tariff
+title: Consumer accounts by tariff
+editions:
+  - match: { edition: "2025..2026" }
+    locate:
+      page: { find_text: "NUMBER OF CONSUMER ACCOUNTS BY TARIFF" }
+    columns:
+      - { key: y_prev, header: "2024", nth: 1 }
+      - { key: y_curr, header: "2025", nth: 1 }
+      - { key: increase, header: "2025", nth: 2 }
+      - { key: share_pct, header: "2025", nth: 3 }
+    rows: { stop_at: ["Note:"] }
+    number: { thousands: ",", missing: ["-"], strip: ["(", ")"] }
+    checks:
+      - { sum_rows: ["GP 1 Small", "GP 2 Medium", "GP 3 Large"], equals_row: "General Purpose Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["H 1 Small", "H 2 Medium", "H 3 Large"], equals_row: "Hotel Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["IP 1 Small", "IP 2 Medium", "IP 3 Large"], equals_row: "Industrial Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["GV 1 Small", "GV 2 Medium", "GV 3 Large"], equals_row: "Government Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["Domestic", "Religious", "General Purpose Total", "Hotel Total", "Industrial Total", "Government Total", "Agriculture", "Bulk Supply to LECO", "Street Lighting"], equals_row: "TOTA L", columns: [y_prev, y_curr], tol: 3 }
+      - { row_count: { min: 22, max: 22 } }

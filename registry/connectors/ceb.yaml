@@ -1,0 +1,205 @@
+# Ceylon Electricity Board, Statistical Digest 2025 (web edition): sales, consumer accounts and
+# revenue by CEB distribution region ("Distribution Provinces as per CEB Classification") and by
+# tariff category, two years per table (2024, 2025). Text-layer PDF read through registry
+# templates (registry/templates/ceb/); every template checks its printed subtotals (regions to
+# Distribution Division totals, divisions + LECO bulk to the grand total, tariff sub-categories
+# to category totals). Class B: every version is reviewed against its evidence sheet.
+# One quantity's grand total is printed in both its region and its tariff table; it is read
+# from the region table only (both map to ceb_region = total, tariff_category = total).
+# Street lighting is one account in the region table and an estimated sales figure in the
+# tariff table; both are kept under their own row.
+# Licence permission_unclear: published with attribution and the takedown contact (08 §2).
+source: ceb
+driver: pdf_table
+version: 1.0.0
+description: >-
+  CEB Statistical Digest: consumer accounts, sales and revenue by distribution region and tariff.
+  Class B: every version is reviewed against its evidence sheet before release.
+discover:
+  files:
+    - key: ceb-sd-2025
+      url: "https://ceb.lk/front_img/img_reports/1783568926SD-2025-Finalized-(Web-Edition).pdf"
+      edition: "2025"
+extract:
+  tables:
+    - { id: sales_region, file: ceb-sd-2025, template: ceb/sales-by-region }
+    - { id: accounts_region, file: ceb-sd-2025, template: ceb/accounts-by-region }
+    - { id: revenue_region, file: ceb-sd-2025, template: ceb/revenue-by-region }
+    - { id: sales_tariff, file: ceb-sd-2025, template: ceb/sales-by-tariff }
+    - { id: accounts_tariff, file: ceb-sd-2025, template: ceb/accounts-by-tariff }
+    - { id: revenue_tariff, file: ceb-sd-2025, template: ceb/revenue-by-tariff }
+standardise:
+  dataset: ceb-statistical-digest
+  vintage: "CEB Statistical Digest {edition}"
+  outputs:
+    - table: sales_region
+      indicator: ener.sales_gwh
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_prev: {}, y_curr: {} }
+      rows:
+        "Colombo City": { ceb_region: colombo_city, tariff_category: total }
+        "North Western I": { ceb_region: north_western_1, tariff_category: total }
+        "North Western II": { ceb_region: north_western_2, tariff_category: total }
+        "North Central": { ceb_region: north_central, tariff_category: total }
+        "Northern": { ceb_region: northern, tariff_category: total }
+        "Division 1 Total": { ceb_region: dd1, tariff_category: total }
+        "Western North": { ceb_region: western_north, tariff_category: total }
+        "Central I": { ceb_region: central_1, tariff_category: total }
+        "Central II": { ceb_region: central_2, tariff_category: total }
+        "Eastern": { ceb_region: eastern, tariff_category: total }
+        "Division 2 Total": { ceb_region: dd2, tariff_category: total }
+        "Western South II": { ceb_region: western_south_2, tariff_category: total }
+        "Uva": { ceb_region: uva, tariff_category: total }
+        "Sabaragamuwa": { ceb_region: sabaragamuwa, tariff_category: total }
+        "Division 3 Total": { ceb_region: dd3, tariff_category: total }
+        "Western South I": { ceb_region: western_south_1, tariff_category: total }
+        "Southern I": { ceb_region: southern_1, tariff_category: total }
+        "Southern II": { ceb_region: southern_2, tariff_category: total }
+        "Division 4 Total": { ceb_region: dd4, tariff_category: total }
+        "Bulk Supply to LECO": { ceb_region: leco_bulk, tariff_category: total }
+        "TOTAL": { ceb_region: total, tariff_category: total }
+    - table: accounts_region
+      indicator: ener.customers
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_prev: {}, y_curr: {} }
+      rows:
+        "Colombo City": { ceb_region: colombo_city, tariff_category: total }
+        "North Western I": { ceb_region: north_western_1, tariff_category: total }
+        "North Western II": { ceb_region: north_western_2, tariff_category: total }
+        "North Central": { ceb_region: north_central, tariff_category: total }
+        "Northern": { ceb_region: northern, tariff_category: total }
+        "Division 1 Total": { ceb_region: dd1, tariff_category: total }
+        "Western North": { ceb_region: western_north, tariff_category: total }
+        "Central I": { ceb_region: central_1, tariff_category: total }
+        "Central II": { ceb_region: central_2, tariff_category: total }
+        "Eastern": { ceb_region: eastern, tariff_category: total }
+        "Division 2 Total": { ceb_region: dd2, tariff_category: total }
+        "Western South II": { ceb_region: western_south_2, tariff_category: total }
+        "Uva": { ceb_region: uva, tariff_category: total }
+        "Sabaragamuwa": { ceb_region: sabaragamuwa, tariff_category: total }
+        "Division 3 Total": { ceb_region: dd3, tariff_category: total }
+        "Western South I": { ceb_region: western_south_1, tariff_category: total }
+        "Southern I": { ceb_region: southern_1, tariff_category: total }
+        "Southern II": { ceb_region: southern_2, tariff_category: total }
+        "Division 4 Total": { ceb_region: dd4, tariff_category: total }
+        "Bulk Supply to LECO": { ceb_region: leco_bulk, tariff_category: total }
+        "TOTAL": { ceb_region: total, tariff_category: total }
+        "Street Lighting": { ceb_region: street_lighting, tariff_category: total }
+    - table: revenue_region
+      indicator: ener.sales_revenue
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_prev: {}, y_curr: {} }
+      rows:
+        "Colombo City": { ceb_region: colombo_city, tariff_category: total }
+        "North Western I": { ceb_region: north_western_1, tariff_category: total }
+        "North Western II": { ceb_region: north_western_2, tariff_category: total }
+        "North Central": { ceb_region: north_central, tariff_category: total }
+        "Northern": { ceb_region: northern, tariff_category: total }
+        "Division 1 Total": { ceb_region: dd1, tariff_category: total }
+        "Western North": { ceb_region: western_north, tariff_category: total }
+        "Central I": { ceb_region: central_1, tariff_category: total }
+        "Central II": { ceb_region: central_2, tariff_category: total }
+        "Eastern": { ceb_region: eastern, tariff_category: total }
+        "Division 2 Total": { ceb_region: dd2, tariff_category: total }
+        "Western South II": { ceb_region: western_south_2, tariff_category: total }
+        "Uva": { ceb_region: uva, tariff_category: total }
+        "Sabaragamuwa": { ceb_region: sabaragamuwa, tariff_category: total }
+        "Division 3 Total": { ceb_region: dd3, tariff_category: total }
+        "Western South I": { ceb_region: western_south_1, tariff_category: total }
+        "Southern I": { ceb_region: southern_1, tariff_category: total }
+        "Southern II": { ceb_region: southern_2, tariff_category: total }
+        "Division 4 Total": { ceb_region: dd4, tariff_category: total }
+        "Bulk Supply to LECO": { ceb_region: leco_bulk, tariff_category: total }
+        "TOTAL": { ceb_region: total, tariff_category: total }
+      scale: 1000000
+    - table: sales_tariff
+      indicator: ener.sales_gwh
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_prev: {}, y_curr: {} }
+      rows:
+        "Domestic": { tariff_category: domestic, ceb_region: total }
+        "Religious": { tariff_category: religious, ceb_region: total }
+        "General Purpose Total": { tariff_category: general_purpose, ceb_region: total }
+        "GP 1 Small": { tariff_category: gp1, ceb_region: total }
+        "GP 2 Medium": { tariff_category: gp2, ceb_region: total }
+        "GP 3 Large": { tariff_category: gp3, ceb_region: total }
+        "Hotel Total": { tariff_category: hotel, ceb_region: total }
+        "H 1 Small": { tariff_category: h1, ceb_region: total }
+        "H 2 Medium": { tariff_category: h2, ceb_region: total }
+        "H 3 Large": { tariff_category: h3, ceb_region: total }
+        "Industrial Total": { tariff_category: industrial, ceb_region: total }
+        "IP 1 Small": { tariff_category: i1, ceb_region: total }
+        "IP 2 Medium": { tariff_category: i2, ceb_region: total }
+        "IP 3 Large": { tariff_category: i3, ceb_region: total }
+        "Government Total": { tariff_category: government, ceb_region: total }
+        "GV 1 Small": { tariff_category: gv1, ceb_region: total }
+        "GV 2 Medium": { tariff_category: gv2, ceb_region: total }
+        "GV 3 Large": { tariff_category: gv3, ceb_region: total }
+        "Agriculture": { tariff_category: agriculture, ceb_region: total }
+        "Bulk Supply to LECO": { tariff_category: bulk_leco, ceb_region: total }
+        "Street Lighting(Estimate)": { tariff_category: street_lighting, ceb_region: total }
+    - table: accounts_tariff
+      indicator: ener.customers
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_prev: {}, y_curr: {} }
+      rows:
+        "Domestic": { tariff_category: domestic, ceb_region: total }
+        "Religious": { tariff_category: religious, ceb_region: total }
+        "General Purpose Total": { tariff_category: general_purpose, ceb_region: total }
+        "GP 1 Small": { tariff_category: gp1, ceb_region: total }
+        "GP 2 Medium": { tariff_category: gp2, ceb_region: total }
+        "GP 3 Large": { tariff_category: gp3, ceb_region: total }
+        "Hotel Total": { tariff_category: hotel, ceb_region: total }
+        "H 1 Small": { tariff_category: h1, ceb_region: total }
+        "H 2 Medium": { tariff_category: h2, ceb_region: total }
+        "H 3 Large": { tariff_category: h3, ceb_region: total }
+        "Industrial Total": { tariff_category: industrial, ceb_region: total }
+        "IP 1 Small": { tariff_category: i1, ceb_region: total }
+        "IP 2 Medium": { tariff_category: i2, ceb_region: total }
+        "IP 3 Large": { tariff_category: i3, ceb_region: total }
+        "Government Total": { tariff_category: government, ceb_region: total }
+        "GV 1 Small": { tariff_category: gv1, ceb_region: total }
+        "GV 2 Medium": { tariff_category: gv2, ceb_region: total }
+        "GV 3 Large": { tariff_category: gv3, ceb_region: total }
+        "Agriculture": { tariff_category: agriculture, ceb_region: total }
+        "Bulk Supply to LECO": { tariff_category: bulk_leco, ceb_region: total }
+        "Street Lighting": { tariff_category: street_lighting, ceb_region: total }
+    - table: revenue_tariff
+      indicator: ener.sales_revenue
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_prev: {}, y_curr: {} }
+      rows:
+        "Domestic": { tariff_category: domestic, ceb_region: total }
+        "Religious": { tariff_category: religious, ceb_region: total }
+        "General Purpose Total": { tariff_category: general_purpose, ceb_region: total }
+        "GP 1 Small": { tariff_category: gp1, ceb_region: total }
+        "GP 2 Medium": { tariff_category: gp2, ceb_region: total }
+        "GP 3 Large": { tariff_category: gp3, ceb_region: total }
+        "Hotel Total": { tariff_category: hotel, ceb_region: total }
+        "H 1 Small": { tariff_category: h1, ceb_region: total }
+        "H 2 Medium": { tariff_category: h2, ceb_region: total }
+        "H 3 Large": { tariff_category: h3, ceb_region: total }
+        "Industrial Total": { tariff_category: industrial, ceb_region: total }
+        "IP 1 Small": { tariff_category: i1, ceb_region: total }
+        "IP 2 Medium": { tariff_category: i2, ceb_region: total }
+        "IP 3 Large": { tariff_category: i3, ceb_region: total }
+        "Government Total": { tariff_category: government, ceb_region: total }
+        "GV 1 Small": { tariff_category: gv1, ceb_region: total }
+        "GV 2 Medium": { tariff_category: gv2, ceb_region: total }
+        "GV 3 Large": { tariff_category: gv3, ceb_region: total }
+        "Agriculture": { tariff_category: agriculture, ceb_region: total }
+        "Bulk Supply to LECO": { tariff_category: bulk_leco, ceb_region: total }
+        "Street Lighting": { tariff_category: street_lighting, ceb_region: total }
+      scale: 1000000
+expect:
+  - { check: row_count, min: 240, max: 260 }
+  - { check: no_future }
+  - { check: range, indicator: ener.sales_gwh, min: 0, max: 20000 }
+  - { check: sum_dims, dim: ceb_region, tol_pct: 0.2, note: "regions add up to their Distribution Division and the grand total (printed, rounded)" }
+  - { check: sum_dims, dim: tariff_category, tol_pct: 0.2, note: "sub-categories add up to category totals and categories to the grand total" }
