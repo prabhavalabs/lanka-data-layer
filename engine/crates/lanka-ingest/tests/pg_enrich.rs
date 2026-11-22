@@ -10,8 +10,8 @@
 //!   district and a suppressed one
 //! - `derived-it-density`: ratio of the census and the roll-up over the areas,
 //!   two recipes downstream (`/km2`)
-//! - `derived-it-facilities`: features_zonal over a fixture `geo.features` table
-//!   in WP-04's 0007 shape (`UNOFFICIAL_GEOM`/`DISAGGREGATED` features) and
+//! - `derived-it-facilities`: features_zonal over fixture rows of `geo.features`
+//!   (WP-04's 0007 table) (`UNOFFICIAL_GEOM`/`DISAGGREGATED` features) and
 //!   per 10,000 population (`DENOM_MISMATCH`)
 //! - `it-official-sum`: a roll-up of an estimated input into an `official`
 //!   indicator — the validator must reject it, the recipe fails with a
@@ -615,7 +615,7 @@ async fn run_cycle(url: String) {
         methods,
     };
 
-    // ── inputs: boundaries, census, an estimated series, fixture features ──
+    // ── inputs: boundaries, census, an estimated series, features ──
     let run = RunTracker::start(&pool, "it-src", "test")
         .await
         .expect("run");
@@ -661,15 +661,7 @@ async fn run_cycle(url: String) {
         est.push(r);
     }
     assert_eq!(ctx.stage("it-est", &est).await.outcome, "approved");
-    // geo.features in the WP-04 shape (05 §4; migration 0007 delivers it).
-    pool.execute(sqlx::raw_sql(
-        "DROP TABLE geo.features CASCADE;
-         CREATE TABLE geo.features (dataset_key int4 NOT NULL, feature_key text NOT NULL, kind text NOT NULL,
-           unit_key int4, geom geometry(Geometry, 4326) NOT NULL, attrs jsonb, flags int4 NOT NULL DEFAULT 0,
-           vfrom int4 NOT NULL, vto int4 NOT NULL DEFAULT 2147483647);",
-    ))
-    .await
-    .expect("fixture features table");
+    // geo.features (migration 0007, WP-04): rows of an approved version.
     sqlx::query(
         "INSERT INTO data.dataset_versions (dataset_id, dsv, content_sha256, row_count, status, publication_class, seq)
          VALUES ('it-pois', 'dsv_fixture_pois', '\\x00', 4, 'approved', 'A', 1)",
@@ -678,10 +670,12 @@ async fn run_cycle(url: String) {
     .await
     .expect("features version");
     sqlx::query(
-        "INSERT INTO geo.features (dataset_key, feature_key, kind, unit_key, geom, flags, vfrom)
-         SELECT d.key, f.k, f.kind, u.key, ST_SetSRID(ST_MakePoint(80.1, 7.1), 4326), f.flags, 1
-         FROM (VALUES ('n/1', 'hospital', 'ZZ11', 0), ('n/2', 'school', 'ZZ11', $1),
-                      ('n/3', 'school', 'ZZ12', $2), ('n/4', 'school', 'ZZ21', 0)) f(k, kind, unit, flags)
+        "INSERT INTO geo.features (feature_id, dataset_key, feature_key, kind, unit_key, geom, rep,
+                                   cell_id, content_sha256, flags, vfrom)
+         SELECT (d.key::int8 << 40) | f.n, d.key, f.k, f.kind, u.key, ST_SetSRID(ST_MakePoint(80.1, 7.1), 4326),
+                ST_SetSRID(ST_MakePoint(80.1, 7.1), 4326), 0, sha256(f.k::bytea), f.flags, 1
+         FROM (VALUES (1, 'n/1', 'hospital', 'ZZ11', 0), (2, 'n/2', 'school', 'ZZ11', $1),
+                      (3, 'n/3', 'school', 'ZZ12', $2), (4, 'n/4', 'school', 'ZZ21', 0)) f(n, k, kind, unit, flags)
          JOIN geo.units u ON u.code = f.unit, catalog.datasets d WHERE d.id = 'it-pois'",
     )
     .bind(Flags::UNOFFICIAL_GEOM.to_db())

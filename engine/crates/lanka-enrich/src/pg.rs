@@ -204,9 +204,9 @@ impl Inputs for PgInputs {
         Ok(t)
     }
 
-    /// The 05 §4 `geo.features` shape (WP-04, migration 0007): `dataset_key`,
-    /// `vfrom`/`vto`, `feature_key`, `kind`, `unit_key`, `attrs`, `flags`,
-    /// `geom`.
+    /// `geo.features` (WP-04, migration 0007) at the pinned version: features
+    /// share `data.version_closes` with observations (`obs_id` = `feature_id`),
+    /// so an approved, unreleased version hides the rows it will close.
     async fn features(&self, port: &str) -> Result<Arc<Vec<Feature>>> {
         let mut cache = self.features.lock().await;
         if let Some(t) = cache.get(port) {
@@ -228,15 +228,18 @@ impl Inputs for PgInputs {
                     CASE WHEN GeometryType(f.geom) LIKE '%POLYGON' THEN ST_Area(f.geom::geography) / 1e6 END
              FROM geo.features f LEFT JOIN geo.units u ON u.key = f.unit_key
              WHERE f.dataset_key = $1 AND f.vfrom <= $2 AND f.vto >= $2
+               AND NOT EXISTS (SELECT 1 FROM data.version_closes c
+                               WHERE c.version_id = $3 AND c.obs_id = f.feature_id)
              ORDER BY f.feature_key",
         )
         .bind(p.dataset_key)
         .bind(p.seq)
+        .bind(p.version_id)
         .fetch_all(&self.pool)
         .await
         .with_context(|| {
             format!(
-                "reading features {port} ({} {}); geo.features needs the WP-04 shape (0007_features)",
+                "reading features {port} ({} {})",
                 p.dataset_id, p.dsv
             )
         })?;

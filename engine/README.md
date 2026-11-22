@@ -607,10 +607,10 @@ Values: Western Province 6,117,341 (sum of 3 districts; provinces sum to the nat
   The class-A staging gate (> 1 % changed) also applies to derived versions, stricter than `max_revision_pct`.
 - *Periods*: an emitted row is re-expressed in the output indicator's frequency (census snapshot `2024` → year 2024 for
   `derived.per_km2`).
-- *Features* (`features_zonal`, WP-04): reads the 05 §4 shape of `geo.features` (`dataset_key`, `vfrom`/`vto`,
-  `feature_key`, `kind`, `unit_key`, `attrs`, `flags`, `geom`). Until 0007 lands the facility recipe waits for its input
-  and `lanka recipe check` warns that `osm-pois-amenities` is not yet `kind: features`; the facility acceptance is proven
-  by `tests/pg_enrich.rs` on a fixture table of that shape. Lines/polygons count whole in their `unit_key`.
+- *Features* (`features_zonal`, WP-04): reads `geo.features` (0007) at the pinned version, hiding rows that an
+  approved, unreleased version closes (`data.version_closes`, `obs_id` = `feature_id`). A features port bound to a
+  dataset that is not `kind: features` is a `lanka recipe check` error. `derived-facility-counts` runs on
+  `osm-pois-amenities` (kinds = the `amenity_type` codes); lines/polygons count whole in their `unit_key`.
 
 ### How WP-05 plugs `grid_zonal` in
 

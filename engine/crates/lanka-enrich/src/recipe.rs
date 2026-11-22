@@ -382,13 +382,7 @@ fn check_one(s: &RecipeSpec, reg: &RegistryView, methods: &Methods, rep: &mut Ch
                     m.info().id,
                     p.kind.dataset_kind()
                 );
-                // Feature datasets are reshaped by WP-04 (0007_features): until a
-                // dataset declares kind features this is advisory.
-                if p.kind == PortKind::Features {
-                    rep.warnings.push(at(msg));
-                } else {
-                    rep.errors.push(sat(msg));
-                }
+                rep.errors.push(sat(msg));
             }
             for ind in &p.indicators {
                 let readable = if input.indicators.is_empty() {
