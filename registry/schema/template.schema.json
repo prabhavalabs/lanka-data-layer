@@ -72,7 +72,8 @@
               "start_after": { "type": "string" },
               "stop_at": { "type": "array", "items": { "type": "string", "minLength": 1 } },
               "min_cells": { "type": "integer", "minimum": 1 },
-              "label_above": { "type": "boolean" }
+              "label_above": { "type": "boolean" },
+              "wrapped_labels": { "type": "boolean", "description": "A line with numbers but no label takes the label words of the adjacent label-only lines above and below (labels wrapped around their numbers); takes precedence over label_above." }
             }
           },
           "number": {

@@ -175,6 +175,12 @@ pub struct RowsSpec {
     /// numbers aligned with the last or a middle line).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub label_above: bool,
+    /// A label wrapped over two lines around its numbers ("All" / numbers /
+    /// "Island"): a line with numbers but no label takes the label words of
+    /// the adjacent label-only lines (above and below) less than a line
+    /// height away. Takes precedence over `label_above`.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub wrapped_labels: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -938,12 +944,16 @@ fn read_at(
     }
     'pages: for (pi, pls) in std::iter::once(&ls).chain(other_pages.iter()).enumerate() {
         let p = page + u32::try_from(pi)?;
+        // (y0, y1, label words, column words) of the lines in the table body.
+        let mut body: Vec<BodyLine<'_>> = Vec::new();
+        let mut stopped = false;
         for l in pls {
             if p == page && l.y0 < start_y - 0.5 {
                 continue;
             }
             if stops.iter().any(|s| !l.find(s).is_empty()) {
-                break 'pages;
+                stopped = true;
+                break;
             }
             let label_ws: Vec<&Word> = l
                 .words
@@ -965,18 +975,31 @@ fn read_at(
                 .copied()
                 .filter(|w| w.cx() >= first_left && right_limit.is_none_or(|r| w.bbox[0] <= r))
                 .collect();
+            body.push((l.y0, l.y1, label_ws, col_ws));
+        }
+        for (i, (y0, y1, label_ws, col_ws)) in body.iter().enumerate() {
             if !label_ws.is_empty() && !col_ws.is_empty() {
-                cand.push((p, label_ws, col_ws));
+                cand.push((p, label_ws.clone(), col_ws.clone()));
                 pending.clear();
+            } else if e.rows.wrapped_labels {
+                if label_ws.is_empty() && !col_ws.is_empty() {
+                    let wrapped = wrapped_label(&body, i, *y0, *y1, line_h);
+                    if !wrapped.is_empty() {
+                        cand.push((p, wrapped, col_ws.clone()));
+                    }
+                }
             } else if e.rows.label_above {
                 if col_ws.is_empty() {
                     // A label line without numbers: the start of a wrapped label.
-                    pending.extend(label_ws);
+                    pending.extend(label_ws.iter().copied());
                 } else if !pending.is_empty() {
                     // Numbers printed below their (wrapped) label.
-                    cand.push((p, std::mem::take(&mut pending), col_ws));
+                    cand.push((p, std::mem::take(&mut pending), col_ws.clone()));
                 }
             }
+        }
+        if stopped {
+            break 'pages;
         }
     }
 
@@ -1276,6 +1299,33 @@ pub fn load(root: &std::path::Path, id: &str) -> Result<(Template, [u8; 32])> {
     Ok((t, Sha256::digest(text.as_bytes()).into()))
 }
 
+/// A table-body line: `(y0, y1, label words, column words)`.
+type BodyLine<'w> = (f32, f32, Vec<&'w Word>, Vec<&'w Word>);
+
+/// The label words of the label-only lines right above and below body line
+/// `i` (less than a line height away), in reading order.
+fn wrapped_label<'w>(
+    body: &[BodyLine<'w>],
+    i: usize,
+    y0: f32,
+    y1: f32,
+    line_h: f32,
+) -> Vec<&'w Word> {
+    let near = |j: usize| -> Option<&Vec<&'w Word>> {
+        let (b0, b1, lw, cw) = body.get(j)?;
+        let gap = (b0 - y1).abs().min((y0 - b1).abs());
+        (cw.is_empty() && !lw.is_empty() && gap < line_h).then_some(lw)
+    };
+    let mut out: Vec<&'w Word> = Vec::new();
+    if let Some(ws) = i.checked_sub(1).and_then(near) {
+        out.extend(ws.iter().copied());
+    }
+    if let Some(ws) = near(i + 1) {
+        out.extend(ws.iter().copied());
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1507,6 +1557,52 @@ editions:
         let t = Template::from_yaml(&joined).expect("template");
         let tab = t.read(&words, None).expect("read");
         assert_eq!(tab.rows[2].label, "2025 January");
+    }
+
+    #[test]
+    fn wrapped_labels_join_the_lines_around_their_numbers() {
+        let tpl = r#"
+id: test/wrapped
+editions:
+  - locate: { page: { find_text: "Table 4.5" } }
+    label: { key: sector, header: "Sector" }
+    columns:
+      - { key: v2016, header: "2016" }
+    rows: { stop_at: ["Source:"], wrapped_labels: WRAP }
+"#;
+        let words = Words {
+            pages: vec![lanka_extractd::PageBox {
+                page: 1,
+                width: 400.0,
+                height: 400.0,
+            }],
+            words: vec![
+                w(1, "Table", 10.0, 10.0),
+                w(1, "4.5", 40.0, 10.0),
+                w(1, "Sector", 20.0, 40.0),
+                w(1, "2016", 120.0, 40.0),
+                // "All" / 1.2 / "Island": the label wraps around its number.
+                w(1, "All", 20.0, 64.0),
+                w(1, "1.2", 125.0, 70.0),
+                w(1, "Island", 20.0, 76.0),
+                w(1, "Urban", 20.0, 100.0),
+                w(1, "0.3", 125.0, 100.0),
+                w(1, "Source:", 20.0, 130.0),
+            ],
+        };
+        let off = Template::from_yaml(&tpl.replace("WRAP", "false")).expect("template");
+        let tab = off.read(&words, None).expect("read");
+        assert_eq!(
+            tab.rows.len(),
+            1,
+            "without the option the wrapped row is lost"
+        );
+        let on = Template::from_yaml(&tpl.replace("WRAP", "true")).expect("template");
+        let tab = on.read(&words, None).expect("read");
+        assert_eq!(tab.rows.len(), 2);
+        assert_eq!(tab.rows[0].label, "All Island");
+        assert_eq!(tab.rows[0].cells["v2016"].value, Value::Number(1.2));
+        assert_eq!(tab.rows[1].label, "Urban");
     }
 
     #[test]
