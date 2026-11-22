@@ -12,6 +12,8 @@ const AreaProfile = lazy(() => import('@/pages/AreaProfile'))
 const Catalogue = lazy(() => import('@/pages/Catalogue'))
 const DatasetPage = lazy(() => import('@/pages/Dataset'))
 const Developers = lazy(() => import('@/pages/Developers'))
+const SharedMap = lazy(() => import('@/pages/SharedMap'))
+const EmbedMap = lazy(() => import('@/pages/SharedMap').then((m) => ({ default: m.EmbedMap })))
 
 function PageFallback() {
   return (
@@ -25,7 +27,7 @@ function PageFallback() {
 
 function Shell() {
   const { pathname, hash } = useLocation()
-  const immersive = pathname.startsWith('/explore')
+  const immersive = pathname.startsWith('/explore') || pathname.startsWith('/m/')
   useLayoutEffect(() => applyRouteDefaultTheme(pathname), [pathname])
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
@@ -52,9 +54,18 @@ export function App() {
     <TooltipProvider>
       <CommandPaletteProvider>
         <Routes>
+          <Route
+            path="embed/m/:id"
+            element={
+              <Suspense fallback={null}>
+                <EmbedMap />
+              </Suspense>
+            }
+          />
           <Route element={<Shell />}>
             <Route index element={<Landing />} />
             <Route path="explore" element={<Explore />} />
+            <Route path="m/:id" element={<SharedMap />} />
             <Route path="area/:pcode" element={<AreaProfile />} />
             <Route path="data" element={<Catalogue />} />
             <Route path="data/:id" element={<DatasetPage />} />
