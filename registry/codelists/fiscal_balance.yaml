@@ -1,0 +1,12 @@
+# Government budget balance
+# Source/authority: Central Bank of Sri Lanka, statistical table 3.1 (summary of government fiscal operations).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-fiscal-operations
+id: fiscal_balance
+title: Government budget balance
+codes:
+  - { code: current_account, label: Current account surplus (+) / deficit (-) }
+  - { code: primary, label: Primary account surplus (+) / deficit (-) }
+  - { code: overall, label: Overall budget surplus (+) / deficit (-) }

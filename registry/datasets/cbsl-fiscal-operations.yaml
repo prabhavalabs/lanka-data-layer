@@ -1,8 +1,9 @@
 id: cbsl-fiscal-operations
 title: Government fiscal operations, revenue and debt (CBSL)
-description: Annual summary of government revenue by tax type, expenditure, overall balance and central government debt stock.
+description: Annual summary of government revenue by tax type, expenditure, budget balances, deficit financing and central
+  government debt stock (CBSL statistical tables 3.1, 3.2 and 3.5).
 source_ids:
-- cbsl-statistical-tables
+- cbsl-fiscal-tables
 indicators:
 - id: fisc.revenue
   label: Government revenue
@@ -28,6 +29,48 @@ indicators:
   geo_levels:
   - national
   period_type: year
+- id: fisc.balance
+  label: Government budget balance
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: none
+  class: official
+  dims:
+  - fiscal_balance
+  geo_levels:
+  - national
+  period_type: year
+- id: fisc.financing
+  label: Budget deficit financing
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - financing_source
+  geo_levels:
+  - national
+  period_type: year
+- id: fisc.revenue_grants_gdp
+  label: Revenue and grants as a share of GDP
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: fisc.expenditure_gdp
+  label: Expenditure as a share of GDP
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
 - id: fisc.overall_balance_gdp
   label: Overall fiscal balance
   unit: '%'
@@ -49,12 +92,27 @@ indicators:
   geo_levels:
   - national
   period_type: year
+- id: fisc.cg_debt_gdp
+  label: Central government debt as a share of GDP
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - debt_type
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
   from: '1990'
   to: '2025'
-method: Sheets 3.01, 3.02, 3.05.
+method: CBSL statistical tables 3.1, 3.2 and 3.5 (Excel), read cell by cell.
 limits:
 - Annual; for in-year use treasury-fiscal-performance.
+- The latest year is provisional (marked (a)/(b) in the workbook).
+- Debt is on a net basis (net of deposits) following the IMF Public Sector Debt Statistics framework; from 2023 domestic
+  debt is compiled from data confirmed by the Ministry of Finance (break in series).
+- GDP shares use DCS GDP (base year 2015 from 2010); the share columns are CBSL's, not recomputed.
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'

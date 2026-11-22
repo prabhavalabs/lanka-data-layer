@@ -1,6 +1,6 @@
 id: cbsl-statistical-tables
 publisher: Central Bank of Sri Lanka
-title: CBSL statistical tables (external sector, fiscal sector)
+title: CBSL statistical tables (external sector)
 homepage: https://www.cbsl.gov.lk/en/statistics/statistical-tables
 access:
   method: xlsx
@@ -24,7 +24,6 @@ datasets:
 - cbsl-merchandise-trade
 - cbsl-tourism-earnings
 - cbsl-workers-remittances
-- cbsl-fiscal-operations
 priority: P1
 effort: M
 status: planned
@@ -36,6 +35,3 @@ dc_refs:
 - merchandise-trade-category-annual
 - tourism-earnings-monthly
 - workers-remittances-monthly
-- government-fiscal-operations-annual
-- government-revenue-annual
-- central-government-debt-annual

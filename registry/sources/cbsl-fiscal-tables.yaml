@@ -1,0 +1,38 @@
+id: cbsl-fiscal-tables
+publisher: Central Bank of Sri Lanka
+title: CBSL statistical tables, fiscal sector
+homepage: https://www.cbsl.gov.lk/en/statistics/statistical-tables/fiscal-sector
+access:
+  method: xlsx
+  endpoint: https://www.cbsl.gov.lk/en/statistics/statistical-tables/fiscal-sector
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Central Bank of Sri Lanka, statistical tables (fiscal sector)
+cadence:
+  frequency: annual
+  expected_lag_days: 200
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+- GOVE
+datasets:
+- cbsl-fiscal-operations
+priority: P1
+effort: S
+status: active
+verified_at: '2026-11-22'
+notes: >-
+  Tables 3.01 (summary of fiscal operations), 3.02 (economic classification of revenue) and 3.05
+  (central government debt), 1990 onwards. File names are date-stamped (table3.01_20260720.xlsx);
+  the connector picks the newest link on the fiscal-sector index page. Split from
+  cbsl-statistical-tables because the two index pages are separate listings. The CBSL site gives no
+  explicit reuse licence: published with attribution and the takedown contact.
+dc_refs:
+- government-fiscal-operations-annual
+- government-revenue-annual
+- central-government-debt-annual
