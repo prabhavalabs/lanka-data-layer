@@ -44,3 +44,108 @@ export const classOf = (v: number, breaks: number[]) => {
   while (i < breaks.length && v >= breaks[i]) i++
   return i
 }
+
+/* ------------------------------------------------------------------
+   Ramp registry for the map workspace (10-map-composition §2.6): named
+   ramps, resolved per colour scheme of the basemap they are drawn on.
+   ------------------------------------------------------------------ */
+export type RampName = `ldl.seq.${'violet' | 'teal' | 'blue' | 'green' | 'orange'}` | 'ldl.div.blue-orange' | 'ldl.cat.default'
+export const SEQ_RAMPS: { name: RampName; label: string; id: RampId }[] = [
+  { name: 'ldl.seq.blue', label: 'Blue', id: 'water' },
+  { name: 'ldl.seq.teal', label: 'Teal', id: 'access' },
+  { name: 'ldl.seq.green', label: 'Green', id: 'vegetation' },
+  { name: 'ldl.seq.orange', label: 'Orange', id: 'built' },
+  { name: 'ldl.seq.violet', label: 'Violet', id: 'people' },
+]
+export const RAMP_OF: Record<RampId, RampName> = { people: 'ldl.seq.violet', access: 'ldl.seq.teal', water: 'ldl.seq.blue', vegetation: 'ldl.seq.green', built: 'ldl.seq.orange' }
+export const rampLabel = (name: string) => (name === 'ldl.div.blue-orange' ? 'Blue–orange' : (SEQ_RAMPS.find((r) => r.name === name)?.label ?? 'Blue'))
+
+type RGB = [number, number, number]
+export const hexToRgb = (hex: string): RGB => {
+  const h = hex.replace('#', '')
+  const n = parseInt(h.length === 3 ? h.replace(/./g, '$&$&') : h.slice(0, 6), 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+export const rgbToHex = ([r, g, b]: RGB) => `#${[r, g, b].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0')).join('')}`
+
+/** The stops of a named ramp, light → dark on a light map, mirrored on a dark one so "more" is always the stronger end. */
+export function rampStops(name: string, theme: Theme, reverse = false): string[] {
+  const stops = name === 'ldl.div.blue-orange' ? diverging(theme) : name === 'ldl.cat.default' ? categorical(theme) : ramp(SEQ_RAMPS.find((r) => r.name === name)?.id ?? 'water', theme)
+  return reverse ? [...stops].reverse() : stops
+}
+/** Colour at t ∈ [0,1] along a ramp, interpolated between its stops. */
+export function rampAt(stops: string[], t: number): RGB {
+  const x = Math.min(1, Math.max(0, t)) * (stops.length - 1)
+  const i = Math.min(stops.length - 2, Math.floor(x))
+  const a = hexToRgb(stops[i]), b = hexToRgb(stops[i + 1])
+  const f = x - i
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f]
+}
+/** `n` class colours spread over a ramp. */
+export function rampClasses(name: string, theme: Theme, n: number, reverse = false): string[] {
+  const stops = rampStops(name, theme, reverse)
+  if (n === stops.length) return stops
+  return Array.from({ length: n }, (_, i) => rgbToHex(rampAt(stops, n === 1 ? 0.6 : i / (n - 1))))
+}
+
+/* Bivariate 3×3 palettes. Index = y * 3 + x, both low → high. Built by mixing two inks into a neutral ground:
+   subtractive on a light map (both high = darkest), additive on a dark one (both high = lightest). */
+export const BIVARIATE: { name: string; label: string; x: [string, string]; y: [string, string]; ground: [string, string] }[] = [
+  { name: 'ldl.biv.blue-orange', label: 'Blue × orange', x: ['#2f6fc4', '#4a94f5'], y: ['#d9741a', '#f29a3c'], ground: ['#ecece9', '#2b333e'] },
+  { name: 'ldl.biv.teal-violet', label: 'Teal × violet', x: ['#14897b', '#2fb8a4'], y: ['#6a4bc9', '#9478f0'], ground: ['#ecece9', '#2b333e'] },
+  { name: 'ldl.biv.green-blue', label: 'Green × blue', x: ['#3f8a2f', '#62b84e'], y: ['#2e62bd', '#4f8cf0'], ground: ['#ecece9', '#2b333e'] },
+]
+export function bivariateColors(name: string, theme: Theme): string[] {
+  const p = BIVARIATE.find((b) => b.name === name) ?? BIVARIATE[0]
+  const dark = theme === 'dark'
+  const g = hexToRgb(p.ground[dark ? 1 : 0])
+  const x = hexToRgb(p.x[dark ? 1 : 0]), y = hexToRgb(p.y[dark ? 1 : 0])
+  const out: string[] = []
+  // how far each step travels toward its ink; the second step is the longer one, so the corners separate
+  const k = dark ? [0, 0.52, 1] : [0, 0.42, 0.86]
+  for (let j = 0; j < 3; j++)
+    for (let i = 0; i < 3; i++) {
+      const c = g.map((gv, ch) => {
+        if (dark) {
+          // additive: each ink adds its light to the ground; where both are present the sum is held under white
+          const sum = gv + (x[ch] - gv) * k[i] + (y[ch] - gv) * k[j] * (i ? 0.78 : 1) + (i && j ? 34 * k[i] * k[j] : 0)
+          return Math.min(246, sum)
+        }
+        // multiply the two tints
+        const tx = 1 - (1 - x[ch] / 255) * k[i], ty = 1 - (1 - y[ch] / 255) * k[j]
+        return gv * tx * ty
+      }) as RGB
+      out.push(rgbToHex(c))
+    }
+  return out
+}
+
+/** Named tones for constant colours, so a line or a dot follows the basemap's scheme instead of freezing one hex. */
+export const TONES = ['ink', 'grey', 'blue', 'teal', 'green', 'orange', 'violet'] as const
+export type Tone = (typeof TONES)[number]
+export function toneColor(value: string | undefined, theme: Theme, fallback: Tone = 'ink'): string {
+  if (value && value.startsWith('#')) return value
+  const t = (value?.replace('ldl.tone.', '') ?? fallback) as Tone
+  const dark = theme === 'dark'
+  switch (t as Tone | 'paper') {
+    case 'paper':
+      return paperColor(theme)
+    case 'ink':
+      return dark ? '#e8edf2' : '#14181c'
+    case 'grey':
+      return dark ? '#8a97a5' : '#687480'
+    case 'blue':
+      return ramp('water', theme)[dark ? 4 : 4]
+    case 'teal':
+      return ramp('access', theme)[4]
+    case 'green':
+      return ramp('vegetation', theme)[4]
+    case 'orange':
+      return ramp('built', theme)[4]
+    case 'violet':
+      return ramp('people', theme)[4]
+    default:
+      return dark ? '#e8edf2' : '#14181c'
+  }
+}
+export const paperColor = (theme: Theme) => (theme === 'dark' ? '#0b0e12' : '#ffffff')
