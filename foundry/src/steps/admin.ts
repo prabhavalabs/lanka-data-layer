@@ -142,12 +142,13 @@ export async function run({ db, log }: StepContext): Promise<void> {
     });
   }
 
-  // Level 2: districts. parent_pcode via parentId -> province id -> province pcode.
+  // Level 2: districts. parent_pcode from the COD-AB p-code prefix (LK52 -> LK5):
+  // geoBoundaries' parentId puts Ampara (LK52) under Uva (LK8), so it is not used.
+  const provincePcodes = new Set(provinceIdToPcode.values());
   for (const f of districts.features) {
     const pcode = String(f.properties.pcode);
-    const parentId = String(f.properties.parentId);
-    const parentPcode = provinceIdToPcode.get(parentId);
-    if (!parentPcode) throw new Error(`admin: district ${pcode} has unresolved parentId ${parentId}`);
+    const parentPcode = pcode.slice(0, 3);
+    if (!provincePcodes.has(parentPcode)) throw new Error(`admin: district ${pcode} has no province ${parentPcode}`);
     const c = bboxCenter(f.geometry as never);
     const names = siTaByPcode.get(pcode);
     rows.push({

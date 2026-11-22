@@ -38,8 +38,7 @@ standardise:
     - { table: adm1, method: csv_row, indicator: { value: pop.codps }, melt: *cols, geo: { column: ADM1_PCODE }, period: *year, dims: *dims, value: *num }
     - { table: adm2, method: csv_row, indicator: { value: pop.codps }, melt: *cols, geo: { column: ADM2_PCODE }, period: *year, dims: *dims, value: *num }
 expect:
-  - { check: sum_to_parent, tol_pct: 0.5, severity: warn,
-      note: "Fails for LK5/LK8 while geo.admin_units records Ampara (LK52) under Uva (LK8); its p-code and COD-PS put it in Eastern (LK5)." }
+  - { check: sum_to_parent, tol_pct: 0.5 }
   - { check: sum_dims, dim: sex, tol: 2 }
   - { check: completeness, level: 2, min_units: 25 }
   - { check: completeness, level: 1, min_units: 9 }
