@@ -1,42 +1,51 @@
 id: pucsl-supply-reliability
 title: Electricity supply interruptions (SAIDI/SAIFI)
-description: Average interruption duration and frequency per customer by distribution licensee and province/area.
+description: Monthly average interruption duration (SAIDI) and frequency (SAIFI) per customer by distribution licensee
+  (CEB Distribution Divisions 1-4, LECO) and area office, from PUCSL's quarterly returns.
 source_ids:
 - pucsl
 indicators:
 - id: ener.saidi
-  label: SAIDI
+  label: SAIDI (system average interruption duration index)
   unit: 'min/{customer}'
   measure_type: rate
   aggregation: none
   class: official
   dims:
   - licensee
+  - distribution_area
+  - id: cause
+    codelist: interruption_cause
   geo_levels:
-  - adm1
-  - polygon
-  period_type: quarter
+  - national
+  period_type: month
 - id: ener.saifi
-  label: SAIFI
+  label: SAIFI (system average interruption frequency index)
   unit: '{interruption}/{customer}'
   measure_type: rate
   aggregation: none
   class: official
   dims:
   - licensee
+  - distribution_area
+  - id: cause
+    codelist: interruption_cause
   geo_levels:
-  - adm1
-  - polygon
-  period_type: quarter
+  - national
+  period_type: month
 time_coverage:
-  from: 2024-Q3
-  to: 2026-Q1
-method: XLS parse.
+  from: 2024-07
+  to: 2026-06
+method: 'XLS/XLSX parse of eight quarterly workbooks (2024-Q3 to 2026-Q2). Months are read by column position within the
+  quarter each file is published as, because some internal year/month headers conflict with it (LECO 2025-Q1 prints 2024
+  and "September"; two 2025-Q2 sheets print no months). LECO 2025-Q1 SAIDI is printed in hours and converted to minutes.'
 limits:
-- Self-reported by utilities.
+- Self-reported by utilities; computation assumptions differ by licensee (workbook "Assumptions" sheet).
+- Area offices are utility areas, not admin units; CEB region ("Province") subtotals are not published here.
+- Planned/breakdown/other split only in 2024-Q4 (CEB).
 enrichment:
   joins:
-  - distribution area names -> province/area crosswalk
+  - distribution area offices -> districts needs a utility area crosswalk (not published)
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
-publication_class: A
+publication_class: B
