@@ -1,0 +1,24 @@
+# National Transport Statistics (NTC), table 6.1: inter-provincial private buses (NTC permits)
+# by type of service, nine years, plus the buses operated. Years are the column headers.
+id: ntc/inter-provincial-fleet-by-service
+title: Inter-provincial private bus fleet by type of service
+editions:
+  - match: { edition: "2024..2025" }
+    locate:
+      page: { find_text: "Table 6.1 Inter Provincial Private Bus Operation" }
+    label: { key: service, header: "Type of Service" }
+    columns:
+      - { key: y1, header: "2015" }
+      - { key: y2, header: "2016" }
+      - { key: y3, header: "2017" }
+      - { key: y4, header: "2018" }
+      - { key: y5, header: "2019" }
+      - { key: y6, header: "2020" }
+      - { key: y7, header: "2021" }
+      - { key: y8, header: "2022" }
+      - { key: y9, header: "2023" }
+    rows: { stop_at: ["Source:"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: ["Super Luxury", "Semi Luxury", "Normal", "Luxury"], equals_row: "Total", tol: 1 }
+      - { row_count: { min: 6, max: 6 } }

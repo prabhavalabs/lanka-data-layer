@@ -1,0 +1,15 @@
+# Bus service class (NTC inter-provincial permits)
+# Source/authority: National Transport Commission, National Transport Statistics 2024, table 6.1 (type of service:
+#   super luxury, luxury, semi luxury, normal).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ntc-bus-statistics
+id: bus_service_class
+title: Bus service class
+codes:
+  - { code: total, label: All service classes, total: true, sdmx: _T }
+  - { code: super_luxury, label: Super luxury, parent: total }
+  - { code: luxury, label: Luxury, parent: total }
+  - { code: semi_luxury, label: Semi luxury, parent: total }
+  - { code: normal, label: Normal, parent: total }

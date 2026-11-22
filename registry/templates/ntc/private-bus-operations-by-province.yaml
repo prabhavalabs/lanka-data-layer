@@ -1,0 +1,26 @@
+# National Transport Statistics (NTC), table 6.2: private bus operational data for the report's
+# data year, intra-provincial by province (with a total), then inter-provincial (NTC permits) and
+# the grand total. Columns: total fleet, buses operated, seating capacity, operated km and
+# passenger km.
+id: ntc/private-bus-operations-by-province
+title: Private bus operational data by province (intra- and inter-provincial)
+editions:
+  - match: { edition: "2024..2025" }
+    locate:
+      page: { find_text: "Table 6.2 Private Bus Operational Data" }
+    label: { key: province, header: "Province" }
+    columns:
+      - { key: fleet, header: "Fleet" }
+      - { key: operated, header: "No. of Buses" }
+      - { key: seats, header: "Seating" }
+      - { key: km, header: "Operated", nth: 1 }
+      - { key: pkm, header: "Passenger Km." }
+    rows: { stop_at: ["Source:"] }
+    number: { thousands: "," }
+    checks:
+      # Upstream inconsistency (2024 edition): the provinces' operated km add up to 539,189,680,
+      # the printed intra-provincial Total is 316,660,224 (and Total + NTC = Grand Total holds).
+      # The km column is excluded from this check and flagged in review; the other four agree.
+      - { sum_rows: ["Western", "Southern", "Sabaragamuwa", "North western", "Central", "Uva", "North Central", "Eastern", "Northern"], equals_row: "Total", columns: [fleet, operated, seats, pkm], tol: 2 }
+      - { sum_rows: ["Total", "NTC"], equals_row: "Grand Total", tol: 2 }
+      - { rows_present: ["Western", "Northern", "Total", "NTC", "Grand Total"] }
