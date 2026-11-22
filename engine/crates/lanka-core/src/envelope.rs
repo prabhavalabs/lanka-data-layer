@@ -76,6 +76,10 @@ pub struct SourceRef {
     pub publisher: String,
     pub title: String,
     pub url: String,
+    /// Licence id of this source.
+    pub licence: String,
+    /// The attribution text this source asks for (else its publisher).
+    pub attribution: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, ToSchema)]
@@ -84,6 +88,8 @@ pub struct LicenceRef {
     /// open | attribution | permission_unclear | restricted
     pub status: String,
     pub url: Option<String>,
+    /// The attributions of the sources in this response that use this
+    /// licence (`; `-joined) — from each source, never one text per licence.
     pub attribution: Option<String>,
 }
 

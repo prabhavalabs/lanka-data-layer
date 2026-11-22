@@ -347,10 +347,9 @@ pub fn document(p: &Present<'_>, out: Option<&MethodOutput>, raised: &[Raised]) 
                 continue;
             }
             if let Some(src) = p.catalog.sources.get(s) {
-                let l = p.catalog.licences.get(&src.licence_id);
                 attribution.push(json!({
                     "source": s, "publisher": src.publisher, "title": src.title, "licence": src.licence_id,
-                    "text": l.and_then(|l| l.attribution.clone()), "url": src.homepage,
+                    "text": src.attribution, "url": src.homepage,
                 }));
             }
         }

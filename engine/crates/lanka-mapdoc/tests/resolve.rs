@@ -73,6 +73,7 @@ fn catalog() -> Catalog {
         title: format!("{id} data"),
         homepage: "https://example.org".into(),
         licence_id: lic.into(),
+        attribution: format!("{id} office"),
         cadence: "annual".into(),
         access_method: "api".into(),
         themes: Vec::new(),
@@ -84,7 +85,6 @@ fn catalog() -> Catalog {
         id: id.into(),
         status: status.into(),
         url: None,
-        attribution: None,
         spdx: spdx.map(str::to_owned),
         redistribution: "bulk".into(),
     };

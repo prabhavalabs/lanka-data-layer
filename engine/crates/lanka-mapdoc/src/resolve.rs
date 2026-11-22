@@ -1343,7 +1343,7 @@ pub fn resolve(doc: &MapDocument, cat: &Catalog, ctx: &ResolveContext) -> Resolv
             attribution.insert(Attribution {
                 source_id: src.id.clone(),
                 publisher: src.publisher.clone(),
-                text: format!("{} — {}", src.publisher, src.title),
+                text: src.attribution.clone(),
                 licence,
                 licence_url: lic.and_then(|l| l.url.clone()),
                 licence_status: status,

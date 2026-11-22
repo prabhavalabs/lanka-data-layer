@@ -258,12 +258,16 @@ async fn export_layer(pool: &PgPool, profile: &Profile, l: &LayerPlan, path: &Pa
     Ok(n)
 }
 
+/// The tileset's attribution: each input dataset's sources, as
+/// `<the source's attribution, else its publisher> (<licence>)`.
 async fn attribution(pool: &PgPool, datasets: &[String]) -> Result<Option<String>> {
     Ok(sqlx::query_scalar(
-        "SELECT string_agg(DISTINCT coalesce(l.attribution, s.publisher), '; ' ORDER BY coalesce(l.attribution, s.publisher))
-         FROM catalog.dataset_sources ds JOIN catalog.sources s ON s.id = ds.source_id
-         LEFT JOIN catalog.licences l ON l.id = s.licence_id
-         WHERE ds.dataset_id = ANY($1)",
+        "SELECT string_agg(DISTINCT a.t, '; ' ORDER BY a.t) FROM (
+            SELECT coalesce(nullif(btrim(s.spec #>> '{licence,attribution}'), ''), s.publisher)
+                   || ' (' || coalesce(l.spdx, s.licence_id) || ')' AS t
+            FROM catalog.dataset_sources ds JOIN catalog.sources s ON s.id = ds.source_id
+            LEFT JOIN catalog.licences l ON l.id = s.licence_id
+            WHERE ds.dataset_id = ANY($1)) a",
     )
     .bind(datasets)
     .fetch_one(pool)

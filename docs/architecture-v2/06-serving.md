@@ -62,6 +62,8 @@ Base path `/v2`. JSON. Envelope kept: `{success, message, payload, meta}`.
 
 `meta.source` (the v1 field) is emitted as an alias of `attribution[].text` for the life of contract 2.
 
+Attribution is **per source, never per licence**: a source's text is its registry `licence.attribution`, else its publisher. Until `meta.attribution[]` ships, `meta.source[]` carries `licence` and `attribution` per source and `meta.licences[].attribution` is the `; `-joined texts of the response's sources under that licence. Tileset attribution (TileJSON, PMTiles metadata) is built the same way: `<source text> (<SPDX or licence id>)` for each input dataset's sources. `catalog.licences.attribution` is not used (registry sync writes NULL).
+
 ### 2.1 Resources
 
 | Resource | Endpoint | Notes |

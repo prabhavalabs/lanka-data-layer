@@ -1071,7 +1071,10 @@ impl Registry {
             .bind(&l.id)
             .bind(&l.status)
             .bind(&l.url)
-            .bind(&l.attribution)
+            // Attribution is per source (`catalog.sources.spec.licence.attribution`);
+            // one text per licence id would credit one source's publisher on
+            // every other source under the same licence.
+            .bind(Option::<&str>::None)
             .bind(l.spdx())
             .bind(l.share_alike())
             .bind(l.non_commercial())

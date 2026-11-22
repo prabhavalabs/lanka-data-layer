@@ -25,7 +25,6 @@ pub struct LicenceInfo {
     pub id: String,
     pub status: String,
     pub url: Option<String>,
-    pub attribution: Option<String>,
     pub spdx: Option<String>,
     /// bulk | api | link | internal
     pub redistribution: String,
@@ -38,6 +37,9 @@ pub struct SourceInfo {
     pub title: String,
     pub homepage: String,
     pub licence_id: String,
+    /// The attribution this source asks for (its registry `licence.attribution`),
+    /// else its publisher. Attribution is per source, never per licence.
+    pub attribution: String,
     pub cadence: String,
     pub access_method: String,
     pub themes: Vec<String>,
@@ -216,12 +218,14 @@ impl Catalog {
             None => None,
         };
         let licences: Vec<LicenceInfo> = sqlx::query_as(
-            "SELECT id, status::text AS status, url, attribution, spdx, redistribution FROM catalog.licences",
+            "SELECT id, status::text AS status, url, spdx, redistribution FROM catalog.licences",
         )
         .fetch_all(&mut *tx)
         .await?;
         let sources: Vec<SourceInfo> = sqlx::query_as(
-            "SELECT id, publisher, title, homepage, licence_id, cadence, access_method, themes, status
+            "SELECT id, publisher, title, homepage, licence_id,
+                    coalesce(nullif(btrim(spec #>> '{licence,attribution}'), ''), publisher) AS attribution,
+                    cadence, access_method, themes, status
              FROM catalog.sources",
         )
         .fetch_all(&mut *tx)
@@ -377,7 +381,9 @@ impl Catalog {
                 src.extend(d.source_ids.iter().map(String::as_str));
             }
         }
-        let mut lic: BTreeSet<&str> = BTreeSet::new();
+        // licence id → the attributions of the sources (in this response) under it
+        let mut lic: std::collections::BTreeMap<&str, BTreeSet<&str>> =
+            std::collections::BTreeMap::new();
         for id in src {
             if let Some(s) = self.sources.get(id) {
                 meta.source.push(SourceRef {
@@ -385,17 +391,21 @@ impl Catalog {
                     publisher: s.publisher.clone(),
                     title: s.title.clone(),
                     url: s.homepage.clone(),
+                    licence: s.licence_id.clone(),
+                    attribution: s.attribution.clone(),
                 });
-                lic.insert(s.licence_id.as_str());
+                lic.entry(s.licence_id.as_str())
+                    .or_default()
+                    .insert(s.attribution.as_str());
             }
         }
-        for id in lic {
+        for (id, texts) in lic {
             if let Some(l) = self.licences.get(id) {
                 meta.licences.push(LicenceRef {
                     id: l.id.clone(),
                     status: l.status.clone(),
                     url: l.url.clone(),
-                    attribution: l.attribution.clone(),
+                    attribution: Some(texts.into_iter().collect::<Vec<_>>().join("; ")),
                 });
             }
         }

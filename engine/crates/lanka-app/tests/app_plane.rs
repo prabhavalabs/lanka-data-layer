@@ -334,6 +334,7 @@ fn example_catalog() -> Catalog {
         title: format!("{id} data"),
         homepage: "https://example.org".into(),
         licence_id: lic.into(),
+        attribution: publisher.into(),
         cadence: "annual".into(),
         access_method: "file".into(),
         themes: Vec::new(),
@@ -355,7 +356,6 @@ fn example_catalog() -> Catalog {
         id: id.into(),
         status: status.into(),
         url: Some(format!("https://licences.example.org/{id}")),
-        attribution: None,
         spdx: spdx.map(str::to_owned),
         redistribution: redistribution.into(),
     };
