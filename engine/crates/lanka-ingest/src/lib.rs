@@ -8,6 +8,7 @@ pub mod geo_load;
 pub mod pipeline;
 pub mod publish;
 pub mod registry;
+pub mod registry_migrate;
 pub mod run;
 
 pub use archive::Archive;

@@ -18,6 +18,8 @@ use futures::FutureExt;
 use futures::future::BoxFuture;
 use serde_json::json;
 
+use lanka_core::{Basis, Flags, Method, Status};
+
 use crate::connector::{
     Candidate, Connector, CrosswalkRow, Ctx, Fetched, ObsRow, Output, dims_key,
 };
@@ -322,8 +324,10 @@ struct Resolved {
 }
 
 /// Port of `resolveRows`: document-order resolution + additivity checks.
+/// The country row keys to `root` (the profile's level-0 p-code).
 fn resolve(
     table: &str,
+    root: &str,
     rows: Vec<SheetRow>,
     idx: &NameIndex,
     xw: &mut Vec<CrosswalkRow>,
@@ -351,7 +355,7 @@ fn resolve(
                 country = Some(row.values.clone());
                 district_sum = vec![0.0; row.values.len()];
                 resolved.push(Resolved {
-                    pcode: "LK".to_owned(),
+                    pcode: root.to_owned(),
                     row,
                 });
             }
@@ -479,7 +483,8 @@ impl Connector for DcsCensus2024 {
                     .find(|(_, f)| f.key == *t)
                     .with_context(|| format!("table {t} was not fetched"))?;
                 let (sheet, sheet_rows) = parse_sheet(&f.bytes, cols.len()).with_context(|| format!("table {t}"))?;
-                let (resolved, unmatched) = resolve(t, sheet_rows, &idx, &mut xw)?;
+                let (resolved, unmatched) =
+                    resolve(t, ctx.profile.admin.root(), sheet_rows, &idx, &mut xw)?;
                 ensure!(
                     unmatched.len() <= MAX_UNMATCHED_DS,
                     "{t}: {} unmatched DS divisions (max {MAX_UNMATCHED_DS}): {:?}",
@@ -509,7 +514,11 @@ impl Connector for DcsCensus2024 {
                             period: PERIOD.to_owned(),
                             dims: dims_key(dims),
                             value: Some(r.row.values[k]),
-                            status: "reported",
+                            lo: None,
+                            hi: None,
+                            basis: Basis::Reported,
+                            status: Status::Normal,
+                            flags: Flags::EMPTY,
                             artifact: ai,
                             locator: json!({
                                 "table": t, "sheet": sheet,
@@ -517,7 +526,7 @@ impl Connector for DcsCensus2024 {
                                 "row": r.row.name_en, "column": label,
                             }),
                             verbatim: Some(r.row.verbatim[k].clone()),
-                            method: "sheet_cell",
+                            method: Method::SheetCell,
                             confidence: Some(1.0),
                         });
                     }
@@ -530,7 +539,11 @@ impl Connector for DcsCensus2024 {
                             period: PERIOD.to_owned(),
                             dims: String::new(),
                             value: Some((100.0 * m / f * 1e4).round() / 1e4),
-                            status: "derived",
+                            lo: None,
+                            hi: None,
+                            basis: Basis::Computed,
+                            status: Status::Normal,
+                            flags: Flags::EMPTY,
                             artifact: ai,
                             locator: json!({
                                 "table": t, "sheet": sheet, "formula": "100 * male / female",
@@ -538,7 +551,7 @@ impl Connector for DcsCensus2024 {
                                 "row": r.row.name_en,
                             }),
                             verbatim: None,
-                            method: "derived",
+                            method: Method::Derived,
                             confidence: Some(1.0),
                         });
                     }

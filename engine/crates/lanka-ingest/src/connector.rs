@@ -11,6 +11,8 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use lanka_core::{Basis, Flags, Method, Profile, Status};
+
 use anyhow::Result;
 use bytes::Bytes;
 use futures::future::BoxFuture;
@@ -46,23 +48,61 @@ pub struct Fetched {
     pub media_type: Option<String>,
 }
 
-/// One observation with row-level provenance. `geo_level` and `review` are
-/// filled in by the pipeline from the database and the publication class.
+/// One observation with row-level provenance, as a connector reads it:
+/// codes, not keys (the pipeline resolves surrogate keys and the admin
+/// level from the catalogue and `geo.units`, never from the connector).
 #[derive(Debug, Clone)]
 pub struct ObsRow {
     pub indicator_id: String,
+    /// p-code or `scheme:code`.
     pub geo_code: String,
+    /// Canonical period code of the indicator's frequency.
     pub period: String,
     /// Canonical `k=v;k=v` with keys sorted; empty when undimensioned.
     pub dims: String,
     pub value: Option<f64>,
-    pub status: &'static str,
+    /// Interval bounds (mandatory for `estimated` indicators).
+    pub lo: Option<f64>,
+    pub hi: Option<f64>,
+    pub basis: Basis,
+    pub status: Status,
+    pub flags: Flags,
     /// Index into the `Fetched` slice the row came from.
     pub artifact: usize,
     pub locator: serde_json::Value,
     pub verbatim: Option<String>,
-    pub method: &'static str,
+    pub method: Method,
     pub confidence: Option<f32>,
+}
+
+impl ObsRow {
+    /// A reported, normal, unflagged observation (the common case).
+    #[must_use]
+    pub fn reported(
+        indicator_id: impl Into<String>,
+        geo_code: impl Into<String>,
+        period: impl Into<String>,
+        dims: String,
+        value: Option<f64>,
+    ) -> Self {
+        Self {
+            indicator_id: indicator_id.into(),
+            geo_code: geo_code.into(),
+            period: period.into(),
+            dims,
+            value,
+            lo: None,
+            hi: None,
+            basis: Basis::Reported,
+            status: Status::Normal,
+            flags: Flags::EMPTY,
+            artifact: 0,
+            locator: serde_json::Value::Null,
+            verbatim: None,
+            method: Method::Api,
+            confidence: Some(1.0),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -128,6 +168,8 @@ pub struct RunOptions {
 pub struct Ctx<'a> {
     pub pool: &'a PgPool,
     pub registry: &'a Registry,
+    /// The country profile (codes, root unit, calendars).
+    pub profile: &'a Profile,
     pub archive: &'a Archive,
     pub http: &'a reqwest::Client,
     pub run: &'a RunTracker,
@@ -163,16 +205,8 @@ pub fn connector_for(source_id: &str) -> Option<Arc<dyn Connector>> {
 /// Source ids that have a connector implementation.
 pub const IMPLEMENTED: &[&str] = &["dcs-census-2024", "hdx-cod-ab-lka", "worldbank-wdi"];
 
-/// Canonical dims key from pairs: keys sorted, `k=v` joined by `;`.
-#[must_use]
-pub fn dims_key(pairs: &[(&str, &str)]) -> String {
-    let mut p: Vec<(&str, &str)> = pairs.to_vec();
-    p.sort_unstable();
-    p.iter()
-        .map(|(k, v)| format!("{k}={v}"))
-        .collect::<Vec<_>>()
-        .join(";")
-}
+/// Canonical dims key from pairs (keys sorted, `k=v` joined by `;`).
+pub use lanka_core::dims::dims_key;
 
 #[cfg(test)]
 mod tests {

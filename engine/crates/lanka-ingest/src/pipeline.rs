@@ -12,6 +12,7 @@ use std::time::Duration;
 use anyhow::{Context, Result, anyhow};
 use bytes::Bytes;
 use futures::{StreamExt, TryStreamExt};
+use lanka_core::Profile;
 use serde::Serialize;
 use serde_json::json;
 use sqlx::PgPool;
@@ -53,6 +54,7 @@ pub fn http_client() -> Result<reqwest::Client> {
 pub async fn run_source(
     pool: &PgPool,
     registry: &Registry,
+    profile: &Profile,
     archive: &Archive,
     source_id: &str,
     opts: &RunOptions,
@@ -76,6 +78,7 @@ pub async fn run_source(
     let ctx = Ctx {
         pool,
         registry,
+        profile,
         archive,
         http: &http,
         run: &run,
@@ -165,6 +168,7 @@ async fn execute(ctx: &Ctx<'_>, connector: &dyn crate::connector::Connector) -> 
                 let r = publish_observations(
                     ctx.pool,
                     ctx.registry,
+                    ctx.profile,
                     ctx.run.run_id,
                     &dataset_id,
                     vintage.as_deref(),
@@ -180,9 +184,7 @@ async fn execute(ctx: &Ctx<'_>, connector: &dyn crate::connector::Connector) -> 
                         Some(json!(r)),
                     )
                     .await;
-                if r.outcome != "unchanged" {
-                    written += r.rows;
-                }
+                written += r.rows_written;
                 published.push(r);
             }
             Output::AdminUnits {
@@ -192,6 +194,7 @@ async fn execute(ctx: &Ctx<'_>, connector: &dyn crate::connector::Connector) -> 
             } => {
                 let r = publish_admin_units(
                     ctx.pool,
+                    ctx.profile,
                     ctx.run.run_id,
                     &dataset_id,
                     &boundary_set,
@@ -207,9 +210,7 @@ async fn execute(ctx: &Ctx<'_>, connector: &dyn crate::connector::Connector) -> 
                         Some(json!(r)),
                     )
                     .await;
-                if r.outcome != "unchanged" {
-                    written += r.rows;
-                }
+                written += r.rows_written;
                 published.push(r);
             }
             Output::Crosswalks { source_id, rows } => {

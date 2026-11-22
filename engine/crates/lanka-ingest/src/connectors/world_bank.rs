@@ -1,4 +1,5 @@
-//! World Bank Indicators API v2 — national series for Sri Lanka (LKA).
+//! World Bank Indicators API v2 — national series for the profile's country
+//! (ISO 3166 alpha-3 from `country/<id>/profile.yaml`).
 //!
 //! Registry: source `worldbank-wdi`, dataset `wdi-lka`. Series fetched =
 //! every named indicator the dataset declares (`wdi.<code lowercased, . → _>`
@@ -18,6 +19,8 @@ use futures::future::BoxFuture;
 use serde::Deserialize;
 use serde_json::json;
 use serde_json::value::RawValue;
+
+use lanka_core::{Basis, Flags, Method, Status};
 
 use crate::connector::{Candidate, Connector, Ctx, Fetched, ObsRow, Output, dims_key};
 
@@ -86,8 +89,10 @@ pub fn indicator_id(code: &str) -> String {
     format!("wdi.{}", code.to_ascii_lowercase().replace('.', "_"))
 }
 
-fn url_for(code: &str) -> String {
-    format!("https://api.worldbank.org/v2/country/LKA/indicator/{code}?format=json&per_page=500")
+fn url_for(alpha3: &str, code: &str) -> String {
+    format!(
+        "https://api.worldbank.org/v2/country/{alpha3}/indicator/{code}?format=json&per_page=500"
+    )
 }
 
 /// Where a series' rows go: a named indicator, or the generic one + dims.
@@ -116,6 +121,7 @@ impl Target {
 /// Parses one API response into rows. `artifact` indexes the fetched slice.
 pub fn parse_response(
     bytes: &[u8],
+    geo: &str,
     code: &str,
     target: &Target,
     url: &str,
@@ -150,26 +156,32 @@ pub fn parse_response(
         if r.date.len() != 4 || !r.date.bytes().all(|b| b.is_ascii_digit()) {
             bail!("{code}: unexpected non-annual period {:?}", r.date);
         }
-        let status = match r.obs_status.as_deref().unwrap_or("") {
-            "E" | "e" => "estimate",
-            "F" | "f" => "forecast",
-            "P" | "p" => "provisional",
-            _ => "reported",
+        // WB obs_status: E estimate, F forecast, P provisional (WDI is a
+        // third-party source, so estimates are allowed when it says so).
+        let (basis, status) = match r.obs_status.as_deref().unwrap_or("") {
+            "E" | "e" => (Basis::Estimated, Status::Normal),
+            "F" | "f" => (Basis::Forecast, Status::Normal),
+            "P" | "p" => (Basis::Reported, Status::Provisional),
+            _ => (Basis::Reported, Status::Normal),
         };
         rows.push(ObsRow {
             indicator_id: target.indicator_id.clone(),
-            geo_code: "LK".to_owned(),
+            geo_code: geo.to_owned(),
             period: r.date,
             dims: target.dims.clone(),
             value: Some(value),
+            lo: None,
+            hi: None,
+            basis,
             status,
+            flags: Flags::EMPTY,
             artifact,
             locator: json!({
                 "url": url, "path": format!("$[1][{i}].value"), "series": code,
                 "series_label": r.indicator.map(|n| n.value),
             }),
             verbatim: Some(token.to_owned()),
-            method: "api",
+            method: Method::Api,
             confidence: Some(1.0),
         });
     }
@@ -217,10 +229,11 @@ impl Connector for WorldBankWdi {
             let mut codes: BTreeMap<String, ()> =
                 CORE_SERIES.iter().map(|c| ((*c).to_owned(), ())).collect();
             codes.extend(named.keys().map(|c| (c.clone(), ())));
+            let alpha3 = &ctx.profile.spec.iso3166.alpha3;
             Ok(codes
                 .into_keys()
                 .map(|code| Candidate {
-                    url: url_for(&code),
+                    url: url_for(alpha3, &code),
                     key: code,
                     local_path: None,
                     media_type: Some("application/json".to_owned()),
@@ -242,7 +255,8 @@ impl Connector for WorldBankWdi {
             let mut updated: Option<String> = None;
             for (i, f) in fetched.iter().enumerate() {
                 let target = Target::for_code(&f.key, &named);
-                let (mut r, lu) = parse_response(&f.bytes, &f.key, &target, &f.url, i)?;
+                let root = ctx.profile.admin.root();
+                let (mut r, lu) = parse_response(&f.bytes, root, &f.key, &target, &f.url, i)?;
                 if r.is_empty() {
                     ctx.run
                         .warn(
@@ -285,8 +299,8 @@ mod tests {
                 dims: "series_code=SP.POP.TOTL".into()
             }
         );
-        let (rows, lu) =
-            parse_response(SAMPLE.as_bytes(), "SP.POP.TOTL", &t, "https://x", 3).expect("parses");
+        let (rows, lu) = parse_response(SAMPLE.as_bytes(), "LK", "SP.POP.TOTL", &t, "https://x", 3)
+            .expect("parses");
         assert_eq!(lu.as_deref(), Some("2026-11-11"));
         assert_eq!(rows.len(), 2, "null values are skipped");
         assert_eq!(rows[0].value, Some(21_756_000.0));
@@ -295,7 +309,11 @@ mod tests {
         assert_eq!(rows[0].locator["series_label"], "Population, total");
         assert_eq!(rows[1].locator["path"], "$[1][2].value");
         assert_eq!(rows[1].verbatim.as_deref(), Some("2.5e7"));
-        assert_eq!(rows[1].status, "estimate");
+        assert_eq!(
+            (rows[1].basis, rows[1].status),
+            (Basis::Estimated, Status::Normal)
+        );
+        assert_eq!(rows[0].geo_code, "LK");
         assert_eq!(rows[1].artifact, 3);
     }
 
@@ -315,6 +333,7 @@ mod tests {
         let t = Target::for_code("X.Y", &HashMap::new());
         let err = parse_response(
             br#"[{"message":[{"id":"120","key":"Invalid value"}]}]"#,
+            "LK",
             "X.Y",
             &t,
             "u",

@@ -12,6 +12,8 @@ use futures::future::BoxFuture;
 use serde::Deserialize;
 use serde_json::value::RawValue;
 
+use lanka_core::AdminCodes;
+
 use crate::connector::{AdminUnitIn, BoundarySet, Candidate, Connector, Ctx, Fetched, Output};
 
 pub struct CodAb;
@@ -55,8 +57,16 @@ fn clean(s: Option<String>) -> Option<String> {
     s.map(|v| v.trim().to_owned()).filter(|v| !v.is_empty())
 }
 
-/// Parses one level file into units.
-pub fn parse_level(bytes: &[u8], key: &str, artifact: usize) -> Result<Vec<AdminUnitIn>> {
+/// Parses one level file into units. Codes are checked against the country
+/// profile's admin rules; the level-0 unit takes the profile's root code and
+/// `country_name` when the file carries none.
+pub fn parse_level(
+    bytes: &[u8],
+    key: &str,
+    artifact: usize,
+    admin: &AdminCodes,
+    country_name: &str,
+) -> Result<Vec<AdminUnitIn>> {
     let fc: Fc<'_> = serde_json::from_slice(bytes)
         .with_context(|| format!("{key}: not a GeoJSON FeatureCollection"))?;
     let expected: i16 = key[3..].parse()?;
@@ -67,10 +77,10 @@ pub fn parse_level(bytes: &[u8], key: &str, artifact: usize) -> Result<Vec<Admin
         ensure!(level == expected, "{key}: feature at level {level}");
         let (pcode, name_en, parent) = if level == 0 {
             (
-                "LK".to_owned(),
+                admin.root().to_owned(),
                 clean(p.name_en)
                     .or(clean(p.name))
-                    .unwrap_or_else(|| "Sri Lanka".to_owned()),
+                    .unwrap_or_else(|| country_name.to_owned()),
                 None,
             )
         } else {
@@ -84,7 +94,14 @@ pub fn parse_level(bytes: &[u8], key: &str, artifact: usize) -> Result<Vec<Admin
                 .with_context(|| format!("{key}: {pcode} has no parent_pcode"))?;
             (pcode, name, Some(parent))
         };
-        lanka_core::Pcode::parse(&pcode).with_context(|| format!("{key}: bad p-code"))?;
+        let code = admin
+            .parse(&pcode)
+            .with_context(|| format!("{key}: bad p-code"))?;
+        ensure!(
+            i16::from(code.level()) == level,
+            "{key}: {pcode} is a level-{} code in a level-{level} file",
+            code.level()
+        );
         out.push(AdminUnitIn {
             pcode,
             level,
@@ -134,7 +151,13 @@ impl Connector for CodAb {
         async move {
             let mut units = Vec::new();
             for (i, f) in fetched.iter().enumerate() {
-                units.extend(parse_level(&f.bytes, &f.key, i)?);
+                units.extend(parse_level(
+                    &f.bytes,
+                    &f.key,
+                    i,
+                    &ctx.profile.admin,
+                    &ctx.profile.spec.name.en,
+                )?);
             }
             let unnamed: Vec<&str> =
                 units.iter().filter(|u| u.name_en == u.pcode).map(|u| u.pcode.as_str()).collect();
@@ -150,7 +173,7 @@ impl Connector for CodAb {
             Ok(vec![Output::AdminUnits {
                 dataset_id: DATASET.to_owned(),
                 boundary_set: BoundarySet {
-                    id: "cod-ab-lka".to_owned(),
+                    id: ctx.profile.reference_boundary_set().to_owned(),
                     title: "OCHA COD-AB Sri Lanka administrative boundaries (ADM0–ADM4)".to_owned(),
                     vintage: Some("COD-AB LKA (fetched 2026-08-12)".to_owned()),
                     notes: Some(
@@ -169,23 +192,30 @@ impl Connector for CodAb {
 mod tests {
     use super::*;
 
+    fn admin() -> AdminCodes {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../registry");
+        let p = lanka_core::Profile::discover(&root).expect("profile");
+        lanka_core::Profile::load(p).expect("loads").admin
+    }
+
     #[test]
     fn parses_levels() {
+        let a = admin();
         let adm1 = br#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"pcode":"LK4","name_en":"Northern Province","name_si":"x","name_ta":null,"level":1,"parent_pcode":"LK"},"geometry":{"type":"Polygon","coordinates":[[[79.9,8.9],[80.0,8.9],[80.0,9.0],[79.9,8.9]]]}}]}"#;
-        let u = parse_level(adm1, "adm1", 2).expect("parses");
+        let u = parse_level(adm1, "adm1", 2, &a, "Country").expect("parses");
         assert_eq!(u.len(), 1);
         assert_eq!(u[0].pcode, "LK4");
         assert_eq!(u[0].parent_pcode.as_deref(), Some("LK"));
         assert!(u[0].name_ta.is_none());
         assert!(u[0].geometry.get().starts_with("{\"type\":\"Polygon\""));
         let adm0 = br#"{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"name":"Sri Lanka","level":0},"geometry":{"type":"Point","coordinates":[80,7]}}]}"#;
-        let u0 = parse_level(adm0, "adm0", 0).expect("parses");
+        let u0 = parse_level(adm0, "adm0", 0, &a, "Country").expect("parses");
         assert_eq!(
             (u0[0].pcode.as_str(), u0[0].parent_pcode.is_none()),
             ("LK", true)
         );
         assert!(
-            parse_level(adm1, "adm2", 0).is_err(),
+            parse_level(adm1, "adm2", 0, &a, "Country").is_err(),
             "level mismatch is rejected"
         );
     }
