@@ -975,7 +975,11 @@ fn read_at(
                 .copied()
                 .filter(|w| w.cx() >= first_left && right_limit.is_none_or(|r| w.bbox[0] <= r))
                 .collect();
-            body.push((l.y0, l.y1, label_ws, col_ws));
+            // Lines with nothing in the label or column area (text printed left of
+            // the label column, e.g. other-language labels) are not table lines.
+            if !label_ws.is_empty() || !col_ws.is_empty() {
+                body.push((l.y0, l.y1, label_ws, col_ws));
+            }
         }
         for (i, (y0, y1, label_ws, col_ws)) in body.iter().enumerate() {
             if !label_ws.is_empty() && !col_ws.is_empty() {
