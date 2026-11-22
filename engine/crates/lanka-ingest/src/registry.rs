@@ -198,6 +198,9 @@ pub struct DatasetSpec {
     /// Name search (`q=`) is served: a trigram index on `name_en`.
     #[serde(default)]
     pub searchable: bool,
+    /// Declarative expectations (03 §5.2, `expect.rs`).
+    #[serde(default)]
+    pub expect: Vec<serde_json::Value>,
 }
 
 /// A declared feature field.
@@ -680,6 +683,31 @@ impl Registry {
     fn check_references(&mut self, errors: &mut Vec<String>) {
         self.check_semantics(errors);
         self.check_feature_specs(errors);
+        // Expectations parse (dataset and connector level).
+        for d in self.datasets.values() {
+            if let Err(e) = crate::expect::parse_all(&d.spec.expect) {
+                errors.push(format!("{}: {e:#}", d.path.display()));
+            }
+        }
+        for c in self.connectors.values() {
+            if let Some(list) = c.json.get("expect").and_then(serde_json::Value::as_array) {
+                match crate::expect::parse_all(list) {
+                    Err(e) => errors.push(format!("{}: {e:#}", c.path.display())),
+                    Ok(exps) => {
+                        for x in exps {
+                            if let Some(ds) = &x.dataset
+                                && !self.datasets.contains_key(ds)
+                            {
+                                errors.push(format!(
+                                    "{}: expectation for unknown dataset {ds:?}",
+                                    c.path.display()
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+        }
         // Indicator ids are global.
         let mut seen: HashMap<&str, &str> = HashMap::new();
         for d in self.datasets.values() {

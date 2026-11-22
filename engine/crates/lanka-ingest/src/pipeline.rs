@@ -33,11 +33,11 @@ use tokio::sync::{Mutex, Semaphore};
 
 use crate::connector::{
     Candidate, CollectSink, Connector, DiscoverCtx, ExtractCtx, Fetched, HttpMethod, Lookup,
-    Output, RunOptions, StdCtx, UnitRef, connector_for, implemented,
+    ObsRow, Output, RunOptions, StdCtx, UnitRef, connector_for, implemented,
 };
 use crate::extract::{ExtractArtifact, ExtractOut, ExtractRef, from_parquet, to_parquet};
 use crate::geo_load::{publish_admin_units, upsert_crosswalks};
-use crate::publish::{PublishResult, StageInput, publish_observations};
+use crate::publish::{PublishOpts, PublishResult, StageInput, publish_observations_with};
 use crate::registry::Registry;
 use crate::run::{Level, RunStatus, RunTracker, Stage};
 
@@ -78,14 +78,21 @@ impl RunReport {
     }
 }
 
+/// User agent of every fetch: the crawler convention `Mozilla/5.0
+/// (compatible; <bot>/<version>; +<url>)`. It identifies the project; some
+/// government web application firewalls (CBSL) refuse agents without the
+/// `Mozilla/5.0 (compatible; …)` prefix.
+pub const USER_AGENT: &str = concat!(
+    "Mozilla/5.0 (compatible; lanka-data-layer-ingest/",
+    env!("CARGO_PKG_VERSION"),
+    "; +https://github.com/prabhavalabs/lanka-data-layer)"
+);
+
 /// HTTP client used by connectors: identifies the project, follows redirects,
 /// decompresses, and times out.
 pub fn http_client() -> Result<reqwest::Client> {
     Ok(reqwest::Client::builder()
-        .user_agent(concat!(
-            "lanka-data-layer-ingest/",
-            env!("CARGO_PKG_VERSION")
-        ))
+        .user_agent(USER_AGENT)
         .connect_timeout(Duration::from_secs(15))
         .timeout(Duration::from_secs(300))
         .build()?)
@@ -587,7 +594,7 @@ pub(crate) async fn persist_extract(
 
 /// Admin units of the profile's scheme for `standardise` (read once per run),
 /// and the country's land area buffered by the snap distance (features).
-async fn load_lookup(pool: &PgPool, profile: &Profile) -> Result<Lookup> {
+pub async fn load_lookup(pool: &PgPool, profile: &Profile) -> Result<Lookup> {
     let coverage = crate::features::load_coverage(pool, profile).await?;
     let units: Vec<(String, i16, String, Option<String>)> =
         sqlx::query_as("SELECT pcode, level, name_en, parent_pcode FROM geo.admin_units")
@@ -673,7 +680,8 @@ async fn standardise_and_publish(
                     None,
                 )
                 .await;
-                let r = publish_observations(
+                let opts = expectations(env, run, &lookup, &dataset_id, &rows).await?;
+                let r = publish_observations_with(
                     env.pool,
                     env.registry,
                     env.profile,
@@ -685,6 +693,7 @@ async fn standardise_and_publish(
                         artifact_ids,
                         extract_ids: &extract_ids,
                     },
+                    &opts,
                 )
                 .await
                 .with_context(|| format!("publishing {dataset_id}"))?;
@@ -734,6 +743,21 @@ async fn standardise_and_publish(
                     None,
                 )
                 .await;
+                {
+                    let exps = crate::expect::for_dataset(env.registry, &dataset_id)?;
+                    let class = env
+                        .registry
+                        .dataset(&dataset_id)
+                        .map_or("A", |d| d.publication_class.as_str());
+                    let results = crate::expect::check_geometry(
+                        &exps,
+                        &crate::expect::feature_items(&rows),
+                        env.profile,
+                        class,
+                    );
+                    log_results(run, &dataset_id, &results).await;
+                    crate::expect::ensure_passed(&dataset_id, &results)?;
+                }
                 let r = crate::features::publish_features(
                     env.pool,
                     env.registry,
@@ -794,6 +818,77 @@ async fn standardise_and_publish(
         published,
         crosswalks,
         short_circuit: None,
+    })
+}
+
+/// Writes expectation results to the run log.
+async fn log_results(run: &RunTracker, dataset_id: &str, results: &[crate::expect::CheckResult]) {
+    for r in results {
+        let msg = format!("{dataset_id}: {}", r.line());
+        if r.passed {
+            run.info(Stage::Validate, &msg, None).await;
+        } else {
+            run.warn(Stage::Validate, &msg, None).await;
+        }
+    }
+}
+
+/// Evaluates a dataset's expectations on the standardised rows (03 §5.2).
+/// Class A fails here on an error; B/C carry the failures into review.
+async fn expectations(
+    env: &Env<'_>,
+    run: &RunTracker,
+    lookup: &Lookup,
+    dataset_id: &str,
+    rows: &[ObsRow],
+) -> Result<PublishOpts> {
+    let exps = crate::expect::for_dataset(env.registry, dataset_id)?;
+    if exps.is_empty() {
+        return Ok(PublishOpts::default());
+    }
+    let class = env
+        .registry
+        .dataset(dataset_id)
+        .map_or_else(|| "A".to_owned(), |d| d.publication_class.clone());
+    let prev_rows: Option<i64> = sqlx::query_scalar(
+        "SELECT row_count FROM data.dataset_versions
+         WHERE dataset_id = $1 AND status = 'published' ORDER BY seq DESC LIMIT 1",
+    )
+    .bind(dataset_id)
+    .fetch_optional(env.pool)
+    .await?;
+    let ctx = crate::expect::ObsCtx {
+        registry: env.registry,
+        profile: env.profile,
+        lookup,
+        class: &class,
+        prev_rows,
+        today: chrono::Utc::now().date_naive(),
+    };
+    let results = crate::expect::check_observations(&exps, rows, &ctx);
+    log_results(run, dataset_id, &results).await;
+    if class == "A" {
+        crate::expect::ensure_passed(dataset_id, &results)?;
+    }
+    let staged: Vec<crate::expect::Expectation> = exps
+        .into_iter()
+        .filter(|e| {
+            matches!(
+                e.check,
+                crate::expect::Check::Sql { .. } | crate::expect::Check::RevisionLimit { .. }
+            )
+        })
+        .collect();
+    Ok(PublishOpts {
+        gate: crate::expect::revision_limits(
+            &staged,
+            (
+                crate::publish::MAX_CHANGED_SHARE,
+                crate::publish::MAX_REMOVED_SHARE,
+            ),
+        ),
+        results,
+        staged,
     })
 }
 

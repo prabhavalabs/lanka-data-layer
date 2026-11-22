@@ -4,10 +4,12 @@
 //! the scheduler, the release train and the worker.
 
 pub mod connector;
+pub mod connector_test;
 pub mod connectors;
 pub mod copy_bin;
 pub mod derive;
 pub mod drivers;
+pub mod expect;
 pub mod extract;
 pub mod features;
 pub mod geo_load;

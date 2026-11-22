@@ -841,12 +841,47 @@ pub(crate) async fn current_full(
 /// hashed or written. Otherwise the dsv is computed incrementally from the
 /// released version's multiset hash, and only new or rewritten rows are
 /// inserted (range versioning, 05 §2.1).
-#[allow(clippy::too_many_lines)]
 pub async fn publish_observations(
     pool: &PgPool,
     registry: &Registry,
     profile: &Profile,
     input: StageInput<'_>,
+) -> Result<PublishResult> {
+    publish_observations_with(pool, registry, profile, input, &PublishOpts::default()).await
+}
+
+/// Expectation results and gate settings for one staging (03 §5.2).
+#[derive(Debug, Clone)]
+pub struct PublishOpts {
+    /// Class-A gate thresholds (shares): changed, removed.
+    pub gate: (f64, f64),
+    /// Results of the pre-staging expectations (stored in `validation`).
+    pub results: Vec<crate::expect::CheckResult>,
+    /// `sql` and `revision_limit` expectations, evaluated at staging.
+    pub staged: Vec<crate::expect::Expectation>,
+}
+
+impl Default for PublishOpts {
+    fn default() -> Self {
+        Self {
+            gate: (MAX_CHANGED_SHARE, MAX_REMOVED_SHARE),
+            results: Vec::new(),
+            staged: Vec::new(),
+        }
+    }
+}
+
+/// [`publish_observations`] with expectations: `sql` checks run against the
+/// staged rows, `revision_limit` sets the gate, and any error-severity
+/// failure sends a B/C version to review (class A fails before this point,
+/// or here for the staging-time checks).
+#[allow(clippy::too_many_lines)]
+pub async fn publish_observations_with(
+    pool: &PgPool,
+    registry: &Registry,
+    profile: &Profile,
+    input: StageInput<'_>,
+    opts: &PublishOpts,
 ) -> Result<PublishResult> {
     let StageInput {
         run_id,
@@ -895,8 +930,34 @@ pub async fn publish_observations(
     )
     .await?;
     ensure!(staged == n, "COPY staged {staged} of {n} rows");
+    let mut results = opts.results.clone();
+    for e in &opts.staged {
+        if let Some(r) = crate::expect::run_sql(&mut tx, e, &class).await? {
+            results.push(r);
+        }
+    }
     let cur_seq = current.as_ref().map_or(0, |c| c.seq);
     let diff = classify(&mut tx, dataset_key, cur_seq).await?;
+    for e in &opts.staged {
+        if let Some(r) = crate::expect::check_revision(
+            e,
+            &class,
+            diff.prev_rows,
+            diff.rows_changed,
+            diff.rows_removed,
+        ) {
+            results.push(r);
+        }
+    }
+    if class == "A" {
+        // Class A: an error at staging fails the run (nothing is written).
+        crate::expect::ensure_passed(dataset_id, &results)?;
+    }
+    let expect_failure = results
+        .iter()
+        .filter(|r| r.is_error())
+        .map(crate::expect::CheckResult::line)
+        .collect::<Vec<_>>();
     let untouched = diff.rows_added == 0
         && diff.rows_changed == 0
         && diff.rows_restated == 0
@@ -1086,27 +1147,33 @@ pub async fn publish_observations(
     let gate_failure = has_prev
         .then(|| {
             let prev = diff.prev_rows.max(1) as f64;
-            if diff.rows_changed as f64 / prev > MAX_CHANGED_SHARE {
+            let (max_changed, max_removed) = opts.gate;
+            if diff.rows_changed as f64 / prev > max_changed {
                 Some(format!(
-                    "{} historical values changed (> {:.0}%)",
+                    "{} historical values changed (> {}%)",
                     diff.rows_changed,
-                    MAX_CHANGED_SHARE * 100.0
+                    max_changed * 100.0
                 ))
-            } else if diff.rows_removed as f64 / prev > MAX_REMOVED_SHARE {
+            } else if diff.rows_removed as f64 / prev > max_removed {
                 Some(format!(
-                    "{} rows removed (> {:.0}%)",
+                    "{} rows removed (> {}%)",
                     diff.rows_removed,
-                    MAX_REMOVED_SHARE * 100.0
+                    max_removed * 100.0
                 ))
             } else {
                 None
             }
         })
-        .flatten();
+        .flatten()
+        .or_else(|| {
+            (!expect_failure.is_empty())
+                .then(|| format!("expectations failed: {}", expect_failure.join("; ")))
+        });
     let validation = json!({
         "rows": n_rows, "rows_written": written, "rows_hashed": hashed,
         "geo_codes": prep.iter().map(|p| p.geo_key).collect::<BTreeSet<_>>().len(),
         "gate_failure": gate_failure,
+        "expectations": results,
     });
     let diff_out = has_prev.then_some(diff);
     sqlx::query("UPDATE data.dataset_versions SET validation = $2, diff = $3 WHERE id = $1")
