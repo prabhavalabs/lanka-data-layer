@@ -10,7 +10,7 @@ Design: [docs/architecture-v2/](../docs/architecture-v2/README.md) (the standard
 |---|---|
 | `lanka-core` | standard-model types — country profile, geography codes (profile-driven p-codes + `scheme:code`), periods (`freq` + `time_start`, full grammar), units/measure semantics, `basis`/`status`/method/review codes, flag registry, dims, dsv multiset hashing — plus the canonical grid (pinned to the v1 test vectors), envelope, Postgres pool + embedded migrations, catalog snapshot (surrogate-key maps) and every read query. No country literal: everything country-specific comes from `country/<id>/profile.yaml`. |
 | `lanka-store` | the blob store behind one `BlobStore` trait (`FsStore` today; S3/Garage later): content-addressed `raw/` (L0) and `extract/` (L1), immutable named objects, atomic temp + fsync + rename |
-| `lanka-ingest` | registry loader + JSON-Schema validation + sync (profile, units, codelists, connector specs, schedules), connector SDK v2 (`discover` → `extract` → `standardise`), declarative drivers (`http_json`; `registry/connectors/*.yaml`), code connectors (`dcs-census-2024`, `hdx-cod-ab-lka`), L1 Parquet extracts, layered change detection, run tracking + the event feed, validate → stage (binary COPY + set-based diff, incremental dsv, range-versioned) → gate → approve/review, the job queue (`jobs.rs`), scheduler (`scheduler.rs`), release train (`train.rs`) and `lanka worker` (`worker.rs`), the WP-01 registry migration |
+| `lanka-ingest` | registry loader + JSON-Schema validation + sync (profile, units, codelists, connector specs, schedules), connector SDK v2 (`discover` → `extract` → `standardise`), declarative drivers (`http_json`, tabular `csv`/`sdmx`/`ckan`/`xlsx_table`/`html_table`/`git_files`, spatial `osm_pbf`/`geo_file`/`raster`; `registry/connectors/*.yaml`), declarative expectations (`expect.rs`), `lanka connector test`, code connectors (`dcs-census-2024`, `hdx-cod-ab-lka`), L1 Parquet extracts, layered change detection, run tracking + the event feed, validate → stage (binary COPY + set-based diff, incremental dsv, range-versioned) → gate → approve/review, the job queue (`jobs.rs`), scheduler (`scheduler.rs`), release train (`train.rs`) and `lanka worker` (`worker.rs`), the WP-01 registry migration |
 | `lanka-mapdoc` | the `ldl-map/1` map document (WP-26): serde types (`x-*` keys preserved), validation (embedded `spec/map/1/map.schema.json` + limits/references, JSON-pointer problems), RFC 8785 canonical JSON + content hash, references (`app.map_refs`), resolution against the catalogue, the ramp/tone registry, generated TypeScript |
 | `lanka-server` | axum `/v2/*` (data, frames, health, status) + OpenAPI (utoipa) |
 | `lanka-cli` | the `lanka` binary |
@@ -424,12 +424,50 @@ LANKA_TEST_DATABASE_URL=postgres://lanka:<password>@127.0.0.1:55432/postgres car
 LANKA_TEST_CENSUS_DIR=$PWD/../../lanka-data-layer/foundry/data/raw/census-2024 cargo test -p lanka-ingest
 ```
 
+## Declarative drivers and expectations (WP-07)
+
+Design: [03 §2.2, §5.2](../docs/architecture-v2/03-ingestion.md#22-declarative-drivers--the-default-path),
+[ADR 0008](../docs/architecture-v2/adr/0008-declarative-drivers-rust-only.md).
+
+- **One tabular implementation** (`drivers/tabular.rs`) behind `csv`, `sdmx` (SDMX-CSV), `ckan`, `xlsx_table`,
+  `html_table`, `git_files` and the table form of `http_json` (the WP-02 per-key form keeps WDI). The driver
+  name only picks the default format; `discover.kind` (`static`, `keys`, `listing_page`, `url_pattern`,
+  `ckan`, `git`) finds the files, `extract.format` (`csv`/`tsv` streamed, optionally from a zip member and
+  row-filtered; `xlsx`/`xls` via calamine; `html` via scraper; `json` tables with entries and key templates)
+  writes the L1 extract (cells or records).
+- **Selector language** (`drivers/table.rs`): tables are assembled from the extract (header anchor, multi-row
+  merged headers, `fill_down`, `rename` for printed header typos, stop/skip rows); each output maps rows to
+  observations (`indicator`, `geo` root/code/name-matched with the reviewed alias list, `period` with chrono
+  formats and seasons, `dims` with maps, `value`/`lo`/`hi` with number rules, `status` codes, wide → long
+  `melt`, row `filter`) or to point features. Every value keeps its cell provenance and verbatim token;
+  a duplicate observation key is an error that names both cells. Logic beyond that is a code connector.
+- **Expectations** (`expect.rs`): every check of 03 §5.2 from `expect:` in a dataset or connector spec
+  (`dataset:` scopes connector entries; default severity error for class A, warn otherwise). Evaluated after
+  standardise; `sql` runs on the staged rows (`stage_obs`, read-only, 10 s, rolled back) and
+  `revision_limit` sets the class-A gate. Results are in `dataset_versions.validation.expectations`.
+  *Deviation:* an error fails a class-A run before staging (03 §7 says "version rejected, kept 180 days";
+  the extract is kept, so the run can be re-standardised); B/C go to review with the failures.
+- **`lanka connector test <source> [--from DIR] [--rows N] [--json] [--no-db]`** runs discover/fetch (or the
+  fixture files, keyed by file stem), extract, a Parquet round trip and standardise in memory, prints the
+  first rows and every expectation, and exits 1 on an error. `lanka connector list` lists drivers.
+- **Fetching**: the user agent follows the crawler convention (`Mozilla/5.0 (compatible; lanka-data-layer-ingest/…)`)
+  — CBSL's firewall rejects anything else. `statistics.gov.lk` offers only TLS 1.2 CBC suites, which rustls
+  does not implement (the image has no OpenSSL), so DCS documents are fetched over HTTP; artifacts are
+  still content-addressed.
+
+Sources on YAML: `worldbank-wdi` (WP-02), `dcs-agriculture` (HTML + 8 XLSX), `cbsl-exchange-rates`,
+`imf-data`, `who-gho`, `un-sdg`, `ilostat`, `hdx-cod-ps-lka`, `wfp-vam`, `ourairports`, `geonames`,
+`faostat` (bulk CSV: the REST API is down or token-only), `nuuuwan-lk-dcs` (`git_files`). Golden tests on
+real government fixtures: `tests/drivers_golden.rs`; expectation pass/fail cases: `src/expect/tests.rs` and
+`tests/pg_expect.rs` (`sql`).
+
 ## Adding a source
 
 1. Write `registry/sources/<id>.yaml` and `registry/datasets/<id>.yaml` (validated by `lanka registry validate`);
    units must be in `registry/units.yaml` and every dimension needs a `registry/codelists/<codelist>.yaml`.
-2. **Regular API** → `registry/connectors/<id>.yaml` on a driver (today `http_json`; see
-   `worldbank-wdi.yaml` and the header of `drivers/http_json.rs`). No Rust.
+2. **Regular source** → `registry/connectors/<id>.yaml` on a driver (`http_json`, `csv`, `sdmx`, `ckan`,
+   `xlsx_table`, `html_table`, `git_files`; see [Declarative drivers](#declarative-drivers-and-expectations-wp-07)).
+   Try it with `lanka connector test <id>` (upstream) or `--from <fixtures>`, add `expect:` checks. No Rust.
    **Irregular source** → `crates/lanka-ingest/src/connectors/<id>.rs` implementing `Connector`
    (`discover` + `extract` + `standardise`; no DB writes, no network outside `discover`) and one line in
    `connector::code_connector`.
