@@ -118,6 +118,14 @@ pub struct HeaderSpec {
     /// but the last header row.
     #[serde(default)]
     pub fill_right: bool,
+    /// Use the n-th match of `anchor` (row-major, 1-based): stacked tables
+    /// on one sheet repeat their header.
+    #[serde(default = "one")]
+    pub occurrence: u32,
+    /// At least this many columns from the anchor, even where the header
+    /// prints fewer (unlabelled value columns are named `#<letter>`).
+    #[serde(default)]
+    pub min_width: u32,
 }
 
 const fn one() -> u32 {
@@ -852,21 +860,30 @@ fn from_cells(
         }
     }
     let anchor = re(&h.anchor)?;
+    ensure!(h.occurrence >= 1, "header.occurrence starts at 1");
     let (hr, hc) = grid
         .iter()
-        .find_map(|(r, cols)| {
+        .flat_map(|(r, cols)| {
             cols.iter()
-                .find(|(_, i)| anchor.is_match(&clean(&cells[**i as usize].text)))
-                .map(|(c, _)| (*r, *c))
+                .filter(|(_, i)| anchor.is_match(&clean(&cells[**i as usize].text)))
+                .map(move |(c, _)| (*r, *c))
         })
-        .with_context(|| format!("header anchor {:?} not found (template miss)", h.anchor))?;
-    let header_rows: Vec<u32> = (hr..hr + h.rows).collect();
+        .nth(h.occurrence as usize - 1)
+        .with_context(|| {
+            format!(
+                "header anchor {:?} (occurrence {}) not found (template miss)",
+                h.anchor, h.occurrence
+            )
+        })?;
+    let depth = h.rows;
+    let header_rows: Vec<u32> = (hr..hr + depth).collect();
     let max_c = header_rows
         .iter()
         .filter_map(|r| grid.get(r))
         .filter_map(|cols| cols.keys().next_back().copied())
         .max()
-        .unwrap_or(hc);
+        .unwrap_or(hc)
+        .max(hc + h.min_width.saturating_sub(1));
     let ncols = (max_c - hc + 1) as usize;
     let mut parts: Vec<Vec<String>> = vec![Vec::new(); ncols];
     for (k, r) in header_rows.iter().enumerate() {
@@ -925,7 +942,7 @@ fn from_cells(
         .iter()
         .map(|s| re(s))
         .collect::<Result<_>>()?;
-    let last_header = hr + h.rows - 1;
+    let last_header = hr + depth - 1;
     let max_row = grid.keys().next_back().copied().unwrap_or(last_header);
     let mut rows = Vec::new();
     let mut blanks = 0u32;

@@ -1174,6 +1174,14 @@
             },
             "fill_right": {
               "type": "boolean"
+            },
+            "occurrence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "min_width": {
+              "type": "integer",
+              "minimum": 1
             }
           }
         },

@@ -277,6 +277,47 @@ async fn imf_projections_follow_the_edition_year() {
     assert_eq!(basis_of(&r, "2027"), "forecast");
 }
 
+/// PUCSL SAIDI/SAIFI: two stacked blocks per sheet (`header.occurrence`),
+/// unlabelled month columns (`header.min_width`), months by position.
+#[tokio::test]
+async fn pucsl_stacked_blocks_xlsx() {
+    let (reg, p) = registry();
+    let r = test("pucsl", &reg, &p).await.expect("runs");
+    let o = &r.outputs[0];
+    assert_eq!((o.dataset.as_str(), o.rows), ("pucsl-supply-reliability", 5314));
+    // 2024-Q4 CEB sheets split each month by cause: Jaffna, October, planned
+    let jaffna = find(
+        &o.first,
+        &[
+            ("indicator", "ener.saidi"),
+            ("dims", "cause=planned;distribution_area=dl1_jaffna;licensee=DL1"),
+            ("period", "2024-10"),
+        ],
+    );
+    assert_eq!(jaffna["value"], 84.1);
+    // the SAIFI block is the anchor's second occurrence
+    find(
+        &o.first,
+        &[
+            ("indicator", "ener.saifi"),
+            ("dims", "cause=total;distribution_area=dl1_jaffna_east;licensee=DL1"),
+            ("period", "2024-07"),
+        ],
+    );
+    // LECO 2025-Q1 prints SAIDI in hours: × 60, verbatim kept
+    let kotte = find(
+        &o.first,
+        &[
+            ("indicator", "ener.saidi"),
+            ("dims", "cause=total;distribution_area=dl5_kotte;licensee=DL5"),
+            ("period", "2025-01"),
+        ],
+    );
+    assert!((kotte["value"].as_f64().expect("number") - 57.6).abs() < 1e-9);
+    assert_eq!(kotte["verbatim"], "0.96");
+    assert!(!r.failed());
+}
+
 #[test]
 fn every_connector_spec_builds_its_driver() {
     let (reg, _) = registry();
