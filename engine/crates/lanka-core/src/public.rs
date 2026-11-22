@@ -11,7 +11,8 @@
 //!    TCP peer is listed in `LANKA_TRUSTED_PROXIES` (comma-separated IPs);
 //! 4. the country profile's `site.base_url`.
 //!
-//! `Host` alone is never trusted. Payload links that stay inside the API
+//! `Host` alone is never trusted, except by TileJSON in relative mode
+//! ([`PublicBase::absolute_origin_for`]): it points back at the request. Payload links that stay inside the API
 //! (`next`, analysis output `href`s) are relative whatever the base.
 
 use std::net::IpAddr;
@@ -69,6 +70,37 @@ impl PublicBase {
         match &self.configured {
             Some(c) => c.clone(),
             None => profile_base.map(trim).unwrap_or_default(),
+        }
+    }
+
+    /// The origin for documents whose links must be absolute (TileJSON:
+    /// MapLibre does not resolve relative `tiles` URLs, its workers have no
+    /// base URL). As [`Self::origin_for`]; in relative mode the request's
+    /// own origin — trusted forwarded headers, else `Host` — so the links
+    /// point back where the client reached this document.
+    #[must_use]
+    pub fn absolute_origin_for(
+        &self,
+        peer: Option<IpAddr>,
+        forwarded_proto: Option<&str>,
+        forwarded_host: Option<&str>,
+        host: Option<&str>,
+        profile_base: Option<&str>,
+    ) -> String {
+        if self.configured.as_deref() != Some("") {
+            return self.origin_for(peer, forwarded_proto, forwarded_host, profile_base);
+        }
+        let relative = Self {
+            configured: None,
+            ..self.clone()
+        };
+        let o = relative.origin_for(peer, forwarded_proto, forwarded_host, None);
+        if !o.is_empty() {
+            return o;
+        }
+        match host.map(str::trim).filter(|h| valid_host(h)) {
+            Some(h) => format!("http://{h}"),
+            None => String::new(),
         }
     }
 
@@ -138,6 +170,34 @@ mod tests {
         assert_eq!(
             rel.origin_for(peer, Some("https"), Some("evil"), PROFILE),
             ""
+        );
+    }
+
+    #[test]
+    fn tilejson_stays_absolute_in_relative_mode() {
+        let rel = base(&[
+            ("LANKA_PUBLIC_BASE_URL", ""),
+            ("LANKA_TRUSTED_PROXIES", "127.0.0.1"),
+        ]);
+        let proxy = Some("127.0.0.1".parse().expect("ip"));
+        assert_eq!(
+            rel.absolute_origin_for(
+                proxy,
+                Some("http"),
+                Some("100.1.2.3:5183"),
+                Some("127.0.0.1:8601"),
+                PROFILE
+            ),
+            "http://100.1.2.3:5183"
+        );
+        assert_eq!(
+            rel.absolute_origin_for(None, None, Some("evil"), Some("127.0.0.1:8601"), PROFILE),
+            "http://127.0.0.1:8601"
+        );
+        let abs = base(&[("LANKA_PUBLIC_BASE_URL", "https://api.example.org")]);
+        assert_eq!(
+            abs.absolute_origin_for(None, None, None, Some("127.0.0.1:8601"), PROFILE),
+            "https://api.example.org"
         );
     }
 

@@ -311,25 +311,6 @@ fn vector_layers(
     vl
 }
 
-/// The public origin for absolute links in this response
-/// ([`lanka_core::PublicBase`]; `""` = relative links).
-pub(crate) fn public_origin(
-    st: &AppState,
-    headers: &HeaderMap,
-    peer: Option<std::net::IpAddr>,
-) -> String {
-    let h = |n: &str| headers.get(n).and_then(|v| v.to_str().ok());
-    let cat = st.catalog();
-    lanka_core::PublicBase::global().origin_for(
-        peer,
-        h("x-forwarded-proto"),
-        h("x-forwarded-host"),
-        cat.profile
-            .as_deref()
-            .map(|p| p.spec.site.base_url.as_str()),
-    )
-}
-
 /// The TCP peer, when the server runs with connect info.
 pub(crate) type Peer = Option<axum::Extension<axum::extract::ConnectInfo<std::net::SocketAddr>>>;
 
@@ -404,7 +385,19 @@ async fn tilejson(
     let pm = open_archive(&store_root(&st).join(&t.path))?;
     let meta = pm.metadata().unwrap_or_default();
     let h = &pm.header;
-    let base = public_origin(&st, &headers, peer_ip(&peer));
+    let base = {
+        let h = |n: &str| headers.get(n).and_then(|v| v.to_str().ok());
+        let cat = st.catalog();
+        lanka_core::PublicBase::global().absolute_origin_for(
+            peer_ip(&peer),
+            h("x-forwarded-proto"),
+            h("x-forwarded-host"),
+            h("host"),
+            cat.profile
+                .as_deref()
+                .map(|p| p.spec.site.base_url.as_str()),
+        )
+    };
     let raster = h.tile_type != 1;
     let ext = if raster { "png" } else { "mvt" };
     let mut doc = serde_json::json!({

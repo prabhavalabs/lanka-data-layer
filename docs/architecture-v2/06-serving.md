@@ -69,8 +69,10 @@ Attribution is **per source, never per licence**: a source's text is its registr
 Every absolute link the engine emits — TileJSON `tiles`/`pmtiles`, analysis citation permalinks, snapshot `url`/`embed`, package and oEmbed links — is built on **one public base**, resolved in this order:
 
 1. `LANKA_PUBLIC_BASE_URL` when set. **Empty means relative**: links are bare paths (`/v2/tiles/admin/{z}/{x}/{y}.mvt`, `/m/{id}`), resolved by the client against the API origin it called (a dev proxy, a same-origin front-end). `LANKA_PUBLIC_URL` is a deprecated alias (non-empty only).
-2. `X-Forwarded-Proto` + `X-Forwarded-Host` of the request, **only** when the TCP peer is listed in `LANKA_TRUSTED_PROXIES` (comma-separated IPs; empty by default). `Host` alone is never trusted.
+2. `X-Forwarded-Proto` + `X-Forwarded-Host` of the request, **only** when the TCP peer is listed in `LANKA_TRUSTED_PROXIES` (comma-separated IPs; empty by default). `Host` alone is never trusted (TileJSON in relative mode is the exception below).
 3. The country profile's `site.base_url`.
+
+TileJSON is the one document that stays absolute in relative mode (MapLibre does not resolve relative `tiles` URLs; its workers have no base URL): its links use the request's own origin — trusted forwarded headers, else `Host` — so they point back where the client fetched the TileJSON. Behind a dev proxy that rewrites `Host` (`changeOrigin`), let it send `X-Forwarded-Host` (`xfwd: true`) and list the proxy in `LANKA_TRUSTED_PROXIES`, or load tiles from the resolver's relative `tiles` template instead of the TileJSON.
 
 Links that stay inside the API are relative whatever the base: `meta.next[].href`, analysis `outputs[].href` (`/v2/analyses/{id}/outputs/{output}`; stored results are re-linked when served), resolver data URLs.
 
