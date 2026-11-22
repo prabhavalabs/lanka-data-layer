@@ -17,13 +17,15 @@ indicators:
   - adm1
   period_type: year
 - id: tran.new_vehicle_registrations
-  label: New vehicle registrations
+  label: New vehicles registered by class and fuel type
   unit: '{count}'
   measure_type: count
   aggregation: sum
   class: official
   dims:
   - vehicle_class
+  - id: fuel
+    codelist: vehicle_fuel
   geo_levels:
   - national
   period_type: year
@@ -147,9 +149,9 @@ indicators:
 time_coverage:
   from: '2016'
   to: '2024'
-method: 'Statistical Abstract 2025, chapter 7: table 7.1 (A and B road length by province and expressways), 7.12 (ship traffic
-  by port), 7.13 (Port of Colombo cargo by flow), 7.14 (cargo by port; Colombo totals from 7.13) and 7.15 (Colombo port performance).
-  PDF tables read through registry templates; reviewed.'
+method: 'Statistical Abstract 2025, chapter 7: table 7.1 (A and B road length by province and expressways), 7.3 (new vehicles
+  registered by class and fuel, DMT), 7.12 (ship traffic by port), 7.13 (Port of Colombo cargo by flow), 7.14 (cargo by port;
+  Colombo totals from 7.13) and 7.15 (Colombo port performance). PDF tables read through registry templates; reviewed.'
 limits:
 - Road length covers RDA A and B class roads and expressways only.
 - 'Table 7.14 Colombo 2018: the components sum to 99,151 thousand t but the total prints 100,151 (7.13: 100,152).'

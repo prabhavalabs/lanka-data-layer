@@ -1,0 +1,22 @@
+# Statistical Abstract, chapter 7, table 7.3: new vehicles registered by class of
+# vehicle and fuel type, five years (Department of Motor Traffic). The label is the
+# English fuel type; the vehicle class is printed only on the first fuel row of each
+# class, so rows are told apart by fuel-type occurrence (connector rows map). The
+# "Total" row sits left of the fuel column and is not read.
+id: dcs-statistical-abstract/table-7.3-new-vehicles-by-class-fuel
+title: Number of new vehicles registered by class of vehicle and fuel type
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 7.3", then_text: "Fuel Type" }
+    label: { key: fuel, header: "Fuel Type", slack: 15 }
+    columns:
+      - { key: y1, header: "2020" }
+      - { key: y2, header: "2021" }
+      - { key: y3, header: "2022" }
+      - { key: y4, header: "2023" }
+      - { key: y5, header: "2024" }
+    rows: { stop_at: ["Source"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 38, max: 46 } }

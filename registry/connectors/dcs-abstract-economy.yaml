@@ -8,10 +8,12 @@ source: dcs-abstract-economy
 driver: pdf_table
 version: 1.0.0
 description: >-
-  Statistical Abstract 2025 tables 7.1 (road length by province), 7.12-7.15 (ports).
+  Statistical Abstract 2025 tables 7.1 (road length by province), 7.3 (new vehicles by class and
+  fuel), 7.12-7.15 (ports).
 discover:
   files:
     - { key: abstract-2025-7.1, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.1%207.2.pdf", edition: "2025" }
+    - { key: abstract-2025-7.3, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.3.pdf", edition: "2025" }
     - { key: abstract-2025-7.12, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.12.pdf", edition: "2025" }
     - { key: abstract-2025-7.13, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.13.pdf", edition: "2025" }
     - { key: abstract-2025-7.14, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.14.pdf", edition: "2025" }
@@ -19,6 +21,7 @@ discover:
 extract:
   tables:
     - { id: t7_1, file: abstract-2025-7.1, template: dcs-statistical-abstract/table-7.1-road-length-by-province }
+    - { id: t7_3, file: abstract-2025-7.3, template: dcs-statistical-abstract/table-7.3-new-vehicles-by-class-fuel }
     - { id: t7_12, file: abstract-2025-7.12, template: dcs-statistical-abstract/table-7.12-ship-traffic-by-port }
     - { id: t7_13, file: abstract-2025-7.13, template: dcs-statistical-abstract/table-7.13-colombo-port-cargo }
     - { id: t7_14, file: abstract-2025-7.14, template: dcs-statistical-abstract/table-7.14-cargo-by-port }
@@ -39,6 +42,55 @@ standardise:
       geo: { from_label: { level: 1, skip: ["A and B roads", "Expressways"] } }
       period: { from_header: year }
       columns: { y1: { road_class: AB }, y2: { road_class: AB }, y3: { road_class: AB }, y4: { road_class: AB }, y5: { road_class: AB } }
+    # ── 7.3 new vehicles registered by class and fuel (DMT); the class is printed only on
+    # the first fuel row of each class, so rows are fuel-type occurrences in print order ──
+    - table: t7_3
+      indicator: tran.new_vehicle_registrations
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y5
+      rows:
+        "Diesel#1": { vehicle_class: motor_car, fuel: diesel }
+        "Petrol#1": { vehicle_class: motor_car, fuel: petrol }
+        "Electric#1": { vehicle_class: motor_car, fuel: electric }
+        "Diesel/Electric#1": { vehicle_class: motor_car, fuel: diesel_electric }
+        "Petrol/Electric#1": { vehicle_class: motor_car, fuel: petrol_electric }
+        "Diesel#2": { vehicle_class: motor_tricycle, fuel: diesel }
+        "Petrol#2": { vehicle_class: motor_tricycle, fuel: petrol }
+        "Electric#2": { vehicle_class: motor_tricycle, fuel: electric }
+        "Petrol/Electric#2": { vehicle_class: motor_tricycle, fuel: petrol_electric }
+        "Diesel#3": { vehicle_class: motor_tricycle_van, fuel: diesel }
+        "Petrol#3": { vehicle_class: motor_tricycle_van, fuel: petrol }
+        "Electric#3": { vehicle_class: motor_tricycle_van, fuel: electric }
+        "Petrol#4": { vehicle_class: quadricycle, fuel: petrol }
+        "Electric#4": { vehicle_class: motor_home, fuel: electric }
+        "Diesel#4": { vehicle_class: bus, fuel: diesel }
+        "Petrol#5": { vehicle_class: bus, fuel: petrol }
+        "Petrol#6": { vehicle_class: motor_cycle, fuel: petrol }
+        "Electric#5": { vehicle_class: motor_cycle, fuel: electric }
+        "Petrol/Electric#3": { vehicle_class: motor_cycle, fuel: petrol_electric }
+        "Diesel#5": { vehicle_class: dual_purpose, fuel: diesel }
+        "Petrol#7": { vehicle_class: dual_purpose, fuel: petrol }
+        "Electric#6": { vehicle_class: dual_purpose, fuel: electric }
+        "Petrol/Electric#4": { vehicle_class: dual_purpose, fuel: petrol_electric }
+        "Diesel#6": { vehicle_class: single_cab, fuel: diesel }
+        "Petrol#8": { vehicle_class: single_cab, fuel: petrol }
+        "Electric#7": { vehicle_class: single_cab, fuel: electric }
+        "Diesel#7": { vehicle_class: special_purpose, fuel: diesel }
+        "Petrol#9": { vehicle_class: special_purpose, fuel: petrol }
+        "Electric#8": { vehicle_class: special_purpose, fuel: electric }
+        "Diesel#8": { vehicle_class: motor_lorry, fuel: diesel }
+        "Petrol#10": { vehicle_class: motor_lorry, fuel: petrol }
+        "Diesel/Electric#2": { vehicle_class: motor_lorry, fuel: diesel_electric }
+        "LP Gas": { vehicle_class: motor_lorry, fuel: lp_gas }
+        "Diesel#9": { vehicle_class: prime_mover, fuel: diesel }
+        "Non Fuel#1": { vehicle_class: lorry_trailer, fuel: non_fuel }
+        "Diesel#10": { vehicle_class: ambulance_hearse, fuel: diesel }
+        "Petrol#11": { vehicle_class: ambulance_hearse, fuel: petrol }
+        "Diesel#11": { vehicle_class: land_vehicle_tractor, fuel: diesel }
+        "Non Fuel#2": { vehicle_class: land_vehicle_trailer, fuel: non_fuel }
+        "Diesel#12": { vehicle_class: land_vehicle_trailer, fuel: diesel }
+        "Diesel#13": { vehicle_class: land_vehicle_tractor_2w, fuel: diesel }
     # ── 7.12 ship traffic by port ('000 t tonnage) ──
     - table: t7_12
       indicator: tran.port_ship_arrivals

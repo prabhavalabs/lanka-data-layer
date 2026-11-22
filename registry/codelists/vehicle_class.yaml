@@ -22,3 +22,8 @@ codes:
   - { code: other, label: Other, parent: total }
   - { code: ambulance_hearse, label: Ambulances and hearses, parent: total }
   - { code: land_vehicle, label: Land vehicles - tractors and trailers (overlaps the two) }
+  - { code: motor_tricycle_van, label: Motor tricycle vans, parent: total }
+  - { code: single_cab, label: Single cab, parent: total }
+  - { code: prime_mover, label: Lorry tractors (prime movers), parent: total }
+  - { code: lorry_trailer, label: Lorry trailers, parent: total }
+  - { code: land_vehicle_tractor_2w, label: Land vehicles - tractors (2 wheel), parent: total }
