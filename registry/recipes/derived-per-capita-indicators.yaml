@@ -1,0 +1,28 @@
+id: derived-per-capita-indicators
+output: derived-per-capita-indicators
+title: Population density per km2 from Census 2024 and unit areas
+stability: stable
+inputs:
+  census: { dataset: dcs-census-2024-population, indicators: [census24.pop_total] }
+  rollups: { dataset: derived-census-2024-rollups, indicators: [rollup.census24.pop_total] }
+  admin: { dataset: derived-admin-metrics, indicators: [admin.area_km2] }
+steps:
+  - id: density
+    method: ratio@^1
+    with:
+      terms:
+        pop:
+          from:
+            - { port: census, indicator: census24.pop_total }
+            - { port: rollups, indicator: rollup.census24.pop_total }
+          select: "sex=total"
+        area: { from: [{ port: admin, indicator: admin.area_km2 }] }
+      formula: pop / area
+      indicator: derived.per_km2
+      set_dims: "source_indicator=census24.pop_total"
+      levels: [0, 1, 2, 3]
+emit:
+  - { from: density }
+qa:
+  - { check: non_negative }
+  - { check: no_missing }

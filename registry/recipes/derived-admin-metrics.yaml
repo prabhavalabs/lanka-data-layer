@@ -1,0 +1,21 @@
+id: derived-admin-metrics
+output: derived-admin-metrics
+title: Admin unit areas and child counts from the reference boundaries
+stability: stable
+inputs:
+  admin: { dataset: cod-ab-lka-boundaries }
+steps:
+  - id: metrics
+    method: unit_metrics@^1
+    with:
+      boundaries: admin
+      period: "2024"
+      area: admin.area_km2
+      child_count: admin.child_count
+      levels: [0, 1, 2, 3, 4]
+emit:
+  - { from: metrics }
+qa:
+  - { check: non_negative }
+  - { check: no_missing, indicator: admin.area_km2 }
+  - { check: min_rows, n: 14000, indicator: admin.area_km2 }

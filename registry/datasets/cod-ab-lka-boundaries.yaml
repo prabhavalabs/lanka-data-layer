@@ -5,32 +5,7 @@ description: Country, 9 provinces, 25 districts, DS divisions and ~14,000 GN div
 source_ids:
 - hdx-cod-ab-lka
 - geoboundaries-lka
-indicators:
-- id: admin.area_km2
-  label: Land area of admin unit
-  unit: km2
-  measure_type: sum
-  aggregation: sum
-  class: official
-  geo_levels:
-  - national
-  - adm1
-  - adm2
-  - adm3
-  - adm4
-  period_type: snapshot
-- id: admin.child_count
-  label: Number of child units
-  unit: '{count}'
-  measure_type: count
-  aggregation: sum
-  class: official
-  geo_levels:
-  - national
-  - adm1
-  - adm2
-  - adm3
-  period_type: snapshot
+indicators: []
 time_coverage:
   from: '2018'
   to: '2024'
@@ -44,6 +19,6 @@ enrichment:
   - defines the p-code spine; all other datasets join to it
   aggregations:
   - admin hierarchy table (parent p-codes) used for every roll-up
-  - areas for density denominators
+  - areas for density denominators (admin.area_km2 and admin.child_count are published by derived-admin-metrics)
 kind: boundaries
 publication_class: A

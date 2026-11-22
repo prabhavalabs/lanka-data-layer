@@ -58,6 +58,9 @@ datasets:
 - derived-market-access
 - derived-multi-hazard-exposure
 - derived-attractions-register
+- derived-admin-metrics
+- derived-census-2024-rollups
+- derived-facility-counts
 priority: P1
 effort: L
 status: planned
