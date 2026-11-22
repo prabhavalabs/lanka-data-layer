@@ -107,16 +107,12 @@ impl AppState {
     /// Builds the analysis engine on its own pool (role `lanka_analysis`).
     pub async fn analysis_engine(&self) -> anyhow::Result<lanka_analysis::Engine> {
         let pool = analysis_api::connect(&self.pool.connect_options()).await?;
-        let base = std::env::var("LANKA_PUBLIC_URL")
-            .ok()
-            .filter(|s| !s.is_empty())
-            .or_else(|| {
-                self.catalog()
-                    .profile
-                    .as_deref()
-                    .map(|p| p.spec.site.base_url.clone())
-            })
-            .unwrap_or_default();
+        let base = lanka_core::PublicBase::global().origin(
+            self.catalog()
+                .profile
+                .as_deref()
+                .map(|p| p.spec.site.base_url.as_str()),
+        );
         let rev = std::env::var("LANKA_GIT_REV").unwrap_or_else(|_| "unknown".to_owned());
         let cat = self.catalog_fn();
         let st = self.clone();

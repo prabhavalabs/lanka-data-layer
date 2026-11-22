@@ -152,6 +152,12 @@ fn noun_of(cat: &Catalog, level: i16) -> String {
 }
 
 impl Engine {
+    /// The public origin of citation permalinks (`""` = relative).
+    #[must_use]
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
     #[must_use]
     pub fn new(
         pool: PgPool,

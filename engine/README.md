@@ -510,7 +510,7 @@ attribution and `ESTIMATE`, the package keeps private data metadata-only, withdr
   cannot fail on a missing app role.
 - *oEmbed never reads `app.*`*: a `/v2` response may not depend on app-plane state, so the title is generic
   ("Map — Lanka Data Layer") and an unknown snapshot id still gets an iframe (the embed route shows not-found). Only
-  URLs of the deployment's origin (`LANKA_PUBLIC_URL`, else the profile's `site.base_url`) are answered.
+  URLs of the deployment's origin (the public base: `LANKA_PUBLIC_BASE_URL`, else the profile's `site.base_url`; see 06 §2.2) are answered.
   Dataset/indicator/area URLs (06 §7) are still 404.
 - *Not here*: `ops.jobs` INSERT for `upload`/`analysis` (WP-29/WP-32 add it with the job kinds), `app.usage_daily`
   flushing (WP-31), the `/m/…`/`/embed/m/…` pages (web track), `lanka takedown --map` (WP-31; withdraw by

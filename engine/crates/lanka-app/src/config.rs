@@ -71,8 +71,10 @@ pub struct AppConfig {
     /// `LANKA_IP_HASH_SALT`: secret behind the client-address hashes
     /// (rotated monthly by mixing in the month). Unset: random per process.
     pub ip_salt: Option<String>,
-    /// `LANKA_PUBLIC_URL`: origin used in links (snapshot URLs, packages,
-    /// oEmbed). Unset: the country profile's `site.base_url`.
+    /// Origin used in links (snapshot URLs, packages, oEmbed):
+    /// `LANKA_PUBLIC_BASE_URL` (empty = relative links; `LANKA_PUBLIC_URL`
+    /// is a deprecated alias), see [`lanka_core::PublicBase`]. Unset: the
+    /// country profile's `site.base_url`.
     pub public_url: Option<String>,
 }
 
@@ -115,7 +117,9 @@ impl AppConfig {
                 None => DEFAULT_SNAPSHOT_RATE,
             },
             ip_salt: nonempty("LANKA_IP_HASH_SALT"),
-            public_url: nonempty("LANKA_PUBLIC_URL").map(|u| u.trim_end_matches('/').to_owned()),
+            public_url: lanka_core::PublicBase::from_lookup(&get)
+                .configured()
+                .map(str::to_owned),
         })
     }
 }

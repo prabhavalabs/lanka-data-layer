@@ -64,6 +64,16 @@ Base path `/v2`. JSON. Envelope kept: `{success, message, payload, meta}`.
 
 Attribution is **per source, never per licence**: a source's text is its registry `licence.attribution`, else its publisher. Until `meta.attribution[]` ships, `meta.source[]` carries `licence` and `attribution` per source and `meta.licences[].attribution` is the `; `-joined texts of the response's sources under that licence. Tileset attribution (TileJSON, PMTiles metadata) is built the same way: `<source text> (<SPDX or licence id>)` for each input dataset's sources. `catalog.licences.attribution` is not used (registry sync writes NULL).
 
+### 2.0 Public URLs
+
+Every absolute link the engine emits — TileJSON `tiles`/`pmtiles`, analysis citation permalinks, snapshot `url`/`embed`, package and oEmbed links — is built on **one public base**, resolved in this order:
+
+1. `LANKA_PUBLIC_BASE_URL` when set. **Empty means relative**: links are bare paths (`/v2/tiles/admin/{z}/{x}/{y}.mvt`, `/m/{id}`), resolved by the client against the API origin it called (a dev proxy, a same-origin front-end). `LANKA_PUBLIC_URL` is a deprecated alias (non-empty only).
+2. `X-Forwarded-Proto` + `X-Forwarded-Host` of the request, **only** when the TCP peer is listed in `LANKA_TRUSTED_PROXIES` (comma-separated IPs; empty by default). `Host` alone is never trusted.
+3. The country profile's `site.base_url`.
+
+Links that stay inside the API are relative whatever the base: `meta.next[].href`, analysis `outputs[].href` (`/v2/analyses/{id}/outputs/{output}`; stored results are re-linked when served), resolver data URLs.
+
 ### 2.1 Resources
 
 | Resource | Endpoint | Notes |

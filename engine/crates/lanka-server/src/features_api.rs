@@ -311,16 +311,30 @@ fn vector_layers(
     vl
 }
 
-fn base_url(headers: &HeaderMap) -> String {
-    let host = headers
-        .get(header::HOST)
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("127.0.0.1:8601");
-    let proto = headers
-        .get("x-forwarded-proto")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("http");
-    format!("{proto}://{host}")
+/// The public origin for absolute links in this response
+/// ([`lanka_core::PublicBase`]; `""` = relative links).
+pub(crate) fn public_origin(
+    st: &AppState,
+    headers: &HeaderMap,
+    peer: Option<std::net::IpAddr>,
+) -> String {
+    let h = |n: &str| headers.get(n).and_then(|v| v.to_str().ok());
+    let cat = st.catalog();
+    lanka_core::PublicBase::global().origin_for(
+        peer,
+        h("x-forwarded-proto"),
+        h("x-forwarded-host"),
+        cat.profile
+            .as_deref()
+            .map(|p| p.spec.site.base_url.as_str()),
+    )
+}
+
+/// The TCP peer, when the server runs with connect info.
+pub(crate) type Peer = Option<axum::Extension<axum::extract::ConnectInfo<std::net::SocketAddr>>>;
+
+pub(crate) fn peer_ip(p: &Peer) -> Option<std::net::IpAddr> {
+    p.as_ref().map(|axum::Extension(c)| c.0.ip())
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -374,6 +388,7 @@ async fn tilejson(
     State(st): State<AppState>,
     Path(file): Path<String>,
     headers: HeaderMap,
+    peer: Peer,
 ) -> ApiResult {
     let Some(id) = file.strip_suffix(".json") else {
         return Err(ApiError::new(
@@ -389,7 +404,7 @@ async fn tilejson(
     let pm = open_archive(&store_root(&st).join(&t.path))?;
     let meta = pm.metadata().unwrap_or_default();
     let h = &pm.header;
-    let base = base_url(&headers);
+    let base = public_origin(&st, &headers, peer_ip(&peer));
     let raster = h.tile_type != 1;
     let ext = if raster { "png" } else { "mvt" };
     let mut doc = serde_json::json!({

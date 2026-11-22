@@ -313,12 +313,20 @@ async fn result(
     }
     match e.get(&id).await {
         Ok(Some(ran)) => {
-            let dv: Option<String> = serde_json::from_slice::<Value>(&ran.bytes)
-                .ok()
+            let mut doc = serde_json::from_slice::<Value>(&ran.bytes).ok();
+            let dv: Option<String> = doc
+                .as_ref()
                 .and_then(|d| d["provenance"]["data_version"].as_str().map(str::to_owned));
+            let bytes = match doc.as_mut() {
+                Some(d) => {
+                    lanka_analysis::result::relink(d, e.base_url());
+                    serde_json::to_vec(d).unwrap_or_else(|_| ran.bytes.to_vec())
+                }
+                None => ran.bytes.to_vec(),
+            };
             let mut r = json_response(
                 StatusCode::OK,
-                envelope_raw(&ran.bytes, dv.as_deref()),
+                envelope_raw(&bytes, dv.as_deref()),
                 IMMUTABLE,
             );
             if let Ok(h) = HeaderValue::from_str(&etag) {

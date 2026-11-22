@@ -275,6 +275,25 @@ pub struct Present<'a> {
 
 /// The result document. `out = None` → blocked before running.
 #[allow(clippy::too_many_lines)]
+/// Rewrites the links of a stored result for serving: output `href`s
+/// relative (results stored before they were), the citation permalink on
+/// the current public origin (`""` = relative).
+pub fn relink(doc: &mut Value, base: &str) {
+    let Some(id) = doc["id"].as_str().map(str::to_owned) else {
+        return;
+    };
+    if let Some(outs) = doc["outputs"].as_array_mut() {
+        for o in outs {
+            if let Some(oid) = o["id"].as_str().map(str::to_owned) {
+                o["href"] = json!(format!("/v2/analyses/{id}/outputs/{oid}"));
+            }
+        }
+    }
+    if doc["citation"].is_object() {
+        doc["citation"]["url"] = json!(format!("{}/id/analysis/{id}", base.trim_end_matches('/')));
+    }
+}
+
 #[must_use]
 pub fn document(p: &Present<'_>, out: Option<&MethodOutput>, raised: &[Raised]) -> Value {
     let r = p.resolved;
@@ -354,7 +373,9 @@ pub fn document(p: &Present<'_>, out: Option<&MethodOutput>, raised: &[Raised]) 
             }
         }
     }
-    let href = |o: &str| format!("{}/v2/analyses/{}/outputs/{o}", p.base_url, p.id);
+    // Payload links inside the API are relative (06 §2); only the citation
+    // permalink carries the public origin.
+    let href = |o: &str| format!("/v2/analyses/{}/outputs/{o}", p.id);
     let outputs: Vec<Value> = if blocked {
         Vec::new()
     } else {

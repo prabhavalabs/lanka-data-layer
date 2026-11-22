@@ -88,7 +88,8 @@ impl AppPlane {
         &self.pool
     }
 
-    /// The origin used in links: `LANKA_PUBLIC_URL`, else the profile's
+    /// The origin used in links: the configured public base
+    /// (`LANKA_PUBLIC_BASE_URL`; `""` = relative links), else the profile's
     /// `site.base_url`.
     #[must_use]
     pub fn public_url(&self) -> String {

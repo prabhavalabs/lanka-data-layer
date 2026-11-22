@@ -20,6 +20,7 @@ pub mod geo_units;
 pub mod grid;
 pub mod period;
 pub mod profile;
+pub mod public;
 pub mod query;
 pub mod status;
 pub mod units;
@@ -33,6 +34,7 @@ pub use flags::Flags;
 pub use geo_code::{AdminCodes, GeoCode, Pcode};
 pub use period::{Calendars, Freq, Period};
 pub use profile::Profile;
+pub use public::PublicBase;
 
 /// Engine version string recorded on every ingestion run.
 pub const ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
