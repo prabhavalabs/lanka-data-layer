@@ -36,7 +36,7 @@ use crate::connector::{CellProv, Connector, Fetched, ObsRow};
 use crate::drivers::raster::{BuiltLayer, LayerSpec, Raster, ZonalStat, build_layers};
 use crate::extract::{ExtractArtifact, ExtractOut, Record};
 use crate::pipeline::{Env, RunReport};
-use crate::publish::{StageInput, publish_observations};
+use crate::publish::{StageInput, publish_observations_with};
 use crate::run::{RunStatus, RunTracker, Stage};
 
 /// Dataset of the lookup layers.
@@ -549,7 +549,11 @@ pub async fn build_and_publish(
     let mut written = 0;
     let mut version_id = None;
     if !rows.is_empty() {
-        let p = publish_observations(
+        // The dataset's expectations (03 §5.2), as for any other observations.
+        let lookup = crate::pipeline::load_lookup(env.pool, env.profile).await?;
+        let opts =
+            crate::pipeline::expectations(env, run, &lookup, &r.spec.dataset, &rows).await?;
+        let p = publish_observations_with(
             env.pool,
             env.registry,
             env.profile,
@@ -561,6 +565,7 @@ pub async fn build_and_publish(
                 artifact_ids: &artifact_ids,
                 extract_ids: &[ext.id],
             },
+            &opts,
         )
         .await
         .with_context(|| format!("publishing {}", r.spec.dataset))?;

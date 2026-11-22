@@ -839,7 +839,7 @@ async fn log_results(run: &RunTracker, dataset_id: &str, results: &[crate::expec
 
 /// Evaluates a dataset's expectations on the standardised rows (03 §5.2).
 /// Class A fails here on an error; B/C carry the failures into review.
-async fn expectations(
+pub(crate) async fn expectations(
     env: &Env<'_>,
     run: &RunTracker,
     lookup: &Lookup,
