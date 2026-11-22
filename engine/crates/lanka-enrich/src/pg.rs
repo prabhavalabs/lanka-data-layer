@@ -6,16 +6,33 @@
 //! Reads are one indexed range scan per port, cached for the run.
 
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail, ensure};
 use async_trait::async_trait;
 use lanka_core::{Basis, Calendars, Flags, Freq, Status};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use tokio::sync::Mutex;
 
-use crate::method::{Feature, IndicatorMeta, Inputs, Row, Unit, Units};
+use crate::method::{Feature, GridInput, IndicatorMeta, Inputs, Row, Unit, Units};
+
+/// `geo.grid_layers` ids of the lookup arrays (WP-05, `lanka-ingest::grid`).
+const GND_IDX: &str = "grid.gnd_idx";
+const LAND_MASK: &str = "grid.land_mask";
+
+/// (port, layer, period) of a loaded grid layer.
+type GridKey = (String, String, Option<String>);
+
+/// `gnd_idx` of the reference set as unit indices (`u32::MAX` = no unit).
+struct GridLookup {
+    unit_idx: Arc<[u32]>,
+    unit_idx_inside: Arc<[u32]>,
+    units: Arc<[String]>,
+    cols: u32,
+    row_area: Arc<[f64]>,
+}
 
 /// One input port bound to a dataset version.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +60,10 @@ pub struct PgInputs {
     obs: Mutex<HashMap<String, Arc<Vec<Row>>>>,
     features: Mutex<HashMap<String, Arc<Vec<Feature>>>>,
     units: Mutex<Option<Arc<Units>>>,
+    /// Blob store root for grid layers (`grid_zonal`).
+    store_root: Option<PathBuf>,
+    lookup: Mutex<Option<Arc<GridLookup>>>,
+    grids: Mutex<HashMap<GridKey, Arc<GridInput>>>,
 }
 
 type ObsDbRow = (
@@ -135,7 +156,96 @@ impl PgInputs {
             obs: Mutex::new(HashMap::new()),
             features: Mutex::new(HashMap::new()),
             units: Mutex::new(None),
+            store_root: None,
+            lookup: Mutex::new(None),
+            grids: Mutex::new(HashMap::new()),
         })
+    }
+
+    /// Where grid layers (`geo.grid_layers.bin_path`) are read from.
+    #[must_use]
+    pub fn with_store_root(mut self, root: Option<&Path>) -> Self {
+        self.store_root = root.map(Path::to_path_buf);
+        self
+    }
+
+    fn store_root(&self) -> Result<&Path> {
+        self.store_root
+            .as_deref()
+            .context("grid inputs need the blob store root (set LANKA_STORE_DIR)")
+    }
+
+    /// `gnd_idx` + `land_mask` of the reference set and their slot table.
+    async fn lookup(&self) -> Result<Arc<GridLookup>> {
+        let mut cache = self.lookup.lock().await;
+        if let Some(l) = cache.as_ref() {
+            return Ok(l.clone());
+        }
+        let root = self.store_root()?.to_path_buf();
+        let path = |id: &'static str| {
+            sqlx::query_scalar::<_, String>(
+                "SELECT bin_path FROM geo.grid_layers WHERE id = $1 AND period = $2",
+            )
+            .bind(id)
+            .bind(self.reference_set.clone())
+            .fetch_optional(&self.pool)
+        };
+        let g = path(GND_IDX).await?.with_context(|| {
+            format!(
+                "no {GND_IDX} for boundary set {} (run `lanka grid lookups`)",
+                self.reference_set
+            )
+        })?;
+        let m = path(LAND_MASK)
+            .await?
+            .with_context(|| format!("no {LAND_MASK} for {}", self.reference_set))?;
+        let slots: Vec<(i32, String)> = sqlx::query_as(
+            "SELECT l.idx, u.code FROM geo.grid_lookup_units l JOIN geo.units u ON u.key = l.unit_key
+             WHERE l.layer_id = $1 AND l.period = $2 ORDER BY l.idx",
+        )
+        .bind(GND_IDX)
+        .bind(&self.reference_set)
+        .fetch_all(&self.pool)
+        .await?;
+        let n = usize::try_from(slots.last().map_or(0, |s| s.0))?;
+        // slot s (1-based) → unit index s - 1; holes keep an empty code.
+        let mut units = vec![String::new(); n];
+        for (i, code) in slots {
+            let i = usize::try_from(i)?;
+            ensure!(i >= 1, "grid_lookup_units: slot 0 is reserved");
+            units[i - 1] = code;
+        }
+        let l = tokio::task::spawn_blocking(move || -> Result<GridLookup> {
+            use lanka_grid::{GridArray, GridData, lookup::centre_inside};
+            let (ga, _) = GridArray::read_bin(&root.join(&g))?;
+            let (ma, _) = GridArray::read_bin(&root.join(&m))?;
+            let grid = ga.grid;
+            let (GridData::U16(gi), GridData::U8(mk)) = (ga.data, ma.data) else {
+                bail!("gnd_idx/land_mask have unexpected dtypes");
+            };
+            ensure!(
+                gi.len() == mk.len(),
+                "gnd_idx and land_mask differ in length"
+            );
+            let to = |s: u16| if s == 0 { u32::MAX } else { u32::from(s) - 1 };
+            let unit_idx: Vec<u32> = gi.iter().map(|&s| to(s)).collect();
+            let inside: Vec<u32> = gi
+                .iter()
+                .zip(&mk)
+                .map(|(&s, &k)| if centre_inside(k) { to(s) } else { u32::MAX })
+                .collect();
+            Ok(GridLookup {
+                unit_idx: Arc::from(unit_idx),
+                unit_idx_inside: Arc::from(inside),
+                units: Arc::from(units),
+                cols: grid.cols,
+                row_area: Arc::from(lanka_grid::row_areas(&grid)),
+            })
+        })
+        .await??;
+        let l = Arc::new(l);
+        *cache = Some(l.clone());
+        Ok(l)
     }
 
     fn pin(&self, port: &str) -> Result<&Pinned> {
@@ -258,6 +368,71 @@ impl Inputs for PgInputs {
         );
         cache.insert(port.to_owned(), Arc::clone(&t));
         Ok(t)
+    }
+
+    /// A layer of `geo.grid_layers` owned by the port's dataset, aligned to
+    /// the reference set's `gnd_idx`. Grid layers are current, not
+    /// release-pinned (WP-05): the port pins the dataset version, the layer
+    /// file is the one registered now.
+    async fn grid_layer(
+        &self,
+        port: &str,
+        layer: &str,
+        period: Option<&str>,
+    ) -> Result<Arc<GridInput>> {
+        let key = (port.to_owned(), layer.to_owned(), period.map(str::to_owned));
+        if let Some(g) = self.grids.lock().await.get(&key) {
+            return Ok(g.clone());
+        }
+        let p = self.pin(port)?;
+        let hits: Vec<(String, String, Option<String>)> = sqlx::query_as(
+            "SELECT period, bin_path, dataset_id FROM geo.grid_layers
+             WHERE id = $1 AND ($2::text IS NULL OR period = $2) ORDER BY period",
+        )
+        .bind(layer)
+        .bind(period)
+        .fetch_all(&self.pool)
+        .await?;
+        let (lp, bin, ds) = match hits.as_slice() {
+            [h] => h.clone(),
+            [] => bail!("grid layer {layer} {period:?} is not registered"),
+            _ => bail!("grid layer {layer} has several periods; give layer_period"),
+        };
+        ensure!(
+            ds.as_deref() == Some(p.dataset_id.as_str()),
+            "grid layer {layer} {lp} belongs to {ds:?}, not to input {port} ({})",
+            p.dataset_id
+        );
+        let lk = self.lookup().await?;
+        let path = self.store_root()?.join(&bin);
+        let values: Vec<f32> = tokio::task::spawn_blocking(move || -> Result<Vec<f32>> {
+            use lanka_grid::CellValues;
+            let (a, _) = lanka_grid::GridArray::read_bin(&path)?;
+            #[allow(clippy::cast_possible_truncation)]
+            Ok((0..a.len())
+                .map(|i| a.value(i).map_or(f32::NAN, |v| v as f32))
+                .collect())
+        })
+        .await??;
+        ensure!(
+            values.len() == lk.unit_idx.len(),
+            "grid layer {layer} {lp}: {} cells, gnd_idx has {}",
+            values.len(),
+            lk.unit_idx.len()
+        );
+        let g = Arc::new(GridInput {
+            layer: format!("{layer} {lp}"),
+            values: Arc::from(values),
+            unit_idx: lk.unit_idx.clone(),
+            units: lk.units.clone(),
+            unit_idx_inside: Some(lk.unit_idx_inside.clone()),
+            cols: lk.cols,
+            row_area: lk.row_area.clone(),
+            basis: Basis::Computed,
+            flags: Flags::EMPTY,
+        });
+        self.grids.lock().await.insert(key, g.clone());
+        Ok(g)
     }
 
     async fn units(&self) -> Result<Arc<Units>> {

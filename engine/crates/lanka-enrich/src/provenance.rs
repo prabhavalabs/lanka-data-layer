@@ -24,6 +24,8 @@ pub struct GeoContext {
     pub calendars: Calendars,
     pub reference_set: String,
     pub scheme: String,
+    /// Blob store root (grid inputs of `grid_zonal` derivations).
+    pub store_root: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -160,7 +162,8 @@ pub fn explain_obs<'a>(
             &geo.scheme,
             d.inputs.clone(),
         )
-        .await?;
+        .await?
+        .with_store_root(geo.store_root.as_deref());
         let key = RowKey {
             indicator,
             geo: geo_code,

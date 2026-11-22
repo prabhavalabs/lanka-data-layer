@@ -1028,6 +1028,7 @@ async fn provenance(
             calendars: profile.calendars.clone(),
             reference_set: profile.spec.admin.reference_boundary_set.clone(),
             scheme: profile.spec.admin.scheme.clone(),
+            store_root: st.store_dir.clone(),
         };
         let methods = lanka_enrich::Methods::builtin();
         let depth = q.depth.unwrap_or(1).clamp(1, 3);

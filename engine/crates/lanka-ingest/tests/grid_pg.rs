@@ -343,6 +343,62 @@ async fn run_grid(url: String) {
         "split_sum preserves the raster total"
     );
 
+    // grid_zonal@1 (lanka-enrich) over the same layer equals the driver's zonal rows.
+    let (dataset_key, version_id, seq, dsv): (i32, i64, i32, String) = sqlx::query_as(
+        "SELECT d.key, c.version_id, c.seq, c.dsv FROM data.current_versions c
+         JOIN catalog.datasets d ON d.id = c.dataset_id WHERE c.dataset_id = 'it-pop'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("pin");
+    let pin = lanka_enrich::pg::Pinned {
+        port: "pop".into(),
+        dataset_id: "it-pop".into(),
+        dataset_key,
+        version_id,
+        seq,
+        dsv,
+        kind: "indicators".into(),
+        indicators: Vec::new(),
+    };
+    let pg_inputs = lanka_enrich::pg::PgInputs::new(
+        pool.clone(),
+        profile.calendars.clone(),
+        "it-set",
+        "admin",
+        vec![pin],
+    )
+    .await
+    .expect("inputs")
+    .with_store_root(Some(&root));
+    let ctx = lanka_enrich::method::MethodCtx {
+        inputs: &pg_inputs,
+        rng_seed: 0,
+        as_of: chrono::NaiveDate::from_ymd_opt(2025, 1, 1).expect("date"),
+        changed_keys: None,
+    };
+    let gz = lanka_enrich::Methods::builtin()
+        .resolve("grid_zonal@^1")
+        .expect("grid_zonal");
+    let mut sink = lanka_enrich::method::CollectSink::default();
+    gz.run(
+        &ctx,
+        &json!({"grid": "pop", "layer": "it.pop", "indicator": "it.pop", "period": "2025", "levels": [1, 2]}),
+        &mut sink,
+    )
+    .await
+    .expect("grid_zonal run");
+    assert_eq!(sink.rows.len(), vals.len(), "one row per published unit");
+    for r in &sink.rows {
+        let want = get(&r.row.geo);
+        let got = r.row.value.expect("value");
+        assert!(
+            (got - want).abs() <= 1e-3 * want.abs().max(1.0),
+            "{}: grid_zonal {got} vs driver {want}",
+            r.row.geo
+        );
+    }
+
     // Identical second run: no_change before any work.
     let again = run_source(&env, "it-ras", &opts).await.expect("again");
     assert_eq!(again.status, RunStatus::NoChange);

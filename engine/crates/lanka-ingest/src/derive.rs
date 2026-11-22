@@ -44,6 +44,8 @@ pub struct DeriveEnv<'a> {
     pub profile: &'a Profile,
     pub recipes: &'a Recipes,
     pub methods: &'a Methods,
+    /// Blob store root: grid layers for `grid_zonal` (None: no grid inputs).
+    pub store_root: Option<&'a std::path::Path>,
 }
 
 /// The registry as `lanka-enrich` checks see it.
@@ -625,7 +627,8 @@ async fn execute_and_stage(
         &env.profile.spec.admin.scheme,
         pins.to_vec(),
     )
-    .await?;
+    .await?
+    .with_store_root(env.store_root);
     let output = runner::execute(spec, env.methods, &inputs, seed_of(fp)).await?;
     if !output.qa_passed() {
         return Ok(Staged {

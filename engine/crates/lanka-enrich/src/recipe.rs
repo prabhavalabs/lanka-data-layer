@@ -373,7 +373,9 @@ fn check_one(s: &RecipeSpec, reg: &RegistryView, methods: &Methods, rep: &mut Ch
             let Some(d) = reg.datasets.get(&input.dataset) else {
                 continue;
             };
-            if d.kind != p.kind.dataset_kind() {
+            // A raster dataset (kind indicators) owns its grid layers.
+            let grid_ok = p.kind == PortKind::Grid && d.kind == "indicators";
+            if d.kind != p.kind.dataset_kind() && !grid_ok {
                 let msg = format!(
                     "input {} ({}) is a {} dataset; {} expects {}",
                     p.reference,

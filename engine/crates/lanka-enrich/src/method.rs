@@ -378,6 +378,13 @@ pub struct GridInput {
     pub unit_idx: Arc<[u32]>,
     /// Unit codes by index (deepest level).
     pub units: Arc<[String]>,
+    /// `unit_idx` restricted to cells whose centre is inside a unit
+    /// (`land_mask` 1 or 2), when the lookup provides it.
+    pub unit_idx_inside: Option<Arc<[u32]>>,
+    /// Grid columns (row-major layout); 0 = one row of `values.len()` cells.
+    pub cols: u32,
+    /// Cell area (m²) per grid row; empty = every cell weighs 1.
+    pub row_area: Arc<[f64]>,
     pub basis: Basis,
     pub flags: Flags,
 }
@@ -415,7 +422,17 @@ pub trait Inputs: Send + Sync {
     async fn units(&self) -> Result<Arc<Units>>;
     /// A grid layer with its unit index (WP-05 implements the Postgres side).
     async fn grid(&self, port: &str) -> Result<Arc<GridInput>> {
-        bail!("port {port:?}: grid inputs are provided by lanka-grid (WP-05)")
+        bail!("port {port:?}: no grid input")
+    }
+    /// One grid layer (`geo.grid_layers` id, optional period) of a grid port.
+    /// The default ignores the layer (in-memory inputs bind one per port).
+    async fn grid_layer(
+        &self,
+        port: &str,
+        _layer: &str,
+        _period: Option<&str>,
+    ) -> Result<Arc<GridInput>> {
+        self.grid(port).await
     }
     fn indicator(&self, id: &str) -> Option<IndicatorMeta>;
     fn calendars(&self) -> &Calendars;

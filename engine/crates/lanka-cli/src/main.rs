@@ -526,6 +526,12 @@ async fn map_cmd(g: &Global, cmd: MapCmd) -> Result<()> {
 }
 
 /// Registry, profile and checked recipes.
+/// The blob store root when a registry is found (grid inputs of recipes).
+fn store_root(g: &Global) -> Option<PathBuf> {
+    let dir = find_registry(g.registry.as_deref()).ok()?;
+    Some(store(g, &dir).root().to_path_buf())
+}
+
 async fn derive_parts(g: &Global) -> Result<(Registry, Profile, lanka_enrich::Recipes)> {
     let dir = find_registry(g.registry.as_deref())?;
     let reg = Registry::load(&dir)?;
@@ -574,6 +580,7 @@ async fn recipe_cmd(g: &Global, cmd: RecipeCmd) -> Result<()> {
                 calendars: profile.calendars.clone(),
                 reference_set: profile.spec.admin.reference_boundary_set.clone(),
                 scheme: profile.spec.admin.scheme.clone(),
+                store_root: Some(store(g, &dir).root().to_path_buf()),
             };
             match lanka_enrich::provenance::explain_obs(&pool, &geo, &methods, obs_id, depth)
                 .await?
@@ -590,12 +597,14 @@ async fn recipe_cmd(g: &Global, cmd: RecipeCmd) -> Result<()> {
             reg.sync(&pool, &profile)
                 .await
                 .context("syncing registry")?;
+            let sroot = store_root(g);
             let env = derive::DeriveEnv {
                 pool: &pool,
                 registry: &reg,
                 profile: &profile,
                 recipes: &recipes,
                 methods: &methods,
+                store_root: sroot.as_deref(),
             };
             let report = match cmd {
                 RecipeCmd::Run { id, force, dry_run } => {
@@ -826,6 +835,7 @@ async fn run(cli: Cli) -> Result<()> {
                     }
                     let methods = lanka_enrich::Methods::builtin();
                     let parts = parts.ok();
+                    let sroot = store_root(g);
                     let env = parts
                         .as_ref()
                         .map(|(reg, profile, recipes)| derive::DeriveEnv {
@@ -834,6 +844,7 @@ async fn run(cli: Cli) -> Result<()> {
                             profile,
                             recipes,
                             methods: &methods,
+                            store_root: sroot.as_deref(),
                         });
                     print_json(
                         &train::run_train_with(

@@ -422,6 +422,7 @@ impl Ctx {
             profile: &self.profile,
             recipes: &self.recipes,
             methods: &self.methods,
+            store_root: None,
         }
     }
 
@@ -826,6 +827,7 @@ async fn run_cycle(url: String) {
         calendars: ctx.profile.calendars.clone(),
         reference_set: "it-set".into(),
         scheme: "admin".into(),
+        store_root: None,
     };
     let id = ctx.obs_id("rollup.it.pop", "ZZ1", "sex=total").await;
     let e = explain_obs(&pool, &geo, &ctx.methods, id, 1)

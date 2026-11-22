@@ -1,5 +1,6 @@
-//! The plug-in point for array-based zonal statistics (WP-05's
-//! `grid_zonal`).
+//! A plug-in point for custom array-based zonal kernels. The built-in
+//! `grid_zonal@1` (`methods/grid_zonal.rs`) wraps `lanka_grid::zonal`
+//! directly; this adapter remains for kernels outside that library.
 //!
 //! WP-05 implements the kernel as a pure function over the canonical grid
 //! arrays — values and the per-cell unit index (`gnd_idx`) — and wraps it in
@@ -235,6 +236,9 @@ mod tests {
             values: Arc::from(vec![1.0f32, 2.0, f32::NAN, 4.0]),
             unit_idx: Arc::from(vec![0u32, 0, 1, 1]),
             units: Arc::from(vec!["ZZ1".to_owned(), "ZZ2".to_owned()]),
+            unit_idx_inside: None,
+            cols: 0,
+            row_area: Arc::from(Vec::<f64>::new()),
             basis: Basis::Estimated,
             flags: Flags::EMPTY,
         };

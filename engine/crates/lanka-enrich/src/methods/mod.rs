@@ -1,6 +1,5 @@
-//! The method library (04 §3). WP-06 ships `rollup`, `ratio`,
-//! `features_zonal` and `unit_metrics`; WP-05 adds `grid_zonal` through
-//! [`crate::zonal::GridZonal`].
+//! The method library (04 §3): `rollup`, `ratio`, `features_zonal`,
+//! `unit_metrics` (WP-06) and `grid_zonal` (over WP-05's `lanka-grid`).
 
 use std::sync::Arc;
 
@@ -9,6 +8,7 @@ use anyhow::{Result, bail};
 use crate::method::{Method, VersionReq, parse_method_ref};
 
 pub mod features_zonal;
+pub mod grid_zonal;
 pub mod ratio;
 pub mod rollup;
 pub mod unit_metrics;
@@ -27,12 +27,13 @@ impl Methods {
                 Arc::new(rollup::Rollup),
                 Arc::new(ratio::Ratio),
                 Arc::new(features_zonal::FeaturesZonal),
+                Arc::new(grid_zonal::GridZonal),
                 Arc::new(unit_metrics::UnitMetrics),
             ],
         }
     }
 
-    /// Adds a method (WP-05's `grid_zonal`, tests).
+    /// Adds a method (custom kernels, tests).
     #[must_use]
     pub fn with(mut self, m: Arc<dyn Method>) -> Self {
         self.list.push(m);

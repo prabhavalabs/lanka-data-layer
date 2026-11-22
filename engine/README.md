@@ -612,21 +612,17 @@ Values: Western Province 6,117,341 (sum of 3 districts; provinces sum to the nat
   dataset that is not `kind: features` is a `lanka recipe check` error. `derived-facility-counts` runs on
   `osm-pois-amenities` (kinds = the `amenity_type` codes); lines/polygons count whole in their `unit_key`.
 
-### How WP-05 plugs `grid_zonal` in
+### `grid_zonal@1` (WP-05 kernel)
 
-Implement the pure kernel and register the adapter — no runner, recipe or Postgres code involved:
-
-```rust
-pub trait ZonalKernel: Send + Sync {                       // lanka-enrich/src/zonal.rs
-    fn info(&self) -> &MethodInfo;                         // id "grid_zonal", params schema, basis, flags
-    fn zonal(&self, values: &[f32], unit_idx: &[u32], n_units: usize, params: &Value) -> Result<Vec<ZonalStat>>;
-}
-// methods/mod.rs: Methods::builtin() gains Arc::new(GridZonal(GridZonalKernel)); `Inputs::grid(port)` returns a
-// `GridInput { values, unit_idx, units, basis, flags }` (implement it on `pg::PgInputs` from lanka-grid's mmap arrays).
-```
-
-`GridZonal` emits one row per deepest unit with a `cells` contributor; coarser levels are a following `rollup` step.
-`SumKernel` and its conservation property test (Σ units + unassigned = total) are the template.
+`methods/grid_zonal.rs` wraps `lanka_grid::zonal::{zonal, rollup}` + `Acc::stat`, the kernel behind the raster
+driver's `zonal:` entries (`lanka_ingest::grid::zonal_rows`). Parameters: `grid` (a recipe input: the raster dataset
+owning the layer; a grid port may bind a `kind: indicators` raster dataset), `layer` (+ `layer_period`), `indicator`,
+`period`, `stat` (`sum | mean | area_sum | max`), `cells` (`all | inside`, `land_mask` 1/2), `factor`, `levels`,
+`dims`, `basis`. `PgInputs::grid_layer` reads the layer `.bin` and the reference set's `gnd_idx`/`land_mask` from the
+store (`DeriveEnv.store_root`); rows are emitted for every unit and ancestor at `levels` with one `cells`
+contributor. `tests/grid_pg.rs` checks it equals the driver's published zonal rows. The `share` statistic (needs the
+`of` layers) and moving the raster specs' `zonal:` entries into recipes are follow-ups. The generic
+`zonal::GridZonal<K: ZonalKernel>` adapter stays for custom kernels.
 
 ```bash
 # tests (DB tests create and drop throwaway databases)
@@ -905,8 +901,8 @@ round-trips), `crates/lanka-grid/tests/v1_parity.rs` (set `LANKA_V1_PARITY_DIR` 
   release pinning of grids comes with WP-10/WP-27.
 - *`gnd_idx` follows the v2 polygons*, not v1's full-precision file, so the grid path always agrees with the polygon
   path; exact v1 equality returns once COD-AB is ingested at full precision (ckan driver, WP-07).
-- *WP-06*: `grid_zonal` should wrap `lanka_grid::zonal::{zonal, rollup}` + `Acc::stat` and the `ObsRow` mapping in
-  `lanka_ingest::grid::zonal_rows` (inputs: a grid layer + `gnd_idx`/`land_mask` of the pinned boundary set; params
-  `stat`, `cells: all|inside`, `factor`, `levels`); the raster driver's `zonal:` entries then become recipes.
+- *WP-06*: `grid_zonal@1` (lanka-enrich) wraps `lanka_grid::zonal::{zonal, rollup}` + `Acc::stat` over a layer and
+  the reference set's `gnd_idx`/`land_mask` (params `stat`, `cells: all|inside`, `factor`, `levels`); the raster
+  driver's `zonal:` entries can move into recipes (follow-up; `share` is not in the method yet).
 - Not done: `postal_idx` (needs GeoNames postal in v2, WP-07), `cell_area_m2` as a stored layer (computed per row),
   `min_cells`/`SMALL_N`, value tiles (WP-27), STAC.

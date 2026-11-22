@@ -47,6 +47,14 @@ impl Inputs for StepInputs<'_> {
     async fn grid(&self, port: &str) -> Result<Arc<GridInput>> {
         self.base.grid(port).await
     }
+    async fn grid_layer(
+        &self,
+        port: &str,
+        layer: &str,
+        period: Option<&str>,
+    ) -> Result<Arc<GridInput>> {
+        self.base.grid_layer(port, layer, period).await
+    }
     fn indicator(&self, id: &str) -> Option<IndicatorMeta> {
         self.base.indicator(id)
     }

@@ -458,6 +458,7 @@ async fn execute(sh: &Shared, job: &Job) -> Result<serde_json::Value> {
                     profile,
                     recipes,
                     methods: &methods,
+                    store_root: Some(sh.store.root()),
                 });
             let r = train::run_train_with(
                 &sh.pool,
@@ -479,6 +480,7 @@ async fn execute(sh: &Shared, job: &Job) -> Result<serde_json::Value> {
                 profile: &profile,
                 recipes: &recipes,
                 methods: &methods,
+                store_root: Some(sh.store.root()),
             };
             let opts = derive::RecomputeOpts {
                 trigger: if job.trigger == "manual" {

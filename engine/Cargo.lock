@@ -1682,6 +1682,7 @@ dependencies = [
  "hex",
  "jsonschema",
  "lanka-core",
+ "lanka-grid",
  "proptest",
  "serde",
  "serde_json",
