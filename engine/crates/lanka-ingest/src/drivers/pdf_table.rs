@@ -149,6 +149,8 @@ pub enum PeriodParse {
     /// "2026 January" → `2026-01`; a label with only a month name takes the
     /// year of the nearest row above that printed one (from_label only).
     Month,
+    /// "2024Q2" / "2024 Q2" → `2024-Q2`.
+    Quarter,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -538,6 +540,19 @@ pub fn parse_period(how: PeriodParse, text: &str) -> Result<String> {
     match how {
         PeriodParse::Year => Ok(year.to_owned()),
         PeriodParse::Month => parse_month(text, None),
+        PeriodParse::Quarter => {
+            let up = text.to_ascii_uppercase();
+            let q = up
+                .match_indices('Q')
+                .find_map(|(i, _)| {
+                    up[i + 1..]
+                        .chars()
+                        .next()
+                        .filter(|c| ('1'..='4').contains(c))
+                })
+                .with_context(|| format!("no quarter in {text:?}"))?;
+            Ok(format!("{year}-Q{q}"))
+        }
         PeriodParse::QuarterEnd => {
             let lower = text.to_ascii_lowercase();
             let m = lower
@@ -913,6 +928,15 @@ mod tests {
             "2022-01"
         );
         assert_eq!(parse_month("February", Some("2023")).expect("m"), "2023-02");
+        assert_eq!(
+            parse_period(PeriodParse::Quarter, "2024Q2").expect("q"),
+            "2024-Q2"
+        );
+        assert_eq!(
+            parse_period(PeriodParse::Quarter, "2026 Q1").expect("q"),
+            "2026-Q1"
+        );
+        assert!(parse_period(PeriodParse::Quarter, "2025").is_err());
         assert!(parse_month("March", None).is_err());
     }
 }

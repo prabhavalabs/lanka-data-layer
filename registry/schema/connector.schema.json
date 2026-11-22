@@ -190,8 +190,8 @@
                       "type": "object",
                       "additionalProperties": false,
                       "properties": {
-                        "from_header": { "enum": ["year", "quarter_end", "month"] },
-                        "from_label": { "enum": ["year", "quarter_end", "month"] },
+                        "from_header": { "enum": ["year", "quarter_end", "month", "quarter"] },
+                        "from_label": { "enum": ["year", "quarter_end", "month", "quarter"] },
                         "fixed": { "type": "string" }
                       }
                     },
