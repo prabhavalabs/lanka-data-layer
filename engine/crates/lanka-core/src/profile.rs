@@ -136,6 +136,18 @@ pub struct ProfileSpec {
     pub schemes: Vec<SchemeSpec>,
     #[serde(default)]
     pub suppression: BTreeMap<String, serde_json::Value>,
+    #[serde(default)]
+    pub fetch: FetchSpec,
+}
+
+/// How connectors reach the country's publishers.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FetchSpec {
+    /// Hosts (exact names) fetched with the platform TLS stack instead of
+    /// rustls: servers offering only TLS 1.2 CBC suites.
+    #[serde(default)]
+    pub legacy_tls_hosts: Vec<String>,
 }
 
 /// A validated profile plus the derived runtime helpers.

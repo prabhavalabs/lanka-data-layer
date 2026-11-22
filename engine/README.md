@@ -332,12 +332,13 @@ docker compose -f infra/v2/docker-compose.yml --env-file infra/v2/.env up -d --b
 
 ```sh
 lanka template test dcs-lfs/annual-table-4.1-employment-by-industry LFS2025.pdf --edition 2025
-lanka ingest run dcs-lfs --from DIR          # DIR/<file key>.pdf; leaves the version in_review + evidence sheet
+lanka ingest run dcs-lfs --from DIR          # DIR/<file key>.pdf; leaves the version in_review + evidence sheet (worker jobs too)
 lanka review open dsv_…                      # evidence sheet on 127.0.0.1:8790 (page renders, cell overlays, crops)
 lanka review approve dsv_… --by NAME         # unchanged
 lanka extract propose <source> --file scan.pdf --url URL --table "Table 4.1a" --readings a.json --readings b.json
 lanka review sign x<id> --row N --decision accept|correct|reject [--text T] --by NAME
 lanka review approve x<id> --by NAME         # refused until every cell < 1.0 and the 10 % sample are signed
+lanka extract publish x<id>                  # approved class C (or its corrected child) → dataset version, left in review
 ```
 
 Templates live in `registry/templates/<source>/<table>.yaml` (`registry/schema/template.schema.json`); the `tools` sidecar is `infra/v2/tools.Dockerfile` (no network; `cargo test -p lanka-extractd --test sandbox`).
@@ -472,9 +473,13 @@ Design: [03 §2.2, §5.2](../docs/architecture-v2/03-ingestion.md#22-declarative
   fixture files, keyed by file stem), extract, a Parquet round trip and standardise in memory, prints the
   first rows and every expectation, and exits 1 on an error. `lanka connector list` lists drivers.
 - **Fetching**: the user agent follows the crawler convention (`Mozilla/5.0 (compatible; lanka-data-layer-ingest/…)`)
-  — CBSL's firewall rejects anything else. `statistics.gov.lk` offers only TLS 1.2 CBC suites, which rustls
-  does not implement (the image has no OpenSSL), so DCS documents are fetched over HTTP; artifacts are
-  still content-addressed.
+  — CBSL's firewall rejects anything else. TLS is rustls, except for hosts the country profile lists under
+  `fetch.legacy_tls_hosts` (or every host of a source with `access.tls: legacy`): those use the platform stack
+  (OpenSSL in the image, Security.framework on macOS), chosen per request by host (`lanka_ingest::http`).
+  `www.statistics.gov.lk` (IIS 8.5) offers only TLS 1.2 CBC suites (`ECDHE-RSA-AES256-SHA384`), which rustls
+  does not implement; it answers a ClientHello without them with a TCP reset, which is why the failure
+  shows as "Connection reset by peer" during connect rather than a TLS alert (headers and HTTP version
+  play no part).
 
 Sources on YAML: `worldbank-wdi` (WP-02), `dcs-agriculture` (HTML + 8 XLSX), `cbsl-exchange-rates`,
 `imf-data`, `who-gho`, `un-sdg`, `ilostat`, `hdx-cod-ps-lka`, `wfp-vam`, `ourairports`, `geonames`,

@@ -57,6 +57,11 @@ pub struct Access {
     pub method: String,
     pub endpoint: String,
     pub auth: String,
+    /// `legacy`: fetch this source's homepage and endpoint hosts with the
+    /// platform TLS stack (see [`crate::http`]). Default: rustls, unless the
+    /// profile lists the host under `fetch.legacy_tls_hosts`.
+    #[serde(default)]
+    pub tls: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

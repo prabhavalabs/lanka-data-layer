@@ -71,6 +71,13 @@
             "key",
             "manual"
           ]
+        },
+        "tls": {
+          "enum": [
+            "modern",
+            "legacy"
+          ],
+          "description": "TLS stack for the homepage and endpoint hosts: modern (rustls, default) or legacy (platform OpenSSL / Security.framework, for servers offering only TLS 1.2 CBC suites). Prefer the profile's fetch.legacy_tls_hosts for a whole host."
         }
       }
     },

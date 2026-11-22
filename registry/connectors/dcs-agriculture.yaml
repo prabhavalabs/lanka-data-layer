@@ -11,11 +11,9 @@
 #   Yala 1979 → 1979-Yala. Udawalawe, Mahaweli 'H' and Highland paddy are reporting
 #   areas, not districts; they are part of the SRI LANKA row and skipped as units.
 #
-# Transport: www.statistics.gov.lk offers only TLS 1.2 CBC suites (ECDHE-RSA-AES256-SHA384,
-# verified 2026-11-22), which rustls does not implement, and the engine image has no
-# OpenSSL (infra/v2/Dockerfile). The same documents are served over plain HTTP; every
-# artifact is still content-addressed (sha256) in the archive. Switch back to https when
-# DCS enables an AEAD suite.
+# Transport: www.statistics.gov.lk offers only TLS 1.2 CBC suites, which rustls does not
+# implement; the country profile lists the host under fetch.legacy_tls_hosts, so the engine
+# fetches it with the platform TLS stack (lanka_ingest::http).
 source: dcs-agriculture
 driver: html_table
 version: 1.0.0
@@ -24,16 +22,16 @@ discover:
   kind: static
   files:
     - key: agri_index
-      url: http://www.statistics.gov.lk/Agriculture/StaticalInformation/VolumeIndexofAgriculturalProduction
+      url: https://www.statistics.gov.lk/Agriculture/StaticalInformation/VolumeIndexofAgriculturalProduction
       file: agri_index.html
-    - { key: production_maha, format: xlsx, file: production_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Production-Maha_Season-1979-2025" }
-    - { key: production_yala, format: xlsx, file: production_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Production-Yala_Season-1979-2025" }
-    - { key: sown_maha, format: xlsx, file: sown_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Sown_Extent-Maha_Seasons-1979-2025" }
-    - { key: sown_yala, format: xlsx, file: sown_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Sown_Extent-Yala_Seasons-1979-2025" }
-    - { key: harvested_maha, format: xlsx, file: harvested_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Harvested_Extent-Maha_Seasons-1979-2025" }
-    - { key: harvested_yala, format: xlsx, file: harvested_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Harvested_Extent-Yala_Seasons-1979-2025" }
-    - { key: yield_maha, format: xlsx, file: yield_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Average_Yeild-Maha_Season-1979-2025" }
-    - { key: yield_yala, format: xlsx, file: yield_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Average_Yeild-Yala_Season-1979-2025" }
+    - { key: production_maha, format: xlsx, file: production_maha.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Production-Maha_Season-1979-2025" }
+    - { key: production_yala, format: xlsx, file: production_yala.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Production-Yala_Season-1979-2025" }
+    - { key: sown_maha, format: xlsx, file: sown_maha.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Sown_Extent-Maha_Seasons-1979-2025" }
+    - { key: sown_yala, format: xlsx, file: sown_yala.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Sown_Extent-Yala_Seasons-1979-2025" }
+    - { key: harvested_maha, format: xlsx, file: harvested_maha.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Harvested_Extent-Maha_Seasons-1979-2025" }
+    - { key: harvested_yala, format: xlsx, file: harvested_yala.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Harvested_Extent-Yala_Seasons-1979-2025" }
+    - { key: yield_maha, format: xlsx, file: yield_maha.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Average_Yeild-Maha_Season-1979-2025" }
+    - { key: yield_yala, format: xlsx, file: yield_yala.xlsx, url: "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Average_Yeild-Yala_Season-1979-2025" }
 standardise:
   dataset: dcs-paddy-statistics
   tables:

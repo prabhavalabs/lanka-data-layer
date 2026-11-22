@@ -11,6 +11,7 @@
 //! lanka review open <dsv|x<extract>> [--bind 127.0.0.1:8790] | evidence … | sign … | status x<extract>
 //! lanka template test <id> <pdf> [--edition E] | propose <pdf> --page N …
 //! lanka extract propose <source> --artifact <sha> --table <hint> (class C, operator-run)
+//! lanka extract publish x<extract>   (approved class C → dataset version; B/C stay in review)
 //! lanka release cut [--note TEXT] | list
 //! lanka worker [--lane batch|interactive] [--slots 4] [--once]
 //! lanka jobs list | show <id> | enqueue ingest|restandardise|release … | cancel <id>
@@ -394,7 +395,13 @@ enum ConnectorCmd {
 #[derive(Subcommand)]
 enum ExtractCmd {
     /// Two readings → anchored class-C `cells` extract + review with evidence.
-    Propose(propose::ExtractProposeArgs),
+    Propose(Box<propose::ExtractProposeArgs>),
+    /// Standardise an approved class-C extract into a dataset version
+    /// (refused until `lanka review approve x<id>`; B/C versions stay in review).
+    Publish {
+        /// The extract: `x<id>` (or `extract:<id>`).
+        extract: String,
+    },
 }
 
 fn init_tracing(json: bool) {
@@ -1027,7 +1034,37 @@ async fn run(cli: Cli) -> Result<()> {
         Cmd::Probe { url } => probe(&url).await?,
         Cmd::Tiles(cmd) => tiles_cmd::run(g, cmd).await?,
         Cmd::Template(cmd) => doc_cmd::template(g, cmd).await?,
-        Cmd::Extract(ExtractCmd::Propose(a)) => propose::extract_propose(g, a).await?,
+        Cmd::Extract(ExtractCmd::Propose(a)) => propose::extract_propose(g, *a).await?,
+        Cmd::Extract(ExtractCmd::Publish { extract }) => {
+            let lanka_ingest::review::Target::Extract(id) =
+                lanka_ingest::review::Target::parse(&extract)?
+            else {
+                anyhow::bail!("expected an extract (x<id>), got {extract:?}");
+            };
+            let dir = find_registry(g.registry.as_deref())?;
+            let reg = Registry::load(&dir)?;
+            let profile = load_profile(g, &dir)?;
+            let pool = pool(g, PoolRole::Ingest).await?;
+            reg.sync(&pool, &profile)
+                .await
+                .context("syncing registry")?;
+            let store = store(g, &dir);
+            let env = Env {
+                pool: &pool,
+                registry: &reg,
+                profile: &profile,
+                store: &store,
+            };
+            let report = lanka_ingest::pipeline::publish_extract(&env, id).await?;
+            print_json(&report)?;
+            let in_review: Vec<String> = report
+                .published
+                .iter()
+                .filter(|p| p.outcome == "in_review")
+                .map(|p| p.dsv.clone())
+                .collect();
+            review_cmd::after_run(g, &pool, &in_review).await;
+        }
         Cmd::Map(cmd) => map_cmd(g, cmd).await?,
         Cmd::Grid(cmd) => {
             let dir = find_registry(g.registry.as_deref())?;

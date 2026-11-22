@@ -15,13 +15,13 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+use crate::Registry;
+use crate::drivers::pdf_table::{PdfTable, table_from_cells};
+use crate::extract::{Cell, CellType, ExtractArtifact};
+use crate::review::{self, ExtractRow, Target};
+use crate::template::{CheckResult, Template};
 use anyhow::{Context, Result, bail};
 use lanka_extractd::Sandbox;
-use lanka_ingest::Registry;
-use lanka_ingest::drivers::pdf_table::{PdfTable, table_from_cells};
-use lanka_ingest::extract::{Cell, CellType, ExtractArtifact};
-use lanka_ingest::review::{self, ExtractRow, Target};
-use lanka_ingest::template::{CheckResult, Template};
 use lanka_store::{BlobRef, BlobStore, Ns};
 use serde::Serialize;
 use sqlx::PgPool;

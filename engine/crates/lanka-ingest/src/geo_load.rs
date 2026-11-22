@@ -12,8 +12,8 @@
 use std::collections::HashMap;
 
 use anyhow::{Result, bail, ensure};
-use lanka_core::Profile;
 use lanka_core::dsv::{MultisetHash, dsv};
+use lanka_core::{AdminCodes, Profile};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
@@ -22,6 +22,42 @@ use crate::copy_bin::BinCopy;
 use crate::publish::{
     Diff, PublishResult, boundary_schema, current_version, mark_approved, unit_row_bytes,
 };
+
+/// The parent each unit's p-code implies under the profile's p-code rules
+/// (root code + a fixed number of digits per level), `None` at level 0.
+fn pcode_parent(admin: &AdminCodes, pcode: &str) -> Result<Option<String>> {
+    let p = admin.parse(pcode)?;
+    Ok(admin.structural_parent(&p).map(String::from))
+}
+
+/// Units whose parent is not the one their p-code implies (`"<code>: parent
+/// <recorded>, p-code says <implied>"`). P-codes nest by construction, so a
+/// mismatch is always a data error (Ampara LK52 was recorded under Uva LK8).
+pub fn parent_mismatches(admin: &AdminCodes, units: &[AdminUnitIn]) -> Result<Vec<String>> {
+    let mut out = Vec::new();
+    for u in units {
+        let implied = pcode_parent(admin, &u.pcode)?;
+        if implied != u.parent_pcode {
+            out.push(format!(
+                "{}: parent {}, p-code says {}",
+                u.pcode,
+                u.parent_pcode.as_deref().unwrap_or("(none)"),
+                implied.as_deref().unwrap_or("(none)")
+            ));
+        }
+    }
+    Ok(out)
+}
+
+/// Sets every unit's parent to the one its p-code implies; returns the
+/// corrections made (same format as [`parent_mismatches`]).
+pub fn parents_from_pcodes(admin: &AdminCodes, units: &mut [AdminUnitIn]) -> Result<Vec<String>> {
+    let fixes = parent_mismatches(admin, units)?;
+    for u in units.iter_mut() {
+        u.parent_pcode = pcode_parent(admin, &u.pcode)?;
+    }
+    Ok(fixes)
+}
 
 /// Ancestor codes (root → parent) for every unit, by walking parents.
 fn ancestors(units: &[AdminUnitIn], max_depth: usize) -> Result<HashMap<&str, Vec<&str>>> {
@@ -110,6 +146,18 @@ pub async fn publish_admin_units(
             u.level
         );
     }
+    let wrong = parent_mismatches(&profile.admin, units)?;
+    ensure!(
+        wrong.is_empty(),
+        "{} unit(s) have a parent other than the one their p-code implies: {}",
+        wrong.len(),
+        wrong
+            .iter()
+            .take(20)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("; ")
+    );
     let anc = ancestors(units, usize::from(profile.admin.max_level()))?;
     let scheme = profile.admin_scheme();
     let (multiset, geom_hash) = units_multiset(units);
@@ -417,4 +465,56 @@ pub async fn upsert_crosswalks(
     .execute(pool)
     .await?;
     Ok(res.rows_affected())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::value::RawValue;
+
+    fn admin() -> AdminCodes {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../registry");
+        Profile::discover(&root)
+            .and_then(Profile::load)
+            .expect("profile")
+            .admin
+    }
+
+    fn unit(pcode: &str, level: i16, parent: Option<&str>) -> AdminUnitIn {
+        AdminUnitIn {
+            pcode: pcode.into(),
+            level,
+            name_en: pcode.into(),
+            name_si: None,
+            name_ta: None,
+            parent_pcode: parent.map(str::to_owned),
+            geometry: RawValue::from_string("null".into()).expect("json"),
+            artifact: 0,
+        }
+    }
+
+    #[test]
+    fn parents_must_match_the_pcode_prefix() {
+        let a = admin();
+        let mut units = vec![
+            unit("LK", 0, None),
+            unit("LK5", 1, Some("LK")),
+            unit("LK8", 1, Some("LK")),
+            unit("LK52", 2, Some("LK8")), // Ampara under Uva: the v1 export's error
+            unit("LK5215", 3, Some("LK52")),
+            unit("LK5215010", 4, Some("LK5215")),
+            unit("LK81", 2, Some("LK8")),
+        ];
+        assert_eq!(
+            parent_mismatches(&a, &units).expect("checks"),
+            vec!["LK52: parent LK8, p-code says LK5".to_owned()]
+        );
+        let fixed = parents_from_pcodes(&a, &mut units).expect("fixes");
+        assert_eq!(fixed.len(), 1);
+        assert_eq!(units[3].parent_pcode.as_deref(), Some("LK5"));
+        assert!(parent_mismatches(&a, &units).expect("checks").is_empty());
+        // A root with a parent, or a unit skipping a level, is caught too.
+        let bad = vec![unit("LK", 0, Some("LK")), unit("LK5215", 3, Some("LK5"))];
+        assert_eq!(parent_mismatches(&a, &bad).expect("checks").len(), 2);
+    }
 }

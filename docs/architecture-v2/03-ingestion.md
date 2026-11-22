@@ -302,7 +302,7 @@ CREATE TABLE ops.review_cells (           -- class C per-cell sign-off; class B 
 );
 ```
 
-**Evidence sheet** (`lanka-export::evidence`, static HTML written to `store/evidence/<dsv>/`, opened with `lanka review open <dsv>` which serves it on `127.0.0.1` only):
+**Evidence sheet** (`lanka_ingest::evidence`, built by `lanka ingest run` and by worker jobs that leave a version in review; static HTML written to `store/evidence/<dsv>/`, opened with `lanka review open <dsv>` which serves it on `127.0.0.1` only):
 
 - header: dataset, source edition, artifact sha256 + URL, extractor + template version, run id;
 - validation report: every expectation with pass/fail and numbers;

@@ -87,9 +87,12 @@ export async function run({ db, log }: StepContext): Promise<void> {
     });
   }
 
+  // District parents from the COD-AB p-code prefix (LK52 -> LK5), not
+  // geoBoundaries' parentId, which puts Ampara (LK52) under Uva (LK8).
+  const provincePcodes = new Set(provinceIdToPcode.values());
   for (const f of districts.features) {
-    const parentId = String(f.properties.parentId);
-    const parentPcode = provinceIdToPcode.get(parentId) ?? null;
+    const prefix = String(f.properties.pcode).slice(0, 3);
+    const parentPcode = provincePcodes.has(prefix) ? prefix : null;
     units.push({
       pcode: String(f.properties.pcode),
       level: 2,

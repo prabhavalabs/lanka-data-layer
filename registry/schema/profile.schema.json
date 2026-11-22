@@ -242,6 +242,22 @@
     },
     "suppression": {
       "type": "object"
+    },
+    "fetch": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "How connectors reach the country's publishers.",
+      "properties": {
+        "legacy_tls_hosts": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "Exact host names fetched with the platform TLS stack (OpenSSL / Security.framework) instead of rustls: servers that offer only TLS 1.2 CBC suites and reset rustls handshakes.",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9.-]+$"
+          }
+        }
+      }
     }
   },
   "$defs": {

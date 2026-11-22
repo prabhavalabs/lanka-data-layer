@@ -1083,6 +1083,24 @@
             },
             "default": {
               "$ref": "#/$defs/basis_status"
+            },
+            "since": {
+              "type": "object",
+              "description": "Observations whose period starts on or after the period this source evaluates to (output frequency) take codes[code], e.g. projections from the edition year read per series from a metadata table.",
+              "required": [
+                "code"
+              ],
+              "allOf": [
+                {
+                  "$ref": "#/$defs/src_fields"
+                }
+              ],
+              "properties": {
+                "code": {
+                  "type": "string"
+                }
+              },
+              "unevaluatedProperties": false
             }
           },
           "unevaluatedProperties": false

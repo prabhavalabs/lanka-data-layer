@@ -362,6 +362,78 @@ async fn execute_claimed(sh: Arc<Shared>, claimed: Claimed, mut stop: watch::Rec
     claimed.release().await;
 }
 
+/// Builds the evidence sheet (03 §6) of every version a run left in review,
+/// as `lanka ingest run` does. Best effort: a failure is a warning event and
+/// never fails the job (the sheet can be rebuilt with `lanka review evidence`).
+async fn evidence_sheets(
+    sh: &Shared,
+    reg: &Registry,
+    job: &Job,
+    source: &str,
+    dsvs: &[&str],
+) -> Vec<serde_json::Value> {
+    if dsvs.is_empty() {
+        return Vec::new();
+    }
+    let event = |kind| Event {
+        kind: Some(kind),
+        job_id: Some(job.id),
+        source_id: Some(source),
+        ..Event::default()
+    };
+    let sandbox = match lanka_extractd::Sandbox::from_env() {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = format!("evidence sheets not built (no document sandbox): {e:#}");
+            emit(
+                &sh.pool,
+                Level::Warn,
+                Stage::Job,
+                &msg,
+                event("evidence_failed"),
+            )
+            .await;
+            return dsvs
+                .iter()
+                .map(|d| json!({ "dsv": d, "error": msg }))
+                .collect();
+        }
+    };
+    let mut out = Vec::new();
+    for dsv in dsvs {
+        let target = crate::review::Target::Version((*dsv).to_owned());
+        match crate::evidence::build(&sh.pool, &sh.store, reg, &sandbox, &target).await {
+            Ok(b) => {
+                emit(
+                    &sh.pool,
+                    Level::Info,
+                    Stage::Job,
+                    &format!("evidence sheet for {dsv}: {}", b.key),
+                    event("evidence_built"),
+                )
+                .await;
+                out.push(
+                    json!({ "dsv": dsv, "key": b.key, "cells": b.cells, "pages": b.pages,
+                                 "checks_ok": b.checks_ok }),
+                );
+            }
+            Err(e) => {
+                let msg = format!("evidence sheet for {dsv} not built: {e:#}");
+                emit(
+                    &sh.pool,
+                    Level::Warn,
+                    Stage::Job,
+                    &msg,
+                    event("evidence_failed"),
+                )
+                .await;
+                out.push(json!({ "dsv": dsv, "error": msg }));
+            }
+        }
+    }
+    out
+}
+
 /// Executes one job by kind.
 async fn execute(sh: &Shared, job: &Job) -> Result<serde_json::Value> {
     match job.kind.as_str() {
@@ -407,6 +479,13 @@ async fn execute(sh: &Shared, job: &Job) -> Result<serde_json::Value> {
             } else {
                 restandardise_for_job(&env, &source, Some(job.id)).await?
             };
+            let in_review: Vec<&str> = report
+                .published
+                .iter()
+                .filter(|p| p.outcome == "in_review")
+                .map(|p| p.dsv.as_str())
+                .collect();
+            let evidence = evidence_sheets(sh, &reg, job, &source, &in_review).await;
             Ok(json!({
                 "run_id": report.run_id,
                 "status": report.status,
@@ -416,6 +495,7 @@ async fn execute(sh: &Shared, job: &Job) -> Result<serde_json::Value> {
                 "published": report.published.iter().map(|p| json!({
                     "dataset_id": p.dataset_id, "dsv": p.dsv, "outcome": p.outcome, "rows_written": p.rows_written,
                 })).collect::<Vec<_>>(),
+                "evidence": evidence,
             }))
         }
         "release" => {

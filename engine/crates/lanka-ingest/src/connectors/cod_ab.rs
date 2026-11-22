@@ -226,6 +226,18 @@ impl Connector for CodAb {
                 &ctx.profile.spec.name.en,
             )?);
         }
+        // Parents follow from the p-codes (COD-AB codes nest by
+        // construction); the layer files' parent column is only a cross-check.
+        // The v1 export took district parents from geoBoundaries and put
+        // Ampara (LK52) under Uva (LK8).
+        let fixed = crate::geo_load::parents_from_pcodes(&ctx.profile.admin, &mut units)?;
+        if !fixed.is_empty() {
+            ctx.warn(format!(
+                "{} parent(s) in the layer files disagree with the p-codes; the p-code parent is used: {}",
+                fixed.len(),
+                fixed.join("; ")
+            ));
+        }
         let unnamed = units.iter().filter(|u| u.name_en == u.pcode).count();
         if unnamed > 0 {
             ctx.warn(format!(

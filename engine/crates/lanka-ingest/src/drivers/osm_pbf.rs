@@ -693,6 +693,7 @@ impl Connector for OsmPbf {
         // The -latest URL redirects to the dated daily file: one HEAD tells
         // whether there is anything new.
         let http = reqwest::Client::builder()
+            .tls_backend_rustls()
             .redirect(reqwest::redirect::Policy::none())
             .user_agent(concat!(
                 "lanka-data-layer-ingest/",
@@ -1003,7 +1004,7 @@ standardise:
             .and_then(lanka_core::Profile::load)
             .expect("profile");
         let reg = crate::Registry::default();
-        let http = reqwest::Client::new();
+        let http = crate::http::Http::modern().expect("client");
         let opts = crate::RunOptions::default();
         let ctx = DiscoverCtx {
             registry: &reg,

@@ -4,7 +4,8 @@
 //! and release distributions (Parquet, CSV, GeoParquet) come with WP-09.
 
 pub mod dem;
-pub mod evidence;
+/// Evidence sheets live in `lanka_ingest::evidence` (the worker builds them too).
+pub use lanka_ingest::evidence;
 pub mod pmtiles;
 pub mod tiles;
 pub mod tippecanoe;

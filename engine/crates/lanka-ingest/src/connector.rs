@@ -376,7 +376,7 @@ pub struct RunOptions {
 pub struct DiscoverCtx<'a> {
     pub registry: &'a Registry,
     pub profile: &'a Profile,
-    pub http: &'a reqwest::Client,
+    pub http: &'a crate::http::Http,
     pub opts: &'a RunOptions,
     pub run: Option<&'a RunTracker>,
 }
