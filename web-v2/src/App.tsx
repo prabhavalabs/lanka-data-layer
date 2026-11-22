@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
-import { Outlet, Route, Routes, useLocation } from 'react-router'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { CommandPaletteProvider } from '@/components/shell/CommandPalette'
 import { Footer } from '@/components/shell/Footer'
 import { TopNav } from '@/components/shell/TopNav'
@@ -13,6 +13,7 @@ const Catalogue = lazy(() => import('@/pages/Catalogue'))
 const DatasetPage = lazy(() => import('@/pages/Dataset'))
 const Developers = lazy(() => import('@/pages/Developers'))
 const SharedMap = lazy(() => import('@/pages/SharedMap'))
+const Terms = lazy(() => import('@/pages/Terms'))
 const EmbedMap = lazy(() => import('@/pages/SharedMap').then((m) => ({ default: m.EmbedMap })))
 
 function PageFallback() {
@@ -70,6 +71,8 @@ export function App() {
             <Route path="data" element={<Catalogue />} />
             <Route path="data/:id" element={<DatasetPage />} />
             <Route path="developers" element={<Developers />} />
+            <Route path="terms" element={<Terms />} />
+            <Route path="takedown" element={<Navigate to="/terms#takedown" replace />} />
             <Route path="*" element={<Landing />} />
           </Route>
         </Routes>

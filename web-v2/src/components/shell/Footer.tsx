@@ -5,7 +5,8 @@ import { FooterSkyline } from './FooterSkyline'
 const COLS: { h: string; links: [string, string][] }[] = [
   { h: 'Product', links: [['Explore map', '/explore'], ['Area profiles', '/area/LK11'], ['Data catalogue', '/data'], ['Indicators', '/explore']] },
   { h: 'Developers', links: [['REST API v2', '/developers#rest'], ['MCP server', '/developers#mcp'], ['lanka CLI', '/developers#cli'], ['Bulk downloads', '/data']] },
-  { h: 'Project', links: [['Method', '/developers'], ['Licences', '/data'], ['Status', '/data'], ['Releases', '/data']] },
+  { h: 'Project', links: [['Method', '/developers'], ['Licences', '/terms#licensing'], ['Status', '/data'], ['Releases', '/data']] },
+  { h: 'Legal', links: [['Terms of use', '/terms'], ['Data licensing', '/terms#licensing'], ['Takedown requests', '/terms#takedown'], ['Privacy', '/terms#privacy']] },
 ]
 
 export function Footer() {
@@ -24,7 +25,7 @@ export function Footer() {
               <span lang="ta">லங்கா தரவு அடுக்கு</span>
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             {COLS.map((c) => (
               <div key={c.h}>
                 <div className="t-label mb-3">{c.h}</div>
@@ -51,7 +52,9 @@ export function Footer() {
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             <span className="rounded border border-line2 px-1.5 py-px text-warn">design mockup · values are artificial</span>
-            <span>Code MIT · data under each source's licence</span>
+            <Link to="/terms" className="hover:text-ink">
+              Code MIT · data under each source's licence
+            </Link>
           </div>
         </div>
       </div>

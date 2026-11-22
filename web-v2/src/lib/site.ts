@@ -5,3 +5,6 @@ export const SITE = `https://${SITE_HOST}`
 export const API = `${SITE}/v2`
 export const MCP = `${SITE}/mcp`
 export const DOWNLOADS = `${SITE}/downloads`
+
+// Where rights holders send removal requests and anyone sends a licensing question.
+export const DATA_CONTACT = 'data@prabhavalabs.com'
