@@ -17,12 +17,26 @@ indicators:
   - adm3
   - adm4
   period_type: year
+- id: pop.grid_density
+  label: Population density (modelled)
+  unit: /km2
+  measure_type: rate
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
 time_coverage:
   from: '2015'
   to: '2030'
-method: Download annual constrained GeoTIFFs, resample to canonical grid by area-weighted redistribution, zonal sums to ADM4.
+method: Download annual constrained 100 m (3 arc-second) GeoTIFFs, resample to the canonical grid by area-weighted redistribution (area_sum), zonal sums per ADM1-ADM4 unit; density = zonal sum per km2 of the unit's land cells (cells whose centre lies inside the unit).
 limits:
 - Modelled, not counted; small-area (single cell) values are unreliable.
+- Constrained to mapped settlement (cells without built settlement hold 0); rural densities are lower than census density over the whole unit area.
+- 'pop.grid_density divides by land-cell area, not by the geodesic unit area of derived.per_km2; the two differ slightly on coasts.'
 - Projected years beyond the latest census are extrapolations.
 enrichment:
   joins:

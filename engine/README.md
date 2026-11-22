@@ -594,8 +594,14 @@ Values: Western Province 6,117,341 (sum of 3 districts; provinces sum to the nat
 ### Decision note: WP-06 deviations
 
 - *One writer per dataset*: a recipe owns its output dataset, so census ADM1 roll-ups are `rollup.census24.*` in
-  `derived-census-2024-rollups`, not computed rows inside `census24.pop_total` as 04 §8.1 allows; a serve-time union for
-  levels the source does not print is a follow-up. `admin.area_km2`/`admin.child_count` moved to `derived-admin-metrics`
+  `derived-census-2024-rollups`, not computed rows inside `census24.pop_total` as 04 §8.1 allows. The serve-time
+  completion closes that gap (migration `0013_indicator_completes.sql`): a roll-up indicator declares
+  `completes: census24.pop_total` in the registry (`catalog.indicators.completes`; validated: derived class, same
+  unit, measure type, period type and dims), and `/v2/frame`, `/v2/indicators/{id}/map` and `/v2/areas/{code}`
+  serve its rows under the completed id at a level where that indicator has none (`frame::source_at_level`), with
+  `completed_from: "rollup.census24.pop_total"`, the roll-up's dataset (and dataset version in `meta`), `basis =
+  computed` and the roll-up's `obs_id`s; the class stays the completed indicator's (`official` may carry computed
+  roll-ups, 02 §4). Areas also keep the roll-up under its own id. `admin.area_km2`/`admin.child_count` moved to `derived-admin-metrics`
   (class `derived`) because a boundaries dataset version carries no observations.
 - *`data.derivations`* has its own id; `version_id` is not unique, with `outcome new | unchanged`: a re-run whose output
   equals the published version records its fingerprint against that version, so it is reused next time. Failed runs
@@ -814,7 +820,7 @@ Design: [05 §8](../docs/architecture-v2/05-storage-and-performance.md#8-grid-st
 
 ```
 GeoTIFF (L0) ─► resample to the canonical 0.001° grid ─► grids/<layer>/<period>/<sha16>.bin (LKGRID01) + .tif (COG)
-                split_sum | centre_mean | centre_sample           │  geo.grid_layers (+ serve, overview, style, stats)
+                split_sum | area_sum | centre_mean | centre_sample│  geo.grid_layers (+ serve, overview, style, stats)
                 class_count | class_mode | slope_mean/share        ▼
 grid-lookups: gnd_idx (u16) + land_mask (u8) ─► zonal pass (one scan, per-slot accumulators) ─► roll-up via anc_keys
                                                  ─► ObsRows ─► the usual validate → stage → gate → approve → train
@@ -834,7 +840,8 @@ grid-lookups: gnd_idx (u16) + land_mask (u8) ─► zonal pass (one scan, per-sl
 - **Zonal**: `lanka_grid::zonal::zonal(gnd_idx, layer, cols, row_areas, slots)` → per-slot `Acc {n, sum, wsum,
   area, max}`; `rollup(accs, parents)` adds each slot to its unit and every ancestor, so ADM1–ADM3 values are exact
   aggregates, not averages of averages. Stats: `sum`, area-weighted `mean`, `area_sum` (fraction × cell area),
-  `share` (area over the sum of a set of layers), `max`. Sums use every assigned cell (v1's population roll-up);
+  `share` (area over the sum of a set of layers), `max`, `density` (Σ v per km² of the unit's inside cells:
+  `pop.grid_density`). Sums use every assigned cell (v1's population roll-up);
   means and areas use only cells whose centre is inside a unit (`land_mask` 1/2) so near-shore sea is not counted.
   Each pass checks leaves + unassigned = grid total. Cell area per row on the authalic sphere.
 - **`raster` driver** (`registry/connectors/{worldpop,esa-worldcover,copernicus-dem,worldclim}.yaml`): `discover`
@@ -895,6 +902,21 @@ round-trips), `crates/lanka-grid/tests/v1_parity.rs` (set `LANKA_V1_PARITY_DIR` 
 - *Resampling* is centre-based everywhere (no interpolation): coarse counts split evenly over the cells whose centre
   the pixel holds (v1), coarse intensive values sampled at the cell centre, fine pixels averaged / counted by the cell
   holding their centre (WorldCover: exactly 144 pixels per cell). Slope: Horn on 30 m with per-row metric pixel width.
+- *WorldPop is the 100 m constrained product* (connector 1.1.0, `area_sum`). Until 1.1.0 the connector loaded
+  the ~1 km (30″) unconstrained UN-adjusted file with v1's `split_sum`, so every 8 × 8 (or 9 × 9) block of
+  0.001° cells carried the same value and native-zoom value tiles (z10–z11) showed ~1 km squares, although the
+  dataset card (`worldpop-pop-grid.yaml`) names the 100 m constrained product. `area_sum` redistributes each 3″
+  pixel over the ≤ 2 × 2 cells it overlaps by overlap area: the total is conserved exactly, and a cell holds the
+  population of its own ~110 m square (centre sampling at the 1.2 resolution ratio would alias: cells with 1 or 4
+  pixel centres). The v1 parity check above refers to the 1 km file (`LANKA_WORLDPOP_TIF`); `split_sum` stays for it.
+  Measured on a copy of the main database: 2,826,388 valid cells (constrained = nodata outside mapped settlement;
+  1,724.8 persons max per cell), total 23,162,793.6 (the UN-adjusted 1 km total was 23,168,692.0); a z11 value tile
+  over Colombo has 7,493 distinct values with a mean run of 2.0 px (one 0.001° cell ≈ 1.46 z11 px) against 356 and
+  14.7 px from the 1 km file. `pop.grid_density` (zonal stat `density`, persons per km² of all the unit's inside
+  cells, settled or not) covers ADM1–ADM4, so GN divisions have a modelled density while the census GN tables are
+  not loaded; it is `third_party`/`estimated` and never completes `census24.*` or `derived.per_km2`.
+  Consequences: `pop.grid_total` changes everywhere (constrained = zero outside mapped settlement; the national
+  total is WorldPop's constrained total, not the UN-adjusted one), so the re-run goes through review.
 - *Periods*: WorldPop `2025` (A); WorldCover `2021` (A; 2020 v100 is configurable but not loaded); DEM `2015` (P, end of
   the 2011–2015 acquisition); WorldClim normals dated by the window start (02 §5 multi-year rule): `1970-01…12` (M) and
   `1970` (P) for BIO1–19. The doc owner may prefer a climatology-period dimension.
