@@ -460,7 +460,11 @@ async fn render(work: &Path, page: u32, dpi: u32, lim: &Limits, tools: &Tools) -
     #[allow(clippy::cast_precision_loss)]
     let cap = (lim.max_render_mpx * 1_000_000) as f64;
     ensure!(
-        w > 0.0 && h > 0.0 && px <= cap,
+        w > 0.0 && h > 0.0,
+        "page {page} has no usable size ({w}x{h} pt)"
+    );
+    ensure!(
+        px <= cap,
         "page {page} is {w:.0}x{h:.0} pt: {:.0} Mpx at {dpi} dpi exceeds the {} Mpx render cap",
         px / 1e6,
         lim.max_render_mpx
