@@ -5,7 +5,8 @@
 //! version into **one** new release:
 //!
 //! ```text
-//! 1. derived recompute hook (placeholder until recipes exist, WP-06)
+//! 1. derived recompute (`derive::recompute`, before the lock: recipes in
+//!    topological order over current release ∪ approved; WP-06)
 //! 2. lock (pg_advisory_xact_lock 'lanka-release')
 //! 3. collect approved versions                        → none: no_change
 //! 4. data.releases + release_datasets (previous map, re-pointed) + changelog;
@@ -23,6 +24,7 @@ use serde::Serialize;
 use serde_json::json;
 use sqlx::{PgConnection, PgPool};
 
+use crate::derive::{self, DeriveEnv, RecomputeOpts};
 use crate::publish::Diff;
 use crate::run::{Event, Level, Stage, emit};
 
@@ -51,11 +53,33 @@ pub struct TrainReport {
 }
 
 /// Recomputes stale derived datasets in topological order before the cut
-/// (03 §8 step 3). No recipes exist before WP-06, so this reports nothing
-/// to do; a failing recipe will keep its previous version and never block
-/// official data.
-async fn recompute_derived(_pool: &PgPool) -> serde_json::Value {
-    json!({ "recipes": 0, "recomputed": [], "note": "no recipes registered (WP-06)" })
+/// (03 §8 step 3). Without a [`DeriveEnv`] (no registry at hand) nothing is
+/// recomputed. A failing recipe keeps its previous version and never
+/// blocks official data: its error is in the report and an incident.
+async fn recompute_derived(
+    derive: Option<&DeriveEnv<'_>>,
+    trigger: &str,
+    train_id: i64,
+    job_id: Option<i64>,
+) -> serde_json::Value {
+    let Some(env) = derive else {
+        return json!({ "recipes": 0, "note": "no registry given: derived recompute skipped" });
+    };
+    let opts = RecomputeOpts {
+        trigger: if trigger == "test" {
+            "test"
+        } else {
+            "schedule"
+        }
+        .to_owned(),
+        train_id: Some(train_id),
+        job_id,
+        ..RecomputeOpts::default()
+    };
+    match derive::recompute(env, &opts).await {
+        Ok(r) => r.to_json(),
+        Err(e) => json!({ "error": format!("{e:#}") }),
+    }
 }
 
 /// (version id, dataset id, dataset key, seq, dsv, diff, kind)
@@ -69,12 +93,24 @@ type ApprovedRow = (
     String,
 );
 
-/// Runs one train. `trigger` is one of [`TRIGGERS`].
+/// Runs one train without derived recompute. `trigger` is one of [`TRIGGERS`].
 pub async fn run_train(
     pool: &PgPool,
     trigger: &str,
     job_id: Option<i64>,
     note: Option<&str>,
+) -> Result<TrainReport> {
+    run_train_with(pool, trigger, job_id, note, None).await
+}
+
+/// Runs one train; with `derive`, stale recipes are recomputed first and
+/// their approved outputs are released by the same cut.
+pub async fn run_train_with(
+    pool: &PgPool,
+    trigger: &str,
+    job_id: Option<i64>,
+    note: Option<&str>,
+    derive: Option<&DeriveEnv<'_>>,
 ) -> Result<TrainReport> {
     anyhow::ensure!(
         TRIGGERS.contains(&trigger),
@@ -102,7 +138,7 @@ pub async fn run_train(
     )
     .await;
 
-    let recipes = recompute_derived(pool).await;
+    let recipes = recompute_derived(derive, trigger, train_id, job_id).await;
     match cut(pool, train_id, note, &recipes).await {
         Ok((data_version, versions)) => {
             let outcome = if data_version.is_some() {

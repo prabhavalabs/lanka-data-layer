@@ -29,6 +29,7 @@ use tokio::sync::{Mutex, watch};
 use tokio::task::JoinSet;
 
 use crate::connector::RunOptions;
+use crate::derive;
 use crate::jobs::{self, Claimed, Job};
 use crate::pipeline::{Env, restandardise_for_job, run_source};
 use crate::registry::Registry;
@@ -40,7 +41,7 @@ use crate::train;
 #[must_use]
 pub fn executable_kinds(lane: &str) -> &'static [&'static str] {
     match lane {
-        "batch" => &["ingest", "restandardise", "release"],
+        "batch" => &["ingest", "restandardise", "release", "recipe"],
         _ => &[],
     }
 }
@@ -433,8 +434,78 @@ async fn execute(sh: &Shared, job: &Job) -> Result<serde_json::Value> {
                 .get("note")
                 .and_then(|s| s.as_str())
                 .map(str::to_owned);
-            let r = train::run_train(&sh.pool, &trigger, Some(job.id), note.as_deref()).await?;
+            // A broken registry or recipe never blocks the release of
+            // official data: the train then runs without derived recompute.
+            let methods = lanka_enrich::Methods::builtin();
+            let loaded = match sh.load().await {
+                Ok((reg, profile)) => match derive::load_checked(&reg, &methods) {
+                    Ok((recipes, _)) => Some((reg, profile, recipes)),
+                    Err(e) => {
+                        tracing::error!(error = %format!("{e:#}"), "recipes not loadable; train without recompute");
+                        None
+                    }
+                },
+                Err(e) => {
+                    tracing::error!(error = %format!("{e:#}"), "registry not loadable; train without recompute");
+                    None
+                }
+            };
+            let env = loaded
+                .as_ref()
+                .map(|(reg, profile, recipes)| derive::DeriveEnv {
+                    pool: &sh.pool,
+                    registry: reg,
+                    profile,
+                    recipes,
+                    methods: &methods,
+                });
+            let r = train::run_train_with(
+                &sh.pool,
+                &trigger,
+                Some(job.id),
+                note.as_deref(),
+                env.as_ref(),
+            )
+            .await?;
             Ok(serde_json::to_value(&r)?)
+        }
+        "recipe" => {
+            let (reg, profile) = sh.load().await?;
+            let methods = lanka_enrich::Methods::builtin();
+            let (recipes, _) = derive::load_checked(&reg, &methods)?;
+            let env = derive::DeriveEnv {
+                pool: &sh.pool,
+                registry: &reg,
+                profile: &profile,
+                recipes: &recipes,
+                methods: &methods,
+            };
+            let opts = derive::RecomputeOpts {
+                trigger: if job.trigger == "manual" {
+                    "manual"
+                } else {
+                    "schedule"
+                }
+                .to_owned(),
+                job_id: Some(job.id),
+                only: job
+                    .payload
+                    .get("recipe")
+                    .and_then(|r| r.as_str())
+                    .map(str::to_owned),
+                force: job
+                    .payload
+                    .get("force")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
+                include_scheduled: true,
+                ..derive::RecomputeOpts::default()
+            };
+            let r = derive::recompute(&env, &opts).await?;
+            if r.failed > 0 {
+                anyhow::bail!("recipe failed: {}", serde_json::to_string(&r.results)?);
+            }
+            Ok(r.to_json())
         }
         other => anyhow::bail!("job kind {other:?} is not executable by this engine version"),
     }

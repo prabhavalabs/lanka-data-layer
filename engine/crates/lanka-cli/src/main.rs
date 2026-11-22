@@ -27,8 +27,8 @@ use lanka_core::db::{self, PoolRole};
 use lanka_core::{Catalog, Profile, query};
 use lanka_ingest::jobs::{self, NewJob};
 use lanka_ingest::{
-    Env, Registry, RunOptions, implemented, publish, restandardise, run_source, scheduler, train,
-    worker,
+    Env, Registry, RunOptions, derive, implemented, publish, restandardise, run_source, scheduler,
+    train, worker,
 };
 use lanka_store::FsStore;
 use sqlx::PgPool;
@@ -89,6 +89,9 @@ enum Cmd {
     /// Release trains: approved versions become visible in one release.
     #[command(subcommand)]
     Release(ReleaseCmd),
+    /// Derived datasets: check, list, run and explain recipes.
+    #[command(subcommand)]
+    Recipe(RecipeCmd),
     /// Run the job worker: scheduler tick + executor over ops.jobs.
     Worker(WorkerArgs),
     /// Inspect and manage the job queue.
@@ -167,6 +170,33 @@ enum DbCmd {
 }
 
 #[derive(Subcommand)]
+enum RecipeCmd {
+    /// Validate registry/recipes against the schema, the method library and
+    /// the registry; prove the global DAG acyclic.
+    Check,
+    /// Every recipe with what the next train would do (reused / would_run / waiting_inputs …).
+    List,
+    /// The method library.
+    Methods,
+    /// Run one recipe now (stages a version; the next train releases it if approved).
+    Run {
+        id: String,
+        /// Run even when a derivation with the current fingerprint exists.
+        #[arg(long)]
+        force: bool,
+        /// Report the fingerprint and what would run; stage nothing.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Lineage of a derived observation: derivation, formula, contributors.
+    Explain {
+        obs_id: i64,
+        #[arg(long, default_value_t = 1)]
+        depth: u8,
+    },
+}
+
+#[derive(Subcommand)]
 enum ReleaseCmd {
     /// Run a release train now (manual trigger): every approved version is
     /// released together; nothing approved = no_change.
@@ -233,6 +263,12 @@ enum EnqueueCmd {
     Release {
         #[arg(long)]
         note: Option<String>,
+    },
+    /// Recompute one recipe (or every stale one) outside the train.
+    Recipe {
+        recipe: Option<String>,
+        #[arg(long)]
+        force: bool,
     },
 }
 
@@ -478,6 +514,106 @@ async fn map_cmd(g: &Global, cmd: MapCmd) -> Result<()> {
     Ok(())
 }
 
+/// Registry, profile and checked recipes.
+async fn derive_parts(g: &Global) -> Result<(Registry, Profile, lanka_enrich::Recipes)> {
+    let dir = find_registry(g.registry.as_deref())?;
+    let reg = Registry::load(&dir)?;
+    let profile = load_profile(g, &dir)?;
+    let (recipes, warnings) = derive::load_checked(&reg, &lanka_enrich::Methods::builtin())?;
+    for w in warnings {
+        eprintln!("warning: {w}");
+    }
+    Ok((reg, profile, recipes))
+}
+
+async fn recipe_cmd(g: &Global, cmd: RecipeCmd) -> Result<()> {
+    let methods = lanka_enrich::Methods::builtin();
+    match cmd {
+        RecipeCmd::Check => {
+            let dir = find_registry(g.registry.as_deref())?;
+            let reg = Registry::load(&dir)?;
+            let recipes = lanka_enrich::Recipes::load(&dir)?;
+            let rep = recipes.check(&derive::registry_view(&reg), &methods);
+            for w in &rep.warnings {
+                eprintln!("warning: {w}");
+            }
+            for e in &rep.errors {
+                eprintln!("error: {e}");
+            }
+            anyhow::ensure!(
+                rep.errors.is_empty(),
+                "{} recipe error(s)",
+                rep.errors.len()
+            );
+            println!(
+                "recipes OK: {} (order: {})",
+                recipes.list.len(),
+                rep.order.join(" → ")
+            );
+        }
+        RecipeCmd::Methods => {
+            let list: Vec<serde_json::Value> = methods.iter().map(|m| m.info().to_json()).collect();
+            print_json(&list)?;
+        }
+        RecipeCmd::Explain { obs_id, depth } => {
+            let pool = pool(g, PoolRole::Api).await?;
+            let dir = find_registry(g.registry.as_deref())?;
+            let profile = load_profile(g, &dir)?;
+            let geo = lanka_enrich::provenance::GeoContext {
+                calendars: profile.calendars.clone(),
+                reference_set: profile.spec.admin.reference_boundary_set.clone(),
+                scheme: profile.spec.admin.scheme.clone(),
+            };
+            match lanka_enrich::provenance::explain_obs(&pool, &geo, &methods, obs_id, depth)
+                .await?
+            {
+                Some(v) => print_json(&v)?,
+                None => {
+                    anyhow::bail!("observation {obs_id} is not a derived row (or does not exist)")
+                }
+            }
+        }
+        cmd @ (RecipeCmd::List | RecipeCmd::Run { .. }) => {
+            let (reg, profile, recipes) = derive_parts(g).await?;
+            let pool = pool(g, PoolRole::Ingest).await?;
+            reg.sync(&pool, &profile)
+                .await
+                .context("syncing registry")?;
+            let env = derive::DeriveEnv {
+                pool: &pool,
+                registry: &reg,
+                profile: &profile,
+                recipes: &recipes,
+                methods: &methods,
+            };
+            let report = match cmd {
+                RecipeCmd::Run { id, force, dry_run } => {
+                    anyhow::ensure!(
+                        recipes.get(&id).is_some(),
+                        "no recipe {id:?} in the registry"
+                    );
+                    derive::recompute(
+                        &env,
+                        &derive::RecomputeOpts {
+                            trigger: "manual".into(),
+                            only: Some(id),
+                            force,
+                            dry_run,
+                            include_scheduled: true,
+                            ..derive::RecomputeOpts::default()
+                        },
+                    )
+                    .await?
+                }
+                _ => derive::status(&env).await?,
+            };
+            print_json(&report)?;
+            anyhow::ensure!(report.failed == 0, "{} recipe(s) failed", report.failed);
+        }
+    }
+    Ok(())
+}
+
 fn print_json<T: serde::Serialize>(v: &T) -> Result<()> {
     println!("{}", serde_json::to_string_pretty(v)?);
     Ok(())
@@ -525,6 +661,10 @@ async fn run(cli: Cli) -> Result<()> {
                     reg.summary(),
                     r.hashes_backfilled
                 );
+                let methods = lanka_enrich::Methods::builtin();
+                let (recipes, _) = derive::load_checked(&reg, &methods)?;
+                let (m, n) = derive::sync(&pool, &recipes, &methods).await?;
+                println!("method library synced ({m} methods); {n} recipe(s)");
             }
         }
         Cmd::Registry(RegistryCmd::Migrate { write, review_out }) => {
@@ -553,6 +693,12 @@ async fn run(cli: Cli) -> Result<()> {
             match cmd {
                 RegistryCmd::Validate => {
                     Registry::validate_profile(&dir, &profile)?;
+                    let (recipes, warnings) =
+                        derive::load_checked(&reg, &lanka_enrich::Methods::builtin())?;
+                    for w in warnings {
+                        eprintln!("warning: {w}");
+                    }
+                    println!("recipes OK: {}", recipes.list.len());
                     println!(
                         "registry OK ({}): {}; country profile {:?}",
                         dir.display(),
@@ -663,11 +809,36 @@ async fn run(cli: Cli) -> Result<()> {
             let pool = pool(g, PoolRole::Ingest).await?;
             match cmd {
                 ReleaseCmd::Cut { note } => {
-                    print_json(&train::run_train(&pool, "manual", None, note.as_deref()).await?)?;
+                    let parts = derive_parts(g).await;
+                    if let Err(e) = &parts {
+                        eprintln!("warning: derived recompute skipped: {e:#}");
+                    }
+                    let methods = lanka_enrich::Methods::builtin();
+                    let parts = parts.ok();
+                    let env = parts
+                        .as_ref()
+                        .map(|(reg, profile, recipes)| derive::DeriveEnv {
+                            pool: &pool,
+                            registry: reg,
+                            profile,
+                            recipes,
+                            methods: &methods,
+                        });
+                    print_json(
+                        &train::run_train_with(
+                            &pool,
+                            "manual",
+                            None,
+                            note.as_deref(),
+                            env.as_ref(),
+                        )
+                        .await?,
+                    )?;
                 }
                 ReleaseCmd::List { limit } => release_list(&pool, limit).await?,
             }
         }
+        Cmd::Recipe(cmd) => recipe_cmd(g, cmd).await?,
         Cmd::Worker(w) => {
             let dir = find_registry(g.registry.as_deref())?;
             let pool = pool(g, PoolRole::Worker).await?;
@@ -732,6 +903,9 @@ async fn run(cli: Cli) -> Result<()> {
                             j.kind = "restandardise".into();
                             j.dedupe_key = format!("restandardise:{source}");
                             j
+                        }
+                        EnqueueCmd::Recipe { recipe, force } => {
+                            NewJob::recipe(recipe.as_deref(), "manual", force)
                         }
                         EnqueueCmd::Release { note } => {
                             let mut j = NewJob::release(

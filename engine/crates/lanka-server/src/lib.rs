@@ -929,13 +929,25 @@ async fn frame_release(
     frame_response(&st, Some(data_version), p, &headers, &uri).await
 }
 
-/// Row-level provenance of one observation: artifact sha256, locator, verbatim value, review.
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct ProvenanceParams {
+    /// Derived rows: also explain contributors that are themselves derived, this many levels deep (1–3).
+    pub depth: Option<u8>,
+}
+
+/// Row-level provenance of one observation. Extracted rows: artifact sha256,
+/// locator, verbatim value, review. Derived rows (no extract, 04 §6): a
+/// `derived` member with the derivation (recipe, method versions,
+/// parameters, pinned input versions, fingerprint, code revision), the
+/// formula and the contributing input rows recomputed by the method's
+/// `explain` over the exact input versions the derivation pinned.
 #[utoipa::path(get, path = "/v2/observations/{id}/provenance", tag = "provenance",
-    params(("id" = i64, Path, description = "Observation id")),
+    params(("id" = i64, Path, description = "Observation id"), ProvenanceParams),
     responses((status = 200, body = Envelope<query::Provenance>), (status = 404, body = ErrorBody)))]
 async fn provenance(
     State(st): State<AppState>,
     Path(id): Path<String>,
+    Query(q): Query<ProvenanceParams>,
     headers: HeaderMap,
     uri: Uri,
 ) -> ApiResult {
@@ -946,8 +958,41 @@ async fn provenance(
     let p = query::provenance(&st.pool, &cat, id)
         .await
         .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
-    let meta = cat.meta_for([p.dataset_id.as_str()], Vec::new());
-    respond(&headers, &uri, p, meta)
+    let mut datasets = vec![p.dataset_id.clone()];
+    let mut payload = serde_json::to_value(&p)
+        .map_err(|e| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if p.artifact_sha256.is_none()
+        && let Ok(profile) = cat.profile()
+    {
+        let geo = lanka_enrich::provenance::GeoContext {
+            calendars: profile.calendars.clone(),
+            reference_set: profile.spec.admin.reference_boundary_set.clone(),
+            scheme: profile.spec.admin.scheme.clone(),
+        };
+        let methods = lanka_enrich::Methods::builtin();
+        let depth = q.depth.unwrap_or(1).clamp(1, 3);
+        match lanka_enrich::provenance::explain_obs(&st.pool, &geo, &methods, id, depth).await {
+            Ok(Some(d)) => {
+                if let Some(ins) = d
+                    .pointer("/derivation/inputs")
+                    .and_then(serde_json::Value::as_array)
+                {
+                    datasets.extend(
+                        ins.iter()
+                            .filter_map(|i| i["dataset"].as_str().map(str::to_owned)),
+                    );
+                }
+                payload["derived"] = d;
+            }
+            Ok(None) => {}
+            Err(e) => {
+                tracing::warn!(obs_id = id, error = %format!("{e:#}"), "explaining a derived row");
+                payload["derived"] = serde_json::json!({ "error": format!("{e:#}") });
+            }
+        }
+    }
+    let meta = cat.meta_for(datasets.iter().map(String::as_str), Vec::new());
+    respond(&headers, &uri, payload, meta)
 }
 
 #[derive(Debug, Deserialize, IntoParams)]
