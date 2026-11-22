@@ -1,0 +1,49 @@
+id: dcs-pocketbook-social
+publisher: Department of Census and Statistics, Sri Lanka
+title: Statistical Pocket Book social tables (with Statistical Abstract table 4.6)
+homepage: https://www.statistics.gov.lk/Publication/PocketBook2026
+access:
+  method: pdf
+  endpoint: http://www.statistics.gov.lk/Publication/PocketBook2026
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Statistical Pocket Book
+cadence:
+  frequency: annual
+  expected_lag_days: 150
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- SOCI
+- ECON
+- GOVE
+datasets:
+- dcs-hies-poverty
+- dcs-hies-income-expenditure
+- dcs-vital-statistics
+- dcs-pocketbook-social-services
+priority: P1
+effort: M
+status: active
+verified_at: '2026-11-22'
+notes: >-
+  The social chapters of the Statistical Pocket Book (the publication page serves the PDF itself):
+  2 population and vital statistics, 4 poverty indices, 12 health, 13 education, 15 local government,
+  plus Statistical Abstract table 4.6 (district poverty headcount), which feeds the same poverty dataset.
+  Same publication as dcs-pocketbook; kept as its own source so the social tables have their own
+  pdf_table connector and templates (registry/templates/dcs-pocketbook-social/). Class B: every
+  version is reviewed against its evidence sheet.
+dc_refs:
+- poverty-depth-severity
+- household-income-inequality
+- household-expenditure
+- vital-statistics
+- government-health-services
+- school-resources
+- vocational-training
+- local-government-services
+- natural-disaster-impacts

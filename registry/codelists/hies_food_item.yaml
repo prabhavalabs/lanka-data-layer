@@ -1,0 +1,26 @@
+# HIES selected food item
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Household Income and Expenditure Survey - selected food items (Statistical Pocket Book table 4.6).
+# Note: Quantities are in the item's own unit (kg, number, litres); items without a unit carry expenditure only.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-hies-income-expenditure
+id: hies_food_item
+title: HIES selected food item
+codes:
+  - { code: rice, label: Rice (kg) }
+  - { code: wheat_flour, label: Wheat flour (kg) }
+  - { code: bread, label: Bread (kg) }
+  - { code: condiments, label: Condiments }
+  - { code: pulses, label: Pulses (kg) }
+  - { code: vegetables, label: Vegetables }
+  - { code: coconut, label: Coconut (number) }
+  - { code: meat, label: Meat (kg) }
+  - { code: fish, label: Fish (kg) }
+  - { code: dried_fish, label: Dried fish (kg) }
+  - { code: milk, label: Milk (litres) }
+  - { code: milk_products, label: Milk products }
+  - { code: eggs, label: Eggs (number) }
+  - { code: fruit, label: Fruit }
+  - { code: sugar, label: Sugar (kg) }
+  - { code: other_food_drink, label: Other food and drink }

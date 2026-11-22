@@ -4,6 +4,8 @@ description: Official poverty headcount index, poverty gap and squared gap by di
 source_ids:
 - dcs-hies
 - dcs-pocketbook
+- dcs-statistical-abstract
+- dcs-pocketbook-social
 indicators:
 - id: pov.headcount_ratio
   label: Poverty headcount ratio (official line)
@@ -13,6 +15,22 @@ indicators:
   class: official
   dims:
   - sector
+  - id: poverty_line
+    codelist: official_poverty_line
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: pov.poor_households_pct
+  label: Percentage of poor households (official line)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - sector
+  - id: poverty_line
+    codelist: official_poverty_line
   geo_levels:
   - national
   - adm2
@@ -23,6 +41,10 @@ indicators:
   measure_type: share
   aggregation: none
   class: official
+  dims:
+  - sector
+  - id: poverty_line
+    codelist: official_poverty_line
   geo_levels:
   - national
   period_type: year
@@ -32,6 +54,10 @@ indicators:
   measure_type: share
   aggregation: none
   class: official
+  dims:
+  - sector
+  - id: poverty_line
+    codelist: official_poverty_line
   geo_levels:
   - national
   period_type: year
@@ -46,12 +72,17 @@ indicators:
   - adm2
   period_type: year
 time_coverage:
-  from: '2002'
+  from: '1995'
   to: '2024'
-method: PDF tables; reviewed.
+method: >-
+  PDF tables, reviewed: Statistical Abstract table 4.6 (district headcount, 1995/96-2019) and Statistical
+  Pocket Book tables 4.3 (headcount and poor households by sector) and 4.5 (poverty gap and squared gap by
+  sector). Survey periods are keyed by their first year (2012/13 -> 2012).
 limits:
 - Survey rounds are 3-5 years apart.
-- District estimates have wide CIs; Northern districts excluded before 2009.
+- District estimates have wide CIs; Northern and Eastern provinces excluded before 2012/13 (national figures
+  for 1995/96-2009/10 exclude them, 2006/07 also excludes Trincomalee, 2009/10 Mannar, Kilinochchi and Mullaitivu).
+- Two official poverty lines (dimension poverty_line); values on different lines are not comparable.
 enrichment:
   joins:
   - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil

@@ -1,0 +1,27 @@
+# Statistical Abstract, chapter 4, table 4.6: poverty headcount ratio (%) by
+# district and HIES survey period, 1995/96-2019. Trilingual labels; the English
+# district column is the label column. "-" = not surveyed (Northern and Eastern
+# provinces before 2012/13). Survey periods to 2009/10 exclude the Northern and
+# Eastern provinces ("(1)"); 2019 ("*") uses the updated poverty line (2012/13
+# base), earlier rounds the old official line (2002 base).
+id: dcs-statistical-abstract/table-4.6-poverty-headcount-district
+title: Poverty headcount ratio by district and survey period (%)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 4.6", then_text: "Poverty headcount ratio by district" }
+      span_pages: 1
+    label: { key: district, header: "District" }
+    columns:
+      - { key: p1995, header: "1995-96" }
+      - { key: p2002, header: "2002" }
+      - { key: p2006, header: "2006-07" }
+      - { key: p2009, header: "2009-10" }
+      - { key: p2012, header: "2012-13" }
+      - { key: p2016, header: "2016" }
+      - { key: p2019, header: "2019*" }
+    rows: { stop_at: ["Note"] }
+    number: { missing: ["-"] }
+    checks:
+      - { row_count: { min: 26, max: 26 } }
+      - { rows_present: ["Sri Lanka", "Colombo", "Jaffna", "Kegalle", "Moneragala"] }

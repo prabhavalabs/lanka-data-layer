@@ -1,0 +1,22 @@
+# Statistical Pocket Book, table 4.6: average monthly household quantity and expenditure
+# (Rs.) on selected food items, HIES 2012/13, 2016 and 2019. "-" = no quantity unit.
+id: dcs-pocketbook-social/table-4.6-household-food-expenditure
+title: Average monthly household expenditure on selected food items
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "4.6 Average Monthly Household Expenditure", then_text: "Wheat flour" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: unit, header: "Unit" }
+      - { key: qty_2012, header: "Qty.", under: "2012/13" }
+      - { key: value_2012, header: "Value", under: "2012/13" }
+      - { key: qty_2016, header: "Qty.", under: "2016" }
+      - { key: value_2016, header: "Value", under: "2016" }
+      - { key: qty_2019, header: "Qty.", under: "2019" }
+      - { key: value_2019, header: "Value", under: "2019" }
+    rows: { stop_at: ["Source:"] }
+    number: { missing: ["-"] }
+    checks:
+      - { row_count: { min: 16, max: 16 } }
+      - { rows_present: ["Rice", "Other food & drink"] }

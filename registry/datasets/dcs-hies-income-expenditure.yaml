@@ -4,6 +4,7 @@ description: Mean/median household income and expenditure by district, food shar
 source_ids:
 - dcs-hies
 - dcs-pocketbook
+- dcs-pocketbook-social
 indicators:
 - id: hies.mean_household_income
   label: Mean monthly household income
@@ -36,6 +37,8 @@ indicators:
   measure_type: index
   aggregation: none
   class: official
+  dims:
+  - sector
   geo_levels:
   - national
   period_type: year
@@ -48,6 +51,42 @@ indicators:
   geo_levels:
   - national
   - adm2
+  period_type: year
+- id: hies.nonfood_expenditure
+  label: Mean monthly household expenditure by major non-food group
+  unit: LKR
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - id: group
+    codelist: hies_nonfood_group
+  geo_levels:
+  - national
+  period_type: year
+- id: hies.food_item_expenditure
+  label: Mean monthly household expenditure on selected food items
+  unit: LKR
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - id: item
+    codelist: hies_food_item
+  geo_levels:
+  - national
+  period_type: year
+- id: hies.food_item_quantity
+  label: Mean monthly household quantity of selected food items (unit per item)
+  unit: '{various}'
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - id: item
+    codelist: hies_food_item
+  geo_levels:
+  - national
   period_type: year
 time_coverage:
   from: '2006'

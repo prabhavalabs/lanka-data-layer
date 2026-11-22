@@ -4,6 +4,7 @@ description: Registered live births, deaths, infant deaths, marriages and crude 
 source_ids:
 - dcs-population-vital
 - dcs-pocketbook
+- dcs-pocketbook-social
 indicators:
 - id: vital.births
   label: Registered live births
@@ -54,6 +55,42 @@ indicators:
   geo_levels:
   - national
   - adm2
+  period_type: year
+- id: vital.crude_death_rate
+  label: Crude death rate
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: vital.maternal_mortality_ratio
+  label: Maternal mortality ratio
+  unit: '/10*5{live_birth}'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: vital.under5_mortality_rate
+  label: Under-5 mortality rate (per 1,000 live births)
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: vital.infant_mortality_rate
+  label: Infant mortality rate (per 1,000 live births)
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
   period_type: year
 time_coverage:
   from: '2000'

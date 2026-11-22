@@ -1,0 +1,21 @@
+# HIES major non-food expenditure group
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Household Income and Expenditure Survey - major non-food expenditure groups (Statistical Pocket Book table 4.7).
+# Note: DCS grouping, not COICOP; groups are printed separately, without a total.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-hies-income-expenditure
+id: hies_nonfood_group
+title: HIES major non-food expenditure group
+codes:
+  - { code: housing, label: Housing }
+  - { code: fuel_light, label: Fuel and light }
+  - { code: clothing, label: "Clothing, textile and footwear" }
+  - { code: personal_care_health, label: Personal care and health }
+  - { code: transport_communication, label: Transport and communication }
+  - { code: education, label: Education }
+  - { code: culture_entertainment, label: Cultural and entertainment }
+  - { code: nondurable_goods, label: Non-durable household goods }
+  - { code: consumer_durables, label: Consumer durables }
+  - { code: other_non_consumer, label: Other non-consumer expenditure }
+  - { code: liquor_tobacco, label: Liquor and tobacco }

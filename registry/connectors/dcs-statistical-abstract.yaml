@@ -16,7 +16,7 @@ extract:
       template: dcs-statistical-abstract/table-2.1a-midyear-population-district
 standardise:
   dataset: dcs-midyear-population-district
-  vintage: "Statistical Abstract {edition}, table 2.1a"
+  vintage: "Statistical Abstract {edition}"
   outputs:
     - table: t2_1a
       indicator: pop.midyear_district
@@ -42,3 +42,10 @@ standardise:
       scale: 1000
       # "(1) Provisional" marks the year headers.
       status: { header_markers: { "(1)": provisional } }
+expect:
+  - { dataset: dcs-midyear-population-district, check: row_count, min: 375, max: 390, note: "26 rows x 5 years x 3 sexes" }
+  - { dataset: dcs-midyear-population-district, check: range, indicator: pop.midyear_district, min: 20000, max: 23000000 }
+  - { dataset: dcs-midyear-population-district, check: sum_dims, indicator: pop.midyear_district, dim: sex, tol_pct: 0.5 }
+  - { dataset: dcs-midyear-population-district, check: sum_to_parent, indicator: pop.midyear_district, tol_pct: 0.5,
+      note: "districts are printed in thousands; rounding" }
+  - { dataset: dcs-midyear-population-district, check: completeness, indicator: pop.midyear_district, level: 2, min_units: 25 }
