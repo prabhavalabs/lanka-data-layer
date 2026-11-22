@@ -235,6 +235,18 @@ pub struct ExtractSpec {
     /// html: CSS selector of the tables (default `table`).
     #[serde(default)]
     pub tables: Option<serde_json::Value>,
+    /// csv: keep only rows whose column is one of the values (a country
+    /// slice of a world file; applied while streaming, before the L1).
+    #[serde(default)]
+    pub filter: Vec<RowFilter>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RowFilter {
+    pub column: String,
+    #[serde(rename = "in")]
+    pub any_of: Vec<String>,
 }
 
 /// The tabular driver for one source.
@@ -406,6 +418,16 @@ impl Tabular {
                 for k in &d.keys {
                     let mut c = mk(k, render_vars(tpl, &base(k))?, None);
                     self.local(ctx, &mut c, None)?;
+                    out.push(c);
+                }
+                // plus fixed files (metadata endpoints)
+                for f in &d.files {
+                    let url = render_vars(
+                        f.url.as_deref().context("discover.files[].url")?,
+                        &base(&f.key),
+                    )?;
+                    let mut c = mk(&f.key, url, f.media_type.as_ref());
+                    self.local(ctx, &mut c, f.file.as_deref())?;
                     out.push(c);
                 }
             }
@@ -684,44 +706,128 @@ pub fn parse_csv(text: &str, delim: char) -> Vec<Vec<String>> {
     rows
 }
 
+/// Streams CSV records (RFC 4180) from a reader: a record ends at a
+/// newline outside quotes. Memory is one record, not the file.
+struct CsvRows<R: std::io::BufRead> {
+    r: R,
+    delim: char,
+    line: Vec<u8>,
+}
+
+impl<R: std::io::BufRead> CsvRows<R> {
+    fn next_row(&mut self) -> Result<Option<Vec<String>>> {
+        self.line.clear();
+        loop {
+            let n = self.r.read_until(b'\n', &mut self.line)?;
+            if n == 0 {
+                break;
+            }
+            if self.line.iter().filter(|b| **b == b'"').count() % 2 == 0 {
+                break;
+            }
+        }
+        if self.line.is_empty() {
+            return Ok(None);
+        }
+        let text = String::from_utf8_lossy(&self.line);
+        let mut rows = parse_csv(&text, self.delim);
+        Ok(Some(rows.pop().unwrap_or_default()))
+    }
+}
+
 fn csv_records(
     spec: &ExtractSpec,
-    bytes: &[u8],
+    reader: impl Read,
     table_id: &str,
     delim: char,
     ai: u32,
     out: &mut Vec<Record>,
 ) -> Result<()> {
-    let text = String::from_utf8_lossy(bytes);
-    let text = text.trim_start_matches('\u{feff}');
-    let mut rows = parse_csv(text, delim).into_iter().skip(spec.skip_lines);
+    let mut rows = CsvRows {
+        r: std::io::BufReader::with_capacity(1 << 20, reader),
+        delim,
+        line: Vec::new(),
+    };
+    for _ in 0..spec.skip_lines {
+        rows.next_row()?;
+    }
     let header: Vec<String> = if spec.columns.is_empty() {
-        rows.next()
+        rows.next_row()?
             .context("empty CSV")?
             .into_iter()
-            .map(|h| clean(&h))
+            .map(|h| clean(h.trim_start_matches('\u{feff}')))
             .collect()
     } else {
         spec.columns.clone()
     };
-    for (i, r) in rows.enumerate() {
+    let filters: Vec<(usize, &RowFilter)> = spec
+        .filter
+        .iter()
+        .map(|f| {
+            header
+                .iter()
+                .position(|h| h == &f.column)
+                .map(|i| (i, f))
+                .with_context(|| format!("extract.filter: no column {:?}", f.column))
+        })
+        .collect::<Result<_>>()?;
+    let first_line = 1 + spec.skip_lines + usize::from(spec.columns.is_empty());
+    let mut i = 0usize;
+    let mut n = 0u32;
+    while let Some(r) = rows.next_row()? {
+        let line = first_line + i;
+        i += 1;
+        if r.len() == 1 && r[0].is_empty() {
+            continue;
+        }
+        if !filters
+            .iter()
+            .all(|(c, f)| r.get(*c).is_some_and(|v| f.any_of.contains(v)))
+        {
+            continue;
+        }
         let mut fields = BTreeMap::new();
         for (h, v) in header.iter().zip(r) {
             if !v.is_empty() && !h.is_empty() {
                 fields.insert(h.clone(), v);
             }
         }
-        // header + skipped lines + 1-based
-        let line = i + 2 + spec.skip_lines - usize::from(!spec.columns.is_empty());
         out.push(Record {
             table_id: table_id.to_owned(),
-            record_idx: u32::try_from(i)?,
+            record_idx: n,
             path: format!("line:{line}"),
             fields,
             artifact_idx: ai,
         });
+        n += 1;
     }
     Ok(())
+}
+
+/// Calls `f` with a streaming reader over the zip member matching `pattern`.
+fn with_member<T>(
+    bytes: &[u8],
+    pattern: &str,
+    f: impl FnOnce(&str, &mut dyn Read) -> Result<T>,
+) -> Result<T> {
+    let rx = Regex::new(pattern)?;
+    let mut z = zip::ZipArchive::new(Cursor::new(bytes)).context("not a zip archive")?;
+    let names: Vec<String> = z
+        .file_names()
+        .map(|n| n.map(|n| n.into_owned()))
+        .collect::<Result<_, _>>()?;
+    let name = names
+        .iter()
+        .find(|n| rx.is_match(n))
+        .with_context(|| {
+            format!(
+                "zip has no member matching {pattern:?} ({})",
+                names.join(", ")
+            )
+        })?
+        .clone();
+    let mut m = z.by_name(&name)?;
+    f(&name, &mut m)
 }
 
 fn data_text(d: &Data) -> Option<(String, CellType)> {
@@ -896,11 +1002,18 @@ fn json_records(
     tables: &[JsonTable],
     bytes: &[u8],
     key: &str,
+    alpha: (&str, &str),
     ai: u32,
     out: &mut Vec<Record>,
 ) -> Result<()> {
     let root: &RawValue =
         serde_json::from_slice(bytes).with_context(|| format!("{key}: response is not JSON"))?;
+    let vars = |n: &str| match n {
+        "key" => Some(key.to_owned()),
+        "alpha2" => Some(alpha.0.to_owned()),
+        "alpha3" => Some(alpha.1.to_owned()),
+        _ => None,
+    };
     for t in tables {
         if let Some(a) = &t.artifact
             && !Regex::new(a)?.is_match(key)
@@ -914,17 +1027,18 @@ fn json_records(
                 super::json_path::truncate(root.get(), 300)
             );
         }
-        let at = select(root, &t.path)?;
+        let path = render_vars(&t.path, &vars)?;
+        let at = select(root, &path)?;
         let items: Vec<(Option<String>, &RawValue, String)> = if t.entries {
             match at {
                 None => Vec::new(),
                 Some(v) if v.get().trim() == "null" => Vec::new(),
                 Some(v) => {
                     let m: BTreeMap<String, &RawValue> = serde_json::from_str(v.get())
-                        .with_context(|| format!("{key}: {} is not an object", t.path))?;
+                        .with_context(|| format!("{key}: {path} is not an object"))?;
                     m.into_iter()
                         .map(|(k, v)| {
-                            let p = format!("{}.{k}", t.path);
+                            let p = format!("{path}.{k}");
                             (Some(k), v, p)
                         })
                         .collect()
@@ -932,10 +1046,10 @@ fn json_records(
             }
         } else {
             elements(at)
-                .with_context(|| format!("{key}: {}", t.path))?
+                .with_context(|| format!("{key}: {path}"))?
                 .into_iter()
                 .enumerate()
-                .map(|(i, v)| (None, v, format!("{}[{i}]", t.path)))
+                .map(|(i, v)| (None, v, format!("{path}[{i}]")))
                 .collect()
         };
         for (i, (k, v, path)) in items.into_iter().enumerate() {
@@ -1010,7 +1124,8 @@ impl Connector for Tabular {
         })
     }
 
-    async fn extract(&self, _ctx: &ExtractCtx<'_>, fetched: &[Fetched]) -> Result<Vec<ExtractOut>> {
+    async fn extract(&self, ctx: &ExtractCtx<'_>, fetched: &[Fetched]) -> Result<Vec<ExtractOut>> {
+        let iso = &ctx.profile.spec.iso3166;
         let x = &self.spec.extract;
         let sheets = x.sheets.as_deref().map(Regex::new).transpose()?;
         let mut cells = Vec::new();
@@ -1018,13 +1133,6 @@ impl Connector for Tabular {
         for (ai, f) in fetched.iter().enumerate() {
             let ai = u32::try_from(ai)?;
             let raw = f.read()?;
-            let (table_id, bytes) = match &x.zip_member {
-                Some(z) => {
-                    let (name, b) = unzip(&raw, z).with_context(|| f.key.clone())?;
-                    (format!("{}/{name}", f.key), b)
-                }
-                None => (f.key.clone(), raw),
-            };
             let format = self
                 .formats
                 .get(f.key.as_str())
@@ -1036,17 +1144,31 @@ impl Connector for Tabular {
                 })
                 .copied()
                 .unwrap_or(self.format);
-            match format {
-                Format::Csv | Format::Tsv => {
-                    let delim = match (&x.delimiter, format) {
-                        (Some(d), _) if d == "\\t" || d == "tab" => '\t',
-                        (Some(d), _) => d.chars().next().context("empty delimiter")?,
-                        (None, Format::Tsv) => '\t',
-                        _ => ',',
-                    };
-                    csv_records(x, &bytes, &table_id, delim, ai, &mut records)
-                        .with_context(|| f.key.clone())?;
+            if matches!(format, Format::Csv | Format::Tsv) {
+                let delim = match (&x.delimiter, format) {
+                    (Some(d), _) if d == "\\t" || d == "tab" => '\t',
+                    (Some(d), _) => d.chars().next().context("empty delimiter")?,
+                    (None, Format::Tsv) => '\t',
+                    _ => ',',
+                };
+                match &x.zip_member {
+                    Some(z) => with_member(&raw, z, |name, r| {
+                        csv_records(x, r, &format!("{}/{name}", f.key), delim, ai, &mut records)
+                    }),
+                    None => csv_records(x, Cursor::new(&raw), &f.key, delim, ai, &mut records),
                 }
+                .with_context(|| f.key.clone())?;
+                continue;
+            }
+            let (table_id, bytes) = match &x.zip_member {
+                Some(z) => {
+                    let (name, b) = unzip(&raw, z).with_context(|| f.key.clone())?;
+                    (format!("{}/{name}", f.key), b)
+                }
+                None => (f.key.clone(), raw),
+            };
+            match format {
+                Format::Csv | Format::Tsv => unreachable!("streamed above"),
                 Format::Xlsx => xlsx_cells(&bytes, &table_id, sheets.as_ref(), ai, &mut cells)
                     .with_context(|| f.key.clone())?,
                 Format::Html => {
@@ -1064,7 +1186,14 @@ impl Connector for Tabular {
                     )
                     .with_context(|| f.key.clone())?;
                 }
-                Format::Json => json_records(&self.json_tables, &bytes, &f.key, ai, &mut records)?,
+                Format::Json => json_records(
+                    &self.json_tables,
+                    &bytes,
+                    &f.key,
+                    (&iso.alpha2, &iso.alpha3),
+                    ai,
+                    &mut records,
+                )?,
             }
         }
         let mut out = Vec::new();

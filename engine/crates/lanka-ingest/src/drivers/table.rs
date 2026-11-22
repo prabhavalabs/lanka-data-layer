@@ -85,6 +85,9 @@ pub struct Table {
     pub keys: Vec<String>,
     /// Artifact URL of each row (locators).
     pub urls: Vec<String>,
+    /// Built from records (CSV/JSON): a field absent from every record is
+    /// an empty column, not a spec error.
+    pub records: bool,
 }
 
 impl Table {
@@ -209,8 +212,10 @@ pub struct SrcFull {
     pub melt: bool,
     pub value: Option<String>,
     pub template: Option<String>,
-    /// With `column`: read the first row of this table instead.
+    /// With `column`: read the first row of this table instead …
     pub table: Option<String>,
+    /// … or the row whose `key_column` equals this row's artifact key.
+    pub key_column: Option<String>,
     pub regex: Option<String>,
     pub replace: Option<String>,
     pub date: Option<DateConv>,
@@ -482,6 +487,9 @@ impl<'a> RowCtx<'a> {
     }
 
     fn named(&self, name: &str) -> Result<Option<&'a TCell>> {
+        if self.t.records && self.t.col(name).is_none() {
+            return Ok(None); // a field no record carries
+        }
         let c = self.t.col(name).with_context(|| {
             format!(
                 "table {}: no column {name:?} (columns: {})",
@@ -520,9 +528,29 @@ impl<'a> RowCtx<'a> {
             let ci = other
                 .col(c)
                 .with_context(|| format!("table {t}: no column {c:?}"))?;
+            let want = match &f.key_column {
+                None => None,
+                Some(k) => Some((
+                    other
+                        .col(k)
+                        .with_context(|| format!("table {t}: no column {k:?}"))?,
+                    self.t
+                        .keys
+                        .get(self.r)
+                        .map(String::as_str)
+                        .unwrap_or_default(),
+                )),
+            };
             return Ok(other
                 .rows
                 .iter()
+                .filter(|r| {
+                    want.is_none_or(|(kc, key)| {
+                        r.get(kc)
+                            .and_then(Option::as_ref)
+                            .is_some_and(|c| c.text == key)
+                    })
+                })
                 .find_map(|r| r.get(ci).and_then(Option::as_ref))
                 .map(|c| c.text.clone()));
         }
@@ -719,6 +747,7 @@ pub fn assemble(specs: &[TableSpec], extracts: &[ExtractRef]) -> Result<HashMap<
 
 /// Appends `part` to `t`, aligning columns by name.
 fn merge(t: &mut Table, part: Table, key: &str, url: &str) {
+    t.records |= part.records;
     let map: Vec<usize> = part
         .columns
         .iter()
@@ -788,6 +817,7 @@ fn from_records(spec: &TableSpec, ei: usize, x: &ExtractRef, idx: &[u32]) -> Tab
         id: spec.id.clone(),
         columns,
         rows,
+        records: true,
         ..Table::default()
     }
 }
@@ -1119,9 +1149,11 @@ impl<'s> COut<'s> {
     fn new(spec: &'s OutputSpec, t: &Table) -> Result<Self> {
         let mut filters = Vec::new();
         for f in &spec.filter {
-            let c = t
-                .col(&f.column)
-                .with_context(|| format!("filter: no column {:?} in {}", f.column, t.id))?;
+            let c = match t.col(&f.column) {
+                Some(c) => c,
+                None if t.records => usize::MAX,
+                None => bail!("filter: no column {:?} in {}", f.column, t.id),
+            };
             filters.push((c, f, f.regex.as_deref().map(re).transpose()?));
         }
         let melt = match &spec.melt {
@@ -1240,16 +1272,27 @@ pub fn standardise(
         None => None,
         Some(VintageSpec::Fixed(s)) => Some(s.clone()),
         Some(VintageSpec::From(f)) => {
+            // Evaluated on the first row of the first output's table.
             let s = CSrc::new((**f).clone())?;
-            let t = Table::default();
-            let ctx_row = RowCtx {
-                t: &t,
-                r: 0,
-                melt: None,
-                tables: &tables,
-            };
-            ensure!(f.table.is_some(), "vintage: give `table` and `column`");
-            ctx_row.eval(&s, false)?
+            let empty = Table::default();
+            let t = spec
+                .outputs
+                .first()
+                .and_then(|o| tables.get(&o.table))
+                .filter(|t| !t.rows.is_empty())
+                .unwrap_or(&empty);
+            if t.rows.is_empty() {
+                None
+            } else {
+                RowCtx {
+                    t,
+                    r: 0,
+                    melt: None,
+                    tables: &tables,
+                }
+                .eval(&s, false)
+                .context("vintage")?
+            }
         }
     };
     for ds_id in order {
