@@ -1,0 +1,324 @@
+{
+  "spec": "ldl-map/1",
+  "title": "Access to hospitals",
+  "pin": "latest",
+  "view": {
+    "center": [
+      80.72,
+      7.87
+    ],
+    "zoom": 6.7,
+    "bounds": [
+      79.35,
+      5.75,
+      82.15,
+      10
+    ]
+  },
+  "extent": null,
+  "basemap": {
+    "style": "ldl-auto",
+    "labels": "off",
+    "hillshade": {
+      "on": false,
+      "exaggeration": 1
+    },
+    "x-coast": true
+  },
+  "time": null,
+  "sources": {
+    "s_towns_and_cities": {
+      "kind": "features",
+      "dataset": "places"
+    },
+    "s_health_facilities": {
+      "kind": "features",
+      "dataset": "health-facilities",
+      "fields": [
+        "tier",
+        "beds",
+        "ownership"
+      ]
+    },
+    "s_main_roads": {
+      "kind": "features",
+      "dataset": "roads"
+    },
+    "s_districts": {
+      "kind": "boundaries",
+      "scheme": "admin",
+      "level": 2
+    },
+    "s_drive_time_to_nearest_hospit": {
+      "kind": "grid",
+      "grid": "acc.hospital_drive_time",
+      "period": "latest"
+    },
+    "s_mean_drive_time_by_district": {
+      "kind": "indicator",
+      "indicator": "access.hospital.drive_min",
+      "level": 2,
+      "period": {
+        "bind": "time",
+        "match": "asof"
+      }
+    },
+    "s_terrain_relief": {
+      "kind": "grid",
+      "grid": "dem",
+      "period": "latest"
+    }
+  },
+  "analyses": {},
+  "layers": [
+    {
+      "id": "l_terrain_relief",
+      "type": "hillshade",
+      "name": "Terrain relief",
+      "source": "s_terrain_relief",
+      "visible": true,
+      "opacity": 0.5,
+      "blend": "multiply",
+      "filter": null,
+      "style": {
+        "exaggeration": 1
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_mean_drive_time_by_district",
+      "type": "choropleth",
+      "name": "Mean drive time by district",
+      "source": "s_mean_drive_time_by_district",
+      "visible": false,
+      "opacity": 0.9,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "fill": {
+          "field": "value",
+          "scale": {
+            "type": "quantile",
+            "classes": 5,
+            "ramp": "ldl.seq.teal"
+          }
+        },
+        "stroke": {
+          "color": "ldl.tone.paper",
+          "width": 0.5
+        },
+        "uncertainty": "off"
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_drive_time_to_nearest_hospit",
+      "type": "raster",
+      "name": "Drive time to nearest hospital",
+      "source": "s_drive_time_to_nearest_hospit",
+      "visible": true,
+      "opacity": 0.85,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "fill": {
+          "field": "value",
+          "scale": {
+            "type": "manual",
+            "breaks": [
+              15,
+              30,
+              45
+            ],
+            "ramp": "ldl.seq.teal",
+            "reverse": true
+          }
+        },
+        "range": [
+          null,
+          60
+        ],
+        "resample": "linear"
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_districts",
+      "type": "line",
+      "name": "Districts",
+      "source": "s_districts",
+      "visible": true,
+      "opacity": 0.45,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.ink",
+          "width": 1
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_main_roads",
+      "type": "line",
+      "name": "Main roads",
+      "source": "s_main_roads",
+      "visible": true,
+      "opacity": 0.55,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.grey",
+          "width": {
+            "field": "class",
+            "scale": {
+              "type": "categorical",
+              "mapping": {
+                "motorway": 2.4,
+                "trunk": 1.9,
+                "primary": 1.3,
+                "secondary": 0.8
+              }
+            }
+          }
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_health_facilities",
+      "type": "point",
+      "name": "Health facilities",
+      "source": "s_health_facilities",
+      "visible": true,
+      "opacity": 0.95,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "size": {
+          "field": "beds",
+          "scale": {
+            "type": "continuous",
+            "transform": "sqrt",
+            "range": [
+              2.5,
+              13
+            ]
+          }
+        },
+        "fill": {
+          "field": "tier",
+          "scale": {
+            "type": "categorical",
+            "ramp": "ldl.cat.default"
+          }
+        },
+        "stroke": {
+          "color": "ldl.tone.paper",
+          "width": 1
+        }
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_towns_and_cities",
+      "type": "point",
+      "name": "Towns and cities",
+      "source": "s_towns_and_cities",
+      "visible": true,
+      "opacity": 0.9,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "size": {
+          "field": "population",
+          "scale": {
+            "type": "continuous",
+            "transform": "sqrt",
+            "range": [
+              1.8,
+              5.5
+            ]
+          }
+        },
+        "fill": "ldl.tone.ink",
+        "stroke": {
+          "color": "ldl.tone.paper",
+          "width": 1.2
+        },
+        "label": {
+          "text": "{name}",
+          "size": 11.5
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "p_legend",
+      "type": "legend"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-11-18T04:12:00Z",
+    "updated_at": "2026-11-18T04:12:00Z",
+    "forked_from": null,
+    "licence": "CC-BY-4.0",
+    "generator": "lanka-web-v2 mockup",
+    "author": "@lanka"
+  },
+  "description": "Drive time to the nearest base hospital or above, with the facilities themselves and the roads that reach them.",
+  "id": "m_hospital_access"
+}

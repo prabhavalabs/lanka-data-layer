@@ -1,0 +1,599 @@
+{
+  "spec": "ldl-map/1",
+  "title": "Flood exposure vs property prices",
+  "pin": "latest",
+  "view": {
+    "center": [
+      80.03,
+      6.85
+    ],
+    "zoom": 9.35,
+    "bounds": [
+      79.8,
+      6.36,
+      80.3,
+      7.32
+    ]
+  },
+  "extent": {
+    "geo": "LK1"
+  },
+  "basemap": {
+    "style": "ldl-auto",
+    "labels": "off",
+    "hillshade": {
+      "on": false,
+      "exaggeration": 1
+    },
+    "x-coast": true
+  },
+  "time": null,
+  "sources": {
+    "exposure": {
+      "kind": "indicator",
+      "indicator": "exp.flood_pop_share",
+      "level": 4,
+      "parent": "LK1",
+      "period": "latest"
+    },
+    "prices": {
+      "kind": "indicator",
+      "indicator": "@demo/re.asking_price_per_perch_median",
+      "level": 4,
+      "parent": "LK1",
+      "period": {
+        "bind": "time",
+        "match": "asof"
+      }
+    },
+    "flood": {
+      "kind": "grid",
+      "grid": "haz.flood_depth",
+      "dims": {
+        "return_period": "RP100"
+      },
+      "period": "latest"
+    },
+    "listings": {
+      "kind": "features",
+      "dataset": "@demo/property-asking-prices-sample",
+      "fields": [
+        "price_per_perch",
+        "land_use",
+        "listed_year"
+      ]
+    },
+    "rel_biv": {
+      "kind": "analysis",
+      "ref": "rel",
+      "output": "bivariate"
+    },
+    "rel_lee": {
+      "kind": "analysis",
+      "ref": "rel",
+      "output": "local_lee"
+    },
+    "zone_pts": {
+      "kind": "analysis",
+      "ref": "zone",
+      "output": "points"
+    },
+    "dsd": {
+      "kind": "boundaries",
+      "scheme": "admin",
+      "level": 3,
+      "parent": "LK1"
+    },
+    "s_rivers": {
+      "kind": "features",
+      "dataset": "waterways"
+    }
+  },
+  "analyses": {
+    "rel": {
+      "spec": "ldl-analysis/1",
+      "method": "relate",
+      "support": {
+        "kind": "admin",
+        "level": 4,
+        "within": "LK1"
+      },
+      "variables": {
+        "x": {
+          "source": "exposure"
+        },
+        "y": {
+          "source": "prices",
+          "transform": "log"
+        },
+        "controls": [
+          {
+            "indicator": "est.pop_density",
+            "period": "2026",
+            "transform": "log"
+          },
+          {
+            "indicator": "acc.travel_time_city",
+            "dims": {
+              "city": "colombo",
+              "mode": "car"
+            }
+          }
+        ]
+      },
+      "params": {
+        "correlation": [
+          "pearson",
+          "spearman"
+        ],
+        "regression": "ols",
+        "robust": true,
+        "spatial": {
+          "weights": "knn6",
+          "local": "lee",
+          "permutations": 199
+        },
+        "bivariate": {
+          "classes": 3,
+          "method": "quantile"
+        },
+        "scale_sensitivity": [
+          3,
+          4
+        ]
+      }
+    },
+    "zone": {
+      "spec": "ldl-analysis/1",
+      "method": "group_compare",
+      "support": {
+        "kind": "points",
+        "source": "listings"
+      },
+      "variables": {
+        "y": {
+          "field": "price_per_perch",
+          "transform": "log"
+        }
+      },
+      "params": {
+        "zone": {
+          "source": "flood",
+          "where": {
+            "op": ">=",
+            "args": [
+              {
+                "property": "value"
+              },
+              0.15
+            ]
+          }
+        },
+        "rings_m": [
+          0,
+          250,
+          500
+        ],
+        "compare": "inside_vs_ring",
+        "within_groups": {
+          "level": 3
+        },
+        "tests": [
+          "welch",
+          "mann_whitney"
+        ],
+        "bootstrap": 2000
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "g_inputs",
+      "type": "group",
+      "name": "Inputs",
+      "visible": true,
+      "opacity": 1,
+      "collapsed": true,
+      "children": [
+        {
+          "id": "l_median_asking_price_per_perc",
+          "type": "choropleth",
+          "name": "Median asking price per perch",
+          "source": "prices",
+          "visible": false,
+          "opacity": 0.9,
+          "blend": "normal",
+          "filter": null,
+          "style": {
+            "fill": {
+              "field": "value",
+              "scale": {
+                "type": "quantile",
+                "classes": 5,
+                "ramp": "ldl.seq.orange"
+              }
+            },
+            "stroke": {
+              "color": "ldl.tone.paper",
+              "width": 0.5
+            },
+            "uncertainty": "hatch"
+          },
+          "legend": {
+            "show": true,
+            "title": null
+          },
+          "interaction": {
+            "hover": true,
+            "select": true
+          }
+        },
+        {
+          "id": "l_population_in_the_flood_zone",
+          "type": "choropleth",
+          "name": "Population in the flood zone",
+          "source": "exposure",
+          "visible": false,
+          "opacity": 0.9,
+          "blend": "normal",
+          "filter": null,
+          "style": {
+            "fill": {
+              "field": "value",
+              "scale": {
+                "type": "quantile",
+                "classes": 5,
+                "ramp": "ldl.seq.blue"
+              }
+            },
+            "stroke": {
+              "color": "ldl.tone.paper",
+              "width": 0.5
+            },
+            "uncertainty": "hatch"
+          },
+          "legend": {
+            "show": true,
+            "title": null
+          },
+          "interaction": {
+            "hover": true,
+            "select": true
+          }
+        },
+        {
+          "id": "l_land_listings",
+          "type": "point",
+          "name": "Land listings",
+          "source": "listings",
+          "visible": false,
+          "opacity": 0.9,
+          "blend": "normal",
+          "filter": null,
+          "style": {
+            "size": 3.2,
+            "fill": {
+              "field": "price_per_perch",
+              "scale": {
+                "type": "quantile",
+                "classes": 5,
+                "ramp": "ldl.seq.orange"
+              }
+            },
+            "stroke": {
+              "color": "ldl.tone.paper",
+              "width": 0.6
+            }
+          },
+          "legend": {
+            "show": true,
+            "title": null
+          },
+          "interaction": {
+            "hover": true,
+            "select": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "l_zone",
+      "type": "point",
+      "name": "Listings inside and near the flood zone",
+      "source": "zone_pts",
+      "visible": false,
+      "opacity": 0.95,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "size": 3.4,
+        "fill": {
+          "field": "ring",
+          "scale": {
+            "type": "categorical",
+            "mapping": {
+              "inside": "ldl.tone.blue",
+              "0-250": "ldl.tone.orange",
+              "250-500": "ldl.tone.grey"
+            }
+          }
+        },
+        "stroke": {
+          "color": "ldl.tone.paper",
+          "width": 0.7
+        }
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "g_exposure_price",
+      "type": "group",
+      "name": "Exposure × price",
+      "visible": true,
+      "opacity": 1,
+      "collapsed": false,
+      "children": [
+        {
+          "id": "l_biv",
+          "type": "bivariate",
+          "name": "Flood exposure × asking price",
+          "source": "rel_biv",
+          "visible": true,
+          "opacity": 0.9,
+          "blend": "normal",
+          "filter": null,
+          "style": {
+            "fill": {
+              "bivariate": {
+                "x": {
+                  "field": "x",
+                  "scale": {
+                    "type": "quantile",
+                    "classes": 3
+                  }
+                },
+                "y": {
+                  "field": "y",
+                  "scale": {
+                    "type": "quantile",
+                    "classes": 3
+                  }
+                },
+                "palette": "ldl.biv.blue-orange"
+              }
+            },
+            "stroke": {
+              "color": "ldl.tone.paper",
+              "width": 0.3
+            },
+            "uncertainty": "hatch"
+          },
+          "legend": {
+            "show": true,
+            "title": null
+          },
+          "interaction": {
+            "hover": true,
+            "select": true
+          }
+        },
+        {
+          "id": "l_lee",
+          "type": "polygon",
+          "name": "Significant local association",
+          "source": "rel_lee",
+          "visible": false,
+          "opacity": 1,
+          "blend": "normal",
+          "filter": {
+            "op": "<=",
+            "args": [
+              {
+                "property": "p_fdr"
+              },
+              0.05
+            ]
+          },
+          "style": {
+            "fill": "none",
+            "stroke": {
+              "width": 1.5,
+              "color": {
+                "field": "cluster",
+                "scale": {
+                  "type": "categorical",
+                  "mapping": {
+                    "HH": "ldl.tone.orange",
+                    "HL": "ldl.tone.ink",
+                    "LH": "ldl.tone.green",
+                    "LL": "ldl.tone.blue"
+                  }
+                }
+              }
+            }
+          },
+          "legend": {
+            "show": true,
+            "title": null
+          },
+          "interaction": {
+            "hover": true,
+            "select": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "l_flood",
+      "type": "raster",
+      "name": "Flood depth, 1-in-100-year",
+      "source": "flood",
+      "visible": true,
+      "opacity": 0.55,
+      "blend": "multiply",
+      "filter": null,
+      "style": {
+        "fill": {
+          "field": "value",
+          "scale": {
+            "type": "manual",
+            "breaks": [
+              0.15,
+              0.5,
+              1,
+              2
+            ],
+            "ramp": "ldl.seq.blue"
+          }
+        },
+        "range": [
+          0.15,
+          null
+        ],
+        "resample": "linear"
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_rivers",
+      "type": "line",
+      "name": "Rivers",
+      "source": "s_rivers",
+      "visible": true,
+      "opacity": 0.8,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.blue",
+          "width": {
+            "field": "class",
+            "scale": {
+              "type": "categorical",
+              "mapping": {
+                "Main river": 2.2,
+                "River": 1.4,
+                "Stream": 0.8
+              }
+            }
+          }
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_ds_divisions",
+      "type": "line",
+      "name": "DS divisions",
+      "source": "dsd",
+      "visible": true,
+      "opacity": 0.42,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.ink",
+          "width": 0.8
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_ds_division_names",
+      "type": "label",
+      "name": "DS division names",
+      "source": "dsd",
+      "visible": true,
+      "opacity": 1,
+      "blend": "normal",
+      "zoom": [
+        8.8,
+        22
+      ],
+      "filter": null,
+      "style": {
+        "label": {
+          "text": "{name}",
+          "size": 10.5
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "p_legend",
+      "type": "legend"
+    },
+    {
+      "id": "p_scatter",
+      "type": "chart",
+      "chart": "scatter",
+      "analysis": "rel",
+      "linked": "l_biv",
+      "options": {
+        "fit": [
+          "ols",
+          "robust"
+        ],
+        "density": "hexbin",
+        "brush": true
+      }
+    },
+    {
+      "id": "p_stats",
+      "type": "stats",
+      "analysis": "rel"
+    },
+    {
+      "id": "p_zone",
+      "type": "stats",
+      "analysis": "zone"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-11-18T04:12:00Z",
+    "updated_at": "2026-11-18T04:12:00Z",
+    "forked_from": null,
+    "licence": "CC-BY-4.0",
+    "generator": "lanka-web-v2 mockup",
+    "author": "@lanka"
+  },
+  "description": "Where modelled 1-in-100-year river flooding coincides with lower asking prices in Western Province. Associations, not causes.",
+  "id": "m_flood_prices"
+}

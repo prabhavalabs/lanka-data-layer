@@ -1,0 +1,24 @@
+[package]
+name = "lanka-mapdoc"
+description = "The ldl-map/1 map document: types, validation, limits, canonical JSON + hash, references, resolution"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+lanka-core.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+jsonschema.workspace = true
+sqlx.workspace = true
+sha2.workspace = true
+hex.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+
+[lints]
+workspace = true

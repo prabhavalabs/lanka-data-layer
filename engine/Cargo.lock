@@ -1574,6 +1574,7 @@ dependencies = [
  "clap",
  "lanka-core",
  "lanka-ingest",
+ "lanka-mapdoc",
  "lanka-server",
  "lanka-store",
  "serde",
@@ -1633,10 +1634,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "lanka-mapdoc"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "hex",
+ "jsonschema",
+ "lanka-core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "lanka-server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arrow-array",
+ "arrow-ipc",
+ "arrow-schema",
  "axum",
  "http-body-util",
  "lanka-core",

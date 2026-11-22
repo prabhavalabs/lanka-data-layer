@@ -1,0 +1,2057 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/spec/map/1/map.schema.json",
+  "title": "ldl-map/1 — Lanka Data Layer map document",
+  "description": "A map is one JSON document that names data and never holds it (10-map-composition.md §2). Readers MUST reject an unknown major `spec`, MUST ignore unknown `x-*` keys and MUST preserve them on save. Limits beyond this schema (32 layers, 8 groups, group depth 3, 256 KB canonical JSON, references between sources/layers/analyses/panels, layer type ↔ source kind) are checked by the reference validator (`lanka map validate`). Licence: CC BY 4.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": true
+  },
+  "required": [
+    "spec",
+    "title",
+    "pin",
+    "view",
+    "basemap",
+    "sources",
+    "layers"
+  ],
+  "properties": {
+    "spec": {
+      "const": "ldl-map/1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^(m_[0-9a-z_]{1,40}|ms_[0-9a-f]{16})$",
+      "description": "`m_…` saved map, `ms_…` snapshot; absent in an unsaved document. Not part of the content hash."
+    },
+    "title": {
+      "$ref": "#/$defs/text"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 8000,
+      "description": "CommonMark subset: paragraphs, emphasis, links. No HTML, no images."
+    },
+    "pin": {
+      "anyOf": [
+        {
+          "const": "latest"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release"
+          ],
+          "properties": {
+            "release": {
+              "$ref": "#/$defs/release"
+            }
+          }
+        }
+      ]
+    },
+    "view": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "center",
+        "zoom"
+      ],
+      "properties": {
+        "center": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": false
+        },
+        "zoom": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24
+        },
+        "bearing": {
+          "type": "number",
+          "minimum": -360,
+          "maximum": 360
+        },
+        "pitch": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 85
+        },
+        "bounds": {
+          "$ref": "#/$defs/bbox"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "extent": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "geo"
+          ],
+          "properties": {
+            "geo": {
+              "$ref": "#/$defs/geoCode"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bbox"
+          ],
+          "properties": {
+            "bbox": {
+              "$ref": "#/$defs/bbox"
+            }
+          }
+        }
+      ]
+    },
+    "basemap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "style"
+      ],
+      "properties": {
+        "style": {
+          "anyOf": [
+            {
+              "enum": [
+                "ldl-auto",
+                "ldl-light",
+                "ldl-dark",
+                "ldl-mono",
+                "none"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^https://",
+              "maxLength": 2048
+            }
+          ],
+          "description": "`ldl-auto` follows the viewer's colour scheme; a URL to a MapLibre style is for self-hosts."
+        },
+        "labels": {
+          "enum": [
+            "top",
+            "bottom",
+            "off"
+          ]
+        },
+        "hillshade": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "on"
+          ],
+          "properties": {
+            "on": {
+              "type": "boolean"
+            },
+            "exaggeration": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "time": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cursor",
+            "range",
+            "freq"
+          ],
+          "properties": {
+            "cursor": {
+              "$ref": "#/$defs/periodCode"
+            },
+            "range": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "$ref": "#/$defs/periodCode"
+                },
+                {
+                  "$ref": "#/$defs/periodCode"
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2,
+              "items": false
+            },
+            "freq": {
+              "$ref": "#/$defs/freq"
+            },
+            "playback": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "fps"
+              ],
+              "properties": {
+                "fps": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 30
+                },
+                "loop": {
+                  "type": "boolean"
+                }
+              },
+              "patternProperties": {
+                "^x-": true
+              }
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          }
+        }
+      ]
+    },
+    "sources": {
+      "type": "object",
+      "maxProperties": 16,
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "analyses": {
+      "type": "object",
+      "maxProperties": 6,
+      "propertyNames": {
+        "$ref": "#/$defs/id"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/analysisRequest"
+      }
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      },
+      "maxItems": 32
+    },
+    "panels": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/panel"
+      },
+      "maxItems": 16
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "forked_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        },
+        "licence": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "generator": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    }
+  },
+  "$defs": {
+    "text": {
+      "description": "Plain text, or per-language text (en required).",
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "en"
+          ],
+          "properties": {
+            "en": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "si": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "ta": {
+              "type": "string",
+              "maxLength": 500
+            }
+          }
+        }
+      ]
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,63}$",
+      "description": "A document-local identifier (source, layer, group, panel, analysis key)."
+    },
+    "geoCode": {
+      "type": "string",
+      "pattern": "^([A-Z]{2}[0-9]{0,12}|[a-z][a-z0-9_-]*:[A-Za-z0-9_.-]+)$",
+      "description": "A p-code (`LK1103005`) or `scheme:code` (02 §2)."
+    },
+    "periodCode": {
+      "type": "string",
+      "pattern": "^[0-9]{4}([-/][A-Za-z0-9]+){0,2}$",
+      "description": "A period code of 02 §5: `2024`, `2024-Q2`, `2026-08`, `2024-Maha`, `2026-11-20`, `2012/2024`."
+    },
+    "freq": {
+      "enum": [
+        "A",
+        "F",
+        "H",
+        "S",
+        "Q",
+        "M",
+        "W",
+        "D",
+        "P"
+      ]
+    },
+    "dataRef": {
+      "type": "string",
+      "pattern": "^(@[a-z0-9][a-z0-9-]{0,39}/)?[a-z0-9][a-z0-9_.-]{0,127}$",
+      "description": "A public id (`census24.pop_total`, `dcs-census-2024-population`) or a workspace id (`@acme/re.asking_price_median`)."
+    },
+    "dsv": {
+      "type": "string",
+      "pattern": "^dsv_[0-9a-f]{16}$"
+    },
+    "release": {
+      "type": "string",
+      "pattern": "^[0-9]{8}\\.[0-9]+$",
+      "description": "A release data_version, e.g. `20261122.1`."
+    },
+    "dims": {
+      "type": "object",
+      "maxProperties": 8,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_.+<>-]{1,64}$"
+      },
+      "description": "Dimension filter: dimension id → code (codelist-backed, 02 §3)."
+    },
+    "bbox": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        }
+      ],
+      "minItems": 4,
+      "maxItems": 4,
+      "items": false,
+      "description": "[west, south, east, north], WGS84."
+    },
+    "zoomRange": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24
+        },
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "items": false
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^(#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?|transparent|none|ldl\\.tone\\.[a-z][a-z0-9-]*)$",
+      "description": "`#rrggbb`, `#rrggbbaa`, `transparent`, `none`, or a named tone `ldl.tone.<name>` from ramps.json `tones`, which follows the basemap's colour scheme."
+    },
+    "rampRef": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^(ldl\\.(seq|div|cat|biv)\\.[a-z0-9-]+|brewer\\.[A-Za-z0-9]+|viridis\\.[a-z]+|x-[A-Za-z0-9_.-]+)$"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/color"
+          },
+          "minItems": 2,
+          "maxItems": 16
+        }
+      ],
+      "description": "A ramp name from ramps.json, or an explicit colour array."
+    },
+    "versionRef": {
+      "anyOf": [
+        {
+          "const": "latest"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dsv"
+          ],
+          "properties": {
+            "dsv": {
+              "$ref": "#/$defs/dsv"
+            }
+          }
+        }
+      ],
+      "description": "Omitted: inherit the document `pin`."
+    },
+    "periodRef": {
+      "anyOf": [
+        {
+          "const": "latest"
+        },
+        {
+          "$ref": "#/$defs/periodCode"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/periodCode"
+          },
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "from",
+            "to"
+          ],
+          "properties": {
+            "from": {
+              "$ref": "#/$defs/periodCode"
+            },
+            "to": {
+              "$ref": "#/$defs/periodCode"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "bind"
+          ],
+          "properties": {
+            "bind": {
+              "const": "time"
+            },
+            "match": {
+              "enum": [
+                "exact",
+                "asof"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "levelRef": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "byZoom"
+          ],
+          "properties": {
+            "byZoom": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 24
+                  },
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9
+                  }
+                ],
+                "minItems": 2,
+                "maxItems": 2,
+                "items": false
+              }
+            }
+          }
+        }
+      ],
+      "description": "A scheme-local level, or levels by zoom ([[zoom, level], …], zooms ascending)."
+    },
+    "indicatorSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "level",
+        "period"
+      ],
+      "properties": {
+        "kind": {
+          "const": "indicator"
+        },
+        "indicator": {
+          "$ref": "#/$defs/dataRef"
+        },
+        "indicators": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dataRef"
+          },
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true
+        },
+        "level": {
+          "$ref": "#/$defs/levelRef"
+        },
+        "scheme": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "parent": {
+          "$ref": "#/$defs/geoCode"
+        },
+        "period": {
+          "$ref": "#/$defs/periodRef"
+        },
+        "dims": {
+          "$ref": "#/$defs/dims"
+        },
+        "version": {
+          "$ref": "#/$defs/versionRef"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      },
+      "anyOf": [
+        {
+          "required": [
+            "indicator"
+          ]
+        },
+        {
+          "required": [
+            "indicators"
+          ]
+        }
+      ]
+    },
+    "boundariesSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "scheme",
+        "level"
+      ],
+      "properties": {
+        "kind": {
+          "const": "boundaries"
+        },
+        "scheme": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9
+        },
+        "parent": {
+          "$ref": "#/$defs/geoCode"
+        },
+        "version": {
+          "$ref": "#/$defs/versionRef"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "featuresSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "dataset"
+      ],
+      "properties": {
+        "kind": {
+          "const": "features"
+        },
+        "dataset": {
+          "$ref": "#/$defs/dataRef"
+        },
+        "featureKind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "within": {
+          "$ref": "#/$defs/geoCode"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "maxItems": 32,
+          "uniqueItems": true
+        },
+        "time": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Binds a date field of the features to the document time cursor.",
+          "required": [
+            "field"
+          ],
+          "properties": {
+            "field": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "match": {
+              "enum": [
+                "exact",
+                "asof"
+              ]
+            }
+          }
+        },
+        "version": {
+          "$ref": "#/$defs/versionRef"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "gridSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "grid",
+        "period"
+      ],
+      "properties": {
+        "kind": {
+          "const": "grid"
+        },
+        "grid": {
+          "$ref": "#/$defs/dataRef"
+        },
+        "dims": {
+          "$ref": "#/$defs/dims"
+        },
+        "period": {
+          "$ref": "#/$defs/periodRef"
+        },
+        "version": {
+          "$ref": "#/$defs/versionRef"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "analysisSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "ref",
+        "output"
+      ],
+      "properties": {
+        "kind": {
+          "const": "analysis"
+        },
+        "ref": {
+          "$ref": "#/$defs/id"
+        },
+        "output": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "inlineSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Client-only annotations, ≤ 100 KB of canonical JSON.",
+      "required": [
+        "kind",
+        "geojson"
+      ],
+      "properties": {
+        "kind": {
+          "const": "inline"
+        },
+        "geojson": {
+          "type": "object",
+          "required": [
+            "type",
+            "features"
+          ],
+          "properties": {
+            "type": {
+              "const": "FeatureCollection"
+            },
+            "features": {
+              "type": "array"
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "externalSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Fetched by the browser only; the server never requests it.",
+      "required": [
+        "kind",
+        "type",
+        "url",
+        "attribution"
+      ],
+      "properties": {
+        "kind": {
+          "const": "external"
+        },
+        "type": {
+          "enum": [
+            "geojson",
+            "pmtiles",
+            "raster-xyz"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://",
+          "maxLength": 2048
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "indicator",
+            "boundaries",
+            "features",
+            "grid",
+            "analysis",
+            "inline",
+            "external"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "indicator"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/indicatorSource"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "boundaries"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/boundariesSource"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "features"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/featuresSource"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "grid"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/gridSource"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "analysis"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/analysisSource"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "inline"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/inlineSource"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "external"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/externalSource"
+          }
+        }
+      ]
+    },
+    "scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "quantile",
+            "equal",
+            "jenks",
+            "stddev",
+            "headtail",
+            "pretty",
+            "manual",
+            "continuous",
+            "categorical",
+            "diverging",
+            "area",
+            "radius",
+            "graduated"
+          ]
+        },
+        "classes": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 9
+        },
+        "breaks": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1,
+          "maxItems": 15
+        },
+        "ramp": {
+          "$ref": "#/$defs/rampRef"
+        },
+        "reverse": {
+          "type": "boolean"
+        },
+        "nodata": {
+          "$ref": "#/$defs/color"
+        },
+        "domain": {
+          "enum": [
+            "extent",
+            "data",
+            "national"
+          ]
+        },
+        "across": {
+          "enum": [
+            "all_periods",
+            "period"
+          ]
+        },
+        "transform": {
+          "enum": [
+            "linear",
+            "log",
+            "sqrt",
+            "symlog"
+          ]
+        },
+        "clamp": {
+          "anyOf": [
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2,
+              "items": false
+            },
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "const": "p"
+                },
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
+              ],
+              "minItems": 3,
+              "maxItems": 3,
+              "items": false
+            }
+          ],
+          "description": "Absolute [lo, hi] (null = the data's own end) or percentiles [\"p\", 2, 98]."
+        },
+        "mid": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "enum": [
+                "mean",
+                "median"
+              ]
+            }
+          ]
+        },
+        "mapping": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/color"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "description": "categorical: code → colour (colour channels) or number (width/size channels)."
+        },
+        "range": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": false,
+          "description": "Output range in px for numeric channels (size, stroke width)."
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "manual"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "breaks"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "quantile",
+                  "equal",
+                  "jenks",
+                  "stddev",
+                  "headtail",
+                  "pretty",
+                  "diverging"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "classes"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "diverging"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "mid"
+            ]
+          }
+        }
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A visual channel bound to a field through a scale.",
+      "required": [
+        "field",
+        "scale"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_.@/-]{0,127}$"
+        },
+        "scale": {
+          "$ref": "#/$defs/scale"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "colorChannel": {
+      "if": {
+        "type": "string"
+      },
+      "then": {
+        "$ref": "#/$defs/color"
+      },
+      "else": {
+        "$ref": "#/$defs/binding"
+      }
+    },
+    "numberChannel": {
+      "if": {
+        "type": "number"
+      },
+      "then": {
+        "type": "number",
+        "minimum": 0
+      },
+      "else": {
+        "$ref": "#/$defs/binding"
+      }
+    },
+    "bivariateFill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bivariate"
+      ],
+      "properties": {
+        "bivariate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y",
+            "palette"
+          ],
+          "properties": {
+            "x": {
+              "$ref": "#/$defs/binding"
+            },
+            "y": {
+              "$ref": "#/$defs/binding"
+            },
+            "palette": {
+              "$ref": "#/$defs/rampRef"
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "stroke": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "$ref": "#/$defs/colorChannel"
+        },
+        "width": {
+          "$ref": "#/$defs/numberChannel"
+        },
+        "dash": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "maxItems": 8
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "label": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "size": {
+          "type": "number",
+          "minimum": 4,
+          "maximum": 64
+        },
+        "halo": {
+          "$ref": "#/$defs/color"
+        },
+        "zoom": {
+          "$ref": "#/$defs/zoomRange"
+        },
+        "priority": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fill": {
+          "if": {
+            "type": "string"
+          },
+          "then": {
+            "$ref": "#/$defs/color"
+          },
+          "else": {
+            "if": {
+              "type": "object",
+              "required": [
+                "bivariate"
+              ]
+            },
+            "then": {
+              "$ref": "#/$defs/bivariateFill"
+            },
+            "else": {
+              "$ref": "#/$defs/binding"
+            }
+          }
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "size": {
+          "$ref": "#/$defs/numberChannel"
+        },
+        "shape": {
+          "enum": [
+            "circle",
+            "square",
+            "bar"
+          ]
+        },
+        "icon": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "range": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": false,
+          "description": "raster: mask values outside [lo, hi] (null = open)."
+        },
+        "resample": {
+          "enum": [
+            "nearest",
+            "linear"
+          ]
+        },
+        "radius": {
+          "type": "number",
+          "minimum": 0
+        },
+        "intensity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "weight": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ramp": {
+          "$ref": "#/$defs/rampRef"
+        },
+        "reverse": {
+          "type": "boolean"
+        },
+        "cell": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "aggregate": {
+          "anyOf": [
+            {
+              "const": "count"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "sum"
+              ],
+              "properties": {
+                "sum": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mean"
+              ],
+              "properties": {
+                "mean": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          ]
+        },
+        "elevation": {
+          "$ref": "#/$defs/numberChannel"
+        },
+        "exaggeration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "shadow": {
+          "$ref": "#/$defs/color"
+        },
+        "highlight": {
+          "$ref": "#/$defs/color"
+        },
+        "uncertainty": {
+          "enum": [
+            "hatch",
+            "fade",
+            "off"
+          ]
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "cql2": {
+      "type": "object",
+      "required": [
+        "op",
+        "args"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "enum": [
+            "=",
+            "<>",
+            "<",
+            "<=",
+            ">",
+            ">=",
+            "and",
+            "or",
+            "not",
+            "in",
+            "between",
+            "isNull",
+            "like"
+          ]
+        },
+        "args": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/cql2"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "property"
+                ],
+                "properties": {
+                  "property": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  }
+                }
+              },
+              {
+                "type": [
+                  "string",
+                  "number",
+                  "boolean"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                },
+                "maxItems": 256
+              }
+            ]
+          }
+        }
+      },
+      "description": "CQL2-JSON subset (10 §2.4). Arity per operator is checked by the validator."
+    },
+    "blend": {
+      "enum": [
+        "normal",
+        "multiply",
+        "screen",
+        "darken",
+        "lighten",
+        "add",
+        "overlay"
+      ],
+      "description": "`overlay` is non-separable: a renderer without a backdrop pass draws it as `normal` and says so in the layer panel."
+    },
+    "layer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "name",
+        "source",
+        "visible",
+        "style"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "enum": [
+                "choropleth",
+                "bivariate",
+                "symbol",
+                "point",
+                "cluster",
+                "heatmap",
+                "bins",
+                "line",
+                "polygon",
+                "raster",
+                "hillshade",
+                "label",
+                "annotation"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^x-[a-z0-9-]+$"
+            }
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "source": {
+          "$ref": "#/$defs/id"
+        },
+        "visible": {
+          "type": "boolean"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "0..1; default 1."
+        },
+        "blend": {
+          "$ref": "#/$defs/blend"
+        },
+        "zoom": {
+          "$ref": "#/$defs/zoomRange"
+        },
+        "filter": {
+          "if": {
+            "type": "null"
+          },
+          "then": {
+            "type": "null"
+          },
+          "else": {
+            "$ref": "#/$defs/cql2"
+          },
+          "description": "CQL2-JSON subset; null = none."
+        },
+        "clip": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "geo"
+              ],
+              "properties": {
+                "geo": {
+                  "$ref": "#/$defs/geoCode"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "bbox"
+              ],
+              "properties": {
+                "bbox": {
+                  "$ref": "#/$defs/bbox"
+                }
+              }
+            }
+          ]
+        },
+        "style": {
+          "$ref": "#/$defs/style"
+        },
+        "legend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "show"
+          ],
+          "properties": {
+            "show": {
+              "type": "boolean"
+            },
+            "title": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/text"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          }
+        },
+        "interaction": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hover": {
+              "type": "boolean"
+            },
+            "select": {
+              "type": "boolean"
+            },
+            "tooltip": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "maxItems": 16
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          }
+        },
+        "locked": {
+          "type": "boolean"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Groups nest to depth 3 and have no blend mode.",
+      "required": [
+        "id",
+        "type",
+        "name",
+        "visible",
+        "opacity",
+        "children"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "group"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "visible": {
+          "type": "boolean"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "collapsed": {
+          "type": "boolean"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "maxItems": 32
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "if": {
+        "properties": {
+          "type": {
+            "const": "group"
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/group"
+      },
+      "else": {
+        "$ref": "#/$defs/layer"
+      }
+    },
+    "legendPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "legend"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "chartPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "chart"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "chart"
+        },
+        "chart": {
+          "enum": [
+            "scatter",
+            "histogram",
+            "series",
+            "groups"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/id"
+        },
+        "analysis": {
+          "$ref": "#/$defs/id"
+        },
+        "linked": {
+          "$ref": "#/$defs/id"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fit": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "ols",
+                  "robust"
+                ]
+              },
+              "uniqueItems": true
+            },
+            "density": {
+              "enum": [
+                "points",
+                "hexbin"
+              ]
+            },
+            "brush": {
+              "type": "boolean"
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "statsPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "analysis"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "stats"
+        },
+        "analysis": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "textPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "const": "text"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 4000
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "panel": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "legend",
+            "chart",
+            "stats",
+            "text"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "legend"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/legendPanel"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "chart"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/chartPanel"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "stats"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/statsPanel"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "text"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "$ref": "#/$defs/textPanel"
+          }
+        }
+      ]
+    },
+    "analysisRequest": {
+      "type": "object",
+      "required": [
+        "spec",
+        "method"
+      ],
+      "properties": {
+        "spec": {
+          "const": "ldl-analysis/1"
+        },
+        "method": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "result": {
+          "type": "string",
+          "pattern": "^an_[0-9a-f]{16}$"
+        }
+      },
+      "description": "An `ldl-analysis/1` request (spec/analysis/1, WP-29). The request is stored, never the result; `result` is written when the document is frozen."
+    }
+  }
+}

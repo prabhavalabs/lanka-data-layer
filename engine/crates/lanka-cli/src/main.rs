@@ -14,6 +14,7 @@
 //! lanka serve [--bind 127.0.0.1:8601] | serve rebuild
 //! lanka reverse <lat> <lon>
 //! lanka area <pcode>
+//! lanka map validate <file>… | hash <file> | refs <file> | resolve <file> [--freeze] | types
 //! ```
 
 use std::net::SocketAddr;
@@ -114,12 +115,40 @@ enum Cmd {
     },
     /// Print the area profile of a p-code as JSON.
     Area { pcode: String },
+    /// Map documents (`ldl-map/1`): validate, hash, references, resolve.
+    #[command(subcommand)]
+    Map(MapCmd),
     /// HTTP GET a local URL and exit 0 on 200 (container health checks; the
     /// image has no curl). Only plain `http://host:port/path` is supported.
     Probe {
         #[arg(default_value = "http://127.0.0.1:8601/v2/health")]
         url: String,
     },
+}
+
+#[derive(Subcommand)]
+enum MapCmd {
+    /// Validate documents against spec/map/1 (schema + limits + references); exit 1 on any problem.
+    Validate {
+        #[arg(required = true)]
+        files: Vec<PathBuf>,
+        /// Print problems as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Content hash and snapshot id (RFC 8785 canonical JSON, without `id` / `meta.updated_at`).
+    Hash { file: PathBuf },
+    /// What a document depends on (`app.map_refs` rows).
+    Refs { file: PathBuf },
+    /// Resolve against the catalogue: versions, frame URLs, attribution, notices, problems.
+    Resolve {
+        file: PathBuf,
+        /// Pin the document to the current release first.
+        #[arg(long)]
+        freeze: bool,
+    },
+    /// Print the generated TypeScript declarations (spec/map/1/index.d.ts).
+    Types,
 }
 
 #[derive(Subcommand)]
@@ -346,6 +375,107 @@ async fn pool(g: &Global, role: PoolRole) -> Result<PgPool> {
     db::connect(&g.database_url, role)
         .await
         .context("connecting to Postgres (is infra/v2 up?)")
+}
+
+fn read_doc(file: &Path) -> Result<serde_json::Value> {
+    let text =
+        std::fs::read_to_string(file).with_context(|| format!("reading {}", file.display()))?;
+    serde_json::from_str(&text).with_context(|| format!("{} is not JSON", file.display()))
+}
+
+fn checked_doc(file: &Path) -> Result<(serde_json::Value, lanka_mapdoc::MapDocument)> {
+    let v = read_doc(file)?;
+    match lanka_mapdoc::validate(&v) {
+        Ok(d) => Ok((v, d)),
+        Err(problems) => {
+            for p in &problems {
+                eprintln!("{}: {p}", file.display());
+            }
+            anyhow::bail!("{}: {} problem(s)", file.display(), problems.len())
+        }
+    }
+}
+
+async fn map_cmd(g: &Global, cmd: MapCmd) -> Result<()> {
+    match cmd {
+        MapCmd::Validate { files, json } => {
+            let mut bad = 0usize;
+            let mut report = Vec::new();
+            for f in &files {
+                let res = match read_doc(f) {
+                    Ok(v) => lanka_mapdoc::validate(&v).map(|_| ()),
+                    Err(e) => Err(vec![lanka_mapdoc::Problem {
+                        path: String::new(),
+                        code: "JSON",
+                        message: format!("{e:#}"),
+                    }]),
+                };
+                match res {
+                    Ok(()) => {
+                        if !json {
+                            println!("{}: ok", f.display());
+                        }
+                        report.push(serde_json::json!({ "file": f, "ok": true }));
+                    }
+                    Err(problems) => {
+                        bad += 1;
+                        if !json {
+                            for p in &problems {
+                                println!("{}: {p}", f.display());
+                            }
+                        }
+                        report.push(
+                            serde_json::json!({ "file": f, "ok": false, "problems": problems }),
+                        );
+                    }
+                }
+            }
+            if json {
+                print_json(&report)?;
+            }
+            anyhow::ensure!(bad == 0, "{bad} of {} document(s) invalid", files.len());
+        }
+        MapCmd::Hash { file } => {
+            let (v, _) = checked_doc(&file)?;
+            print_json(&serde_json::json!({
+                "snapshot_id": lanka_mapdoc::canon::snapshot_id(&v),
+                "sha256": lanka_mapdoc::canon::content_sha256(&v).iter().map(|b| format!("{b:02x}")).collect::<String>(),
+                "canonical_bytes": lanka_mapdoc::canon::jcs(&v).len(),
+            }))?;
+        }
+        MapCmd::Refs { file } => {
+            let (_, doc) = checked_doc(&file)?;
+            let refs = lanka_mapdoc::refs::references(&doc);
+            let cat = match pool(g, PoolRole::Api).await {
+                Ok(p) => Catalog::load(&p).await.ok(),
+                Err(_) => None,
+            };
+            let rows = lanka_mapdoc::refs::map_refs(&refs, |id| {
+                cat.as_ref()
+                    .and_then(|c| c.indicators.get(id).map(|i| i.dataset_id.clone()))
+            });
+            print_json(&serde_json::json!({ "references": refs, "map_refs": rows }))?;
+        }
+        MapCmd::Resolve { file, freeze } => {
+            let (_, mut doc) = checked_doc(&file)?;
+            let pool = pool(g, PoolRole::Api).await?;
+            let cat = Catalog::load(&pool).await?;
+            if freeze {
+                anyhow::ensure!(
+                    lanka_mapdoc::resolve::freeze(&mut doc, &cat),
+                    "no release to pin to"
+                );
+            }
+            let ctx = lanka_mapdoc::resolve::load_context(&pool, &doc).await?;
+            let resolved = lanka_mapdoc::resolve::resolve(&doc, &cat, &ctx);
+            print_json(&lanka_mapdoc::resolve::ResolvedMap {
+                doc: &doc,
+                resolved,
+            })?;
+        }
+        MapCmd::Types => print!("{}", lanka_mapdoc::ts::declarations()),
+    }
+    Ok(())
 }
 
 fn print_json<T: serde::Serialize>(v: &T) -> Result<()> {
@@ -678,6 +808,7 @@ async fn run(cli: Cli) -> Result<()> {
             }
         }
         Cmd::Probe { url } => probe(&url).await?,
+        Cmd::Map(cmd) => map_cmd(g, cmd).await?,
         Cmd::Area { pcode } => {
             let pool = pool(g, PoolRole::Api).await?;
             let cat = Catalog::load(&pool).await?;

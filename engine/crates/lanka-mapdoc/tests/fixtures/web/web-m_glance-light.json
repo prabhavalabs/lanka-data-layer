@@ -1,0 +1,209 @@
+{
+  "spec": "ldl-map/1",
+  "title": "Sri Lanka at a glance",
+  "pin": "latest",
+  "view": {
+    "center": [
+      80.72,
+      7.87
+    ],
+    "zoom": 6.7,
+    "bounds": [
+      79.35,
+      5.75,
+      82.15,
+      10
+    ]
+  },
+  "extent": null,
+  "basemap": {
+    "style": "ldl-auto",
+    "labels": "off",
+    "hillshade": {
+      "on": false,
+      "exaggeration": 1
+    },
+    "x-coast": true
+  },
+  "time": {
+    "cursor": "2024",
+    "range": [
+      "2012",
+      "2026"
+    ],
+    "freq": "A",
+    "playback": {
+      "fps": 1.1,
+      "loop": true
+    }
+  },
+  "sources": {
+    "s_towns_and_cities": {
+      "kind": "features",
+      "dataset": "places"
+    },
+    "s_railway_lines": {
+      "kind": "features",
+      "dataset": "railways"
+    },
+    "s_provinces": {
+      "kind": "boundaries",
+      "scheme": "admin",
+      "level": 1
+    },
+    "s_population_density": {
+      "kind": "indicator",
+      "indicator": "pop.density",
+      "level": 2,
+      "period": {
+        "bind": "time",
+        "match": "asof"
+      }
+    }
+  },
+  "analyses": {},
+  "layers": [
+    {
+      "id": "l_indicator",
+      "type": "choropleth",
+      "name": "Population density",
+      "source": "s_population_density",
+      "visible": true,
+      "opacity": 0.9,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "fill": {
+          "field": "value",
+          "scale": {
+            "type": "quantile",
+            "classes": 5,
+            "ramp": "ldl.seq.violet"
+          }
+        },
+        "stroke": {
+          "color": "ldl.tone.paper",
+          "width": 0.5
+        },
+        "uncertainty": "off"
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_provinces",
+      "type": "line",
+      "name": "Provinces",
+      "source": "s_provinces",
+      "visible": true,
+      "opacity": 0.55,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.ink",
+          "width": 1.4
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_railway_lines",
+      "type": "line",
+      "name": "Railway lines",
+      "source": "s_railway_lines",
+      "visible": true,
+      "opacity": 0.7,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.ink",
+          "width": 1.2,
+          "dash": [
+            4.5,
+            2.4
+          ],
+          "x-casing": true
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_towns_and_cities",
+      "type": "point",
+      "name": "Towns and cities",
+      "source": "s_towns_and_cities",
+      "visible": true,
+      "opacity": 0.9,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "size": {
+          "field": "population",
+          "scale": {
+            "type": "continuous",
+            "transform": "sqrt",
+            "range": [
+              1.8,
+              5.5
+            ]
+          }
+        },
+        "fill": "ldl.tone.ink",
+        "stroke": {
+          "color": "ldl.tone.paper",
+          "width": 1.2
+        },
+        "label": {
+          "text": "{name}",
+          "size": 11.5
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "p_legend",
+      "type": "legend"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-11-18T04:12:00Z",
+    "updated_at": "2026-11-18T04:12:00Z",
+    "forked_from": null,
+    "licence": "CC-BY-4.0",
+    "generator": "lanka-web-v2 mockup",
+    "author": "@lanka"
+  },
+  "description": "One indicator by district, year by year.",
+  "id": "m_glance"
+}
