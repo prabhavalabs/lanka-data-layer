@@ -277,6 +277,15 @@ fn geometry() {
         &[colombo.clone(), london]
     ));
     assert!(!check("{check: geometry, valid: true}", &[open_ring]));
+    // row_count is evaluated on features too
+    assert!(check(
+        "{check: row_count, min: 1, max: 1}",
+        std::slice::from_ref(&colombo)
+    ));
+    assert!(!check(
+        "{check: row_count, min: 2}",
+        std::slice::from_ref(&colombo)
+    ));
     // nesting and overlap over admin-unit-like items
     let sq = |x0: f64, y0: f64, d: f64| {
         format!(

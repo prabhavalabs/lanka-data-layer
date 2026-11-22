@@ -936,7 +936,9 @@ fn invalid(g: &crate::geom::Geometry) -> Option<&'static str> {
     }
 }
 
-/// `geometry` expectations over features or admin units.
+/// `geometry` expectations over features or admin units, and `row_count`
+/// on the delivered features (a features dataset has no observations, so
+/// `check_observations` never sees it).
 pub fn check_geometry(
     exps: &[Expectation],
     items: &[GeomItem<'_>],
@@ -945,6 +947,22 @@ pub fn check_geometry(
 ) -> Vec<CheckResult> {
     let mut out = Vec::new();
     for e in exps {
+        if let Check::RowCount { min, max } = &e.check {
+            let n = items.len() as u64;
+            let bad: Vec<String> = if min.is_some_and(|m| n < m) || max.is_some_and(|m| n > m) {
+                vec![format!("{n} features, expected {min:?}..{max:?}")]
+            } else {
+                Vec::new()
+            };
+            out.push(CheckResult::new(
+                e,
+                e.severity_for(class),
+                bad.len(),
+                &bad,
+                &format!("{n} features"),
+            ));
+            continue;
+        }
         let Check::Geometry {
             valid,
             within_bbox,
