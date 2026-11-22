@@ -188,6 +188,11 @@ pub struct NumberSpec {
     /// How numbers sit under their headers (`right`: by right edge).
     #[serde(default)]
     pub align: Align,
+    /// Remove spaces inside a cell before parsing ("7 . 0" → 7.0): for text
+    /// layers that split a number into several words. Opt-in, since it would
+    /// also join two numbers that fell into one cell.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub squeeze_spaces: bool,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -219,6 +224,7 @@ impl Default for NumberSpec {
             missing: missing_tokens(),
             strip: Vec::new(),
             align: Align::Right,
+            squeeze_spaces: false,
         }
     }
 }
@@ -482,7 +488,12 @@ impl NumberSpec {
     /// Parses a printed token.
     #[must_use]
     pub fn parse(&self, text: &str) -> Value {
+        let squeezed: String;
         let mut t = text.trim();
+        if self.squeeze_spaces {
+            squeezed = t.split_whitespace().collect();
+            t = &squeezed;
+        }
         for s in &self.strip {
             t = t.trim_end_matches(s.as_str()).trim();
         }
@@ -1479,6 +1490,13 @@ editions:
         assert_eq!(n.parse(".."), Value::Missing);
         assert_eq!(n.parse("2,19,19"), Value::Text);
         assert_eq!(n.parse("12a"), Value::Text);
+        assert_eq!(n.parse("7 . 0"), Value::Text);
+        let sq = NumberSpec {
+            squeeze_spaces: true,
+            ..NumberSpec::default()
+        };
+        assert_eq!(sq.parse("7 . 0"), Value::Number(7.0));
+        assert_eq!(sq.parse("35.0 50.7"), Value::Text);
         assert!(word_matches("2020(1)", "2020"));
         assert!(word_matches("Total;", "total"));
         assert!(!word_matches("Note", "no"));

@@ -83,7 +83,8 @@
               "decimal": { "type": "string", "minLength": 1, "maxLength": 1 },
               "missing": { "type": "array", "items": { "type": "string" } },
               "strip": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-              "align": { "enum": ["right", "center"] }
+              "align": { "enum": ["right", "center"] },
+              "squeeze_spaces": { "type": "boolean" }
             }
           },
           "superscript_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
