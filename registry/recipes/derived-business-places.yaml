@@ -1,0 +1,48 @@
+id: derived-business-places
+output: derived-business-places
+title: Places and office workplaces per admin unit
+stability: stable
+inputs:
+  places_in: { dataset: overture-places }
+  offices_in: { dataset: overture-workplaces }
+  census: { dataset: dcs-census-2024-population, indicators: [census24.pop_total] }
+  rollups: { dataset: derived-census-2024-rollups, indicators: [rollup.census24.pop_total] }
+steps:
+  - id: places
+    method: features_zonal@^1
+    with:
+      features: places_in
+      measure: count
+      dim: { id: category, from: kind, total: total }
+      indicator: derived.places_count
+      period: "2026"
+      levels: [1, 2, 3, 4]
+  - id: offices
+    method: features_zonal@^1
+    with:
+      features: offices_in
+      measure: count
+      dim: { id: workplace_type, from: kind, total: total }
+      indicator: derived.workplace_count
+      period: "2026"
+      levels: [1, 2, 3, 4]
+  - id: offices_per_10k
+    method: ratio@^1
+    with:
+      terms:
+        n: { from: [{ port: offices, indicator: derived.workplace_count }] }
+        pop:
+          from:
+            - { port: census, indicator: census24.pop_total }
+            - { port: rollups, indicator: rollup.census24.pop_total }
+          select: "sex=total"
+      formula: n / pop * 10000
+      indicator: derived.workplace_per_10k
+      match_period: { nearest: { max_years: 5 } }
+      levels: [1, 2, 3]
+emit:
+  - { from: places }
+  - { from: offices }
+  - { from: offices_per_10k }
+qa:
+  - { check: non_negative }

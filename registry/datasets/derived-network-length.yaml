@@ -1,0 +1,65 @@
+id: derived-network-length
+title: Road, expressway and walkable network length per admin unit
+description: Kilometres of open road by OSM class, of expressway by status (open, under construction, proposed) and of
+  the walkable network by class, per province, district, DS division and GN division.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: derived.road_km
+  label: Road length by class (open roads)
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: derived
+  dims:
+  - highway_class
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: derived.expressway_km
+  label: Expressway carriageway length by status
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: derived
+  dims:
+  - id: status
+    codelist: project_status
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: derived.walk_network_km
+  label: Walkable network length by class
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: derived
+  dims:
+  - highway_class
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: 'Recipe derived-network-length: features_zonal@1 length_km (geodesic) over osm-road-network (status open),
+  osm-expressways (motorway and motorway_link ways, by status) and osm-foot-network, summed up the p-code hierarchy.'
+limits:
+- A way is counted whole in the unit holding its point on surface (no clipping at unit boundaries), so small units
+  crossed by long ways are over- or under-counted; districts and provinces are close.
+- Dual carriageways count both directions.
+- Mapped features only (OpenStreetMap).
+enrichment:
+  derived_from:
+  - osm-road-network
+  - osm-expressways
+  - osm-foot-network
+publication_class: A
