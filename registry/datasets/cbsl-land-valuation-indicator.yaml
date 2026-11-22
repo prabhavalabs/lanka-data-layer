@@ -1,6 +1,7 @@
 id: cbsl-land-valuation-indicator
 title: Land Valuation Indicator (Colombo district)
-description: Semi-annual index of residential, commercial and industrial land values in Colombo district.
+description: Semi-annual Land Valuation Indicator (2017 H1 = 100) for Colombo district, by land use (residential,
+  commercial, industrial) and the composite LVI (their simple average).
 source_ids:
 - cbsl-real-estate
 indicators:
@@ -14,17 +15,23 @@ indicators:
   - id: land_use
     codelist: land_value_use
   geo_levels:
-  - national
-  period_type: quarter
+  - adm2
+  period_type: half_year
 time_coverage:
-  from: '1998'
-  to: '2025'
-method: News release tables.
+  from: 2019-H2
+  to: 2026-H1
+method: >-
+  Table "Land Valuation Indicator and Growth Rates" of the CBSL semi-annual releases (PDF text layer, reviewed
+  template); per-perch bare land prices from the Government Valuation Department for the 13 DS divisions of Colombo
+  district, sub-indicators per DS division averaged.
 limits:
 - Colombo district only; valuation-based, not transactions.
+- The whole series was revised in June 2022; only the revised series is loaded. Revised values before 2019 H2 are
+  published only in the CBSL data library (eresearch), not in a release; the pre-2022 releases (2018 H1 to 2021 H2,
+  old basis, from 1998 as the Land Price Index) are not comparable and are not loaded.
 enrichment:
   joins:
-  - 'national series: no spatial join; joins to other national series by period'
+  - 'district series (Colombo, LK11): joins to district-level flood exposure and other LK11 series by period'
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
 publication_class: B
