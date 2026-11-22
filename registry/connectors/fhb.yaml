@@ -1,0 +1,62 @@
+# Family Health Bureau statistics page (https://fhb.health.gov.lk/statistics): HTML tables, one
+# column per year. Read here: "Under-five Nutrition Indicators, 2016 - 2026" (Nutrition Month,
+# six rows) and selected rows of "Maternal & Child Health Statistics, 2016 - 2025" (the page's
+# fourth and fifth <table>, #3 and #4; the first three are headline cards). Rows are matched by their
+# printed label (unmapped rows are not read). Printed tokens with a stray space or a trailing
+# dot ("12 .5", "10.") are read as the number they show (the verbatim keeps the token);
+# "N/A", "-" and "—" are no observation. Class B (HTML page updated in place).
+# Licence permission_unclear: published with attribution and the takedown contact (08 §2).
+source: fhb
+driver: html_table
+version: 1.0.0
+description: FHB national under-five nutrition and maternal/child health rates (HTML tables, by year).
+discover:
+  kind: static
+  files:
+    - { key: statistics, url: "https://fhb.health.gov.lk/statistics", file: statistics.html }
+standardise:
+  dataset: fhb-maternal-child-health
+  tables:
+    - { id: nutrition, artifact: ^statistics$, source: "#4$", header: { anchor: "^Indicators$" } }
+    - { id: mch, artifact: ^statistics$, source: "#3$", header: { anchor: "^Indicators$" } }
+  outputs:
+    - table: nutrition
+      method: sheet_cell
+      indicator:
+        column: Indicators
+        map:
+          Percentage of under 5 children with underweight: heal.child_underweight
+          Percentage of under 5 children with Stunting: heal.child_stunting
+          Percentage of under 5 children with Wasting: heal.child_wasting
+          Percentage of under 5 children with severe wasting (SAM): heal.child_wasting_severe
+          Percentage of under 5 children with moderate wasting (MAM): heal.child_wasting_moderate
+          Percentage of under 5 children with overweight: heal.child_overweight
+      melt: { columns: "^\\d{4}$" }
+      geo: { root: true }
+      period: { melt: true, freq: A, parse: year }
+      value: &num { regex: "^([0-9]*)\\s*(\\.[0-9]*|N/A|—|-)?$", replace: "${1}${2}", number: { missing: ["N/A", "-", "—", ""] } }
+    - table: mch
+      method: sheet_cell
+      filter:
+        - column: Indicators
+          in: [Percentage Low Birth Weight, Neonatal Mortality Rate (1000 live births), Infant Mortality Rate (1000 live births),
+               Under Five Mortality Rate (1000 live births), Still Birth Rate (per 1000 births), "Maternal Mortality Ratio (100,000 live births)"]
+      indicator:
+        column: Indicators
+        map:
+          Percentage Low Birth Weight: heal.low_birth_weight
+          Neonatal Mortality Rate (1000 live births): heal.neonatal_mortality_rate
+          Infant Mortality Rate (1000 live births): heal.infant_mortality_rate
+          Under Five Mortality Rate (1000 live births): heal.under5_mortality_rate
+          Still Birth Rate (per 1000 births): heal.still_birth_rate
+          Maternal Mortality Ratio (100,000 live births): heal.maternal_mortality_ratio
+      melt: { columns: "^\\d{4}$" }
+      geo: { root: true }
+      period: { melt: true, freq: A, parse: year }
+      value: *num
+expect:
+  - { check: row_count, min: 110, max: 130, note: "6 nutrition rows × 11 years + 6 MCH rows × 10 years, less N/A" }
+  - { check: no_future }
+  - { check: range, indicator: heal.child_underweight, min: 5, max: 40 }
+  - { check: range, indicator: heal.maternal_mortality_ratio, min: 5, max: 100 }
+  - { check: period_continuity, indicator: heal.child_stunting }

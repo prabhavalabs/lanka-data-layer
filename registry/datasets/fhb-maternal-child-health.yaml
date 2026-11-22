@@ -1,18 +1,58 @@
 id: fhb-maternal-child-health
 title: Maternal and child health and nutrition (FHB)
-description: Maternal deaths, low birth weight, growth monitoring (underweight/stunting/wasting) by RDHS.
+description: National under-five nutrition status from Nutrition Month (underweight, stunting, wasting, severe and moderate
+  wasting, overweight) and key maternal and child health rates (low birth weight, neonatal, infant and under-five
+  mortality, still births, maternal mortality) from the Family Health Bureau statistics page.
 source_ids:
 - fhb
 indicators:
-- id: heal.maternal_mortality_ratio
-  label: Maternal mortality ratio
-  unit: '/10*5{live_birth}'
-  measure_type: rate
+- id: heal.child_underweight
+  label: Underweight children under 5 (Nutrition Month)
+  unit: '%'
+  measure_type: share
   aggregation: none
   class: official
-  geo_levels:
-  - national
-  - adm2
+  geo_levels: [national]
+  period_type: year
+- id: heal.child_stunting
+  label: Stunted children under 5 (Nutrition Month)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels: [national]
+  period_type: year
+- id: heal.child_wasting
+  label: Wasted children under 5 (Nutrition Month)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels: [national]
+  period_type: year
+- id: heal.child_wasting_severe
+  label: Severely wasted children under 5 (SAM, Nutrition Month)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels: [national]
+  period_type: year
+- id: heal.child_wasting_moderate
+  label: Moderately wasted children under 5 (MAM, Nutrition Month)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels: [national]
+  period_type: year
+- id: heal.child_overweight
+  label: Overweight children under 5 (Nutrition Month)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels: [national]
   period_type: year
 - id: heal.low_birth_weight
   label: Low birth weight
@@ -20,30 +60,61 @@ indicators:
   measure_type: share
   aggregation: none
   class: official
-  geo_levels:
-  - national
-  - adm2
+  geo_levels: [national]
   period_type: year
-- id: heal.child_underweight
-  label: Underweight children under 5 (growth monitoring)
-  unit: '%'
-  measure_type: share
+- id: heal.neonatal_mortality_rate
+  label: Neonatal mortality rate (FHB)
+  unit: '/10*3'
+  measure_type: rate
   aggregation: none
   class: official
-  geo_levels:
-  - national
-  - adm2
+  geo_levels: [national]
+  period_type: year
+- id: heal.infant_mortality_rate
+  label: Infant mortality rate (FHB)
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels: [national]
+  period_type: year
+- id: heal.under5_mortality_rate
+  label: Under-five mortality rate (FHB)
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels: [national]
+  period_type: year
+- id: heal.still_birth_rate
+  label: Still birth rate (per 1,000 births)
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels: [national]
+  period_type: year
+- id: heal.maternal_mortality_ratio
+  label: Maternal mortality ratio
+  unit: '/10*5{live_birth}'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels: [national]
   period_type: year
 time_coverage:
-  from: '2015'
-  to: '2024'
-method: PDF tables.
+  from: '2016'
+  to: '2026'
+method: 'HTML tables of https://fhb.health.gov.lk/statistics ("Under-five Nutrition Indicators, 2016 - 2026" and
+  "Maternal & Child Health Statistics, 2016 - 2025"), one column per year; selected rows of the second table. Values as
+  printed; "N/A" and dashes are no observation.'
 limits:
-- Programme data from clinic attendees.
+- Programme data from clinic attendees (growth monitoring during Nutrition Month), not survey estimates.
+- National only on the statistics page; RDHS breakdowns are in the FHB annual report PDFs (not read yet).
+- The page is updated in place; earlier years can be revised without notice (class B review).
 enrichment:
   joins:
-  - RDHS/MOH area names -> MOH-area polygons (nuuuwan/lk_moh_regions) -> spatial overlay to ADM3; RDHS ~ district except Kalmunai
-    RDHS (part of Ampara)
+  - 'national series: no spatial join'
   aggregations:
-  - rates by RDHS
+  - 'time series derivations: year-on-year change'
 publication_class: B
