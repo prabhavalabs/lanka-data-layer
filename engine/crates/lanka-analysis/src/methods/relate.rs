@@ -112,6 +112,44 @@ pub static INFO: MethodInfo = MethodInfo {
 /// Rows above which the scatter is served as hexbins.
 const SCATTER_POINTS_MAX: usize = 2000;
 
+/// The suggested bivariate layer's palette: a 3×3 `ldl.biv.*` ramp of
+/// `spec/map/1/ramps.json` (the default of 10 §7).
+pub const BIVARIATE_PALETTE: &str = "ldl.biv.blue-orange";
+
+/// Class breaks cut on transformed values, on the scale of the raw values
+/// the output carries. Every transform is increasing, so the classes are
+/// the same (`v ≥ break` → upper class); pointwise transforms invert
+/// exactly, `zscore`/`rank` take the smallest raw value at or above the break.
+fn raw_breaks(
+    breaks: &[f64],
+    t: lanka_stats::transform::Transform,
+    raw: &[f64],
+    transformed: &[f64],
+) -> Vec<f64> {
+    use lanka_stats::transform::Transform as T;
+    breaks
+        .iter()
+        .map(|&b| match t {
+            T::Identity => b,
+            T::Log => b.exp(),
+            T::Log1p => b.exp_m1(),
+            T::Sqrt => b.max(0.0) * b.max(0.0),
+            T::ZScore | T::Rank => raw
+                .iter()
+                .zip(transformed)
+                .filter(|(r, v)| r.is_finite() && v.is_finite() && **v >= b)
+                .map(|(r, _)| *r)
+                .reduce(f64::min)
+                .unwrap_or_else(|| {
+                    raw.iter()
+                        .copied()
+                        .filter(|r| r.is_finite())
+                        .fold(b, f64::max)
+                }),
+        })
+        .collect()
+}
+
 impl AnalysisMethod for Relate {
     fn info(&self) -> &'static MethodInfo {
         &INFO
@@ -418,7 +456,11 @@ impl AnalysisMethod for Relate {
             },
             suggested_layer: Some(json!({
                 "type": "bivariate", "name": format!("{} × {}", x.input.label, y.input.label),
-                "style": {"fill": {"bivariate": {"x": {"field": "x"}, "y": {"field": "y"}, "palette": "ldl.bivariate.teal-orange"}}}
+                "style": {"fill": {"bivariate": {
+                    // breaks on the scale of the `x`/`y` fields (the classes were cut on the transformed values)
+                    "x": {"field": "x", "scale": {"type": m.as_str(), "classes": k, "breaks": nums(&raw_breaks(&biv.x_breaks, x.transform, &raw_x, &xs))}},
+                    "y": {"field": "y", "scale": {"type": m.as_str(), "classes": k, "breaks": nums(&raw_breaks(&biv.y_breaks, y.transform, &raw_y, &ys))}},
+                    "palette": BIVARIATE_PALETTE}}}
             })),
         });
         if let Some(fr) = &fitted {
@@ -435,7 +477,7 @@ impl AnalysisMethod for Relate {
                 ]),
                 suggested_layer: Some(json!({
                     "type": "choropleth", "name": "Residuals",
-                    "style": {"fill": {"field": "residual", "scale": {"type": "diverging", "mid": 0}}}
+                    "style": {"fill": {"field": "residual", "scale": {"type": "diverging", "classes": 7, "mid": 0, "ramp": "ldl.div.blue-orange"}}}
                 })),
             });
         }

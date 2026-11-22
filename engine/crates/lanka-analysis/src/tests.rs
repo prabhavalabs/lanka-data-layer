@@ -751,3 +751,66 @@ fn group_compare_reports_spatially_adjusted_significance() {
     assert_eq!(e["groups"][0]["label"], "inside flood zone (≥20)");
     assert_eq!(e["groups"][1]["label"], "outside flood zone (<20)");
 }
+
+#[test]
+fn suggested_layers_are_valid_map_layers() {
+    let ramps: Value =
+        serde_json::from_str(include_str!("../../../../spec/map/1/ramps.json")).expect("ramps");
+    let (x, y) = xy(80, 11);
+    let group: Vec<f64> = (0..80)
+        .map(|i| if i % 3 == 0 { 1.0 } else { 0.0 })
+        .collect();
+    let mut docs = vec![Case::relate(60).run()];
+    for m in ["describe", "classify"] {
+        docs.push(Case::new(m, vec![column("x", x.clone())]).run());
+    }
+    docs.push(
+        Case::new(
+            "regress",
+            vec![column("x", x.clone()), column("y", y.clone())],
+        )
+        .run(),
+    );
+    let mut g = Case::new(
+        "group_compare",
+        vec![column("y", y), column("group", group)],
+    );
+    g.params = json!({"zone": {"threshold": 0.5, "label": "flood zone"}, "bootstrap": 50});
+    docs.push(g.run());
+    let mut n = 0;
+    for d in &docs {
+        for o in d["outputs"].as_array().into_iter().flatten() {
+            let Some(layer) = o.get("suggested_layer") else {
+                continue;
+            };
+            n += 1;
+            let mut l = layer.clone();
+            l["id"] = json!("l");
+            l["source"] = json!("s");
+            l["visible"] = json!(true);
+            let doc = json!({
+                "spec": "ldl-map/1", "title": "t", "pin": "latest",
+                "view": {"center": [80, 7], "zoom": 7}, "basemap": {"style": "ldl-auto"},
+                "analyses": {"a": d["request"]},
+                "sources": {"s": {"kind": "analysis", "ref": "a", "output": o["id"]}},
+                "layers": [l]
+            });
+            if let Err(p) = lanka_mapdoc::validate(&doc) {
+                panic!("{} {}: {p:#?}", d["method"]["id"], o["id"]);
+            }
+            let fill = &layer["style"]["fill"];
+            for ramp in [&fill["bivariate"]["palette"], &fill["scale"]["ramp"]] {
+                if let Some(r) = ramp.as_str() {
+                    assert!(ramps["ramps"].get(r).is_some(), "{r} is not in ramps.json");
+                }
+            }
+            if let Some(b) = fill.get("bivariate") {
+                for ax in ["x", "y"] {
+                    assert_eq!(b[ax]["scale"]["type"], "quantile");
+                    assert_eq!(b[ax]["scale"]["breaks"].as_array().map(Vec::len), Some(2));
+                }
+            }
+        }
+    }
+    assert!(n >= 5, "{n} suggested layers");
+}

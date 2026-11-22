@@ -54,6 +54,8 @@ spearman: {rho, …}}`.
 `bivariate` (frame: x, y raw; class; basis), `residuals` (frame: fitted, residual, Cook's D, leverage),
 `scatter` (chart: points up to 2,000 rows, else hexbins; with the headline fit line).
 
+Every `suggested_layer` is a valid `ldl-map/1` layer (tested against the map schema and `spec/map/1/ramps.json`). The bivariate one binds `x` and `y` with `{type: <method>, classes, breaks}` — breaks moved back to the raw scale of the `x`/`y` fields (exact inverse for pointwise transforms; for `zscore`/`rank` the smallest raw value in the upper class), so the classes are the ones computed — and uses palette `ldl.biv.blue-orange` (3×3). Residual layers use a `diverging` scale (`classes: 7, mid: 0`).
+
 ## Guards it can raise
 
 `NOT_CAUSAL`, `MIN_N` (n < 10: blocked, no estimates), `SMALL_N` (n < 30: intervals only, **no p-values in the

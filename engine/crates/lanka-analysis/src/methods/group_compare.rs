@@ -288,8 +288,9 @@ impl AnalysisMethod for GroupCompare {
             },
             suggested_layer: Some(json!({
                 "type": "choropleth", "name": format!("{} / {}", cap(&inside_label), outside_label),
-                "style": {"fill": {"field": "group", "scale": {"type": "categorical", "domain": ["inside", "outside"],
-                                                               "labels": {"inside": inside_label, "outside": outside_label}}}}
+                "style": {"fill": {"field": "group", "scale": {"type": "categorical",
+                                                               "mapping": {"inside": "ldl.tone.orange", "outside": "ldl.tone.grey"},
+                                                               "x-labels": {"inside": inside_label, "outside": outside_label}}}}
             })),
         });
         out.outputs.push(Output {

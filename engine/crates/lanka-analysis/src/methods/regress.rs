@@ -264,7 +264,7 @@ impl AnalysisMethod for Regress {
             ),
             suggested_layer: Some(json!({
                 "type": "choropleth", "name": "Residuals",
-                "style": {"fill": {"field": "residual", "scale": {"type": "diverging", "mid": 0}}}
+                "style": {"fill": {"field": "residual", "scale": {"type": "diverging", "classes": 7, "mid": 0, "ramp": "ldl.div.blue-orange"}}}
             })),
         });
         let b_ols = fr.ols.coef[1];

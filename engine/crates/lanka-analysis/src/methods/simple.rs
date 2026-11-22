@@ -87,7 +87,7 @@ impl AnalysisMethod for Describe {
                     encoding: None,
                     data: frame_data(&codes, &[("value", nums(&v))]),
                     suggested_layer: Some(json!({"type": "choropleth", "name": x.input.label,
-                        "style": {"fill": {"field": "value", "scale": {"type": "sequential", "classes": {"method": "quantile", "k": 5}}}}})),
+                        "style": {"fill": {"field": "value", "scale": {"type": "quantile", "classes": 5, "ramp": "ldl.seq.teal"}}}})),
                 },
                 Output {
                     id: "histogram",
@@ -198,9 +198,16 @@ impl AnalysisMethod for Classify {
             )
         };
         let mut est = estimates;
-        if est.get("breaks").is_none() {
+        let bivariate = est.get("breaks").is_none();
+        if bivariate {
             est["breaks"] = est["x_breaks"].clone();
         }
+        let style = if bivariate {
+            json!({"fill": {"field": "class", "scale": {"type": "categorical", "ramp": "ldl.cat.default"}}})
+        } else {
+            json!({"fill": {"field": "value", "scale": {"type": m.as_str(), "classes": k,
+                "breaks": est["breaks"], "ramp": "ldl.seq.teal"}}})
+        };
         Ok(MethodOutput {
             estimates: est,
             outputs: vec![Output {
@@ -209,8 +216,9 @@ impl AnalysisMethod for Classify {
                 columns: vec!["value".into(), "class".into()],
                 encoding: None,
                 data: frame_data(&codes, &[("value", nums(&xs)), ("class", json!(class))]),
-                suggested_layer: Some(json!({"type": "choropleth", "name": x.input.label,
-                    "style": {"fill": {"field": "class", "scale": {"type": "categorical"}}}})),
+                suggested_layer: Some(
+                    json!({"type": "choropleth", "name": x.input.label, "style": style}),
+                ),
             }],
             raised: Vec::new(),
             n_used: rows.len(),
@@ -284,7 +292,7 @@ impl AnalysisMethod for Zonal {
                 encoding: None,
                 data: frame_data(&f.support.codes, &[("value", nums(&v))]),
                 suggested_layer: Some(json!({"type": "choropleth", "name": x.input.label,
-                    "style": {"fill": {"field": "value", "scale": {"type": "sequential", "classes": {"method": "quantile", "k": 5}}}}})),
+                    "style": {"fill": {"field": "value", "scale": {"type": "quantile", "classes": 5, "ramp": "ldl.seq.teal"}}}})),
             }],
             raised: Vec::new(),
             n_used: rows.len(),
@@ -402,7 +410,7 @@ impl AnalysisMethod for Exposure {
                 ),
                 suggested_layer: Some(
                     json!({"type": "choropleth", "name": format!("Exposed share ({} ≥ {})", e.hazard, e.threshold),
-                    "style": {"fill": {"field": "share", "scale": {"type": "sequential", "classes": {"method": "quantile", "k": 5}}}}}),
+                    "style": {"fill": {"field": "share", "scale": {"type": "quantile", "classes": 5, "ramp": "ldl.seq.teal"}}}}),
                 ),
             }],
             raised: Vec::new(),
