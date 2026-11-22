@@ -28,6 +28,12 @@ extract:
     - { id: t4_6, file: pocketbook-2026, template: dcs-pocketbook-social/table-4.6-household-food-expenditure }
     - { id: t4_7, file: pocketbook-2026, template: dcs-pocketbook-social/table-4.7-household-nonfood-expenditure }
     - { id: a4_6, file: abstract-2025-4.6, template: dcs-statistical-abstract/table-4.6-poverty-headcount-district }
+    - { id: t2_10, file: pocketbook-2026, template: dcs-pocketbook-social/table-2.10-disaster-affected }
+    - { id: t2_11, file: pocketbook-2026, template: dcs-pocketbook-social/table-2.11-disaster-deaths }
+    - { id: t12_1, file: pocketbook-2026, template: dcs-pocketbook-social/table-12.1-government-health-services }
+    - { id: t13_1, file: pocketbook-2026, template: dcs-pocketbook-social/table-13.1-school-resources }
+    - { id: t13_2, file: pocketbook-2026, template: dcs-pocketbook-social/table-13.2-exam-results }
+    - { id: t15_2, file: pocketbook-2026, template: dcs-pocketbook-social/table-15.2-local-government-services }
 standardise:
   dataset: dcs-hies-poverty
   vintage: "Statistical Pocket Book 2026; Statistical Abstract 2025"
@@ -182,6 +188,130 @@ standardise:
         period: { from_label: year }, columns: { u5mr: {} }, status: { label_markers: { "*": provisional } } }
     - { table: t2_7, dataset: dcs-vital-statistics, indicator: vital.infant_mortality_rate, geo: { fixed: root },
         period: { from_label: year }, columns: { imr: {} }, status: { label_markers: { "*": provisional } } }
+    # ── P2 social services: 12.1 health, 13.1 schools, 13.2 exams, 15.2 local services,
+    #    2.10 / 2.11 natural disasters ────────────────────────────────────────────────
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.health_institutions, geo: { fixed: root }, period: { from_label: year },
+        columns: { hospitals: { type: total } }, status: { label_markers: { "*": provisional } } }
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.hospital_beds, geo: { fixed: root }, period: { from_label: year },
+        columns: { beds: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.central_dispensaries, geo: { fixed: root }, period: { from_label: year },
+        columns: { dispensaries: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.doctors, geo: { fixed: root }, period: { from_label: year },
+        columns: { doctors: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.registered_amps, geo: { fixed: root }, period: { from_label: year },
+        columns: { amp: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.nurses, geo: { fixed: root }, period: { from_label: year },
+        columns: { nurses: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.outpatient_visits, geo: { fixed: root }, period: { from_label: year },
+        columns: { outpatients_k: {} }, scale: 1000, status: { label_markers: { "*": provisional } } }
+    - { table: t12_1, dataset: dcs-pocketbook-social-services, indicator: pb.inpatient_visits, geo: { fixed: root }, period: { from_label: year },
+        columns: { inpatients_k: {} }, scale: 1000, status: { label_markers: { "*": provisional } } }
+    - table: t13_1
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.schools
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Total Number of Schools": { school_type: total }
+        "Government Schools#1": { school_type: government }
+        "Government approved Private Schools#1": { school_type: private_approved }
+        "Special Schools#1": { school_type: special }
+        "Piriven#1": { school_type: piriven }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {} }
+    - table: t13_1
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.teachers
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Total Number of Teachers": { school_type: total }
+        "Government Schools#2": { school_type: government }
+        "Government approved Private Schools#2": { school_type: private_approved }
+        "Special Schools#2": { school_type: special }
+        "Piriven#2": { school_type: piriven }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {} }
+    - table: t13_1
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.pupils
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Total Number of Pupils": { school_type: total }
+        "Government Schools#3": { school_type: government }
+        "Government approved Private Schools#3": { school_type: private_approved }
+        "Special Schools#3": { school_type: special }
+        "Piriven#3": { school_type: piriven }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {} }
+    - table: t13_1
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.pupil_teacher_ratio
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Government Schools#4": { school_type: government }
+        "Government approved Private Schools#4": { school_type: private_approved }
+        "Special Schools#4": { school_type: special }
+        "Piriven#4": { school_type: piriven }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {} }
+    - { table: t13_1, dataset: dcs-pocketbook-social-services, indicator: pb.new_admissions, geo: { fixed: root }, period: { from_header: year },
+        rows: { "New Admissions to Government Schools": {} }, columns: { y1: {}, y2: {}, y3: {}, y4: {} } }
+    - table: t13_2
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.exam_candidates
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "School Candidates sat (5 or more Subjects ) for the GCE(O/L)": { stage: ol_school_sat }
+        "All Candidates Sat (5 or more Subjects ) for the GCE(O/L)": { stage: ol_all_sat }
+        "School Candidates sat for the GCE(A/L)": { stage: al_school_sat }
+        "School Candidates Qualifying to Enter University": { stage: al_school_qualified_university }
+        "All Candidates Applied for the GCE(A/L)": { stage: al_all_applied }
+        "All Candidates Sat for the GCE(A/L)": { stage: al_all_sat }
+        "All Candidates Qualifying to Enter University": { stage: al_all_qualified_university }
+      columns: { y1: {}, y2: {} }
+    - table: t13_2
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.exam_qualifying_pct
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Percentage Qualifying for GCE(A/L)#1": { stage: ol_school_qualified_al }
+        "Percentage Qualifying for GCE(A/L)#2": { stage: ol_all_qualified_al }
+        "Percentage Qualifying to Enter University#1": { stage: al_school_qualified_university }
+        "Percentage Qualifying to Enter University#2": { stage: al_all_qualified_university }
+      columns: { y1: {}, y2: {} }
+    # 15.2 refers to 2024 (title year).
+    - table: t15_2
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.local_services
+      geo: { fixed: root }
+      period: { fixed: "2024" }
+      rows:
+        Dispensaries: { service: dispensaries }
+        Cemeteries: { service: cemeteries }
+        Parks and Playground: { service: parks_playgrounds }
+        Libraries: { service: libraries }
+      columns: &councils
+        municipal: { council_type: municipal_council }
+        urban: { council_type: urban_council }
+        ps: { council_type: pradeshiya_sabha }
+        total: { council_type: total }
+    - { table: t15_2, dataset: dcs-pocketbook-social-services, indicator: pb.local_roads_km, geo: { fixed: root }, period: { fixed: "2024" },
+        rows: { "Vehicular Road (Km)": {} }, columns: *councils }
+    - table: t2_10
+      dataset: dcs-pocketbook-social-services
+      indicator: pb.disaster_affected
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows: &hazards
+        Flood: { hazard: flood }
+        Drought: { hazard: drought }
+        Lightning (Thundering): { hazard: lightning }
+        Strong Wind: { hazard: storm }
+        Landslides: { hazard: landslide }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {} }
+    - { table: t2_11, dataset: dcs-pocketbook-social-services, indicator: pb.disaster_deaths, geo: { fixed: root }, period: { from_header: year },
+        rows: *hazards, columns: { y1: {}, y2: {}, y3: {}, y4: {} } }
 expect:
   - { dataset: dcs-hies-poverty, check: range, min: 0, max: 100 }
   - { dataset: dcs-hies-poverty, check: row_count, min: 220, max: 225,
@@ -197,3 +327,10 @@ expect:
   - { dataset: dcs-vital-statistics, check: range, indicator: vital.crude_death_rate, min: 3, max: 15 }
   - { dataset: dcs-vital-statistics, check: range, indicator: vital.infant_mortality_rate, min: 1, max: 50 }
   - { dataset: dcs-vital-statistics, check: row_count, min: 25, max: 40 }
+  - { dataset: dcs-pocketbook-social-services, check: row_count, min: 240, max: 245,
+      note: "health 80 + schools 80 + exams 22 + local services 20 + disasters 40" }
+  - { dataset: dcs-pocketbook-social-services, check: sum_dims, indicator: pb.schools, dim: school_type, tol: 0 }
+  - { dataset: dcs-pocketbook-social-services, check: sum_dims, indicator: pb.teachers, dim: school_type, tol: 0 }
+  - { dataset: dcs-pocketbook-social-services, check: sum_dims, indicator: pb.pupils, dim: school_type, tol: 0 }
+  - { dataset: dcs-pocketbook-social-services, check: sum_dims, indicator: pb.local_services, dim: council_type, tol: 0 }
+  - { dataset: dcs-pocketbook-social-services, check: range, indicator: pb.exam_qualifying_pct, min: 0, max: 100 }

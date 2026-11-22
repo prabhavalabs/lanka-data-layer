@@ -1,0 +1,17 @@
+# Statistical Pocket Book, tables 2.10 and 2.11: persons affected by, and deaths from,
+# natural disasters by type of disaster, four years (National Disaster Relief Service Centre).
+id: dcs-pocketbook-social/table-2.10-disaster-affected
+title: Persons affected by natural disasters by type
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "2.10 Number of Persons Affected by Natural Disasters", then_text: "Landslides" }
+    label: { key: hazard, header: "Type of Disaster" }
+    columns:
+      - { key: y1, header: "2022" }
+      - { key: y2, header: "2023" }
+      - { key: y3, header: "2024" }
+      - { key: y4, header: "2025" }
+    rows: { stop_at: ["2.11 Number of Persons"] }
+    checks:
+      - { row_count: { min: 5, max: 5 } }

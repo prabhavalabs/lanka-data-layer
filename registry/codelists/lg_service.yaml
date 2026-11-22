@@ -1,0 +1,14 @@
+# Local authority service facility
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka - type of service provided by local government institutions (Statistical Pocket Book table 15.2).
+# Note: Facilities are counted separately; no total. Vehicular road length is a separate indicator (km).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-social-services
+id: lg_service
+title: Local authority service facility
+codes:
+  - { code: dispensaries, label: Dispensaries }
+  - { code: cemeteries, label: Cemeteries }
+  - { code: parks_playgrounds, label: Parks and playgrounds }
+  - { code: libraries, label: Libraries }

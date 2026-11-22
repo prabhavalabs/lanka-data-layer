@@ -1,15 +1,14 @@
-# Government school type (Ministry of Education)
-# Source/authority: Ministry of Education, Annual School Census of Sri Lanka - school type classification (1AB, 1C, Type 2, Type 3).
-# Note: Pirivenas and private/international schools are outside this list (add as separate codes if a dataset reports them).
+# Type of school (Ministry of Education school census)
+# Source/authority: Ministry of Education via DCS Statistical Pocket Book table 13.1 - schools, teachers and pupils by type of school.
 # Status: complete for the classification as cited.
 # Labels: English only; si/ta pending native-speaker review (not machine-translated).
 # Order: codes are listed in display order.
-# Used by: dcs-abstract-education-health, moe-school-census
+# Used by: dcs-pocketbook-social-services
 id: school_type
-title: Government school type (Ministry of Education)
+title: Type of school
 codes:
-  - { code: total, label: All government schools, total: true, sdmx: _T }
-  - { code: "1AB", label: "Type 1AB: grades 1/6-13 with GCE A/L science stream", parent: total }
-  - { code: "1C", label: "Type 1C: grades 1/6-13 with GCE A/L arts/commerce (no science)", parent: total }
-  - { code: "2", label: "Type 2: grades 1-11", parent: total }
-  - { code: "3", label: "Type 3: grades 1-5 or 1-8", parent: total }
+  - { code: total, label: All schools, total: true, sdmx: _T }
+  - { code: government, label: Government schools, parent: total }
+  - { code: private_approved, label: Government-approved private schools, parent: total }
+  - { code: special, label: Special schools, parent: total }
+  - { code: piriven, label: Pirivenas, parent: total }

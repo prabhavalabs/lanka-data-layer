@@ -1,0 +1,16 @@
+# Statistical Pocket Book, table 13.2: performance of candidates at the G.C.E. (O/L) and
+# G.C.E. (A/L) examinations, two years (numbers and percentages). "Percentage Qualifying ..."
+# labels repeat; the connector addresses them as "Label#n".
+id: dcs-pocketbook-social/table-13.2-exam-results
+title: Performance of candidates at the G.C.E. (O/L) and (A/L)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "13.2 Performance of Candidates", then_text: "Qualifying to Enter University" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: y1, header: "2024" }
+      - { key: y2, header: "2025" }
+    rows: { stop_at: ["Source:"] }
+    checks:
+      - { row_count: { min: 11, max: 11 } }

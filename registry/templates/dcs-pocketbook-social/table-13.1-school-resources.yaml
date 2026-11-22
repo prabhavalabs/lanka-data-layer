@@ -1,0 +1,20 @@
+# Statistical Pocket Book, table 13.1: number of schools, teachers, pupils and pupil-teacher
+# ratio by type of school, four years. School-type rows repeat under each block; the
+# connector addresses them as "Label#n".
+id: dcs-pocketbook-social/table-13.1-school-resources
+title: Schools, teachers, pupils and pupil-teacher ratio by type of school
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "13.1 Number of Schools, Teachers, Pupils", then_text: "Piriven" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: y1, header: "2022" }
+      - { key: y2, header: "2023" }
+      - { key: y3, header: "2024" }
+      - { key: y4, header: "2025" }
+    rows: { stop_at: ["Source:"] }
+    checks:
+      - { row_count: { min: 20, max: 20 } }
+      - { rows_present: ["Total Number of Schools", "Total Number of Teachers", "Total Number of Pupils", "New Admissions to Government Schools"] }
+      - { sum_rows: ["Government Schools", "Government approved Private Schools", "Special Schools", "Piriven"], equals_row: "Total Number of Schools", tol: 0 }

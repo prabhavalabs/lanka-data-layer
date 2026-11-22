@@ -4,6 +4,7 @@ description: Government health service summary, school resources, GCE examinatio
   services and natural disaster impacts.
 source_ids:
 - dcs-pocketbook
+- dcs-pocketbook-social
 indicators:
 - id: pb.health_institutions
   label: Government health institutions
@@ -46,7 +47,10 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - service
+  - id: service
+    codelist: lg_service
+  - id: council_type
+    codelist: council_type
   geo_levels:
   - national
   period_type: year
@@ -61,10 +65,179 @@ indicators:
   geo_levels:
   - national
   period_type: year
+- id: pb.hospital_beds
+  label: Beds in government hospitals
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.central_dispensaries
+  label: Central dispensaries and primary medical care units
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.doctors
+  label: Doctors (all grades, Ministry of Health)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.registered_amps
+  label: Assistant / registered medical practitioners
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.nurses
+  label: Nurses
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.outpatient_visits
+  label: Out-patient visits to government institutions
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.inpatient_visits
+  label: In-patient admissions to government institutions
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.schools
+  label: Schools
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: school_type
+    codelist: school_type
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.teachers
+  label: Teachers
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: school_type
+    codelist: school_type
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.pupils
+  label: Pupils
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: school_type
+    codelist: school_type
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.pupil_teacher_ratio
+  label: Pupil-teacher ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: official
+  dims:
+  - id: school_type
+    codelist: school_type
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.new_admissions
+  label: New admissions to government schools
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.exam_candidates
+  label: G.C.E. examination candidates
+  unit: '{person}'
+  measure_type: count
+  aggregation: none
+  class: official
+  dims:
+  - id: stage
+    codelist: exam_stage
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.exam_qualifying_pct
+  label: G.C.E. candidates qualifying (%)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - id: stage
+    codelist: exam_stage
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.local_roads_km
+  label: Vehicular roads maintained by local authorities
+  unit: 'km'
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: council_type
+    codelist: council_type
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.disaster_deaths
+  label: Deaths from natural disasters
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
   from: '2015'
   to: '2025'
-method: PDF tables.
+method: >-
+  Statistical Pocket Book tables 2.10, 2.11, 12.1, 13.1, 13.2 and 15.2 read from the PDF through registry
+  templates (dcs-pocketbook-social); reviewed against the evidence sheet.
 limits:
 - National summaries only.
 enrichment:

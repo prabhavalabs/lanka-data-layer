@@ -1,0 +1,19 @@
+# G.C.E. examination candidate group and outcome
+# Source/authority: Department of Examinations via DCS Statistical Pocket Book table 13.2 - performance of candidates, G.C.E. (O/L) and (A/L).
+# Note: School candidates are a subset of all candidates; codes are separate measures, not additive.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-social-services
+id: exam_stage
+title: G.C.E. examination candidate group and outcome
+codes:
+  - { code: ol_school_sat, label: "O/L school candidates sat (5 or more subjects)" }
+  - { code: ol_school_qualified_al, label: O/L school candidates qualifying for A/L }
+  - { code: ol_all_sat, label: "O/L all candidates sat (5 or more subjects)" }
+  - { code: ol_all_qualified_al, label: O/L all candidates qualifying for A/L }
+  - { code: al_school_sat, label: A/L school candidates sat }
+  - { code: al_school_qualified_university, label: A/L school candidates qualifying to enter university }
+  - { code: al_all_applied, label: A/L all candidates applied }
+  - { code: al_all_sat, label: A/L all candidates sat }
+  - { code: al_all_qualified_university, label: A/L all candidates qualifying to enter university }
