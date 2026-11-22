@@ -29,15 +29,39 @@ indicators:
   geo_levels:
   - national
   period_type: month
+- id: econ.cpi.ncpi_mom
+  label: NCPI month-on-month change
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims: &id001
+  - id: group
+    codelist: coicop_group
+  geo_levels: &id002
+  - national
+  period_type: month
+- id: econ.cpi.ncpi_12m_avg
+  label: NCPI inflation, 12-month moving average
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims: *id001
+  geo_levels: *id002
+  period_type: month
 time_coverage:
-  from: 2021-01
-  to: 2026-10
-method: Parse NCPI food/non-food tables.
+  from: 2022-01
+  to: 2026-09
+method: 'DCS ''Movements of the NCPI'' PDF (base 2021=100): monthly index, month-on-month change, year-on-year and 12-month
+  moving-average inflation, headline only; read through a registry template and reviewed.'
 limits:
 - No provincial breakdown published monthly.
+- Headline only; the food / non-food group table is not yet read.
+- Year-on-year inflation starts January 2023 (the base-2021 series begins January 2022).
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
-publication_class: A
+publication_class: B

@@ -2,11 +2,11 @@ id: dcs-pocketbook-prices-wages
 title: Building material prices and minimum wage indices
 description: Average prices of building materials and minimum wage rate indices by sector.
 source_ids:
-- dcs-pocketbook
+- dcs-pocketbook-economy
 indicators:
 - id: econ.building_material_price
-  label: Average building material price
-  unit: 'LKR/{unit}'
+  label: All-island average retail price of building materials
+  unit: LKR/{unit}
   measure_type: mean
   aggregation: none
   class: official
@@ -16,6 +16,8 @@ indicators:
   geo_levels:
   - national
   period_type: year
+  definition: 'Rupees per quoted unit: cement per 50 kg bag, bricks and tiles per 1,000, sand per cube, lime per 50 kg, asbestos
+    sheets each, paint per 4 litres.'
 - id: econ.minimum_wage_index
   label: Minimum wage rate index
   unit: '{index}'
@@ -28,12 +30,14 @@ indicators:
   geo_levels:
   - national
   period_type: year
+  base_period: '1978'
 time_coverage:
-  from: '2015'
+  from: '2018'
   to: '2025'
-method: PDF tables.
+method: Statistical Pocket Book 2026 tables 5.3 (building material prices 2021-2025) and 3.9 (minimum wage index 2018-2025).
 limits:
-- Colombo-market prices; not regional.
+- 2025 sand price is printed malformed ('19.514.67') and is not stored.
+- 'Minimum wage index sectors: agriculture, industry and commerce, services, all combined (Department of Labour).'
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'

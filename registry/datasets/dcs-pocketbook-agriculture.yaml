@@ -3,10 +3,10 @@ title: 'Agriculture compendium: crops, livestock, fisheries, food balance'
 description: Extent and production of major crops, cost of production, livestock and fish production, paddy irrigation sources,
   per-capita food and nutrient availability.
 source_ids:
-- dcs-pocketbook
+- dcs-pocketbook-economy
 indicators:
 - id: agri.crop_extent
-  label: Crop extent
+  label: Extent under crop
   unit: har
   measure_type: sum
   aggregation: sum
@@ -27,9 +27,20 @@ indicators:
   geo_levels:
   - national
   period_type: year
-- id: agri.cost_of_production
-  label: Cost of production per hectare
-  unit: LKR/har
+- id: agri.coconut_production_nuts
+  label: Coconut production
+  unit: '{count}'
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 6
+  definition: Million nuts.
+- id: agri.cost_of_production_kg
+  label: Cost of production per kg (tea, rubber)
+  unit: LKR/kg
   measure_type: mean
   aggregation: none
   class: official
@@ -38,18 +49,50 @@ indicators:
   geo_levels:
   - national
   period_type: year
-- id: agri.livestock_production
-  label: Livestock product output
-  unit: t
-  measure_type: sum
-  aggregation: sum
+  definition: Rupees per kg made tea / rubber, by financial year (period = first year).
+- id: agri.cost_of_production_coconut
+  label: Cost of production of coconut per 1,000 nuts
+  unit: LKR/{unit}
+  measure_type: mean
+  aggregation: none
   class: official
-  dims:
-  - id: product
-    codelist: livestock_product
   geo_levels:
   - national
   period_type: year
+  definition: Rupees per 1,000 nuts, by financial year (period = first year).
+- id: agri.livestock_population
+  label: Livestock population
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: species
+    codelist: livestock_species
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: agri.milk_production
+  label: Milk production
+  unit: L
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: agri.egg_production
+  label: Egg production
+  unit: '{count}'
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 6
 - id: agri.fish_production
   label: Fish production
   unit: t
@@ -61,11 +104,46 @@ indicators:
   geo_levels:
   - national
   period_type: year
-- id: agri.paddy_irrigation_share
-  label: Paddy area by water source
-  unit: '%'
-  measure_type: share
-  aggregation: none
+- id: agri.fishing_fleet_operating
+  label: Operating fishing boats
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: boat_class
+    codelist: fishing_fleet_class
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.active_fishers
+  label: Active fishers
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - fishery_type
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.paddy_irrigable_ha
+  label: Irrigable (asweddumized) paddy extent
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: water_source
+    codelist: irrigation_source
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.paddy_irrigated_ha
+  label: Irrigated paddy extent (both seasons)
+  unit: har
+  measure_type: sum
+  aggregation: sum
   class: official
   dims:
   - id: water_source
@@ -74,20 +152,52 @@ indicators:
   - national
   period_type: year
 - id: agri.calorie_availability
-  label: Per-capita calorie availability
+  label: Per capita calorie availability
   unit: kcal/d
   measure_type: mean
-  aggregation: none
+  aggregation: sum
   class: official
+  dims:
+  - id: source
+    codelist: food_source
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.protein_availability
+  label: Per capita protein availability
+  unit: g/d
+  measure_type: mean
+  aggregation: sum
+  class: official
+  dims:
+  - id: source
+    codelist: food_source
+  geo_levels:
+  - national
+  period_type: year
+- id: agri.fat_availability
+  label: Per capita fat availability
+  unit: g/d
+  measure_type: mean
+  aggregation: sum
+  class: official
+  dims:
+  - id: source
+    codelist: food_source
   geo_levels:
   - national
   period_type: year
 time_coverage:
   from: '2015'
   to: '2025'
-method: Pocket Book PDF tables, reviewed.
+method: 'Statistical Pocket Book 2026 tables 6.2 (paddy irrigation), 6.3 (crop extent), 6.4 (crop production), 6.5 (cost of
+  production), 6.7 (food balance: calories, protein, fat), 6.8 (livestock, milk, eggs), 6.10 (fish production) and 6.11 (fishing
+  fleet, fishers). PDF tables read through registry templates; reviewed.'
 limits:
-- National totals; see dcs-paddy-statistics / fisheries for district detail.
+- Pocket Book rounding; 2025 values provisional or estimated where flagged.
+- Cost of production is by financial year; the period is the first calendar year (2015/16 -> 2015).
+- Irrigated extent counts both seasons, so it can exceed the irrigable extent.
+- '6.11 2023 active fishers: marine + inland = 318,474 but the total prints 318,754.'
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'

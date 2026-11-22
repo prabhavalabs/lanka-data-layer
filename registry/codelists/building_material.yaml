@@ -18,3 +18,10 @@ codes:
   - { code: timber, label: Timber }
   - { code: roofing_sheets, label: Roofing sheets }
   - { code: paint, label: Paint }
+  - { code: lime_boiled, label: Lime - boiled (50 kg) }
+  - { code: lime_slaked, label: Lime - slaked (50 kg) }
+  - { code: roofing_tiles, label: Roofing tiles (rectangular) }
+  - { code: asbestos_corrugated, label: Asbestos sheet - corrugated 8 ft }
+  - { code: ceiling_sheet, label: Ceiling sheet - plain 4 x 4 ft }
+  - { code: paint_emulsion, label: Paint - emulsion (4 litre) }
+  - { code: paint_enamel, label: Paint - enamel (4 litre) }

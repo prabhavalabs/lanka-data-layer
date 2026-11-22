@@ -7,20 +7,23 @@
 # published with attribution and the takedown contact (08 §2).
 source: nuuuwan-lk-dcs
 driver: git_files
-version: 1.0.0
-description: CCPI headline and core year-on-year inflation from nuuuwan/lk_dcs (TSV at a commit).
+version: 1.1.0
+description: CCPI index by group and headline and core year-on-year inflation from nuuuwan/lk_dcs (TSV at a commit).
 discover:
   kind: git
   repo: nuuuwan/lk_dcs
   ref: main
   links:
     - { key: ccpi_core, pattern: "^data/ccpi/movements-of-the-ccpi-core/\\d{4}/(\\d{4}-\\d{2}-\\d{2})/data\\.tsv$" }
+    # CCPI (2021=100) by group: all items, food, non-food and the 11 non-food divisions.
+    - { key: ccpi_sub, pattern: "^data/ccpi/ccpi-by-subgroup/\\d{4}/(\\d{4}-\\d{2}-\\d{2})/data\\.tsv$" }
 extract:
   format: tsv
 standardise:
   dataset: dcs-ccpi
   tables:
     - { id: ccpi, artifact: ^ccpi_core$ }
+    - { id: ccpi_sub, artifact: ^ccpi_sub$ }
   outputs:
     - table: ccpi
       method: csv_row
@@ -34,8 +37,37 @@ standardise:
       geo: { root: true }
       period: *month
       value: { column: inflation_ccpi_core_year_to_year, number: { scale: 100 } }
+    # DCS CCPI groups are COICOP 1999 divisions; communication (08) and miscellaneous
+    # goods and services (12 in COICOP 1999) map to the nearest COICOP 2018 division.
+    - table: ccpi_sub
+      method: csv_row
+      indicator: { value: econ.cpi.ccpi_index }
+      melt: { columns: "_ccpi$" }
+      geo: { root: true }
+      period: { column: date_str, freq: M, parse: "%Y-%m-%d" }
+      dims:
+        coicop_group:
+          melt: true
+          map:
+            all_ccpi: total
+            food_ccpi: food
+            non-food_ccpi: nonfood
+            alcoholic-beverages-and-tobacco_ccpi: "02"
+            clothing-and-footwear_ccpi: "03"
+            housing-water-electricity-gas-and-other-fuels_ccpi: "04"
+            furnishings-household-equipment-and-routine-household-maintenance_ccpi: "05"
+            health_ccpi: "06"
+            transport_ccpi: "07"
+            communication_ccpi: "08"
+            recreation-and-culture_ccpi: "09"
+            education_ccpi: "10"
+            restaurants-and-hotels_ccpi: "11"
+            miscellaneous-goods-and-services_ccpi: "13"
+      value: { number: { missing: [""] } }
 expect:
-  - { check: range, min: -20, max: 100 }
-  - { check: no_future }
-  - { check: period_continuity }
-  - { check: row_count, min: 40 }
+  - { dataset: dcs-ccpi, check: range, indicator: econ.cpi.ccpi_yoy, min: -20, max: 100 }
+  - { dataset: dcs-ccpi, check: range, indicator: econ.cpi.ccpi_core_yoy, min: -20, max: 100 }
+  - { dataset: dcs-ccpi, check: range, indicator: econ.cpi.ccpi_index, min: 50, max: 600 }
+  - { dataset: dcs-ccpi, check: no_future }
+  - { dataset: dcs-ccpi, check: period_continuity }
+  - { dataset: dcs-ccpi, check: row_count, min: 600 }

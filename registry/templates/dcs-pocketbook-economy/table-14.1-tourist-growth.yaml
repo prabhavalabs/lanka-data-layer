@@ -1,0 +1,21 @@
+# Pocket Book 2026, table 14.1: tourist arrivals, nights, receipts and employment (SLTDA).
+id: dcs-pocketbook-economy/table-14.1-tourist-growth
+title: "Tourist growth trends"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "14.1 Tourist Growth Trends", then_text: "Arrivals" }
+    label: { key: year, header: "Year", slack: 20 }
+    columns:
+      - { key: arrivals, header: "Arrivals" }
+      - { key: nights, header: "Nights" }
+      - { key: receipts_lkr, header: "Rs. mn." }
+      - { key: receipts_usd, header: "US$" }
+      - { key: receipts_sdr, header: "SDR" }
+      - { key: per_day_usd, header: "Tourist per" }
+      - { key: emp_direct, header: "Direct" }
+      - { key: emp_indirect, header: "Indirect" }
+    rows: { stop_at: ["Provisional"] }
+    number: { thousands: ",", strip: ["*"] }
+    checks:
+      - { row_count: { min: 10, max: 10 } }

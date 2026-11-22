@@ -15,3 +15,4 @@ codes:
   - { code: semi_skilled, label: Semi-skilled, parent: total }
   - { code: unskilled, label: Unskilled, parent: total }
   - { code: domestic_housekeeping, label: Domestic housekeeping assistant (housemaid), parent: total }
+  - { code: low_skilled, label: Low-skilled (SLBFE grouping from 2022; overlaps unskilled and domestic housekeeping) }

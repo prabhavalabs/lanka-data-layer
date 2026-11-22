@@ -1,0 +1,24 @@
+# Statistical Abstract, chapter 7, table 7.15: Port of Colombo, per ship:
+# average waiting, service and turnaround time (hours) and average tons per
+# ship-hour at berth and in port, for non-container and container ships.
+# Five measure banners, each followed by a non-container and a container row,
+# in this order; rows are told apart by occurrence.
+id: dcs-statistical-abstract/table-7.15-colombo-port-performance
+title: Colombo port average waiting, service and turnaround time and tons per ship-hour
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 7.15", then_text: "non-container ships and container ships" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: y1, header: "2018" }
+      - { key: y2, header: "2019" }
+      - { key: y3, header: "2020" }
+      - { key: y4, header: "2021" }
+      - { key: y5, header: "2022" }
+      - { key: y6, header: "2023" }
+      - { key: y7, header: "2024" }
+    rows: { stop_at: ["Source", "Time in hours"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 10, max: 10 } }

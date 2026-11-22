@@ -1,0 +1,21 @@
+# Pocket Book 2026, table 5.3: all-island average retail prices of building materials.
+# Two 2025 cells are malformed in print ("19.514.67" sand, "4,580.08." boiled lime); the
+# first cannot be read unambiguously and is treated as missing, the trailing dot is stripped.
+id: dcs-pocketbook-economy/table-5.3-building-material-prices
+title: "All-island retail prices of selected building materials (Rs.)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "5.3", then_text: "Building Materials" }
+    label: { key: item, header: "Items" }
+    columns:
+      - { key: unit, header: "Unit" }
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["(a) Holcim", "Source"] }
+    number: { thousands: ",", missing: ["19.514.67", "-"], strip: ["."] }
+    checks:
+      - { row_count: { min: 10, max: 10 } }

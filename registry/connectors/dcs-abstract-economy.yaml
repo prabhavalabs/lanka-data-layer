@@ -1,0 +1,189 @@
+# Statistical Abstract 2025, transport (ch. 7). The labour tables of this source (ch. 4)
+# are read by the dcs-lfs connector, which owns dcs-lfs-annual-subnational.
+# One PDF per table, text layer, trilingual. Class B: every version is reviewed
+# against its evidence sheet. statistics.gov.lk: the engine's HTTP client cannot
+# negotiate its TLS (see dcs-agriculture); run with `--from DIR` (files named
+# <key>.pdf, fetched with curl) until that is fixed. URLs are the real upstream.
+source: dcs-abstract-economy
+driver: pdf_table
+version: 1.0.0
+description: >-
+  Statistical Abstract 2025 tables 7.1 (road length by province), 7.3 (new vehicles by class and
+  fuel), 7.12-7.15 (ports).
+discover:
+  files:
+    - { key: abstract-2025-7.1, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.1%207.2.pdf", edition: "2025" }
+    - { key: abstract-2025-7.3, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.3.pdf", edition: "2025" }
+    - { key: abstract-2025-7.12, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.12.pdf", edition: "2025" }
+    - { key: abstract-2025-7.13, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.13.pdf", edition: "2025" }
+    - { key: abstract-2025-7.14, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.14.pdf", edition: "2025" }
+    - { key: abstract-2025-7.15, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.15.pdf", edition: "2025" }
+extract:
+  tables:
+    - { id: t7_1, file: abstract-2025-7.1, template: dcs-statistical-abstract/table-7.1-road-length-by-province }
+    - { id: t7_3, file: abstract-2025-7.3, template: dcs-statistical-abstract/table-7.3-new-vehicles-by-class-fuel }
+    - { id: t7_12, file: abstract-2025-7.12, template: dcs-statistical-abstract/table-7.12-ship-traffic-by-port }
+    - { id: t7_13, file: abstract-2025-7.13, template: dcs-statistical-abstract/table-7.13-colombo-port-cargo }
+    - { id: t7_14, file: abstract-2025-7.14, template: dcs-statistical-abstract/table-7.14-cargo-by-port }
+    - { id: t7_15, file: abstract-2025-7.15, template: dcs-statistical-abstract/table-7.15-colombo-port-performance }
+standardise:
+  dataset: dcs-abstract-transport
+  vintage: "Statistical Abstract {edition}"
+  outputs:
+    # ── 7.1 road length (km) ──
+    - table: t7_1
+      indicator: tran.road_length_km
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows: { "A and B roads": { road_class: AB }, "Expressways": { road_class: E } }
+      columns: &y5 { y1: {}, y2: {}, y3: {}, y4: {}, y5: {} }
+    - table: t7_1
+      indicator: tran.road_length_km
+      geo: { from_label: { level: 1, skip: ["A and B roads", "Expressways"] } }
+      period: { from_header: year }
+      columns: { y1: { road_class: AB }, y2: { road_class: AB }, y3: { road_class: AB }, y4: { road_class: AB }, y5: { road_class: AB } }
+    # ── 7.3 new vehicles registered by class and fuel (DMT); the class is printed only on
+    # the first fuel row of each class, so rows are fuel-type occurrences in print order ──
+    - table: t7_3
+      indicator: tran.new_vehicle_registrations
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y5
+      rows:
+        "Diesel#1": { vehicle_class: motor_car, fuel: diesel }
+        "Petrol#1": { vehicle_class: motor_car, fuel: petrol }
+        "Electric#1": { vehicle_class: motor_car, fuel: electric }
+        "Diesel/Electric#1": { vehicle_class: motor_car, fuel: diesel_electric }
+        "Petrol/Electric#1": { vehicle_class: motor_car, fuel: petrol_electric }
+        "Diesel#2": { vehicle_class: motor_tricycle, fuel: diesel }
+        "Petrol#2": { vehicle_class: motor_tricycle, fuel: petrol }
+        "Electric#2": { vehicle_class: motor_tricycle, fuel: electric }
+        "Petrol/Electric#2": { vehicle_class: motor_tricycle, fuel: petrol_electric }
+        "Diesel#3": { vehicle_class: motor_tricycle_van, fuel: diesel }
+        "Petrol#3": { vehicle_class: motor_tricycle_van, fuel: petrol }
+        "Electric#3": { vehicle_class: motor_tricycle_van, fuel: electric }
+        "Petrol#4": { vehicle_class: quadricycle, fuel: petrol }
+        "Electric#4": { vehicle_class: motor_home, fuel: electric }
+        "Diesel#4": { vehicle_class: bus, fuel: diesel }
+        "Petrol#5": { vehicle_class: bus, fuel: petrol }
+        "Petrol#6": { vehicle_class: motor_cycle, fuel: petrol }
+        "Electric#5": { vehicle_class: motor_cycle, fuel: electric }
+        "Petrol/Electric#3": { vehicle_class: motor_cycle, fuel: petrol_electric }
+        "Diesel#5": { vehicle_class: dual_purpose, fuel: diesel }
+        "Petrol#7": { vehicle_class: dual_purpose, fuel: petrol }
+        "Electric#6": { vehicle_class: dual_purpose, fuel: electric }
+        "Petrol/Electric#4": { vehicle_class: dual_purpose, fuel: petrol_electric }
+        "Diesel#6": { vehicle_class: single_cab, fuel: diesel }
+        "Petrol#8": { vehicle_class: single_cab, fuel: petrol }
+        "Electric#7": { vehicle_class: single_cab, fuel: electric }
+        "Diesel#7": { vehicle_class: special_purpose, fuel: diesel }
+        "Petrol#9": { vehicle_class: special_purpose, fuel: petrol }
+        "Electric#8": { vehicle_class: special_purpose, fuel: electric }
+        "Diesel#8": { vehicle_class: motor_lorry, fuel: diesel }
+        "Petrol#10": { vehicle_class: motor_lorry, fuel: petrol }
+        "Diesel/Electric#2": { vehicle_class: motor_lorry, fuel: diesel_electric }
+        "LP Gas": { vehicle_class: motor_lorry, fuel: lp_gas }
+        "Diesel#9": { vehicle_class: prime_mover, fuel: diesel }
+        "Non Fuel#1": { vehicle_class: lorry_trailer, fuel: non_fuel }
+        "Diesel#10": { vehicle_class: ambulance_hearse, fuel: diesel }
+        "Petrol#11": { vehicle_class: ambulance_hearse, fuel: petrol }
+        "Diesel#11": { vehicle_class: land_vehicle_tractor, fuel: diesel }
+        "Non Fuel#2": { vehicle_class: land_vehicle_trailer, fuel: non_fuel }
+        "Diesel#12": { vehicle_class: land_vehicle_trailer, fuel: diesel }
+        "Diesel#13": { vehicle_class: land_vehicle_tractor_2w, fuel: diesel }
+    # ── 7.12 ship traffic by port ('000 t tonnage) ──
+    - table: t7_12
+      indicator: tran.port_ship_arrivals
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "No. of ships arrived#1": { port: colombo }
+        "No. of ships arrived#2": { port: trincomalee }
+        "No. of ships arrived#3": { port: galle }
+        "No. of ships arrived#4": { port: hambantota }
+        "No. of ships arrived#5": { port: kankesanthurai }
+      columns: &y7 { y1: {}, y2: {}, y3: {}, y4: {}, y5: {}, y6: {}, y7: {} }
+    - table: t7_12
+      indicator: tran.port_gross_tonnage
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Total gross tonnage#1": { port: colombo }
+        "Total gross tonnage#2": { port: trincomalee }
+        "Total gross tonnage#3": { port: galle }
+        "Total gross tonnage#4": { port: hambantota }
+        "Total gross tonnage#5": { port: kankesanthurai }
+      columns: *y7
+    - table: t7_12
+      indicator: tran.port_net_tonnage
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Total net tonnage#1": { port: colombo }
+        "Total net tonnage#2": { port: trincomalee }
+        "Total net tonnage#3": { port: galle }
+        "Total net tonnage#4": { port: hambantota }
+        "Total net tonnage#5": { port: kankesanthurai }
+      columns: *y7
+    # ── 7.13 Port of Colombo cargo by flow ('000 t) ──
+    - table: t7_13
+      indicator: tran.port_cargo_tonnes
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Domestic#1": { port: colombo, flow: discharged_domestic }
+        "Transhipment#1": { port: colombo, flow: discharged_transhipment }
+        "Re-stowing#1": { port: colombo, flow: discharged_restowing }
+        "Total discharged": { port: colombo, flow: discharged }
+        "Domestic#2": { port: colombo, flow: loaded_domestic }
+        "Transhipment#2": { port: colombo, flow: loaded_transhipment }
+        "Re-stowing#2": { port: colombo, flow: loaded_restowing }
+        "Total loaded": { port: colombo, flow: loaded }
+        "Total handled": { port: colombo, flow: total }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {}, y6: {}, y7: {}, y8: {}, y9: {} }
+    # ── 7.14 cargo by port ('000 t); Colombo totals come from 7.13 ──
+    - table: t7_14
+      indicator: tran.port_cargo_tonnes
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Dry and Liquid cargo discharged#1": { port: colombo, flow: dry_liquid_discharged }
+        "Dry cargo loaded#1": { port: colombo, flow: dry_loaded }
+        "Liquid cargo discharged#1": { port: colombo, flow: liquid_discharged }
+        "Liquid cargo loaded#1": { port: colombo, flow: liquid_loaded }
+        "Dry and Liquid cargo discharged#2": { port: trincomalee, flow: dry_liquid_discharged }
+        "Dry cargo loaded#2": { port: trincomalee, flow: dry_loaded }
+        "Total cargo handled#2": { port: trincomalee, flow: total }
+        "Dry and Liquid cargo discharged#3": { port: galle, flow: dry_liquid_discharged }
+        "Dry cargo loaded#3": { port: galle, flow: dry_loaded }
+        "Total cargo handled#3": { port: galle, flow: total }
+        "Dry and Liquid cargo discharged#4": { port: hambantota, flow: dry_liquid_discharged }
+        "Dry cargo loaded#4": { port: hambantota, flow: dry_loaded }
+        "Total cargo handled#4": { port: hambantota, flow: total }
+        "Dry and Liquid cargo discharged#5": { port: kankesanthurai, flow: dry_liquid_discharged }
+        "Dry cargo loaded#5": { port: kankesanthurai, flow: dry_loaded }
+        "Total cargo handled#5": { port: kankesanthurai, flow: total }
+      columns: *y7
+    # ── 7.15 Port of Colombo performance (hours; tons per ship-hour) ──
+    - { table: t7_15, indicator: tran.port_waiting_time, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#1": { ship_type: non_container }, "2 Container ships#1": { ship_type: container } } }
+    - { table: t7_15, indicator: tran.port_service_time, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#2": { ship_type: non_container }, "2 Container ships#2": { ship_type: container } } }
+    - { table: t7_15, indicator: tran.port_turnaround_time, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#3": { ship_type: non_container }, "2 Container ships#3": { ship_type: container } } }
+    - { table: t7_15, indicator: tran.port_tons_per_ship_hour_berth, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#4": { ship_type: non_container }, "2 Container ships#4": { ship_type: container } } }
+    - { table: t7_15, indicator: tran.port_tons_per_ship_hour_port, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#5": { ship_type: non_container }, "2 Container ships#5": { ship_type: container } } }
+expect:
+  - { dataset: dcs-abstract-transport, check: sum_to_parent, indicator: tran.road_length_km, tol_pct: 0.5,
+      note: "Provinces sum to the A and B road total." }
+  - { dataset: dcs-abstract-transport, check: range, indicator: tran.road_length_km, min: 100, max: 20000 }
+  - { dataset: dcs-abstract-transport, check: range, indicator: tran.port_turnaround_time, min: 0, max: 500 }
+  - { dataset: dcs-abstract-transport, check: row_count, min: 300 }
+  - { check: no_future }

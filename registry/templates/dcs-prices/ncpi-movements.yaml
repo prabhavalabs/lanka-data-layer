@@ -1,0 +1,20 @@
+# DCS "Movements of the NCPI" (base 2021=100): one row per month since January 2022;
+# the year is printed only on the January row, in its own column left of the month
+# (label.all_clusters keeps both; the pdf_table month period carries the year down).
+id: dcs-prices/ncpi-movements
+title: Movements of the National Consumer Price Index (2021=100)
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "MOVEMENTS OF THE NCPI", then_text: "Month" }
+    label: { key: month, header: "Year", all_clusters: true }
+    columns:
+      - { key: index, header: "Index" }
+      - { key: mom, header: "Month to Month" }
+      - { key: yoy, header: "Year on Year" }
+      - { key: ma12, header: "Moving" }
+    rows: { stop_at: ["Source"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 50, max: 72 } }
+      - { rows_present: ["2022 January", "2023 January"] }

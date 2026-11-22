@@ -3,12 +3,11 @@ title: GDP by expenditure
 description: Consumption, investment, government, exports and imports components of GDP.
 source_ids:
 - dcs-national-accounts
-- dcs-pocketbook
+- dcs-pocketbook-economy
 indicators:
 - id: econ.gdp_expenditure
-  label: GDP by expenditure component
+  label: Expenditure on GDP
   unit: LKR
-  unit_mult: 6
   measure_type: sum
   aggregation: sum
   class: official
@@ -19,12 +18,27 @@ indicators:
   geo_levels:
   - national
   period_type: year
+  unit_mult: 6
+- id: econ.gdp_expenditure_share
+  label: Expenditure on GDP, share of GDP
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - id: component
+    codelist: gdp_expenditure_component
+  - price_basis
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
-  from: '2015'
+  from: '2021'
   to: '2025'
-method: Pocket Book and national accounts tables.
+method: 'Statistical Pocket Book 2026 table 10.4: expenditure on GDP at current prices, 2021-2025, Rs. million and %.'
 limits:
-- Statistical discrepancy line retained.
+- 'Current prices only; the external balance row (printed in parentheses) is not stored: it is exports less imports.'
+- 2025 provisional, 2023-2024 revised.
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'

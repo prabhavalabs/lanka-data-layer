@@ -1,0 +1,23 @@
+# Statistical Abstract, chapter 7, table 7.12: ship traffic by port, seven
+# years. Each port (Colombo, Trincomalee, Galle, Hambantota, Kankesanthurai)
+# has three rows: ships arrived, gross tonnage, net tonnage ('000 t); the port
+# name is a banner line without numbers, so rows are told apart by occurrence.
+id: dcs-statistical-abstract/table-7.12-ship-traffic-by-port
+title: Ship traffic by port
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 7.12", then_text: "Ship traffic by Port" }
+    label: { key: item, header: "Port and Item" }
+    columns:
+      - { key: y1, header: "2018" }
+      - { key: y2, header: "2019" }
+      - { key: y3, header: "2020" }
+      - { key: y4, header: "2021" }
+      - { key: y5, header: "2022" }
+      - { key: y6, header: "2023" }
+      - { key: y7, header: "2024" }
+    rows: { stop_at: ["Exclusive of Naval"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 15, max: 15 } }

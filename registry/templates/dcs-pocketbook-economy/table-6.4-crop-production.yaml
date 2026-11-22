@@ -1,0 +1,18 @@
+# Pocket Book 2026, table 6.4: production of principal and food crops, metric tons (coconut: million nuts).
+id: dcs-pocketbook-economy/table-6.4-crop-production
+title: "Production under principal crops and food crops (t)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "6.4 Production under Principal Crops", then_text: "Crop" }
+    label: { key: crop, header: "Crop" }
+    columns:
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Note:"] }
+    number: { thousands: ",", strip: ["#"] }
+    checks:
+      - { row_count: { min: 19, max: 19 } }

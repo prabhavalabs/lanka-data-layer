@@ -1,0 +1,17 @@
+# Pocket Book 2026, table 8.1: passengers ('000) and freight ('000 t) by mode and carrier.
+id: dcs-pocketbook-economy/table-8.1-transport-passengers-freight
+title: "Domestic and international transport: passengers and freight"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "8.1 Domestic and International Transport", then_text: "Passengers" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["# Revised", "Source"] }
+    number: { thousands: ",", strip: ["#"] }
+    checks:
+      - { row_count: { min: 8, max: 8 } }

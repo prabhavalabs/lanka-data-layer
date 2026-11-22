@@ -1,0 +1,17 @@
+# Vehicle fuel type (Department of Motor Traffic registrations)
+# Source/authority: Department of Motor Traffic, as printed in the DCS Statistical Abstract table 7.3.
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport
+id: vehicle_fuel
+title: "Vehicle fuel type"
+codes:
+  - { code: total, label: "All fuel types", total: true, sdmx: _T }
+  - { code: petrol, label: "Petrol", parent: total }
+  - { code: diesel, label: "Diesel", parent: total }
+  - { code: electric, label: "Electric", parent: total }
+  - { code: petrol_electric, label: "Petrol / electric hybrid", parent: total }
+  - { code: diesel_electric, label: "Diesel / electric hybrid", parent: total }
+  - { code: lp_gas, label: "LP gas", parent: total }
+  - { code: non_fuel, label: "Non-fuel (trailers)", parent: total }

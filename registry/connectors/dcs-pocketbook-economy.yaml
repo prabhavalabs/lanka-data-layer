@@ -1,0 +1,479 @@
+# Statistical Pocket Book 2026 (DCS), economy tables. One 104-page text-layer PDF,
+# served directly at the publication URL. Class B: every version is reviewed
+# against its evidence sheet. statistics.gov.lk: the engine's HTTP client cannot
+# negotiate its TLS (see dcs-agriculture); run with `--from DIR`
+# (DIR/pocketbook-2026.pdf, fetched with curl) until that is fixed.
+#
+# The labour tables 3.1-3.7 of this source are read by the dcs-lfs connector, which
+# owns dcs-lfs-annual-subnational (one connector per dataset).
+source: dcs-pocketbook-economy
+driver: pdf_table
+version: 1.0.0
+description: >-
+  Statistical Pocket Book 2026 tables 3.9-3.10 (wages, migration), 5.3 (building materials), 6.2-6.11
+  (agriculture, fisheries), 7.1 (energy), 8.1-8.4 (transport, vehicles, telecom), 10.2-10.4
+  (national accounts), 9.8 (trade indices) and 14.1 (tourism).
+discover:
+  files:
+    - { key: pocketbook-2026, url: "https://www.statistics.gov.lk/Publication/PocketBook2026", edition: "2026" }
+extract:
+  tables:
+    - { id: t3_9, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.9-minimum-wage-index }
+    - { id: t3_10a, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.10-foreign-employment-2017-2021 }
+    - { id: t3_10b, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.10-foreign-employment-2022-2025 }
+    - { id: t5_3, file: pocketbook-2026, template: dcs-pocketbook-economy/table-5.3-building-material-prices }
+    - { id: t6_2, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.2-paddy-irrigation }
+    - { id: t6_3, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.3-crop-extent }
+    - { id: t6_4, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.4-crop-production }
+    - { id: t6_5, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.5-cost-of-production }
+    - { id: t6_7, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.7-nutrition-availability }
+    - { id: t6_8, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.8-livestock }
+    - { id: t6_10, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.10-fish-production }
+    - { id: t6_11, file: pocketbook-2026, template: dcs-pocketbook-economy/table-6.11-fishing-fleet }
+    - { id: t7_1, file: pocketbook-2026, template: dcs-pocketbook-economy/table-7.1-energy-supply-consumption }
+    - { id: t8_1, file: pocketbook-2026, template: dcs-pocketbook-economy/table-8.1-transport-passengers-freight }
+    - { id: t8_2, file: pocketbook-2026, template: dcs-pocketbook-economy/table-8.2-registered-motor-vehicles }
+    - { id: t8_4, file: pocketbook-2026, template: dcs-pocketbook-economy/table-8.4-telecommunication-services }
+    - { id: t9_8, file: pocketbook-2026, template: dcs-pocketbook-economy/table-9.8-external-trade-indices }
+    - { id: t10_2, file: pocketbook-2026, template: dcs-pocketbook-economy/table-10.2-gdp-by-activity-current }
+    - { id: t10_3, file: pocketbook-2026, template: dcs-pocketbook-economy/table-10.3-gdp-by-activity-constant }
+    - { id: t10_4, file: pocketbook-2026, template: dcs-pocketbook-economy/table-10.4-gdp-expenditure-current }
+    - { id: t14_1, file: pocketbook-2026, template: dcs-pocketbook-economy/table-14.1-tourist-growth }
+standardise:
+  dataset: dcs-pocketbook-agriculture
+  vintage: "Statistical Pocket Book {edition}"
+  outputs:
+    # ── minimum wage index (3.9) and building materials (5.3) ──
+    - dataset: dcs-pocketbook-prices-wages
+      table: t3_9
+      indicator: econ.minimum_wage_index
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y2018: {}, y2019: {}, y2020: {}, y2021: {}, y2022: {}, y2023: {}, y2024: {}, y2025: {} }
+      rows:
+        "Agriculture": { sector: agriculture }
+        "Industry and": { sector: industry }
+        "Services": { sector: services }
+        "All combined": { sector: total }
+    - dataset: dcs-pocketbook-prices-wages
+      table: t5_3
+      indicator: econ.building_material_price
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: &y21_25 { y2021: {}, y2022: {}, y2023: {}, y2024: {}, y2025: {} }
+      rows:
+        "1. Cement 50kg. bag": { material: cement }
+        "2. Bricks - Clay": { material: bricks }
+        "3. Sand with transport": { material: sand }
+        "4. Lime (1) Boiled": { material: lime_boiled }
+        "(2) Slaked": { material: lime_slaked }
+        "5. Tiles (Rectangular)": { material: roofing_tiles }
+        "6. Asbestos ( 1) Corrugated 8 ft. (Rino)": { material: asbestos_corrugated }
+        "(2) Plain 4 by 4 feet Celling Sheet": { material: ceiling_sheet }
+        "(1) CIC (Emulsion)": { material: paint_emulsion }
+        "(2) CIC (Enamel)": { material: paint_enamel }
+    # ── foreign employment departures (3.10) ──
+    - dataset: slbfe-labour-migration
+      table: t3_10a
+      indicator: migr.departures_by_skill
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns:
+        prof_m: { sex: male, skill: professional }
+        prof_f: { sex: female, skill: professional }
+        mid_m: { sex: male, skill: middle_level }
+        mid_f: { sex: female, skill: middle_level }
+        cler_m: { sex: male, skill: clerical }
+        cler_f: { sex: female, skill: clerical }
+        skilled_m: { sex: male, skill: skilled }
+        skilled_f: { sex: female, skill: skilled }
+        semi_m: { sex: male, skill: semi_skilled }
+        semi_f: { sex: female, skill: semi_skilled }
+        low_m: { sex: male, skill: unskilled }
+        low_f: { sex: female, skill: unskilled }
+        dom: { sex: total, skill: domestic_housekeeping }
+        total: { sex: total, skill: total }
+    - dataset: slbfe-labour-migration
+      table: t3_10b
+      indicator: migr.departures_by_skill
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns:
+        skilled_m: { sex: male, skill: skilled }
+        skilled_f: { sex: female, skill: skilled }
+        low_m: { sex: male, skill: low_skilled }
+        low_f: { sex: female, skill: low_skilled }
+        total: { sex: total, skill: total }
+    # ── agriculture (dcs-pocketbook-agriculture) ──
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_2
+      indicator: agri.paddy_irrigable_ha
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns: { major_irrigable: { water_source: major_irrigation }, minor_irrigable: { water_source: minor_irrigation } }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_2
+      indicator: agri.paddy_irrigated_ha
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns: { major_irrigated: { water_source: major_irrigation }, minor_irrigated: { water_source: minor_irrigation } }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_3
+      indicator: agri.crop_extent
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows: &crops
+        "Paddy": { crop: paddy }
+        "Tea": { crop: tea }
+        "Rubber": { crop: rubber }
+        "Coconut": { crop: coconut }
+        "Kurakkan": { crop: finger_millet }
+        "Maize": { crop: maize }
+        "Meneri": { crop: proso_millet }
+        "Sorghum": { crop: sorghum }
+        "Green gram": { crop: green_gram }
+        "Cowpea": { crop: cowpea }
+        "Gingelly": { crop: gingelly }
+        "Ground nuts": { crop: groundnut }
+        "Manioc": { crop: cassava }
+        "Sweet potatoes": { crop: sweet_potato }
+        "Potatoes": { crop: potato }
+        "Chillies(green)": { crop: chilli }
+        "Mustard": { crop: mustard }
+        "Red onions": { crop: red_onion }
+        "Big onions": { crop: big_onion }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_4
+      indicator: agri.crop_production
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows:
+        "Paddy": { crop: paddy }
+        "Tea": { crop: tea }
+        "Rubber": { crop: rubber }
+        "Kurakkan": { crop: finger_millet }
+        "Maize": { crop: maize }
+        "Meneri": { crop: proso_millet }
+        "Sorghum": { crop: sorghum }
+        "Green-Gram": { crop: green_gram }
+        "Cowpea": { crop: cowpea }
+        "Gingelly": { crop: gingelly }
+        "Ground Nuts": { crop: groundnut }
+        "Manioc": { crop: cassava }
+        "Sweet potatoes": { crop: sweet_potato }
+        "Potatoes": { crop: potato }
+        "Chilies -Green": { crop: chilli }
+        "Mustard": { crop: mustard }
+        "Red Onion": { crop: red_onion }
+        "Big Onion": { crop: big_onion }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_4
+      indicator: agri.coconut_production_nuts
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows: { "Coconut (in million nuts)": {} }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_5
+      indicator: agri.cost_of_production_kg
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns: { tea: { crop: tea }, rubber: { crop: rubber } }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_5
+      indicator: agri.cost_of_production_coconut
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns: { coconut: {} }
+    - { dataset: dcs-pocketbook-agriculture, table: t6_7, indicator: agri.calorie_availability, geo: { fixed: root },
+        period: { from_label: year }, columns: { kcal_veg: { source: vegetable }, kcal_animal: { source: animal }, x_kcal_total: { source: total } } }
+    - { dataset: dcs-pocketbook-agriculture, table: t6_7, indicator: agri.protein_availability, geo: { fixed: root },
+        period: { from_label: year }, columns: { protein_veg: { source: vegetable }, protein_animal: { source: animal }, x_protein_total: { source: total } } }
+    - { dataset: dcs-pocketbook-agriculture, table: t6_7, indicator: agri.fat_availability, geo: { fixed: root },
+        period: { from_label: year }, columns: { fat_veg: { source: vegetable }, fat_animal: { source: animal }, x_fat_total: { source: total } } }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_8
+      indicator: agri.livestock_population
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns:
+        cattle: { species: cattle }
+        buffaloes: { species: buffalo }
+        goats: { species: goat_sheep }
+        pigs: { species: pig }
+        poultry: { species: poultry }
+    - { dataset: dcs-pocketbook-agriculture, table: t6_8, indicator: agri.milk_production, geo: { fixed: root },
+        period: { from_label: year }, columns: { milk: {} } }
+    - { dataset: dcs-pocketbook-agriculture, table: t6_8, indicator: agri.egg_production, geo: { fixed: root },
+        period: { from_label: year }, columns: { eggs: {} } }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_10
+      indicator: agri.fish_production
+      geo: { fixed: root }
+      period: { from_label: year }
+      status: { label_markers: { "*": provisional } }
+      columns:
+        coastal: { fishery_type: coastal }
+        offshore: { fishery_type: offshore }
+        inland: { fishery_type: inland }
+        total: { fishery_type: total }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_11
+      indicator: agri.fishing_fleet_operating
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: &y22_25 { y2022: {}, y2023: {}, y2024: {}, y2025: {} }
+      status: { header_markers: { "*": provisional } }
+      rows:
+        "Inboard Engine": { boat_class: marine_inboard }
+        "Outboard Engine": { boat_class: marine_outboard }
+        "Non-Motorized": { boat_class: marine_non_motorised }
+        "Oru (Canoes)": { boat_class: inland_canoe }
+        "Total Fishing Fleet": { boat_class: total }
+    - dataset: dcs-pocketbook-agriculture
+      table: t6_11
+      indicator: agri.active_fishers
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y22_25
+      status: { header_markers: { "*": provisional } }
+      rows:
+        "Marine Fishers": { fishery_type: marine }
+        "Inland Fishers": { fishery_type: inland }
+        "Total": { fishery_type: total }
+    # ── energy, transport, telecom, tourism (dcs-pocketbook-sector-services) ──
+    - dataset: dcs-pocketbook-sector-services
+      table: t7_1
+      indicator: pb.electricity_generated
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows:
+        "Units Generated": { item: total }
+        "CEB": { item: ceb }
+        "Hydro": { item: ceb_hydro }
+        "Thermal - oil": { item: ceb_thermal_oil }
+        "Thermal - Coal": { item: ceb_thermal_coal }
+        "Wind": { item: ceb_wind }
+        "Small Island": { item: ceb_small_island }
+        "Private": { item: private }
+        "Mini Hydro": { item: private_mini_hydro }
+        "Thermal": { item: private_thermal }
+        "ORE": { item: private_ore }
+    - dataset: dcs-pocketbook-sector-services
+      table: t7_1
+      indicator: pb.electricity_sales
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows:
+        "Total Sales": { category: total }
+        "Domestic & Religious": { category: domestic_religious }
+        "Industrial": { category: industrial }
+        "Commercial": { category: commercial }
+        "LECO": { category: leco }
+        "Street Lighting": { category: street_lighting }
+    - { dataset: dcs-pocketbook-sector-services, table: t7_1, indicator: pb.petroleum_products_imported, geo: { fixed: root },
+        period: { from_header: year }, columns: *y21_25, rows: { "Refined Products(Imported)": {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t7_1, indicator: pb.crude_oil_processed, geo: { fixed: root },
+        period: { from_header: year }, columns: *y21_25, rows: { "Crude Oil(Processed)": {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t7_1, indicator: pb.lpg_production, geo: { fixed: root },
+        period: { from_header: year }, columns: *y21_25, rows: { "3. L.P. Gas Production": {} } }
+    - dataset: dcs-pocketbook-sector-services
+      table: t8_1
+      indicator: pb.passengers
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y22_25
+      rows:
+        "Railway#1": { operator: railway }
+        "Ominibus Services": { operator: omnibus }
+        "Sri Lanka Transport Board": { operator: sltb }
+        "National Carrier (Sri Lankan Airlines)#1": { operator: national_airline }
+        "Foreign Airlines#1": { operator: foreign_airlines }
+    - dataset: dcs-pocketbook-sector-services
+      table: t8_1
+      indicator: pb.freight
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y22_25
+      rows:
+        "Railway#2": { operator: railway }
+        "National Carrier (Sri Lankan Airlines)#2": { operator: national_airline }
+        "Foreign Airlines#2": { operator: foreign_airlines }
+    - dataset: dcs-pocketbook-sector-services
+      table: t8_4
+      indicator: pb.telecom_subscriptions
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y22_25
+      rows:
+        "Wireline Telephone Lines in Service": { service: fixed_wireline }
+        "Wireless Local Loop Telephones": { service: fixed_wireless }
+        "2. Cellular Mobile (No. of subscriptions including data only)": { service: mobile_cellular }
+        "Fixed Internet and E-mail (No. of Subscribers)": { service: fixed_broadband }
+        "Mobile BroadBand (No.of Subscriptions) **": { service: mobile_broadband }
+    - { dataset: dcs-pocketbook-sector-services, table: t8_4, indicator: pb.telephone_density, geo: { fixed: root },
+        period: { from_header: year }, columns: *y22_25, rows: { "Excluding Data only": {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t8_4, indicator: pb.telephone_density_incl_data, geo: { fixed: root },
+        period: { from_header: year }, columns: *y22_25, rows: { "Including Data only": {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourist_arrivals, geo: { fixed: root },
+        period: { from_label: year }, columns: { arrivals: {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourist_nights, geo: { fixed: root },
+        period: { from_label: year }, columns: { nights: {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourism_receipts_lkr, geo: { fixed: root },
+        period: { from_label: year }, columns: { receipts_lkr: {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourism_receipts_usd, geo: { fixed: root },
+        period: { from_label: year }, columns: { receipts_usd: {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourism_receipts_sdr, geo: { fixed: root },
+        period: { from_label: year }, columns: { receipts_sdr: {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourist_spend_per_day, geo: { fixed: root },
+        period: { from_label: year }, columns: { per_day_usd: {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourism_employment_direct, geo: { fixed: root },
+        period: { from_label: year }, columns: { emp_direct: {} } }
+    - { dataset: dcs-pocketbook-sector-services, table: t14_1, indicator: pb.tourism_employment_indirect, geo: { fixed: root },
+        period: { from_label: year }, columns: { emp_indirect: {} } }
+    # ── registered motor vehicles (8.2) ──
+    - dataset: dmt-vehicle-registrations
+      table: t8_2
+      indicator: tran.registered_fleet
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows:
+        "Total": { vehicle_class: total }
+        "Passenger Cars": { vehicle_class: motor_car }
+        "Three Wheelers": { vehicle_class: motor_tricycle }
+        "Buses (SLTB+ Private)": { vehicle_class: bus }
+        "Motor Cycles": { vehicle_class: motor_cycle }
+        "Lorries": { vehicle_class: motor_lorry }
+        "Ambulances and Hearses": { vehicle_class: ambulance_hearse }
+        "Dual Purpose Vehicles": { vehicle_class: dual_purpose }
+        "Tractors & Engines": { vehicle_class: land_vehicle }
+        "Quadricycle": { vehicle_class: quadricycle }
+        "Motor Home": { vehicle_class: motor_home }
+        "Special Purpose vehicles": { vehicle_class: special_purpose }
+    - { dataset: dmt-vehicle-registrations, table: t8_2, indicator: tran.passenger_cars_per_100, geo: { fixed: root },
+        period: { from_header: year }, columns: *y21_25, rows: { "Passenger Cars Per 100 Population (%)": {} } }
+    # ── external trade indices (9.8, CBSL, 2010=100) ──
+    - dataset: dcs-pocketbook-trade-indices
+      table: t9_8
+      indicator: trade.value_index
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows: { "Imports#1": { flow: import }, "Exports#1": { flow: export } }
+    - dataset: dcs-pocketbook-trade-indices
+      table: t9_8
+      indicator: trade.volume_index
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows: { "Imports#2": { flow: import }, "Exports#2": { flow: export } }
+    - { dataset: dcs-pocketbook-trade-indices, table: t9_8, indicator: trade.terms_of_trade, geo: { fixed: root },
+        period: { from_header: year }, columns: *y21_25, rows: { "Trade": {} } }
+    # ── national accounts (10.2-10.4), Rs. million ──
+    - dataset: dcs-gdp-by-industry
+      table: t10_2
+      indicator: econ.gdp_by_activity_annual
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y2020: { price_basis: current }, y2021: { price_basis: current }, y2022: { price_basis: current },
+                 y2023: { price_basis: current }, y2024: { price_basis: current }, y2025: { price_basis: current } }
+      status: { header_markers: { "*": provisional } }
+      rows:
+        "1. Agriculture, Forestry and Fishing": { activity: agriculture }
+        "industries": { activity: industry_other }
+        "2.1 Manufacturing activities": { activity: manufacturing }
+        "3. Construction": { activity: construction }
+        "storage, accommodation and food service activities": { activity: trade_transport_accommodation }
+        "5. Information and communication": { activity: information_communication }
+        "6. Financial and Insurance activities": { activity: finance_insurance }
+        "7. Real estate activities (including ownership of dwelling)": { activity: real_estate }
+        "support service activities": { activity: professional_admin }
+        "health and social work activities": { activity: public_admin_education_health }
+        "10.Other services (excluding own- services)": { activity: other_services }
+        "Equals Gross Value Added (GVA), at basic price": { activity: gva }
+        "(+) Taxes on products": { activity: taxes_on_products }
+        "(-) Subsidies on products": { activity: subsidies_on_products }
+        "Equals GDP at market price": { activity: gdp }
+    - dataset: dcs-gdp-by-industry
+      table: t10_3
+      indicator: econ.gdp_by_activity_annual
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y2020: { price_basis: constant_2015 }, y2021: { price_basis: constant_2015 }, y2022: { price_basis: constant_2015 },
+                 y2023: { price_basis: constant_2015 }, y2024: { price_basis: constant_2015 }, y2025: { price_basis: constant_2015 } }
+      status: { header_markers: { "*": provisional } }
+      rows:
+        "1. Agriculture, Forestry & Fishing": { activity: agriculture }
+        "2. Manufacturing, mining and quarrying and other industries": { activity: industry_other }
+        "2.1. Manufacturing activities": { activity: manufacturing }
+        "3. Construction": { activity: construction }
+        "accommodation and food service activities": { activity: trade_transport_accommodation }
+        "5. Information and communication": { activity: information_communication }
+        "6. Financial and Insurance activities": { activity: finance_insurance }
+        "7. Real estate activities (including ownership of dwelling)": { activity: real_estate }
+        "service activities": { activity: professional_admin }
+        "social work activities": { activity: public_admin_education_health }
+        "10.Other services (excluding own- services)": { activity: other_services }
+        "Equals Gross Value Added (GVA), at basic price": { activity: gva }
+        "(+) Taxes on products": { activity: taxes_on_products }
+        "(-) Subsidies on products": { activity: subsidies_on_products }
+        "Equals GDP at market price": { activity: gdp }
+    - dataset: dcs-gdp-expenditure
+      table: t10_4
+      indicator: econ.gdp_expenditure
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { v2021: { price_basis: current }, v2022: { price_basis: current }, v2023: { price_basis: current },
+                 v2024: { price_basis: current }, v2025: { price_basis: current } }
+      status: { header_markers: { "*": provisional } }
+      rows: &gde
+        "Final Consumption Expenditure": { component: P3 }
+        "Household final consumption": { component: P31_S14 }
+        "expenditure Government final consumption": { component: P3_S13 }
+        "Individual consumption expenditure": { component: P31_S13 }
+        "Collective consumption expenditure": { component: P32_S13 }
+        "Gross Capital Formation": { component: P5 }
+        "Gross Fixed Capital formation": { component: P51G }
+        "Changes in inventories": { component: P52 }
+        "Acquisitions less disposals of valuables": { component: P53 }
+        "Export of goods and services": { component: P6 }
+        "Import of goods and services": { component: P7 }
+        "Gross Domestic Product (GDP/GDE) at": { component: total }
+    - dataset: dcs-gdp-expenditure
+      table: t10_4
+      indicator: econ.gdp_expenditure_share
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { p2021: { price_basis: current }, p2022: { price_basis: current }, p2023: { price_basis: current },
+                 p2024: { price_basis: current }, p2025: { price_basis: current } }
+      status: { header_markers: { "*": provisional } }
+      rows: *gde
+expect:
+  - dataset: dcs-gdp-by-industry
+    check: sql
+    note: The ten activity groups sum to GVA, and GVA + taxes - subsidies = GDP (Rs. mn, ±3).
+    query: >-
+      WITH v AS (SELECT period_start, dims, value FROM stage_obs WHERE indicator_id = 'econ.gdp_by_activity_annual'),
+      p AS (SELECT DISTINCT period_start, split_part(dims, 'price_basis=', 2) AS pb FROM v)
+      SELECT p.period_start, p.pb,
+        (SELECT sum(value) FROM v WHERE v.period_start = p.period_start AND v.dims LIKE '%price_basis=' || p.pb
+           AND v.dims NOT LIKE 'activity=gdp,%' AND v.dims NOT LIKE 'activity=gva,%' AND v.dims NOT LIKE 'activity=manufacturing,%'
+           AND v.dims NOT LIKE 'activity=taxes%' AND v.dims NOT LIKE 'activity=subsidies%') AS groups,
+        (SELECT value FROM v WHERE v.period_start = p.period_start AND v.dims = 'activity=gva,price_basis=' || p.pb) AS gva
+      FROM p
+      WHERE abs((SELECT sum(value) FROM v WHERE v.period_start = p.period_start AND v.dims LIKE '%price_basis=' || p.pb
+           AND v.dims NOT LIKE 'activity=gdp,%' AND v.dims NOT LIKE 'activity=gva,%' AND v.dims NOT LIKE 'activity=manufacturing,%'
+           AND v.dims NOT LIKE 'activity=taxes%' AND v.dims NOT LIKE 'activity=subsidies%')
+        - (SELECT value FROM v WHERE v.period_start = p.period_start AND v.dims = 'activity=gva,price_basis=' || p.pb)) > 3
+  - { dataset: dmt-vehicle-registrations, check: monotonic, indicator: tran.registered_fleet, direction: increasing, severity: warn,
+      note: "Cumulative registrations never fall (DMT does not de-register scrapped vehicles)." }
+  - { dataset: dcs-pocketbook-agriculture, check: range, indicator: agri.crop_extent, min: 10, max: 1500000 }
+  - { dataset: dcs-pocketbook-sector-services, check: range, indicator: pb.tourist_arrivals, min: 100000, max: 5000000 }
+  - { dataset: dcs-pocketbook-prices-wages, check: range, indicator: econ.minimum_wage_index, min: 100, max: 50000 }
+  - { dataset: slbfe-labour-migration, check: range, indicator: migr.departures_by_skill, min: 0, max: 400000 }
+  - { check: no_future }

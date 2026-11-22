@@ -2,22 +2,63 @@ id: dcs-pocketbook-sector-services
 title: Energy, telecom, transport and tourism summary (Pocket Book)
 description: Energy supply/consumption, telecom subscriptions, passenger and freight transport, tourism activity summaries.
 source_ids:
-- dcs-pocketbook
+- dcs-pocketbook-economy
 indicators:
-- id: pb.energy_supply
-  label: Primary energy supply
-  unit: '{ktoe}'
+- id: pb.electricity_generated
+  label: Electricity generated (net)
+  unit: GW.h
   measure_type: sum
   aggregation: sum
   class: official
   dims:
-  - id: source
-    codelist: energy_source
+  - id: item
+    codelist: electricity_generation_item
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.electricity_sales
+  label: Electricity sales
+  unit: GW.h
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: category
+    codelist: electricity_sales_category
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.petroleum_products_imported
+  label: Refined petroleum products imported
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: pb.crude_oil_processed
+  label: Crude oil processed
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: pb.lpg_production
+  label: LP gas production
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: year
 - id: pb.telecom_subscriptions
-  label: Telecom subscriptions
+  label: Telecommunication subscriptions
   unit: '{count}'
   measure_type: count
   aggregation: sum
@@ -28,18 +69,52 @@ indicators:
   geo_levels:
   - national
   period_type: year
-- id: pb.passenger_km
-  label: Passenger kilometres
-  unit: '{passenger}.km'
-  unit_mult: 6
+- id: pb.telephone_density
+  label: Telephone density (excluding data-only subscriptions)
+  unit: '%'
+  measure_type: ratio
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  definition: Telephones per 100 persons including cellular, excluding data-only.
+- id: pb.telephone_density_incl_data
+  label: Telephone density (including data-only subscriptions)
+  unit: '%'
+  measure_type: ratio
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  definition: Telephones per 100 persons including cellular and data-only subscriptions.
+- id: pb.passengers
+  label: Passengers carried
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: operator
+    codelist: transport_operator
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: pb.freight
+  label: Freight carried
+  unit: t
   measure_type: sum
   aggregation: sum
   class: official
   dims:
-  - mode
+  - id: operator
+    codelist: transport_operator
   geo_levels:
   - national
   period_type: year
+  unit_mult: 3
 - id: pb.tourist_arrivals
   label: Tourist arrivals
   unit: '{person}'
@@ -49,12 +124,82 @@ indicators:
   geo_levels:
   - national
   period_type: year
+- id: pb.tourist_nights
+  label: Tourist nights
+  unit: d
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: pb.tourism_receipts_lkr
+  label: Official tourist receipts (rupees)
+  unit: LKR
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 6
+- id: pb.tourism_receipts_usd
+  label: Official tourist receipts (US dollars)
+  unit: USD
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 6
+- id: pb.tourism_receipts_sdr
+  label: Official tourist receipts (SDR)
+  unit: XDR
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 6
+- id: pb.tourist_spend_per_day
+  label: Receipt per tourist per day
+  unit: USD/d
+  measure_type: mean
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.tourism_employment_direct
+  label: Direct employment in tourism
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: pb.tourism_employment_indirect
+  label: Indirect employment in tourism (estimated)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
-  from: '2015'
+  from: '2016'
   to: '2025'
-method: PDF tables; superseded by primary sources (slsea, trcsl, ntc, sltda) where ingested.
+method: Statistical Pocket Book 2026 tables 7.1 (energy supply and consumption), 8.1 (passengers and freight), 8.4 (telecommunication
+  services) and 14.1 (tourism). PDF tables read through registry templates; reviewed.
 limits:
-- Compendium copies; check primary source vintages.
+- 'Values flagged * in table 14.1 are provisional; # revised.'
+- Mobile broadband subscriptions were rebased (printed **).
+- Wireless local loop counts include data-only and LTE from 2021.
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'

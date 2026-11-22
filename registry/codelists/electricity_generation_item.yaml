@@ -1,0 +1,20 @@
+# Electricity generation by producer and plant type
+# Source/authority: Ceylon Electricity Board net generation as printed in the DCS Pocket Book, table 7.1.
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-sector-services
+id: electricity_generation_item
+title: "Electricity generation by producer and plant type"
+codes:
+  - { code: total, label: "Units generated (net)", total: true, sdmx: _T }
+  - { code: ceb, label: "CEB", parent: total }
+  - { code: ceb_hydro, label: "CEB hydro", parent: ceb }
+  - { code: ceb_thermal_oil, label: "CEB thermal - oil", parent: ceb }
+  - { code: ceb_thermal_coal, label: "CEB thermal - coal", parent: ceb }
+  - { code: ceb_wind, label: "CEB wind", parent: ceb }
+  - { code: ceb_small_island, label: "CEB small island plants", parent: ceb }
+  - { code: private, label: "Private producers", parent: total }
+  - { code: private_mini_hydro, label: "Private mini hydro", parent: private }
+  - { code: private_thermal, label: "Private thermal", parent: private }
+  - { code: private_ore, label: "Private other renewable energy (wind, biomass, solar, dendro, waste; rooftop solar)", parent: private }

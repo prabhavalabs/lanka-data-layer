@@ -47,3 +47,5 @@ codes:
   - { code: cocoa, label: Cocoa, parent: export_agri }
   - { code: arecanut, label: Arecanut, parent: export_agri }
   - { code: other, label: Other crops, parent: total }
+  - { code: proso_millet, label: Proso millet (meneri), parent: cereals }
+  - { code: mustard, label: Mustard, parent: condiments }

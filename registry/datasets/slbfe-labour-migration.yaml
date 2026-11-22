@@ -3,7 +3,7 @@ title: Foreign employment departures
 description: Departures for foreign employment by destination country, skill level, sex and district of origin.
 source_ids:
 - slbfe
-- dcs-pocketbook
+- dcs-pocketbook-economy
 indicators:
 - id: migr.departures
   label: Departures for foreign employment
@@ -23,19 +23,35 @@ indicators:
   period_type: year
 - id: migr.departures_per_1000
   label: Departures per 1,000 working-age population
-  unit: '/10*3'
+  unit: /10*3
   measure_type: rate
   aggregation: none
   class: official
   geo_levels:
   - adm2
   period_type: year
+- id: migr.departures_by_skill
+  label: Departures for foreign employment by manpower level
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  - id: skill
+    codelist: migrant_skill_level
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
-  from: '2000'
+  from: '2017'
   to: '2025'
-method: Annual statistical report PDF tables; monthly provisional figures from press releases.
+method: 'Statistical Pocket Book 2026 table 3.10 (SLBFE): 2017-2021 by six manpower levels and sex plus domestic housekeeping
+  assistants; 2022-2025 skilled / low-skilled by sex. Destination and district breakdowns await the SLBFE annual report.'
 limits:
-- Counts registrations, not actual migrants; informal migration excluded.
+- The manpower classification changed in 2022 (skilled / low-skilled); series are not comparable across the break.
+- Domestic housekeeping assistants (2017-2021) are printed without a sex split.
+- 2022 and 2024 are revised (#).
 enrichment:
   joins:
   - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil

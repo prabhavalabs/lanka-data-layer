@@ -25,6 +25,11 @@
 //!       status: { header_markers: { "(1)": provisional } }
 //! ```
 //!
+//! An output may name its own `dataset` (default `standardise.dataset`), so one
+//! publication feeds several datasets; each dataset is one output of the run.
+//! `geo.from_label.level` 2 uses the census district index, any other level the
+//! registry's unit names (+ reviewed aliases); `skip` drops labels that are not units.
+//!
 //! Extract: the sandbox reads the text layer (`pdftotext -bbox-layout`),
 //! the template locates and reads the table, the template checks run and a
 //! failure fails the extract. One `cells` extract holds every table: per
@@ -119,6 +124,9 @@ pub struct LabelGeo {
     /// Labels meaning the whole country.
     #[serde(default)]
     pub root: Vec<String>,
+    /// Labels that are not units (reporting areas, notes): rows dropped.
+    #[serde(default)]
+    pub skip: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -138,6 +146,11 @@ pub enum PeriodParse {
     Year,
     /// "End June 2026" → `2026-Q2` (the quarter a month falls in).
     QuarterEnd,
+    /// "2026 January" → `2026-01`; a label with only a month name takes the
+    /// year of the nearest row above that printed one (from_label only).
+    Month,
+    /// "2024Q2" / "2024 Q2" → `2024-Q2`.
+    Quarter,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -170,6 +183,9 @@ pub type DimMap = BTreeMap<String, String>;
 #[serde(deny_unknown_fields)]
 pub struct OutSpec {
     pub table: String,
+    /// Default: `standardise.dataset`.
+    #[serde(default)]
+    pub dataset: Option<String>,
     pub indicator: String,
     pub geo: GeoSel,
     pub period: PeriodSel,
@@ -514,12 +530,29 @@ const MONTHS: [&str; 12] = [
 
 /// Period code from printed text.
 pub fn parse_period(how: PeriodParse, text: &str) -> Result<String> {
+    if how == PeriodParse::Month {
+        return parse_month(text, None);
+    }
     let year = text
         .split(|c: char| !c.is_ascii_digit())
         .find(|t| t.len() == 4 && (t.starts_with("19") || t.starts_with("20")))
         .with_context(|| format!("no year in {text:?}"))?;
     match how {
         PeriodParse::Year => Ok(year.to_owned()),
+        PeriodParse::Month => parse_month(text, None),
+        PeriodParse::Quarter => {
+            let up = text.to_ascii_uppercase();
+            let q = up
+                .match_indices('Q')
+                .find_map(|(i, _)| {
+                    up[i + 1..]
+                        .chars()
+                        .next()
+                        .filter(|c| ('1'..='4').contains(c))
+                })
+                .with_context(|| format!("no quarter in {text:?}"))?;
+            Ok(format!("{year}-Q{q}"))
+        }
         PeriodParse::QuarterEnd => {
             let lower = text.to_ascii_lowercase();
             let m = lower
@@ -529,6 +562,24 @@ pub fn parse_period(how: PeriodParse, text: &str) -> Result<String> {
             Ok(format!("{year}-Q{}", m / 3 + 1))
         }
     }
+}
+
+fn year_in(text: &str) -> Option<&str> {
+    text.split(|c: char| !c.is_ascii_digit())
+        .find(|t| t.len() == 4 && (t.starts_with("19") || t.starts_with("20")))
+}
+
+/// `YYYY-MM` from a month name and a year in the text, or `carried`.
+fn parse_month(text: &str, carried: Option<&str>) -> Result<String> {
+    let year = year_in(text)
+        .or(carried)
+        .with_context(|| format!("no year in {text:?} (and none above)"))?;
+    let lower = text.to_ascii_lowercase();
+    let m = lower
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .find_map(|w| MONTHS.iter().position(|m| w.len() >= 3 && w.starts_with(m)))
+        .with_context(|| format!("no month in {text:?}"))?;
+    Ok(format!("{year}-{:02}", m + 1))
 }
 
 #[async_trait]
@@ -611,19 +662,30 @@ impl Connector for PdfTable {
         sink: &mut dyn OutputSink,
     ) -> Result<()> {
         let s = &self.spec.standardise;
-        let ds = ctx
-            .registry
-            .dataset(&s.dataset)
-            .with_context(|| format!("registry has no dataset {}", s.dataset))?;
+        let ds_of = |o: &OutSpec| o.dataset.clone().unwrap_or_else(|| s.dataset.clone());
         for o in &s.outputs {
+            let id = ds_of(o);
+            let ds = ctx
+                .registry
+                .dataset(&id)
+                .with_context(|| format!("registry has no dataset {id}"))?;
             ensure!(
                 ds.indicators.iter().any(|i| i.id == o.indicator),
-                "{} does not declare {}",
-                s.dataset,
+                "{id} does not declare {}",
                 o.indicator
             );
         }
         let need_names = s.outputs.iter().any(|o| o.geo.from_label.is_some());
+        let alias_path = ctx.registry.root.join("crosswalks/ds-name-aliases.csv");
+        let level_names = if need_names {
+            let aliases = std::fs::read_to_string(&alias_path).ok();
+            Some(crate::drivers::table::Names::new(
+                &ctx.lookup.units,
+                aliases.as_deref(),
+            )?)
+        } else {
+            None
+        };
         let names = if need_names {
             let units: Vec<UnitRef> = ctx
                 .lookup
@@ -636,15 +698,14 @@ impl Connector for PdfTable {
                 !units.is_empty(),
                 "no admin units in geo.units: run `lanka ingest run hdx-cod-ab-lka` first"
             );
-            let alias_path = ctx.registry.root.join("crosswalks/ds-name-aliases.csv");
             let aliases = std::fs::read_to_string(&alias_path).unwrap_or_default();
             Some(NameIndex::new(&units, &aliases)?)
         } else {
             None
         };
         let root = ctx.profile.admin.root().to_owned();
-        let mut rows = Vec::new();
-        let mut editions: Vec<String> = Vec::new();
+        // Dataset → (editions, rows), in the order of first appearance.
+        let mut by_ds: Vec<(String, Vec<String>, Vec<ObsRow>)> = Vec::new();
         for (ei, x) in extracts.iter().enumerate() {
             let cells = x.data.cells();
             for o in &s.outputs {
@@ -655,10 +716,17 @@ impl Connector for PdfTable {
                     .template_of(&o.table)
                     .with_context(|| format!("unknown table {}", o.table))?;
                 let edition = self.file(&tspec.file).and_then(|f| f.edition.clone());
+                let ds_id = ds_of(o);
+                let di = if let Some(i) = by_ds.iter().position(|d| d.0 == ds_id) {
+                    i
+                } else {
+                    by_ds.push((ds_id, Vec::new(), Vec::new()));
+                    by_ds.len() - 1
+                };
                 if let Some(e) = &edition
-                    && !editions.contains(e)
+                    && !by_ds[di].1.contains(e)
                 {
-                    editions.push(e.clone());
+                    by_ds[di].1.push(e.clone());
                 }
                 let (_, ed) = tpl.edition(edition.as_deref())?;
                 let t = cell_table(cells, &o.table)?;
@@ -689,6 +757,15 @@ impl Connector for PdfTable {
                         }
                     }
                 }
+                // Year carried down the rows for month labels without one.
+                let mut years: Vec<Option<String>> = Vec::with_capacity(t.rows.len());
+                let mut last: Option<String> = None;
+                for r in &t.rows {
+                    if let Some(y) = year_in(r.0) {
+                        last = Some(y.to_owned());
+                    }
+                    years.push(last.clone());
+                }
                 for (ri, row_dims) in picked {
                     let (label, label_cell, by_col) = &t.rows[ri];
                     let geo = match (&o.geo.fixed, &o.geo.from_label) {
@@ -697,15 +774,21 @@ impl Connector for PdfTable {
                         (None, Some(lg)) => {
                             if lg.root.iter().any(|r| norm(r) == norm(label)) {
                                 (root.clone(), Some("root_label"))
+                            } else if lg.skip.iter().any(|r| norm(r) == norm(label)) {
+                                continue;
+                            } else if lg.level != 2 {
+                                let idx = level_names.as_ref().context("name index")?;
+                                let (code, method) =
+                                    idx.resolve(lg.level, label).with_context(|| {
+                                        format!(
+                                            "{}: unmatched name {label:?} (level {})",
+                                            o.table, lg.level
+                                        )
+                                    })?;
+                                (code, Some(method))
                             } else {
                                 let idx = names.as_ref().context("name index")?;
-                                let m = match lg.level {
-                                    2 => idx.district(label),
-                                    l => bail!(
-                                        "geo.from_label: level {l} is not supported yet (2 only)"
-                                    ),
-                                }
-                                .with_context(|| {
+                                let m = idx.district(label).with_context(|| {
                                     format!(
                                         "{}: unmatched name {label:?} (level {})",
                                         o.table, lg.level
@@ -742,6 +825,9 @@ impl Connector for PdfTable {
                         let period =
                             match (&o.period.from_header, &o.period.from_label, &o.period.fixed) {
                                 (Some(p), _, _) => parse_period(*p, header)?,
+                                (_, Some(PeriodParse::Month), _) => {
+                                    parse_month(label, years[ri].as_deref())?
+                                }
                                 (_, Some(p), _) => parse_period(*p, label)?,
                                 (_, _, Some(f)) => f.clone(),
                                 _ => bail!("period"),
@@ -763,7 +849,7 @@ impl Connector for PdfTable {
                             .collect();
                         dims.extend(row_dims.iter().map(|(k, v)| (k.as_str(), v.as_str())));
                         let art = x.artifact(cell.artifact_idx)?;
-                        rows.push(ObsRow {
+                        by_ds[di].2.push(ObsRow {
                             indicator_id: o.indicator.clone(),
                             geo_code: geo.0.clone(),
                             period,
@@ -792,22 +878,25 @@ impl Connector for PdfTable {
             }
         }
         ensure!(
-            !rows.is_empty(),
+            by_ds.iter().any(|d| !d.2.is_empty()),
             "pdf_table: no observations from the extract"
         );
-        let vintage = s
-            .vintage
-            .as_ref()
-            .map(|v| v.replace("{edition}", &editions.join(", ")));
-        sink.begin(OutputHeader {
-            dataset_id: s.dataset.clone(),
-            kind: OutputKind::Observations,
-            vintage,
-        })?;
-        for r in rows {
-            sink.obs(r)?;
+        for (dataset_id, editions, rows) in by_ds {
+            let vintage = s
+                .vintage
+                .as_ref()
+                .map(|v| v.replace("{edition}", &editions.join(", ")));
+            sink.begin(OutputHeader {
+                dataset_id,
+                kind: OutputKind::Observations,
+                vintage,
+            })?;
+            for r in rows {
+                sink.obs(r)?;
+            }
+            sink.end()?;
         }
-        sink.end()
+        Ok(())
     }
 }
 
@@ -834,5 +923,20 @@ mod tests {
             "2026-Q1"
         );
         assert!(parse_period(PeriodParse::Year, "Total").is_err());
+        assert_eq!(
+            parse_period(PeriodParse::Month, "2022 January").expect("m"),
+            "2022-01"
+        );
+        assert_eq!(parse_month("February", Some("2023")).expect("m"), "2023-02");
+        assert_eq!(
+            parse_period(PeriodParse::Quarter, "2024Q2").expect("q"),
+            "2024-Q2"
+        );
+        assert_eq!(
+            parse_period(PeriodParse::Quarter, "2026 Q1").expect("q"),
+            "2026-Q1"
+        );
+        assert!(parse_period(PeriodParse::Quarter, "2025").is_err());
+        assert!(parse_month("March", None).is_err());
     }
 }

@@ -2,6 +2,7 @@ id: dcs-pocketbook-trade-indices
 title: External trade volume/price indices
 description: Export and import volume, unit value and terms-of-trade indices.
 source_ids:
+- dcs-pocketbook-economy
 - dcs-pocketbook
 indicators:
 - id: trade.terms_of_trade
@@ -13,6 +14,7 @@ indicators:
   geo_levels:
   - national
   period_type: year
+  base_period: '2010'
 - id: trade.volume_index
   label: Trade volume index
   unit: '{index}'
@@ -24,10 +26,24 @@ indicators:
   geo_levels:
   - national
   period_type: year
+  base_period: '2010'
+- id: trade.value_index
+  label: External trade value index (2010=100)
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
+  dims:
+  - flow
+  geo_levels:
+  - national
+  period_type: year
+  base_period: '2010'
 time_coverage:
-  from: '2010'
+  from: '2021'
   to: '2025'
-method: PDF tables.
+method: 'Statistical Pocket Book 2026 table 9.8 (from the CBSL Annual Economic Review 2025): value and volume indices of imports
+  and exports and the terms of trade, 2021-2025, 2010=100.'
 limits:
 - Index base changes.
 enrichment:

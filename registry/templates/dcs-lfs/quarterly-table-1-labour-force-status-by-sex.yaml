@@ -1,0 +1,28 @@
+# LFS quarterly report, annex tables 1, 1A, 1B: historical labour force status of
+# the household population aged 15 and over, both sexes, male, female, printed as
+# three blocks with the same headers on one page. Rows: the annual series
+# (2017-…) then four quarters ("2026Q2"); the blocks repeat the row labels, so the
+# connector tells them apart by occurrence (#1 both sexes, #2 male, #3 female).
+id: dcs-lfs/quarterly-table-1-labour-force-status-by-sex
+title: Historical labour force status of the household population (15+), by sex
+editions:
+  - match: { edition: "2026..2027" }
+    locate:
+      page: { find_text: "Quarterly Report : Sri Lanka Labour Force Survey", then_text: "partici:" }
+    label: { key: period, header: "Year", slack: 12 }
+    columns:
+      - { key: hh_pop,     header: "population:" }
+      - { key: lf_total,   header: "Total labour" }
+      - { key: lfpr,       header: "partici:" }
+      - { key: emp_no,     header: "Number", nth: 1 }
+      - { key: emp_rate,   header: "Rate", nth: 1 }
+      - { key: unemp_no,   header: "Number", nth: 2 }
+      - { key: unemp_rate, header: "Rate", nth: 2 }
+      - { key: not_lf,     header: "Number", nth: 3 }
+    rows: { stop_at: ["Quarterly Report"], min_cells: 8 }
+    number: { thousands: "," }
+    checks:
+      - { sum: [emp_no, unemp_no], equals: lf_total, tol: 2 }
+      - { sum: [lf_total, not_lf], equals: hh_pop, tol: 2 }
+      - { row_count: { min: 36, max: 45 } }
+      - { rows_present: ["2017#3", "2026Q2#3"] }

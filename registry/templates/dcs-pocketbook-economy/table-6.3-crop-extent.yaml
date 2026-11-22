@@ -1,0 +1,18 @@
+# Pocket Book 2026, table 6.3: extent under principal and food crops, hectares.
+id: dcs-pocketbook-economy/table-6.3-crop-extent
+title: "Extent under principal crops and food crops (ha)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "6.3 Extent under Principal Crops", then_text: "Crop" }
+    label: { key: crop, header: "Crop" }
+    columns:
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Asweddumized paddy area", "This is an estimated"] }
+    number: { thousands: ",", strip: ["#", "(b)"] }
+    checks:
+      - { row_count: { min: 19, max: 19 } }

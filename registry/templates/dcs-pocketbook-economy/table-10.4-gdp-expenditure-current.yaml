@@ -1,0 +1,25 @@
+# Pocket Book 2026, table 10.4: expenditure on GDP at current prices, value (Rs. mn) and share (%).
+# Wrapped labels: the numbers sit on the middle line, so a label continuation line joins the
+# next label (rows are referenced by their printed text as read).
+id: dcs-pocketbook-economy/table-10.4-gdp-expenditure-current
+title: "Expenditure on GDP at current prices (Rs. mn)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "10.4 Expenditure on Gross Domestic Product", then_text: "Value" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: v2021, header: "Value", under: "2021" }
+      - { key: p2021, header: "%", under: "2021" }
+      - { key: v2022, header: "Value", under: "2022" }
+      - { key: p2022, header: "%", under: "2022" }
+      - { key: v2023, header: "Value", under: "2023" }
+      - { key: p2023, header: "%", under: "2023" }
+      - { key: v2024, header: "Value", under: "2024" }
+      - { key: p2024, header: "%", under: "2024" }
+      - { key: v2025, header: "Value", under: "2025" }
+      - { key: p2025, header: "%", under: "2025" }
+    rows: { stop_at: ["Provisional"], label_above: true }
+    number: { thousands: ",", strip: [] }
+    checks:
+      - { row_count: { min: 13, max: 13 } }

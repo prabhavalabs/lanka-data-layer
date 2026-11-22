@@ -1,0 +1,29 @@
+# Pocket Book 2026, table 3.10, first block (2017-2021): departures by manpower level and sex.
+# The 2022-2025 block has other headers (Skilled / Low-skilled by sex) and is a separate template.
+id: dcs-pocketbook-economy/table-3.10-foreign-employment-2017-2021
+title: "Departures for foreign employment by manpower level and sex, 2017-2021"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "3.10 Departures for Foreign Employment", then_text: "Professional" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: prof_m, header: "M", nth: 1 }
+      - { key: prof_f, header: "F", nth: 1 }
+      - { key: mid_m, header: "M", nth: 2 }
+      - { key: mid_f, header: "F", nth: 2 }
+      - { key: cler_m, header: "M", nth: 3 }
+      - { key: cler_f, header: "F", nth: 3 }
+      - { key: skilled_m, header: "M", nth: 4 }
+      - { key: skilled_f, header: "F", nth: 4 }
+      - { key: semi_m, header: "M", nth: 5 }
+      - { key: semi_f, header: "F", nth: 5 }
+      - { key: low_m, header: "M", nth: 6 }
+      - { key: low_f, header: "F", nth: 6 }
+      - { key: dom, header: "Assistants" }
+      - { key: total, header: "Total" }
+    rows: { stop_at: ["Male"] }
+    number: { thousands: "," }
+    checks:
+      - { sum: [prof_m, prof_f, mid_m, mid_f, cler_m, cler_f, skilled_m, skilled_f, semi_m, semi_f, low_m, low_f, dom], equals: total, tol: 1 }
+      - { row_count: { min: 5, max: 5 } }
