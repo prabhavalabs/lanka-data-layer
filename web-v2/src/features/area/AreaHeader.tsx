@@ -5,7 +5,7 @@ import type { AreaProfile } from '@/api/types'
 import { LocatorMap } from '@/components/charts/LocatorMap'
 import { PcodePlate } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
-import { fmtCoord, fmtInt } from '@/lib/format'
+import { fmtArea, fmtCoord } from '@/lib/format'
 
 export const LEVEL = ['Country', 'Province', 'District', 'DS division', 'GN division'] as const
 export const CHILD_LEVEL = ['Provinces', 'Districts', 'DS divisions', 'GN divisions', 'Sub-units'] as const
@@ -81,7 +81,7 @@ export function AreaHeader({ profile }: { profile: AreaProfile }) {
           {(
             [
               ['centroid', fmtCoord(lat, lon)],
-              ['area', `${fmtInt(area.areaKm2 || profile.headline.find((h) => h.id === 'area.land')?.value || 0)} km²`],
+              ['area', `${fmtArea(area.areaKm2 || profile.headline.find((h) => h.id === 'area.land')?.value || 0)} km²`],
               ['data_version', meta.data_version],
             ] as const
           ).map(([k, v]) => (
