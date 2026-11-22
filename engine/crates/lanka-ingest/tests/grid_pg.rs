@@ -76,6 +76,7 @@ layers:
     style: { ramp: viridis.magma, domain: [0, 10] }
 zonal:
   - { indicator: it.pop, layer: it.pop, stat: sum, levels: [1, 2] }
+  - { indicator: it.density, layer: it.pop, stat: density, levels: [1, 2] }
 "#;
 
 fn fixture_registry() -> (PathBuf, Profile) {
@@ -100,7 +101,7 @@ fn fixture_registry() -> (PathBuf, Profile) {
     }
     std::fs::write(
         dir.join("units.yaml"),
-        "units:\n  - { code: '{thing}', label: things, kind: count }\n",
+        "units:\n  - { code: '{thing}', label: things, kind: count }\n  - { code: '/km2', label: per km2, kind: ratio }\n",
     )
     .expect("write");
     std::fs::write(
@@ -117,6 +118,8 @@ fn fixture_registry() -> (PathBuf, Profile) {
         "id: it-pop\ntitle: Gridded things\ndescription: Fixture raster.\nsource_ids: [it-ras]\n\
          indicators:\n  - {id: it.pop, label: Things, unit: '{thing}', measure_type: count, aggregation: sum,\n\
          \x20     class: third_party, geo_levels: [raster, adm1, adm2], period_type: year}\n\
+         \x20 - {id: it.density, label: Things per km2, unit: /km2, measure_type: rate, aggregation: none,\n\
+         \x20     class: third_party, geo_levels: [adm1, adm2], period_type: year}\n\
          time_coverage: {from: 2025}\nmethod: Fixture.\nlimits: [Not real data.]\npublication_class: A\n",
     )
     .expect("write");
@@ -298,8 +301,8 @@ async fn run_grid(url: String) {
     assert_eq!(r.status, RunStatus::Succeeded, "{r:?}");
     assert_eq!(r.published.len(), 1);
     assert_eq!(r.published[0].outcome, "approved");
-    // 2 regions + 3 districts.
-    assert_eq!(r.published[0].rows, 5);
+    // 2 regions + 3 districts, sums and densities.
+    assert_eq!(r.published[0].rows, 10);
 
     let layers: Vec<(String, String, bool)> =
         sqlx::query_as("SELECT id, dataset_id, serve FROM geo.grid_layers ORDER BY id")
@@ -326,6 +329,20 @@ async fn run_grid(url: String) {
     let get = |c: &str| vals.iter().find(|v| v.0 == c).map(|v| v.2).expect(c);
     // Parents equal the sum of their children.
     assert!((get("ZZ1") - get("ZZ11") - get("ZZ12")).abs() < 1e-6);
+    // Densities (zonal stat `density`): per km² of the unit's inside cells;
+    // a parent's lies between its children's.
+    let dens: Vec<(String, f64)> = sqlx::query_as(
+        "SELECT geo_code, value FROM data.current_observations_coded WHERE indicator_id = 'it.density' ORDER BY geo_code",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("density");
+    assert_eq!(dens.len(), 5, "{dens:?}");
+    let d = |c: &str| dens.iter().find(|v| v.0 == c).map(|v| v.1).expect(c);
+    let (lo, hi) = (d("ZZ11").min(d("ZZ12")), d("ZZ11").max(d("ZZ12")));
+    assert!(d("ZZ1") >= lo - 1e-9 && d("ZZ1") <= hi + 1e-9, "{dens:?}");
+    // 0.01° cells ≈ 1.2 km²: values of 1…400 per 0.05° pixel = 25 cells.
+    assert!(d("ZZ1") > 0.0 && d("ZZ1") < 400.0 / 25.0 / 1.0, "{dens:?}");
     assert!((get("ZZ2") - get("ZZ21")).abs() < 1e-6);
     // Leaves + the bay (cells outside every unit beyond 2 km, slot 0) = the grid total.
     let leaves = get("ZZ11") + get("ZZ12") + get("ZZ21");

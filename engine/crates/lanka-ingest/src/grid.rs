@@ -744,6 +744,26 @@ pub async fn zonal_rows(
             accs.insert((i, inside), rollup(&a, &parents));
         }
     }
+    // Unit areas over every assigned cell (valid or not), for `density`: a
+    // constrained population raster is nodata outside mapped settlement, and
+    // a density divides by the unit's land, not by its settled cells.
+    let mut unit_area: HashMap<bool, HashMap<i32, f64>> = HashMap::new();
+    for z in specs.iter().filter(|z| z.stat == ZonalStat::Density) {
+        let inside = z.inside_only()?;
+        if unit_area.contains_key(&inside) {
+            continue;
+        }
+        let idx = if inside { &lk.gnd_inside } else { &lk.gnd_idx };
+        let ones = vec![0.0f32; idx.len()];
+        let a = zonal(idx, ones.as_slice(), grid.cols, &areas, slots);
+        unit_area.insert(
+            inside,
+            rollup(&a, &parents)
+                .into_iter()
+                .map(|(k, a)| (k, a.area))
+                .collect(),
+        );
+    }
     let mut rows = Vec::new();
     let mut empty = std::collections::BTreeSet::new();
     for z in specs {
@@ -781,6 +801,16 @@ pub async fn zonal_rows(
                         } else {
                             Some(a.wsum / d)
                         }
+                    }
+                    // Persons (or any count) per km² of the unit's valid cells.
+                    // Σ v per km² of all the unit's (inside) cells.
+                    ZonalStat::Density => {
+                        let area = unit_area
+                            .get(&inside)
+                            .and_then(|m| m.get(k))
+                            .copied()
+                            .unwrap_or(0.0);
+                        (area > 0.0).then(|| a.sum / (area / 1e6))
                     }
                     s => a.stat(s.acc_stat()),
                 };

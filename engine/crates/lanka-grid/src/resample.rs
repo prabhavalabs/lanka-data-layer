@@ -3,6 +3,7 @@
 //! | method | for | rule |
 //! |---|---|---|
 //! | [`split_sum`] | counts on a coarser raster (WorldPop ~1 km) | each valid pixel's value is split evenly over the cells whose **centre** lies in the pixel (half-open `[west, east) × [south, north)`); the v1 `cells` step, operation for operation |
+//! | [`area_sum`] | counts on a raster of similar or finer resolution (WorldPop 100 m, 3″) | each valid pixel's value is split over the cells it overlaps in proportion to the overlap area (area-weighted redistribution); conserves the total inside the grid at any resolution ratio |
 //! | [`CentreMean`] | intensive values on a finer raster (DEM 30 m) | mean of the valid pixels whose centre lies in the cell |
 //! | [`CentreClasses`] | categories on a finer raster (WorldCover 10 m) | per-class count of pixels whose centre lies in the cell |
 //! | [`CentreMax`] | depths on a finer raster (JRC flood 90 m) | maximum of the valid pixels whose centre lies in the cell |
@@ -130,6 +131,104 @@ pub fn split_sum(
             for_each_cell(g, r, |i| {
                 acc[i] = if acc[i].is_nan() { per } else { acc[i] + per };
             });
+        }
+    }
+    let mut out = Vec::with_capacity(n);
+    for a in acc {
+        if a.is_finite() {
+            rep.distributed_total += a;
+        }
+        #[allow(clippy::cast_possible_truncation)]
+        out.push(a as f32);
+    }
+    (out, rep)
+}
+
+/// Totals of an [`area_sum`] pass.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct AreaSumReport {
+    /// Sum of all valid positive pixels.
+    pub raster_total: f64,
+    pub positive_pixels: u64,
+    /// Sum distributed onto the grid (less than the raster total only by
+    /// the parts of pixels outside the grid).
+    pub distributed_total: f64,
+}
+
+/// Area-weighted redistribution: every valid pixel (finite, not nodata) is
+/// split over the cells its footprint overlaps, each cell receiving
+/// `v × overlap / pixel area` (planar in degrees — at 3″ the latitude
+/// change of the metric across one pixel is below 1e-6). A pixel of 3″ on
+/// the 0.001° grid overlaps at most 2 × 2 cells, so a cell holds the
+/// population of the area it covers, not a whole pixel (no aliasing as with
+/// centre sampling at a 1.2 resolution ratio). Cells overlapped only by valid
+/// zero pixels are 0; cells overlapped by no valid pixel are NaN.
+#[must_use]
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap
+)]
+pub fn area_sum(
+    g: &Grid,
+    geo: &GeoRef,
+    band: &Block,
+    b: u16,
+    nodata: Option<f64>,
+) -> (Vec<f32>, AreaSumReport) {
+    let n = crate::cells(g);
+    let mut acc = vec![f64::NAN; n];
+    let mut rep = AreaSumReport::default();
+    let step = g.step;
+    let pixel_area = geo.dx * geo.dy;
+    for row in 0..band.height {
+        let north = geo.y0 - f64::from(band.y + row) * geo.dy;
+        let south = north - geo.dy;
+        // Grid rows overlapping [south, north).
+        let r0 = ((g.lat_max - north) / step).floor().max(0.0);
+        let r1 = ((g.lat_max - south) / step).ceil().min(f64::from(g.rows));
+        if r1 <= r0 {
+            continue;
+        }
+        for col in 0..band.width {
+            let raw = band.get(col, row, b);
+            let v = f64::from(raw);
+            #[allow(clippy::cast_possible_truncation)]
+            let valid = v.is_finite() && nodata.is_none_or(|nd| raw != nd as f32);
+            if !valid {
+                continue;
+            }
+            let v = v.max(0.0);
+            if v > 0.0 {
+                rep.positive_pixels += 1;
+                rep.raster_total += v;
+            }
+            let west = geo.x0 + f64::from(band.x + col) * geo.dx;
+            let east = west + geo.dx;
+            let c0 = ((west - g.lon_min) / step).floor().max(0.0);
+            let c1 = ((east - g.lon_min) / step).ceil().min(f64::from(g.cols));
+            if c1 <= c0 {
+                continue;
+            }
+            for r in (r0 as u32)..(r1 as u32) {
+                let cn = g.lat_max - f64::from(r) * step;
+                let cs = cn - step;
+                let h = north.min(cn) - south.max(cs);
+                if h <= 0.0 {
+                    continue;
+                }
+                let base = r as usize * g.cols as usize;
+                for c in (c0 as u32)..(c1 as u32) {
+                    let cw = g.lon_min + f64::from(c) * step;
+                    let w = east.min(cw + step) - west.max(cw);
+                    if w <= 0.0 {
+                        continue;
+                    }
+                    let part = v * (w * h) / pixel_area;
+                    let a = &mut acc[base + c as usize];
+                    *a = if a.is_nan() { part } else { *a + part };
+                }
+            }
         }
     }
     let mut out = Vec::with_capacity(n);
@@ -496,6 +595,84 @@ mod tests {
         let zeros = out.iter().filter(|v| **v == 0.0).count();
         assert!(zeros > 0, "the zero pixel's cells are 0, not nodata");
         assert!(out.iter().filter(|v| v.is_finite()).count() < 6 * 81);
+    }
+
+    #[test]
+    fn area_sum_conserves_and_resolves_100m_pixels() {
+        // A 3-arc-second (WorldPop 100 m) raster of 12 × 12 pixels = 0.01°:
+        // exactly 10 × 10 cells of 0.001°.
+        let grid = Grid {
+            lat_max: 10.0,
+            lon_min: 79.4,
+            step: 0.001,
+            rows: 10,
+            cols: 10,
+        };
+        let dx = 1.0 / 1200.0;
+        let geo = GeoRef {
+            x0: 79.4,
+            dx,
+            y0: 10.0,
+            dy: dx,
+            width: 12,
+            height: 12,
+        };
+        // Uniform density except one hot pixel (top-left corner).
+        let mut data = vec![1.0f32; 144];
+        data[0] = 145.0;
+        let block = Block {
+            x: 0,
+            y: 0,
+            width: 12,
+            height: 12,
+            stride: 12,
+            bands: 1,
+            data,
+        };
+        let (out, rep) = area_sum(&grid, &geo, &block, 0, Some(-99999.0));
+        assert!((rep.raster_total - 288.0).abs() < 1e-9);
+        assert!((rep.distributed_total - 288.0).abs() < 1e-3);
+        // A cell away from the hot pixel holds 1.44 pixels' worth.
+        assert!((f64::from(out[55]) - 1.44).abs() < 1e-4, "{}", out[55]);
+        // The hot pixel (0.000833°) sits inside the first cell: its value
+        // stays there, it is not smeared over a 1 km block.
+        assert!(out[0] > 140.0, "{}", out[0]);
+        assert!(out[1] < 3.0, "{}", out[1]);
+        assert!(out.iter().all(|v| v.is_finite()));
+    }
+
+    #[test]
+    fn area_sum_matches_split_sum_on_aligned_coarse_pixels() {
+        // A 0.002° pixel covering exactly 2 × 2 cells: both rules give v / 4.
+        let grid = Grid {
+            lat_max: 10.0,
+            lon_min: 79.4,
+            step: 0.001,
+            rows: 2,
+            cols: 2,
+        };
+        let geo = GeoRef {
+            x0: 79.4,
+            dx: 0.002,
+            y0: 10.0,
+            dy: 0.002,
+            width: 1,
+            height: 1,
+        };
+        let block = Block {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 1,
+            stride: 1,
+            bands: 1,
+            data: vec![8.0],
+        };
+        let (a, _) = area_sum(&grid, &geo, &block, 0, None);
+        let (s, _) = split_sum(&grid, &geo, &block, 0, None);
+        for (x, y) in a.iter().zip(&s) {
+            assert!((x - y).abs() < 1e-5 && (x - 2.0).abs() < 1e-5);
+        }
     }
 
     #[test]

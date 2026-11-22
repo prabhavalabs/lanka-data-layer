@@ -13,7 +13,7 @@
 //!   - id: worldpop.population
 //!     period: "2025"
 //!     indicator: pop.grid_total       # optional; dims: "k=v"
-//!     resample: split_sum             # split_sum | centre_mean | centre_sample | class_count | class_mode | slope_mean | slope_share | centre_max | centre_share
+//!     resample: split_sum             # split_sum | area_sum | centre_mean | centre_sample | class_count | class_mode | slope_mean | slope_share | centre_max | centre_share
 //!     band: 1                         # 1-based (default 1); files: [keys] (default all)
 //!     encoding: { dtype: f32 }        # + scale, offset, nodata
 //!     unit: "{person}"
@@ -52,7 +52,7 @@ use lanka_grid::array::{Dtype, LayerEncoding};
 use lanka_grid::cog::Overview;
 use lanka_grid::geotiff::GeoTiff;
 use lanka_grid::resample::{
-    CentreClasses, CentreMax, CentreMean, CentreShare, centre_sample, split_sum,
+    CentreClasses, CentreMax, CentreMean, CentreShare, area_sum, centre_sample, split_sum,
 };
 use lanka_grid::tile::Style;
 use lanka_grid::zonal::Stat;
@@ -98,6 +98,8 @@ pub struct FileSpec {
 #[serde(rename_all = "snake_case")]
 pub enum Resample {
     SplitSum,
+    /// Area-weighted redistribution of counts (similar or finer rasters).
+    AreaSum,
     CentreMean,
     CentreSample,
     ClassCount,
@@ -116,6 +118,7 @@ impl Resample {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::SplitSum => "split_sum",
+            Self::AreaSum => "area_sum",
             Self::CentreMean => "centre_mean",
             Self::CentreSample => "centre_sample",
             Self::ClassCount => "class_count",
@@ -206,6 +209,8 @@ pub enum ZonalStat {
     AreaSum,
     Share,
     Max,
+    /// Σ v per km² of the unit's valid cells (counts → density).
+    Density,
 }
 
 impl ZonalStat {
@@ -213,7 +218,7 @@ impl ZonalStat {
     #[must_use]
     pub const fn acc_stat(self) -> Stat {
         match self {
-            Self::Sum => Stat::Sum,
+            Self::Sum | Self::Density => Stat::Sum,
             Self::Mean => Stat::Mean,
             Self::AreaSum | Self::Share => Stat::AreaSum,
             Self::Max => Stat::Max,
@@ -631,6 +636,10 @@ pub fn build_layers(
                         let (v, _) = split_sum(g, &geo, &block, band, nodata);
                         merge_sum(arrays.entry(li).or_default(), v);
                     }
+                    Resample::AreaSum => {
+                        let (v, _) = area_sum(g, &geo, &block, band, nodata);
+                        merge_sum(arrays.entry(li).or_default(), v);
+                    }
                     Resample::CentreSample => {
                         let v = centre_sample(g, &geo, &block, band, is_nd);
                         merge_first(arrays.entry(li).or_default(), v);
@@ -678,7 +687,7 @@ pub fn build_layers(
         );
         for (&li, l) in members.iter().zip(&layers) {
             let values = match l.resample {
-                Resample::SplitSum | Resample::CentreSample => arrays
+                Resample::SplitSum | Resample::AreaSum | Resample::CentreSample => arrays
                     .remove(&li)
                     .flatten()
                     .context("layer produced nothing")?,
