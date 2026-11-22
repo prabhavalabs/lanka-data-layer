@@ -1,0 +1,34 @@
+# World Bank Sri Lanka Development Update: macroeconomic outlook metric
+# Source/authority: World Bank, Sri Lanka Development Update, key economic indicators table (Table 1.1 in October 2026)
+#   and the Macro Poverty Outlook table ("Recent history and projections").
+# Note: growth metrics are annual percent changes; ratio metrics are percent of GDP as labelled.
+# Status: complete for the editions loaded (2026-05, 2026-10).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: wb-sldu-outlook
+id: wb_outlook_metric
+title: Macroeconomic outlook metric (World Bank SLDU)
+codes:
+  - { code: gdp_growth, label: "Real GDP growth, at constant market prices (% change)" }
+  - { code: private_consumption, label: "Private consumption (% change)" }
+  - { code: government_consumption, label: "Government consumption (% change)" }
+  - { code: gfcf, label: "Gross fixed capital formation (% change)" }
+  - { code: exports_real, label: "Exports of goods and services, real (% change)" }
+  - { code: imports_real, label: "Imports of goods and services, real (% change)" }
+  - { code: gdp_growth_factor, label: "Real GDP growth, at constant factor prices (% change)" }
+  - { code: agriculture, label: "Agriculture, real value added (% change)" }
+  - { code: industry, label: "Industry, real value added (% change)" }
+  - { code: services, label: "Services, real value added (% change)" }
+  - { code: employment_rate, label: "Employment rate (% of working-age population, 15+)" }
+  - { code: inflation, label: "Consumer price inflation (% change)" }
+  - { code: revenue_grants_gdp, label: "Revenues and grants (% of GDP)" }
+  - { code: tax_revenue_gdp, label: "Tax revenue (% of GDP)" }
+  - { code: expenditure_gdp, label: "Expenditures (% of GDP)" }
+  - { code: primary_balance_gdp, label: "Primary balance (% of GDP)" }
+  - { code: fiscal_balance_gdp, label: "Fiscal balance (% of GDP)" }
+  - { code: debt_gdp, label: "Central government debt (% of GDP)" }
+  - { code: current_account_gdp, label: "Current account balance (% of GDP)" }
+  - { code: exports_gdp, label: "Exports of goods and services (% of GDP)" }
+  - { code: imports_gdp, label: "Imports of goods and services (% of GDP)" }
+  - { code: net_fdi_gdp, label: "Net foreign direct investment (% of GDP)" }
+  - { code: ghg_growth, label: "GHG emissions growth (%)" }

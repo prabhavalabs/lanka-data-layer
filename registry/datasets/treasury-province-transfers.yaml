@@ -1,6 +1,7 @@
 id: treasury-province-transfers
 title: Transfers to provincial councils
-description: Central government transfers (block grants, PSDG, criteria-based grants) to each provincial council.
+description: Central government transfers to each provincial council, recurrent and capital, from the Ministry of Finance
+  annual report (Final Budget Position Report), table "Transfers to Provinces".
 source_ids:
 - treasury-annual-report
 indicators:
@@ -12,25 +13,21 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - grant_type
-  geo_levels:
-  - adm1
-  period_type: year
-- id: fisc.pc_transfers_per_capita
-  label: Transfers per capita
-  unit: LKR
-  measure_type: mean
-  aggregation: none
-  class: official
+  - expenditure_type
   geo_levels:
   - adm1
   period_type: year
 time_coverage:
-  from: '2015'
+  from: '2021'
   to: '2025'
-method: PDF tables.
+method: >-
+  Table "Transfers to Provinces in <year>" (5.8 or 5.9) of the Ministry of Finance annual report for that year (PDF text
+  layer, reviewed template), Rs. million.
 limits:
-- Allocations vs disbursements differ.
+- Transfers as reported in the annual report (Department of National Budget, Department of State Accounts); the split
+  into block, criteria-based and province-specific grants is not printed in this table.
+- Projects implemented by the ministry in charge of provincial councils are printed as a separate line with no province
+  and are not loaded, so provinces do not sum to the printed total.
 enrichment:
   joins:
   - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)

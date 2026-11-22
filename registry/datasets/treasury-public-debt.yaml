@@ -41,12 +41,54 @@ indicators:
   geo_levels:
   - national
   period_type: quarter
+- id: debt.domestic_by_instrument_usd
+  label: Domestic debt by instrument (US dollars)
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - instrument
+  geo_levels:
+  - national
+  period_type: quarter
+- id: debt.public_gross
+  label: Public debt (gross) by component
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - public_debt_component
+  geo_levels:
+  - national
+  period_type: quarter
+- id: debt.public_gross_usd
+  label: Public debt (gross) by component (US dollars)
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - public_debt_component
+  geo_levels:
+  - national
+  period_type: quarter
 time_coverage:
-  from: 2019-Q1
+  from: 2025-Q2
   to: 2026-Q2
-method: PDF tables, reviewed.
+method: >-
+  Quarterly Statistical Debt Bulletin (PDMO) sections 2 (outstanding public debt, previous and current quarter end) and 3
+  (summary of outstanding domestic debt), PDF text layer read through reviewed templates; LKR billion scaled to million.
 limits:
 - Restructuring-period valuation changes.
+- All figures provisional as printed. USD figures use the quarter-end indicative exchange rate.
+- Loaded from the 2025 third-quarter bulletin onwards (one layout); the 2025 fourth-quarter bulletin is a scan with no
+  text layer (its quarter is read from the 2026 first-quarter bulletin's previous-quarter column); earlier bulletins
+  (2022 Q3 to 2025 Q2) use other layouts and are not loaded yet.
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'

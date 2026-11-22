@@ -10,3 +10,7 @@ codes:
   - { code: total, label: Total central government debt, total: true, sdmx: _T }
   - { code: domestic, label: Domestic debt, parent: total }
   - { code: foreign, label: Foreign debt, parent: total }
+  - { code: treasury_bills, label: Treasury bills (resident holdings), parent: domestic }
+  - { code: treasury_bonds, label: Treasury bonds (resident holdings), parent: domestic }
+  - { code: rupee_loans, label: Rupee loans, parent: domestic }
+  - { code: other_domestic, label: Other domestic debt, parent: domestic }

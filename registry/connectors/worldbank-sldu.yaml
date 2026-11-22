@@ -1,0 +1,116 @@
+source: worldbank-sldu
+driver: pdf_table
+version: 1.0.0
+description: >-
+  World Bank Sri Lanka Development Update: the key economic indicators table of the
+  October 2026 edition (Table 1.1, 2022-2028) and the Macro Poverty Outlook table of the
+  May 2026 edition (2023-2028). Each edition is a vintage in the `edition` dimension.
+  Licence CC BY 3.0 IGO. Class B: every version is reviewed against its evidence sheet
+  before release.
+discover:
+  files:
+    - key: sldu-2026-10
+      url: https://documents1.worldbank.org/curated/en/099854410052618368/pdf/IDU-b519d848-09f1-47d1-b782-3378e00f3019.pdf
+      edition: "2026-10"
+    - key: sldu-2026-05
+      url: https://documents1.worldbank.org/curated/en/099213205052641407/pdf/IDU-df6d36cb-59f0-4e01-af7b-4893b4d08e24.pdf
+      edition: "2026-05"
+extract:
+  tables:
+    - { id: kei_2026_10, file: sldu-2026-10, template: worldbank-sldu/key-economic-indicators }
+    - { id: mpo_2026_05, file: sldu-2026-05, template: worldbank-sldu/key-economic-indicators }
+standardise:
+  dataset: wb-sldu-outlook
+  vintage: "Sri Lanka Development Update {edition}"
+  outputs:
+    # ── October 2026, Table 1.1 ──
+    - table: kei_2026_10
+      indicator: wbsldu.macro
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: &c2610
+        y2022: { edition: "2026-10" }
+        y2023: { edition: "2026-10" }
+        y2024: { edition: "2026-10" }
+        y2025: { edition: "2026-10" }
+        y2026: { edition: "2026-10" }
+        y2027: { edition: "2026-10" }
+        y2028: { edition: "2026-10" }
+      rows:
+        "Real GDP": { metric: gdp_growth }
+        "Private consumption": { metric: private_consumption }
+        "Gross fixed capital formation": { metric: gfcf }
+        "Exports": { metric: exports_real }
+        "Imports": { metric: imports_real }
+        "Consumer price inflation": { metric: inflation }
+        "Revenues and grants": { metric: revenue_grants_gdp }
+        "of which, tax revenue": { metric: tax_revenue_gdp }
+        "Expenditures": { metric: expenditure_gdp }
+        "Primary balance": { metric: primary_balance_gdp }
+        "Fiscal balance": { metric: fiscal_balance_gdp }
+        "Central government debt": { metric: debt_gdp }
+        "Current account balance": { metric: current_account_gdp }
+        "Exports, goods and services": { metric: exports_gdp }
+        "Imports, goods and services": { metric: imports_gdp }
+        "Net foreign direct investment": { metric: net_fdi_gdp }
+    - table: kei_2026_10
+      indicator: wbsldu.reserves_months
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *c2610
+      rows: { "Gross reserves (months of imports)": {} }
+    - table: kei_2026_10
+      indicator: wbsldu.poverty_rate
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *c2610
+      rows:
+        "International poverty rate (US$3.00 in 2021 PPP)": { poverty_line: usd3_00_ppp2021 }
+        "Lower middle-income poverty rate (US$4.20 in 2021 PPP)": { poverty_line: usd4_20_ppp2021 }
+        "Upper middle-income poverty rate (US$8.30 in 2021 PPP)": { poverty_line: usd8_30_ppp2021 }
+    # ── May 2026, Macro Poverty Outlook table ──
+    - table: mpo_2026_05
+      indicator: wbsldu.macro
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: &c2605
+        y2023: { edition: "2026-05" }
+        y2024: { edition: "2026-05" }
+        y2025: { edition: "2026-05" }
+        y2026: { edition: "2026-05" }
+        y2027: { edition: "2026-05" }
+        y2028: { edition: "2026-05" }
+      rows:
+        "Real GDP growth, at constant market prices": { metric: gdp_growth }
+        "Private consumption": { metric: private_consumption }
+        "Government consumption": { metric: government_consumption }
+        "Gross fixed capital investment": { metric: gfcf }
+        "Exports, goods and services": { metric: exports_real }
+        "Imports, goods and services": { metric: imports_real }
+        "Real GDP growth, at constant factor prices": { metric: gdp_growth_factor }
+        "Agriculture": { metric: agriculture }
+        "Industry": { metric: industry }
+        "Services": { metric: services }
+        "Employment rate (% of working-age population, 15 years+)": { metric: employment_rate }
+        "Inflation (consumer price index)": { metric: inflation }
+        "Current account balance (% of GDP)": { metric: current_account_gdp }
+        "Net foreign direct investment inflow (% of GDP)": { metric: net_fdi_gdp }
+        "Fiscal balance (% of GDP)": { metric: fiscal_balance_gdp }
+        "Revenues (% of GDP)": { metric: revenue_grants_gdp }
+        "Debt (% of GDP)": { metric: debt_gdp }
+        "Primary balance (% of GDP)": { metric: primary_balance_gdp }
+        "GHG emissions growth (mtCO2e)": { metric: ghg_growth }
+    - table: mpo_2026_05
+      indicator: wbsldu.poverty_rate
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *c2605
+      rows:
+        "International poverty rate ($3.00 in 2021 PPP)": { poverty_line: usd3_00_ppp2021 }
+        "Lower middle-income poverty rate ($4.20 in 2021 PPP)": { poverty_line: usd4_20_ppp2021 }
+        "Upper middle-income poverty rate ($8.30 in 2021 PPP)": { poverty_line: usd8_30_ppp2021 }
+expect:
+  - { check: row_count, min: 272, max: 272 }
+  - { check: range, indicator: wbsldu.poverty_rate, min: 0, max: 100 }
+  - { check: range, indicator: wbsldu.macro, min: -60, max: 150 }
+  - { check: range, indicator: wbsldu.reserves_months, min: 0, max: 12 }

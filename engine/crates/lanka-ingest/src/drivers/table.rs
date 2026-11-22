@@ -182,6 +182,67 @@ pub struct TableSpec {
     /// Columns whose empty cells repeat the cell above (merged row labels).
     #[serde(default)]
     pub fill_down: Vec<String>,
+    /// Section rows (a block label such as a year printed alone above a
+    /// block of rows): removed from the table, their label carried into a
+    /// new column for the rows below.
+    #[serde(default)]
+    pub section: Option<SectionSpec>,
+}
+
+/// A row whose only text is a `column` cell matching `pattern` starts a
+/// section; the cell (its provenance kept) fills column `into` of every
+/// following row until the next section row. Rows before the first section
+/// row get no value.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SectionSpec {
+    pub column: String,
+    pub pattern: String,
+    pub into: String,
+}
+
+/// Applies a [`SectionSpec`] to an assembled table.
+fn apply_section(table: &mut Table, s: &SectionSpec) -> Result<()> {
+    let c = table
+        .col(&s.column)
+        .with_context(|| format!("table {}: section column {:?}", table.id, s.column))?;
+    ensure!(
+        table.col(&s.into).is_none(),
+        "table {}: section column {:?} already exists",
+        table.id,
+        s.into
+    );
+    let rx = re(&s.pattern)?;
+    table.columns.push(s.into.clone());
+    let mut current: Option<TCell> = None;
+    let mut rows = Vec::with_capacity(table.rows.len());
+    let mut keys = Vec::with_capacity(table.keys.len());
+    let mut urls = Vec::with_capacity(table.urls.len());
+    let old = std::mem::take(&mut table.rows);
+    for (i, mut row) in old.into_iter().enumerate() {
+        let others = row
+            .iter()
+            .enumerate()
+            .any(|(j, cell)| j != c && cell.is_some());
+        let label = row.get(c).and_then(Option::as_ref);
+        if !others && label.is_some_and(|l| rx.is_match(&clean(&l.text))) {
+            current = label.cloned();
+            continue;
+        }
+        row.resize(table.columns.len() - 1, None);
+        row.push(current.clone());
+        rows.push(row);
+        if let Some(k) = table.keys.get(i) {
+            keys.push(k.clone());
+        }
+        if let Some(u) = table.urls.get(i) {
+            urls.push(u.clone());
+        }
+    }
+    table.rows = rows;
+    table.keys = keys;
+    table.urls = urls;
+    Ok(())
 }
 
 // ───────────────────────────── sources ─────────────────────────────────────
@@ -745,6 +806,9 @@ pub fn assemble(specs: &[TableSpec], extracts: &[ExtractRef]) -> Result<HashMap<
             spec.artifact,
             spec.source
         );
+        if let Some(s) = &spec.section {
+            apply_section(&mut table, s)?;
+        }
         for name in &spec.fill_down {
             let c = table
                 .col(name)
@@ -1058,17 +1122,35 @@ impl Names {
         Ok(Self { by_level, alias })
     }
 
-    /// `None` when the name is not a unit of `level`.
+    /// `None` when the name is not a unit of `level`. A province (level 1)
+    /// is the text before the word "province" ("Uva province Local Government
+    /// Authorities", "Western Province"), or the name without a trailing "PC".
     #[must_use]
     pub fn resolve(&self, level: i16, name: &str) -> Option<(String, &'static str)> {
         let m = self.by_level.get(&level)?;
-        let n = norm(strip_suffix(name));
+        let n = if level == 1 {
+            norm(province_head(name))
+        } else {
+            norm(strip_suffix(name))
+        };
         if let Some(c) = m.get(&n) {
             return Some((c.clone(), "name_exact"));
         }
         let a = self.alias.get(&(level, n))?;
         m.get(a).map(|c| (c.clone(), "name_alias"))
     }
+}
+
+/// The text before the word "province", else the name without " PC".
+fn province_head(s: &str) -> &str {
+    let t = s.trim();
+    let head = t
+        .to_ascii_lowercase()
+        .find("province")
+        .map_or(t, |i| t[..i].trim_end());
+    head.strip_suffix(" PC")
+        .or_else(|| head.strip_suffix(" pc"))
+        .unwrap_or(head)
 }
 
 fn strip_suffix(s: &str) -> &str {
@@ -1432,6 +1514,7 @@ fn with_record_tables(
             rows: RowsSpec::default(),
             rename: BTreeMap::new(),
             fill_down: Vec::new(),
+            section: None,
         };
         let t = assemble(std::slice::from_ref(&auto), extracts)?;
         tables.extend(t);
@@ -1747,6 +1830,41 @@ mod tests {
     use super::*;
 
     #[test]
+    fn province_names_in_labels() {
+        let u = |code: &str, level: i16, name: &str| UnitRef {
+            code: code.into(),
+            level,
+            name_en: name.into(),
+            parent: None,
+        };
+        let units = [
+            u("LK7", 1, "North Central Province"),
+            u("LK9", 1, "Sabaragamuwa Province"),
+            u("LK11", 2, "Colombo District"),
+        ];
+        let n = Names::new(
+            &units,
+            Some("level,alias_norm,target_norm,note\n1,sabaragamuva,sabaragamuwa,x\n"),
+        )
+        .expect("names");
+        let code = |l: i16, s: &str| n.resolve(l, s).map(|(c, _)| c);
+        for s in [
+            "North Central",
+            "North Central Province",
+            "North-Central province Local Government Authorities",
+            "North Central PC",
+        ] {
+            assert_eq!(code(1, s).as_deref(), Some("LK7"), "{s}");
+        }
+        assert_eq!(
+            n.resolve(1, "Sabaragamuva Province"),
+            Some(("LK9".into(), "name_alias"))
+        );
+        assert_eq!(code(1, "Colombo"), None, "provinces only");
+        assert_eq!(code(2, "Colombo District").as_deref(), Some("LK11"));
+    }
+
+    #[test]
     fn numbers_and_dates() {
         let n = NumberSpec {
             thousands: Some(",".into()),
@@ -1785,5 +1903,69 @@ mod tests {
         );
         assert_eq!(norm("Nuwara-Eliya"), norm("NUWARA ELIYA"));
         assert_eq!(strip_suffix("Colombo District"), "Colombo");
+    }
+
+    #[test]
+    fn section_rows_become_a_column() {
+        let cell = |t: &str, r: u32| {
+            Some(TCell {
+                text: t.into(),
+                vtype: CellType::String,
+                extract: 0,
+                row: r,
+                artifact: 0,
+                loc: Loc::Sheet {
+                    sheet: "S".into(),
+                    a1: format!("A{r}"),
+                },
+            })
+        };
+        let mut t = Table {
+            id: "t".into(),
+            columns: vec!["District".into(), "Total".into()],
+            rows: vec![
+                vec![cell("Note", 1), None],
+                vec![cell("2022(e)", 2), None],
+                vec![cell("Ampara", 3), cell("126", 3)],
+                vec![cell("Total", 4), cell("3632", 4)],
+                vec![cell("2023", 5), None],
+                vec![cell("Ampara", 6), cell("127", 6)],
+                // a number in the label column with other cells is data, not a section
+                vec![cell("2024", 7), cell("1", 7)],
+            ],
+            keys: vec!["k".into(); 7],
+            urls: vec!["u".into(); 7],
+            records: false,
+        };
+        let s = SectionSpec {
+            column: "District".into(),
+            pattern: r"^\d{4}".into(),
+            into: "Year".into(),
+        };
+        apply_section(&mut t, &s).expect("section");
+        assert_eq!(t.columns, ["District", "Total", "Year"]);
+        let years: Vec<Option<&str>> = t
+            .rows
+            .iter()
+            .map(|r| r[2].as_ref().map(|c| c.text.as_str()))
+            .collect();
+        assert_eq!(
+            years,
+            [
+                None,
+                Some("2022(e)"),
+                Some("2022(e)"),
+                Some("2023"),
+                Some("2023")
+            ]
+        );
+        assert_eq!(t.keys.len(), 5);
+        assert_eq!(t.rows[3][2].as_ref().map(|c| c.row), Some(5));
+        let dup = SectionSpec {
+            column: "District".into(),
+            pattern: "x".into(),
+            into: "Total".into(),
+        };
+        assert!(apply_section(&mut t, &dup).is_err());
     }
 }

@@ -1,0 +1,13 @@
+# Budget deficit financing source
+# Source/authority: Central Bank of Sri Lanka, statistical table 3.1 (summary of government fiscal operations).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-fiscal-operations
+id: financing_source
+title: Budget deficit financing source
+codes:
+  - { code: total, label: Total financing, total: true, sdmx: _T }
+  - { code: foreign, label: Foreign financing, parent: total }
+  - { code: domestic, label: Domestic financing, parent: total }
+  - { code: privatisation, label: Privatisation proceeds, parent: total }

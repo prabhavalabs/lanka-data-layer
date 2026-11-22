@@ -1,11 +1,12 @@
 id: treasury-provincial-debt
-title: Provincial council debt
-description: Debt of provincial councils by province.
+title: Sub-national (local government) debt by province
+description: Outstanding debt of local government authorities by province, and the number of local authorities with
+  liabilities, from section 5 of the Quarterly Statistical Debt Bulletin (provincial councils themselves report no debt).
 source_ids:
 - treasury-debt
 indicators:
-- id: debt.provincial
-  label: Provincial council debt
+- id: debt.local_gov
+  label: Outstanding debt of local government authorities
   unit: LKR
   unit_mult: 6
   measure_type: sum
@@ -14,12 +15,36 @@ indicators:
   geo_levels:
   - adm1
   period_type: quarter
+- id: debt.local_gov_usd
+  label: Outstanding debt of local government authorities (US dollars)
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - adm1
+  period_type: quarter
+- id: debt.local_gov_with_liabilities
+  label: Local government authorities with liabilities
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - adm1
+  period_type: quarter
 time_coverage:
-  from: 2020-Q1
+  from: 2026-Q1
   to: 2026-Q2
-method: PDF tables.
+method: >-
+  Quarterly Statistical Debt Bulletin (PDMO), section 5 "Summary of Debt - Provincial Councils and Local Government
+  Authorities" (data from the Ministry of Public Administration, Provincial Councils and Local Governments), PDF text
+  layer read through a reviewed template; province names matched to ADM1 p-codes.
 limits:
-- Small amounts; reporting irregular.
+- Small amounts; reporting irregular; provisional as printed. USD at the quarter-end exchange rate.
+- Loaded from the 2026 first- and second-quarter bulletins (one layout); the 2025 third-quarter bulletin prints a
+  different header and earlier bulletins other layouts.
 enrichment:
   joins:
   - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)

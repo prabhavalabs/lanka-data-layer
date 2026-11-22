@@ -190,9 +190,10 @@
                       "type": "object",
                       "additionalProperties": false,
                       "properties": {
-                        "from_header": { "enum": ["year", "quarter_end", "month", "quarter"] },
-                        "from_label": { "enum": ["year", "quarter_end", "month", "quarter"] },
-                        "fixed": { "type": "string" }
+                        "from_header": { "enum": ["year", "quarter_end", "month", "quarter", "half_year"] },
+                        "from_label": { "enum": ["year", "quarter_end", "month", "quarter", "half_year", "rolling_month"] },
+                        "fixed": { "type": "string" },
+                        "from_edition": { "type": "boolean" }
                       }
                     },
                     "columns": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/dims" } },
@@ -1217,6 +1218,27 @@
           "type": "array",
           "items": {
             "type": "string"
+          }
+        },
+        "section": {
+          "description": "Section rows (a block label printed alone, such as a year above a block of districts) are removed; their label fills a new column `into` for the rows below.",
+          "type": "object",
+          "required": [
+            "column",
+            "pattern",
+            "into"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "column": {
+              "type": "string"
+            },
+            "pattern": {
+              "type": "string"
+            },
+            "into": {
+              "type": "string"
+            }
           }
         }
       }

@@ -1,0 +1,55 @@
+# CBSL Land Valuation Indicator release (semi-annual, Statistics Department), table
+# "Land Valuation Indicator and Growth Rates": the indicator values (2017 H1 = 100) for the
+# last six half-years, then annual and semi-annual percentage changes (not read: they are
+# ratios of the printed values). Columns are found by the half ("H1"/"H2") under its year;
+# the leftmost match is the value block; `pct_first` (the first annual percentage change)
+# only bounds the last value column and is not loaded. Each release prints a different six half-years, so
+# every release used is its own edition. The whole series was revised in June 2022 (re-estimated
+# Valuation Department data); releases from the first half of 2022 carry the revised series.
+id: cbsl-real-estate/lvi-indicator-values
+title: Land Valuation Indicator, indicator values by land use (Colombo district)
+editions:
+  - match: { edition: "2022-H1" }
+    locate:
+      page: { find_text: "Land Valuation Indicator and Growth Rates" }
+    columns:
+      - { key: v1, header: "H2", under: "2019" }
+      - { key: v2, header: "H1", under: "2020" }
+      - { key: v3, header: "H2", under: "2020" }
+      - { key: v4, header: "H1", under: "2021" }
+      - { key: v5, header: "H2", under: "2021" }
+      - { key: v6, header: "H1", under: "2022" }
+      - { key: pct_first, header: "H2", under: "2020", nth: 2 }
+    rows: { start_after: "H1)", stop_at: ["Source", "The Land Price Index"] }
+    number: { align: center }
+    checks: &lvi_checks
+      - { row_count: { min: 4, max: 4 } }
+      - { rows_present: ["Residential LVI", "Commercial LVI", "Industrial LVI", "LVI"] }
+  - match: { edition: "2025-H1" }
+    locate:
+      page: { find_text: "Land Valuation Indicator and Growth Rates" }
+    columns:
+      - { key: v1, header: "H2", under: "2022" }
+      - { key: v2, header: "H1", under: "2023" }
+      - { key: v3, header: "H2", under: "2023" }
+      - { key: v4, header: "H1", under: "2024" }
+      - { key: v5, header: "H2", under: "2024" }
+      - { key: v6, header: "H1", under: "2025" }
+      - { key: pct_first, header: "H2", under: "2023", nth: 2 }
+    rows: { start_after: "H1)", stop_at: ["Source", "The Land Price Index"] }
+    number: { align: center }
+    checks: *lvi_checks
+  - match: { edition: "2026-H1" }
+    locate:
+      page: { find_text: "Land Valuation Indicator and Growth Rates" }
+    columns:
+      - { key: v1, header: "H2", under: "2023" }
+      - { key: v2, header: "H1", under: "2024" }
+      - { key: v3, header: "H2", under: "2024" }
+      - { key: v4, header: "H1", under: "2025" }
+      - { key: v5, header: "H2", under: "2025" }
+      - { key: v6, header: "H1", under: "2026" }
+      - { key: pct_first, header: "H2", under: "2024", nth: 2 }
+    rows: { start_after: "H1)", stop_at: ["Source", "The Land Price Index"] }
+    number: { align: center }
+    checks: *lvi_checks

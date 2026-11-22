@@ -532,6 +532,7 @@ pub async fn template_propose(g: &Global, a: TemplateProposeArgs) -> Result<()> 
             rows: template::RowsSpec::default(),
             number: template::NumberSpec::default(),
             superscript_ratio: 0.75,
+            right_bound: None,
             checks: vec![template::Check::RowCount {
                 row_count: template::MinMax {
                     min: Some(1),

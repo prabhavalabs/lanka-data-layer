@@ -1,0 +1,13 @@
+# Property type of the CBSL asking-price indices
+# Source/authority: Central Bank of Sri Lanka, Real Estate Market Analysis, Table 1 (Asking Price Indices, Colombo
+#   district, 2019 = 100), compiled from online advertisements with a hedonic rolling-window time-dummy method.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-condominium-prices
+id: asking_price_property
+title: Property type (CBSL asking-price indices)
+codes:
+  - { code: lands, label: Lands }
+  - { code: houses, label: Houses }
+  - { code: condominiums, label: Condominiums }

@@ -75,6 +75,11 @@ pub struct Edition {
     /// (footnote superscripts); 0 disables.
     #[serde(default = "default_superscript")]
     pub superscript_ratio: f32,
+    /// Words starting more than this many points right of the rightmost
+    /// column header are not table cells (running text printed beside the
+    /// table); absent = the last column extends to the page edge.
+    #[serde(default)]
+    pub right_bound: Option<f32>,
     #[serde(default)]
     pub checks: Vec<Check>,
 }
@@ -647,14 +652,21 @@ impl Template {
     }
 }
 
-/// `"2025"` matches `"2025"`, `"2024..2026"` matches leading years 2024–2026.
+/// `"2025"` matches `"2025"`, `"2024..2026"` matches leading years 2024–2026,
+/// and `"2025-Q1..2027-Q1"` matches leading years 2025–2027 whose text after
+/// the year is `-Q1` (both bounds must carry the same suffix): one edition
+/// entry per recurring layout, such as a quarter of a quarterly bulletin.
 fn edition_matches(pattern: Option<&str>, edition: Option<&str>) -> bool {
     let Some(p) = pattern else { return true };
     let Some(e) = edition else { return false };
     let year = |s: &str| s.trim().get(..4).and_then(|y| y.parse::<i32>().ok());
+    let suffix = |s: &str| s.trim().get(4..).unwrap_or("").to_owned();
     match p.split_once("..") {
         Some((a, b)) => match (year(a), year(b), year(e)) {
-            (Some(a), Some(b), Some(y)) => (a..=b).contains(&y),
+            (Some(ya), Some(yb), Some(y)) => {
+                let (sa, sb) = (suffix(a), suffix(b));
+                (ya..=yb).contains(&y) && (sa.is_empty() || (sa == sb && sa == suffix(e)))
+            }
             _ => false,
         },
         None => p.trim() == e.trim(),
@@ -912,6 +924,9 @@ fn read_at(
             .ok_or_else(|| miss(format!("start_after {sa:?} not found")))?;
         start_y = start_y.max(h.bbox()[3]);
     }
+    let right_limit = e
+        .right_bound
+        .map(|b| headers.iter().map(|h| h.bbox[2]).fold(f32::MIN, f32::max) + b);
     let stops: Vec<Vec<String>> = e.rows.stop_at.iter().map(|s| tokens(s)).collect();
     let min_cells = e.rows.min_cells.unwrap_or(1);
     let span_pages = e.locate.span_pages.max(1);
@@ -948,7 +963,7 @@ fn read_at(
                 .words
                 .iter()
                 .copied()
-                .filter(|w| w.cx() >= first_left)
+                .filter(|w| w.cx() >= first_left && right_limit.is_none_or(|r| w.bbox[0] <= r))
                 .collect();
             if !label_ws.is_empty() && !col_ws.is_empty() {
                 cand.push((p, label_ws, col_ws));
@@ -1344,6 +1359,18 @@ editions:
       - { row_count: { min: 3, max: 3 } }
       - { rows_present: ["Nuwara Eliya"] }
 "#;
+
+    #[test]
+    fn edition_patterns() {
+        assert!(edition_matches(None, Some("2026-Q2")));
+        assert!(edition_matches(Some("2026-Q2"), Some("2026-Q2")));
+        assert!(edition_matches(Some("2025..2027"), Some("2026-Q2")));
+        assert!(edition_matches(Some("2025-Q2..2027-Q2"), Some("2026-Q2")));
+        assert!(!edition_matches(Some("2025-Q2..2027-Q2"), Some("2026-Q1")));
+        assert!(!edition_matches(Some("2025-Q2..2027-Q2"), Some("2028-Q2")));
+        assert!(!edition_matches(Some("2025-Q2..2027-Q3"), Some("2026-Q2")));
+        assert!(!edition_matches(Some("2025"), None));
+    }
 
     #[test]
     fn reads_a_two_level_header_table() {

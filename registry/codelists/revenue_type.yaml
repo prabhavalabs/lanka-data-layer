@@ -26,3 +26,6 @@ codes:
   - { code: ssc_levy, label: Social security contribution levy, parent: tax }
   - { code: pal, label: Ports and airports development levy, parent: tax }
   - { code: other_taxes, label: "Other taxes (stamp duty, licences, ...)", parent: tax }
+  - { code: revenue, label: "Total revenue (tax and non-tax, excluding grants)", parent: total }
+  - { code: direct_tax, label: Direct taxes, parent: tax }
+  - { code: indirect_tax, label: Indirect taxes, parent: tax }

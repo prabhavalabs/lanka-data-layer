@@ -21,3 +21,9 @@ codes:
   - { code: project_loans, label: Project and programme loans, parent: foreign }
   - { code: foreign_t_bills_bonds, label: Non-resident holdings of T-bills / T-bonds, parent: foreign }
   - { code: other_foreign, label: Other foreign, parent: foreign }
+  - { code: domestic_dollar_bond, label: Domestic dollar bond, parent: domestic }
+  - { code: term_loan_boc, label: Term loan - Bank of Ceylon, parent: domestic }
+  - { code: term_loan_pb, label: "Term loan - People's Bank", parent: domestic }
+  - { code: suhurupaya_loan, label: Suhurupaya loan account of the Ministry of Defence, parent: domestic }
+  - { code: retirement_gratuity_loan, label: Retirement gratuity loan account, parent: domestic }
+  - { code: domestic_project_loans, label: Development project loans from domestic banks, parent: domestic }

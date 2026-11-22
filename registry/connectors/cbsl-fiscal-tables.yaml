@@ -1,0 +1,175 @@
+# CBSL statistical tables, fiscal sector (Central Bank of Sri Lanka). Three annual workbooks,
+# one row per year from 1990, figures in Rs. million:
+#   3.1  Summary of Government Fiscal Operations: revenue, grants, expenditure, balances,
+#        deficit financing and three ratios to GDP (two-row merged header);
+#   3.2  Economic Classification of Government Revenue: direct / indirect / total tax and
+#        non-tax revenue (the share columns are ratios of the printed figures: not loaded);
+#   3.5  Central Government Debt: domestic by instrument, foreign, total, and ratios to GDP.
+# File names carry a revision date (table3.01_20260720.xlsx): discovery takes the newest
+# link on the fiscal-sector index page. The last year carries a "provisional" note marker,
+# (b) in 3.1, (a) in 3.2 and (j) in 3.5. Licence permission_unclear: published with
+# attribution and the takedown contact; it does not block ingestion.
+source: cbsl-fiscal-tables
+driver: xlsx_table
+version: 1.0.0
+description: CBSL fiscal-sector tables 3.1, 3.2 and 3.5 (annual, 1990 onwards).
+discover:
+  kind: listing_page
+  page: https://www.cbsl.gov.lk/en/statistics/statistical-tables/fiscal-sector
+  links:
+    - { key: table3.01, pattern: "/table3\\.01_(\\d{8})(?:_e)?\\.xlsx$", pick: latest }
+    - { key: table3.02, pattern: "/table3\\.02_(\\d{8})(?:_e)?\\.xlsx$", pick: latest }
+    - { key: table3.05, pattern: "/table3\\.05_(\\d{8})(?:_e)?\\.xlsx$", pick: latest }
+standardise:
+  dataset: cbsl-fiscal-operations
+  tables:
+    - id: summary
+      artifact: ^table3\.01$
+      header: { anchor: "^Year$", rows: 2, fill_right: true }
+      rows: { until_blank: 2, stop: ["^Source", "^\\(a\\)"] }
+    - id: revenue
+      artifact: ^table3\.02$
+      header: { anchor: "^Year$", rows: 2, fill_right: true }
+      rows: { until_blank: 2, stop: ["^Source", "^\\(a\\)"] }
+    - id: debt
+      artifact: ^table3\.05$
+      header: { anchor: "^Year$", rows: 2, fill_right: true }
+      rows: { until_blank: 2, stop: ["^Source", "^Note", "^\\(a\\)"] }
+  outputs:
+    - table: summary
+      indicator: { value: fisc.revenue }
+      melt: { columns: "^(Revenue Tax|Revenue Total|Grants|Revenue and Grants)" }
+      geo: { root: true }
+      period: &year { column: Year, regex: "^(\\d{4})", freq: A, parse: year }
+      dims:
+        revenue_type:
+          melt: true
+          regex: "^(Revenue Tax|Revenue Total|Grants|Revenue and Grants)"
+          map: { "Revenue Tax": tax, "Revenue Total": revenue, "Grants": grants, "Revenue and Grants": total }
+      value: &num { number: { missing: ["-", ""] } }
+      status: &prov31 { column: Year, regex: "(\\(b\\))", unmapped: keep, codes: { "(b)": [reported, provisional] } }
+    - table: summary
+      indicator: { value: fisc.expenditure }
+      melt: { columns: "^Expenditure " }
+      geo: { root: true }
+      period: *year
+      dims:
+        expenditure_type:
+          melt: true
+          map: { "Expenditure Recurrent": recurrent, "Expenditure Capital and Net Lending": capital, "Expenditure Total": total }
+      value: *num
+      status: *prov31
+    - table: summary
+      indicator: { value: fisc.balance }
+      melt: { columns: "^(Current A/C|Primary A/C|Overall Budget)" }
+      geo: { root: true }
+      period: *year
+      dims:
+        fiscal_balance:
+          melt: true
+          regex: "^(Current|Primary|Overall)"
+          map: { Current: current_account, Primary: primary, Overall: overall }
+      value: *num
+      status: *prov31
+    - table: summary
+      indicator: { value: fisc.financing }
+      melt: { columns: "^Financing " }
+      geo: { root: true }
+      period: *year
+      dims:
+        financing_source:
+          melt: true
+          map: { "Financing Foreign": foreign, "Financing Domestic": domestic, "Financing Privatisation": privatisation, "Financing Total Financing": total }
+      value: *num
+      status: *prov31
+    - table: summary
+      indicator: { value: fisc.revenue_grants_gdp }
+      melt: { columns: "^As a % of GDP .*Revenue and Grants$" }
+      geo: { root: true }
+      period: *year
+      value: *num
+      status: *prov31
+    - table: summary
+      indicator: { value: fisc.expenditure_gdp }
+      melt: { columns: "^As a % of GDP .*Expenditure$" }
+      geo: { root: true }
+      period: *year
+      value: *num
+      status: *prov31
+    - table: summary
+      indicator: { value: fisc.overall_balance_gdp }
+      melt: { columns: "^As a % of GDP .*Overall Budget" }
+      geo: { root: true }
+      period: *year
+      value: *num
+      status: *prov31
+    - table: revenue
+      indicator: { value: fisc.revenue }
+      melt: { columns: "^(Tax Revenue (Direct Tax|Indirect Tax)|Non-Tax Revenue)$" }
+      geo: { root: true }
+      period: *year
+      dims:
+        revenue_type:
+          melt: true
+          map: { "Tax Revenue Direct Tax": direct_tax, "Tax Revenue Indirect Tax": indirect_tax, "Non-Tax Revenue": non_tax }
+      value: *num
+      status: { column: Year, regex: "(\\(a\\))", unmapped: keep, codes: { "(a)": [reported, provisional] } }
+    - table: debt
+      indicator: { value: fisc.cg_debt }
+      melt: { columns: "^(Domestic Debt|Foreign Debt|Total Debt)" }
+      geo: { root: true }
+      period: *year
+      dims:
+        debt_type:
+          melt: true
+          regex: "^(?:Domestic Debt \\(b\\) )?(Treasury Bills|Treasury Bonds|Rupee Loans|Other|Total Debt|Total|Foreign)"
+          map:
+            "Treasury Bills": treasury_bills
+            "Treasury Bonds": treasury_bonds
+            "Rupee Loans": rupee_loans
+            "Other": other_domestic
+            "Total": domestic
+            "Foreign": foreign
+            "Total Debt": total
+      value: *num
+      status: &prov35 { column: Year, regex: "(\\(j\\))", unmapped: keep, codes: { "(j)": [reported, provisional] } }
+    - table: debt
+      indicator: { value: fisc.cg_debt_gdp }
+      melt: { columns: "^As a % of GDP" }
+      geo: { root: true }
+      period: *year
+      dims:
+        debt_type:
+          melt: true
+          regex: "(Domestic|Foreign|Total)$"
+          map: { Domestic: domestic, Foreign: foreign, Total: total }
+      value: *num
+      status: *prov35
+expect:
+  - { check: no_future }
+  - { check: row_count, min: 700 }
+  - { check: period_continuity, indicator: fisc.revenue }
+  - { check: range, indicator: fisc.revenue, min: 0, max: 100000000 }
+  - { check: range, indicator: fisc.cg_debt, min: 0, max: 100000000 }
+  - { check: range, indicator: fisc.revenue_grants_gdp, min: 0, max: 60 }
+  - { check: range, indicator: fisc.cg_debt_gdp, min: 0, max: 200 }
+  - { check: sum_dims, indicator: fisc.expenditure, dim: expenditure_type, tol_pct: 0.5,
+      note: "Recurrent + capital and net lending = total expenditure." }
+  - { check: sum_dims, indicator: fisc.financing, dim: financing_source, tol_pct: 0.5,
+      note: "Foreign + domestic + privatisation = total financing." }
+  - check: sql
+    note: "Tax revenue = direct + indirect taxes (table 3.2 against table 3.1), within 0.5 %."
+    query: >-
+      SELECT t.period_start FROM stage_obs t
+      JOIN stage_obs d ON d.period_start = t.period_start AND d.indicator_id = 'fisc.revenue' AND d.dims = 'revenue_type=direct_tax'
+      JOIN stage_obs i ON i.period_start = t.period_start AND i.indicator_id = 'fisc.revenue' AND i.dims = 'revenue_type=indirect_tax'
+      WHERE t.indicator_id = 'fisc.revenue' AND t.dims = 'revenue_type=tax'
+        AND abs(d.value + i.value - t.value) > 0.005 * abs(t.value)
+  - check: sql
+    note: "Domestic + foreign = total central government debt, within 0.5 %."
+    query: >-
+      SELECT t.period_start FROM stage_obs t
+      JOIN stage_obs d ON d.period_start = t.period_start AND d.indicator_id = 'fisc.cg_debt' AND d.dims = 'debt_type=domestic'
+      JOIN stage_obs f ON f.period_start = t.period_start AND f.indicator_id = 'fisc.cg_debt' AND f.dims = 'debt_type=foreign'
+      WHERE t.indicator_id = 'fisc.cg_debt' AND t.dims = 'debt_type=total'
+        AND abs(d.value + f.value - t.value) > 0.005 * abs(t.value)

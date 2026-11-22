@@ -88,6 +88,7 @@
             }
           },
           "superscript_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+          "right_bound": { "type": "number", "minimum": 0 },
           "checks": {
             "type": "array",
             "items": {

@@ -226,6 +226,22 @@ async fn cbsl_exchange_rates_xlsx() {
     assert!(!r.failed());
     let names: Vec<&str> = o.expectations.iter().map(|e| e.check).collect();
     assert!(names.contains(&"period_continuity") && names.contains(&"max_step_change"));
+    // IF_REER.xlsx: Excel month-end dates, then printed months ("Nov-21", "Aug-26 (d)")
+    let e = r
+        .outputs
+        .iter()
+        .find(|o| o.dataset == "cbsl-neer-reer")
+        .expect("reer output");
+    assert_eq!(e.rows, 330);
+    let jan13 = find(
+        &e.first,
+        &[
+            ("indicator", "fx.neer"),
+            ("dims", "basket=cur24"),
+            ("period", "2013-01"),
+        ],
+    );
+    assert_eq!(jan13["locator"]["cell"], "C6");
 }
 
 /// basis of the observation for `year` in the first output.

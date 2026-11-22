@@ -1,6 +1,7 @@
 id: cbsl-bank-branches
 title: Bank branches and banking density by district
-description: Commercial and specialised bank branches and ATMs per district, branches per 100,000 people.
+description: Branches of licensed commercial and specialised banks by bank and district (2022 onwards) and by bank
+  nationally (2013 onwards), branches per 100,000 persons, and district co-operative rural bank outlets.
 source_ids:
 - cbsl-ess
 indicators:
@@ -11,7 +12,7 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - bank_type
+  - bank
   geo_levels:
   - national
   - adm2
@@ -22,16 +23,41 @@ indicators:
   measure_type: rate
   aggregation: none
   class: official
+  dims:
+  - bank
   geo_levels:
   - national
   - adm2
   period_type: year
+- id: fin.rural_bank_branches
+  label: District co-operative rural bank outlets
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: fin.outlets_per_100k_incl_rural
+  label: Bank branches including rural bank outlets per 100,000 persons
+  unit: '/10*5'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
-  from: '2015'
+  from: '2013'
   to: '2025'
-method: ESS tables 7.8-7.9.
+method: CBSL Economic and Social Statistics of Sri Lanka 2026, tables 7.8 (district) and 7.9 (national), Excel, read
+  cell by cell.
 limits:
 - Counts only; no locations (use osm-pois-amenities for points).
+- All banking outlets except student savings units; the latest year is provisional and earlier years of 7.8 are revised.
+- District density uses CBSL's population figures (thousands) printed beside the counts; the population column itself is
+  not loaded (use the DCS mid-year population).
+- District rows exist only for 2022 onwards in the 2026 edition.
 enrichment:
   joins:
   - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil

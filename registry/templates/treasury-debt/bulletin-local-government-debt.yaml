@@ -1,0 +1,23 @@
+# Quarterly Statistical Debt Bulletin (Public Debt Management Office),
+# section 5 "Summary of Debt - Provincial Councils and Local Government
+# Authorities": per province, the number of local authorities with
+# liabilities and their outstanding debt (Rs. million and USD million) at the
+# end of the bulletin's quarter. The two "Outstanding" headers share a line
+# from the 2026 first-quarter bulletin; the 2025 third-quarter bulletin
+# staggers them (not matched here).
+id: treasury-debt/bulletin-local-government-debt
+title: Local government debt by province
+editions:
+  - match: { edition: "2026..2027" }
+    locate:
+      page: { find_text: "Summary of Debt - Provincial Councils" }
+    label: { key: province, all_clusters: true }
+    columns:
+      - { key: count, header: "with Liabilities" }
+      - { key: lkr, header: "Outstanding", nth: 1 }
+      - { key: usd, header: "Outstanding", nth: 2 }
+    rows: { stop_at: ["Source"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: all_but_last, equals_row: "Total", columns: [count, lkr], tol: 1 }
+      - { row_count: { min: 10, max: 10 } }

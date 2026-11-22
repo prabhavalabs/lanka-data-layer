@@ -1,0 +1,55 @@
+source: treasury-annual-report
+driver: pdf_table
+version: 1.0.0
+description: >-
+  Ministry of Finance annual report (Final Budget Position Report from 2023), chapter 5
+  table "Transfers to Provinces in <year>": recurrent and capital transfers to the nine
+  provincial councils, Rs. million, one report per year 2021-2025. "(a) Provisional" marks
+  the year header of the 2022 and 2025 tables. Class B: every version is reviewed against
+  its evidence sheet before release.
+discover:
+  files:
+    - { key: annual-report-2025, url: https://www.treasury.gov.lk/api/file/078b4101-6964-4b72-b271-2cf60e3b56a1, edition: "2025" }
+    - { key: annual-report-2024, url: https://www.treasury.gov.lk/api/file/234681b4-35d2-4b44-ace8-612e2f14fc38, edition: "2024" }
+    - { key: annual-report-2023, url: https://www.treasury.gov.lk/api/file/ad12f7fa-d2db-43d4-9daa-9270ee7b7cac, edition: "2023" }
+    - { key: annual-report-2022, url: https://www.treasury.gov.lk/api/file/39a16e61-7659-476b-8f18-d969c7a69733, edition: "2022" }
+    - { key: annual-report-2021, url: https://www.treasury.gov.lk/api/file/a7a35d1a-556f-49b2-81e0-20294eb5a519, edition: "2021" }
+extract:
+  tables:
+    - { id: pc_2025, file: annual-report-2025, template: treasury-annual-report/transfers-to-provinces }
+    - { id: pc_2024, file: annual-report-2024, template: treasury-annual-report/transfers-to-provinces }
+    - { id: pc_2023, file: annual-report-2023, template: treasury-annual-report/transfers-to-provinces }
+    - { id: pc_2022, file: annual-report-2022, template: treasury-annual-report/transfers-to-provinces }
+    - { id: pc_2021, file: annual-report-2021, template: treasury-annual-report/transfers-to-provinces }
+standardise:
+  dataset: treasury-province-transfers
+  vintage: "Ministry of Finance Annual Report {edition}"
+  outputs:
+    - table: pc_2025
+      indicator: fisc.pc_transfers
+      geo: { from_label: { level: 1 } }
+      period: { from_header: year }
+      columns: &cols
+        recurrent: { expenditure_type: recurrent }
+        capital: { expenditure_type: capital }
+      rows: &provinces
+        "Western": {}
+        "Central": {}
+        "Southern": {}
+        "Northern": {}
+        "North Western": {}
+        "North Central": {}
+        "Uva": {}
+        "Sabaragamuwa": {}
+        "Eastern": {}
+      status: &prov { header_markers: { "(a)": provisional } }
+    - { table: pc_2024, indicator: fisc.pc_transfers, geo: { from_label: { level: 1 } }, period: { from_header: year }, columns: *cols, rows: *provinces, status: *prov }
+    - { table: pc_2023, indicator: fisc.pc_transfers, geo: { from_label: { level: 1 } }, period: { from_header: year }, columns: *cols, rows: *provinces, status: *prov }
+    - { table: pc_2022, indicator: fisc.pc_transfers, geo: { from_label: { level: 1 } }, period: { from_header: year }, columns: *cols, rows: *provinces, status: *prov }
+    - { table: pc_2021, indicator: fisc.pc_transfers, geo: { from_label: { level: 1 } }, period: { from_header: year }, columns: *cols, rows: *provinces, status: *prov }
+expect:
+  - { check: row_count, min: 90, max: 90 }
+  - { check: completeness, level: 1, min_units: 9 }
+  - { check: range, min: 0, max: 200000 }
+  - { check: no_future }
+  - { check: period_continuity }

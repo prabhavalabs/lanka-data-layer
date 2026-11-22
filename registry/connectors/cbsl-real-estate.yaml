@@ -1,0 +1,119 @@
+source: cbsl-real-estate
+driver: pdf_table
+version: 1.0.0
+description: >-
+  CBSL Land Valuation Indicator releases (semi-annual, Colombo district). Each release prints
+  the last six half-years; three releases cover the revised series (June 2022 revision,
+  2017 H1 = 100) from 2019 H2: 2022 H1 (2019 H2 to 2022 H1), 2025 H1 (2022 H2 to 2025 H1)
+  and 2026 H1 (2025 H2, 2026 H1; its earlier columns repeat the 2025 H1 release and are not
+  loaded twice). The revised values for 2017 H1 to 2019 H1 are only in the CBSL data library
+  (an interactive application), not in any release. Also the quarterly Real Estate Market
+  Analysis, Table 1 (monthly asking-price indices, Colombo district): the 2024 Q1 release
+  (October 2022 to March 2024; its first nine months are used), the 2024 Q4 release
+  (July 2023 to December 2024) and the 2025 Q2, 2025 Q4 and 2026 Q2 releases (six months
+  each). Class B: every version is reviewed against its evidence sheet before release.
+discover:
+  files:
+    - key: lvi-2022-h1
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/land_valuation_indicator_first_half_of_2022_e.pdf
+      edition: "2022-H1"
+    - key: lvi-2025-h1
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/land_valuation_indicator_first_half_of_2025_e.pdf
+      edition: "2025-H1"
+    - key: lvi-2026-h1
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/land_valuation_indicator_first_half_of_2026_e.pdf
+      edition: "2026-H1"
+    - key: rema-2024-q1
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/real_estate_market_analysis_2024_q1.pdf
+      edition: "2024-Q1"
+    - key: rema-2024-q4
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/real_estate_market_analysis_2024_q4.pdf
+      edition: "2024-Q4"
+    - key: rema-2025-q2
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/real_estate_market_analysis_2025_q2.pdf
+      edition: "2025-Q2"
+    - key: rema-2025-q4
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/real_estate_market_analysis_2025_q4.pdf
+      edition: "2025-Q4"
+    - key: rema-2026-q2
+      url: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/real_estate_market_analysis_2026_q2.pdf
+      edition: "2026-Q2"
+extract:
+  tables:
+    - { id: lvi_2022_h1, file: lvi-2022-h1, template: cbsl-real-estate/lvi-indicator-values }
+    - { id: lvi_2025_h1, file: lvi-2025-h1, template: cbsl-real-estate/lvi-indicator-values }
+    - { id: lvi_2026_h1, file: lvi-2026-h1, template: cbsl-real-estate/lvi-indicator-values }
+    - { id: ap_2024_q1, file: rema-2024-q1, template: cbsl-real-estate/asking-price-indices }
+    - { id: ap_2024_q4, file: rema-2024-q4, template: cbsl-real-estate/asking-price-indices }
+    - { id: ap_2025_q2, file: rema-2025-q2, template: cbsl-real-estate/asking-price-indices }
+    - { id: ap_2025_q4, file: rema-2025-q4, template: cbsl-real-estate/asking-price-indices }
+    - { id: ap_2026_q2, file: rema-2026-q2, template: cbsl-real-estate/asking-price-indices }
+standardise:
+  dataset: cbsl-land-valuation-indicator
+  vintage: "CBSL release {edition}"
+  outputs:
+    - table: lvi_2022_h1
+      indicator: re.lvi
+      geo: { fixed: LK11 }
+      period: { from_header: half_year }
+      columns: { v1: {}, v2: {}, v3: {}, v4: {}, v5: {}, v6: {} }
+      rows: &uses
+        "Residential LVI": { land_use: residential }
+        "Commercial LVI": { land_use: commercial }
+        "Industrial LVI": { land_use: industrial }
+        "LVI": { land_use: composite }
+    - table: lvi_2025_h1
+      indicator: re.lvi
+      geo: { fixed: LK11 }
+      period: { from_header: half_year }
+      columns: { v1: {}, v2: {}, v3: {}, v4: {}, v5: {}, v6: {} }
+      rows: *uses
+    - table: lvi_2026_h1
+      indicator: re.lvi
+      geo: { fixed: LK11 }
+      period: { from_header: half_year }
+      columns: { v5: {}, v6: {} }
+      rows: *uses
+    # ── asking-price indices (months from the row order: period.from_label: rolling_month) ──
+    - table: ap_2024_q1
+      dataset: &ap cbsl-condominium-prices
+      indicator: re.asking_price_index
+      geo: { fixed: LK11 }
+      period: { from_label: rolling_month }
+      columns: &ap_cols
+        lands: { property_type: lands }
+        houses: { property_type: houses }
+        condominiums: { property_type: condominiums }
+      rows:
+        "October#1": {}
+        "November#1": {}
+        "December#1": {}
+        "January#1": {}
+        "February#1": {}
+        "March#1": {}
+        "April#1": {}
+        "May#1": {}
+        "June#1": {}
+    - { table: ap_2024_q4, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
+    - { table: ap_2025_q2, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
+    - { table: ap_2025_q4, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
+    - { table: ap_2026_q2, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
+expect:
+  - { dataset: cbsl-land-valuation-indicator, check: row_count, min: 56, max: 56 }
+  - { check: range, min: 80, max: 400 }
+  - { check: no_future }
+  - { check: period_continuity }
+  - { dataset: cbsl-condominium-prices, check: row_count, min: 135, max: 135 }
+  - { dataset: cbsl-condominium-prices, check: max_step_change, pct: 10,
+      note: "Monthly asking-price moves stay within a few per cent." }
+  - { dataset: cbsl-land-valuation-indicator, check: max_step_change, pct: 20,
+      note: "Largest half-year move in the revised series: industrial LVI +15.7 % in 2021 H2." }
+  - dataset: cbsl-land-valuation-indicator
+    check: sql
+    note: "The LVI is the simple average of the residential, commercial and industrial sub-indicators (within 0.15 for rounding)."
+    query: >-
+      SELECT c.period_start FROM stage_obs c
+      JOIN (SELECT period_start, avg(value) a FROM stage_obs
+            WHERE dims IN ('land_use=residential','land_use=commercial','land_use=industrial')
+            GROUP BY period_start) s ON s.period_start = c.period_start
+      WHERE c.dims = 'land_use=composite' AND abs(s.a - c.value) > 0.15

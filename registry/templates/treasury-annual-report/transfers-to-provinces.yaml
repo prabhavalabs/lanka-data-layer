@@ -1,0 +1,19 @@
+# Ministry of Finance annual report (Final Budget Position Report), chapter 5,
+# table "Transfers to Provinces in <year>" (5.8 in 2021-2023, 5.9 from 2024):
+# recurrent and capital transfers to each provincial council, Rs. million.
+# The table sits in a two-column page: running text is printed beside it,
+# so words far right of the "Capital" header are not cells (right_bound).
+id: treasury-annual-report/transfers-to-provinces
+title: Transfers to provinces (recurrent, capital)
+editions:
+  - match: { edition: "2021..2027" }
+    locate:
+      page: { find_text: "to Provinces in", then_text: "Recurrent" }
+    columns:
+      - { key: recurrent, header: "Recurrent", under: "Transfers" }
+      - { key: capital, header: "Capital", under: "Transfers" }
+    rows: { stop_at: ["Total", "Source"] }
+    number: { thousands: ",", missing: ["-"] }
+    right_bound: 12
+    checks:
+      - { rows_present: ["Western", "Central", "Southern", "Northern", "North Western", "North Central", "Uva", "Sabaragamuwa", "Eastern"] }

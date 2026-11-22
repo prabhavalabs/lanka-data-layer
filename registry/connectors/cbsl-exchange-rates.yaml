@@ -15,6 +15,7 @@ discover:
   files:
     - { key: monthly_average, file: IF_Monthly_Average_Exchange_Rates.xlsx, url: "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/IF_Monthly_Average_Exchange_Rates.xlsx" }
     - { key: end_of_month, file: IF_End_of_the_Month_Exchange_Rates.xlsx, url: "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/IF_End_of_the_Month_Exchange_Rates.xlsx" }
+    - { key: reer, file: IF_REER.xlsx, url: "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/IF_REER.xlsx" }
 standardise:
   dataset: cbsl-exchange-rates
   tables:
@@ -28,6 +29,13 @@ standardise:
       header: { anchor: "^Year$" }
       rows: { until_blank: 3, skip: ["^Annual Average"], stop: ["^Source"] }
       fill_down: [Year]
+    # IF_REER.xlsx: Month | NEER 2017=100 (a) | REER 2017=100 (a) (b), 24-currency basket,
+    # monthly averages from January 2013. Months are Excel dates (month-end) up to October 2021
+    # and printed text ("Nov-21", "Feb-23 (c)", "Aug-26 (d)") after that; (d) = provisional.
+    - id: reer
+      artifact: ^reer$
+      header: { anchor: "^Month$" }
+      rows: { until_blank: 2, stop: ["^\\(a\\)"] }
   outputs:
     - table: monthly_average
       indicator: { value: fx.rate_monthly_avg }
@@ -44,13 +52,35 @@ standardise:
       period: *month
       dims: *currency
       value: *num
+    - table: reer
+      dataset: cbsl-neer-reer
+      indicator: { melt: true, regex: "^(NEER|REER)", map: { NEER: fx.neer, REER: fx.reer } }
+      melt: &eer { columns: "^(NEER|REER) 2017=100" }
+      filter: [{ column: Month, regex: "^\\d{4}-\\d{2}-\\d{2}$" }]
+      geo: { root: true }
+      period: { column: Month, regex: "^(\\d{4}-\\d{2})", parse: "%Y-%m", freq: M }
+      dims: &basket { basket: { value: cur24 } }
+      value: *num
+    - table: reer
+      dataset: cbsl-neer-reer
+      indicator: { melt: true, regex: "^(NEER|REER)", map: { NEER: fx.neer, REER: fx.reer } }
+      melt: *eer
+      filter: [{ column: Month, regex: "^[A-Z][a-z]{2,3} ?-\\d{2}\\b" }]
+      geo: { root: true }
+      period: { column: Month, regex: "^([A-Z][a-z]{2})[a-z]? ?-(\\d{2})", replace: "$1-$2", parse: "%b-%y", freq: M }
+      dims: *basket
+      value: *num
+      status: { column: Month, regex: "(\\(d\\))", unmapped: keep, codes: { "(d)": [reported, provisional] } }
 expect:
   - { check: range, min: 0.001, max: 2000 }
   - { check: no_future }
   - { check: max_step_change, indicator: fx.rate_monthly_avg, pct: 60,
       note: "Largest month-on-month move: April 2022 float (about +50 %)." }
   - { check: period_continuity, indicator: fx.rate_monthly_avg }
-  - { check: row_count, min: 4000 }
+  - { check: row_count, min: 4000, dataset: cbsl-exchange-rates }
+  - { dataset: cbsl-neer-reer, check: row_count, min: 300 }
+  - { dataset: cbsl-neer-reer, check: range, min: 20, max: 200 }
+  - { dataset: cbsl-neer-reer, check: period_continuity }
   - check: sql
     note: USD is quoted in every month that has any rate.
     query: >-
