@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: env.ghg_co2e
   label: GHG emissions
-  unit: t CO2e
+  unit: 't{CO2e}'
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - sector
   - gas
@@ -16,7 +19,10 @@ indicators:
   period_type: year
 - id: env.asset_emissions
   label: Emissions per asset
-  unit: t CO2e
+  unit: 't{CO2e}'
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - asset_type
   geo_levels:

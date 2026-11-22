@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: gov.mps
   label: Members of Parliament
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - party
   geo_levels:

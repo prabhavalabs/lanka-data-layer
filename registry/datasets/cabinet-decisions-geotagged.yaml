@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: gov.cabinet_decisions
   label: Cabinet decisions mentioning a unit
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - topic
   geo_levels:

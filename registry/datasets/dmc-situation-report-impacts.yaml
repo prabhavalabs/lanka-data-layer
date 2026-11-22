@@ -9,7 +9,10 @@ source_ids:
 indicators:
 - id: dis.affected_persons
   label: Persons affected
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - hazard
   - event
@@ -20,7 +23,10 @@ indicators:
   period_type: day
 - id: dis.deaths
   label: Deaths
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - hazard
   - event
@@ -31,7 +37,10 @@ indicators:
   period_type: day
 - id: dis.houses_damaged
   label: Houses damaged
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - damage_level
   - event
@@ -42,7 +51,10 @@ indicators:
   period_type: day
 - id: dis.displaced_in_safe_centres
   label: Persons in safe centres
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - event
   geo_levels:

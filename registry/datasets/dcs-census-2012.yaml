@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: census12.pop_total
   label: Population 2012
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sex
   geo_levels:
@@ -19,7 +22,10 @@ indicators:
   period_type: snapshot
 - id: census12.pop_by_ethnicity
   label: Population by ethnicity 2012
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - ethnicity
   geo_levels:
@@ -31,7 +37,10 @@ indicators:
   period_type: snapshot
 - id: census12.pop_by_religion
   label: Population by religion 2012
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - religion
   geo_levels:
@@ -43,7 +52,10 @@ indicators:
   period_type: snapshot
 - id: census12.housing_amenities
   label: Households by amenity 2012
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - amenity
   geo_levels:

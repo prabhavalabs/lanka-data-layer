@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: pop.grid_total
   label: Population (modelled)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - raster
   - adm1

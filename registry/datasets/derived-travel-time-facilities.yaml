@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: acc.tt_nearest
   label: Travel time to nearest facility
-  unit: minutes
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: derived
   dims:
   - facility_type
   - mode
@@ -20,7 +23,10 @@ indicators:
   period_type: snapshot
 - id: acc.pop_mean_tt
   label: Population-weighted mean travel time
-  unit: minutes
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: derived
   dims:
   - facility_type
   - mode

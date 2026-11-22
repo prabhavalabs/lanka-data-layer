@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: admin.changes
   label: Admin unit change events
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - change_type
   geo_levels:

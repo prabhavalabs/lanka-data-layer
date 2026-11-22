@@ -7,6 +7,9 @@ indicators:
 - id: tran.osm_rail_km
   label: Railway length
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   geo_levels:
   - national
   - adm1
@@ -15,7 +18,10 @@ indicators:
   period_type: snapshot
 - id: tran.osm_rail_stations
   label: Railway stations
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - point
   - adm1

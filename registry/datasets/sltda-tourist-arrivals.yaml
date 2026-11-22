@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: tour.arrivals
   label: Tourist arrivals
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - source_country
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: month
 - id: tour.arrivals_weekly
   label: Tourist arrivals (weekly)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: day

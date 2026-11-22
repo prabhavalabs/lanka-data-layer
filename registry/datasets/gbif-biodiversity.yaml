@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: env.species_records
   label: Occurrence records
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - taxon_class
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: year
 - id: env.species_richness
   label: Observed species richness
-  unit: species
+  unit: '{species}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - taxon_class
   geo_levels:

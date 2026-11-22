@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: debt.provincial
   label: Provincial council debt
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - adm1
   period_type: quarter

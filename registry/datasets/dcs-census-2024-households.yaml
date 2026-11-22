@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: census24.households
   label: Households
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm1
@@ -17,7 +20,10 @@ indicators:
   period_type: snapshot
 - id: census24.avg_household_size
   label: Average household size
-  unit: persons
+  unit: '{person}'
+  measure_type: mean
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm1

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: lab.lfpr
   label: Labour force participation rate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - sex
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: quarter
 - id: lab.unemployment_rate
   label: Unemployment rate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - sex
   - age_group
@@ -24,7 +30,10 @@ indicators:
   period_type: quarter
 - id: lab.employed
   label: Employed population
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sex
   - sector

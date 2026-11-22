@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: just.grave_crimes
   label: Grave crimes reported
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - crime_type
   geo_levels:
@@ -16,7 +19,10 @@ indicators:
   period_type: year
 - id: just.prison_admissions
   label: Prison admissions
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - status
   geo_levels:

@@ -7,7 +7,11 @@ source_ids:
 indicators:
 - id: debt.total
   label: Central government debt stock
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - instrument
   geo_levels:
@@ -15,7 +19,11 @@ indicators:
   period_type: quarter
 - id: debt.external_by_creditor
   label: External debt by creditor
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - creditor
   geo_levels:
@@ -23,7 +31,11 @@ indicators:
   period_type: quarter
 - id: debt.domestic_by_instrument
   label: Domestic debt by instrument
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - instrument
   geo_levels:

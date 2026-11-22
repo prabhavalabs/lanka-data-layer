@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: agri.production_index
   label: Agricultural production volume index
-  unit: index (2002=100)
+  unit: '{index}'
+  base_period: '2002=100'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - group
   geo_levels:

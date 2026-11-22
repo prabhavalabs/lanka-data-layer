@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: elec.pres_votes
   label: Votes by candidate
-  unit: votes
+  unit: '{vote}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - election
   - candidate
@@ -19,7 +22,10 @@ indicators:
   period_type: snapshot
 - id: elec.pres_turnout
   label: Turnout
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - election
   geo_levels:
@@ -29,7 +35,10 @@ indicators:
   period_type: snapshot
 - id: elec.pres_vote_share
   label: Vote share
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - election
   - party

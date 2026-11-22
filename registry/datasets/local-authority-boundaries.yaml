@@ -8,7 +8,10 @@ source_ids:
 indicators:
 - id: gov.la_count
   label: Local authorities
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - la_type
   geo_levels:

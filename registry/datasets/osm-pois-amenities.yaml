@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: fac.osm_count
   label: Facilities by type
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - amenity_type
   geo_levels:
@@ -19,7 +22,10 @@ indicators:
   period_type: snapshot
 - id: fac.osm_per_10k
   label: Facilities per 10,000 population
-  unit: per 10k
+  unit: '/10*4'
+  measure_type: rate
+  aggregation: none
+  class: third_party
   dims:
   - amenity_type
   geo_levels:

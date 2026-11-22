@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: aid.commitments
   label: Foreign financing commitments
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - partner
   - sector
@@ -15,7 +19,11 @@ indicators:
   period_type: year
 - id: aid.disbursements
   label: Foreign financing disbursements
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - partner
   - sector

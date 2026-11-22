@@ -8,6 +8,9 @@ indicators:
 - id: wx.met_rain_24h
   label: 24-hour rainfall
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - station
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: day
 - id: wx.met_tmax
   label: Maximum temperature
-  unit: deg C
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - station
   geo_levels:
@@ -23,7 +29,10 @@ indicators:
   period_type: day
 - id: wx.met_rh
   label: Relative humidity (3-hourly)
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - station
   geo_levels:
@@ -41,4 +50,5 @@ enrichment:
   aggregations:
   - bias-correction of CHIRPS/IMERG
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+kind: features
 publication_class: A

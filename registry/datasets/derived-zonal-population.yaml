@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: pop.best_estimate
   label: Best-estimate population
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   geo_levels:
   - adm1
   - adm2
@@ -16,7 +19,10 @@ indicators:
   period_type: year
 - id: pop.model_disagreement
   label: Coefficient of variation across population models
-  unit: ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4

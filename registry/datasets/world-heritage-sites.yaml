@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: heritage.whs_sites
   label: World Heritage properties
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - category
   - status

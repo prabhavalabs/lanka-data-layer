@@ -9,6 +9,9 @@ indicators:
 - id: water.river_level
   label: River water level
   unit: m
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - station
   geo_levels:
@@ -16,7 +19,10 @@ indicators:
   period_type: day
 - id: water.flood_alert_level
   label: Flood alert status
-  unit: category
+  unit: '{category}'
+  measure_type: category
+  aggregation: none
+  class: official
   dims:
   - station
   geo_levels:
@@ -34,4 +40,5 @@ enrichment:
   - station -> HydroBASINS basin -> downstream ADM4 units
   aggregations:
   - 'derive: population downstream of gauges at alert'
+kind: features
 publication_class: A

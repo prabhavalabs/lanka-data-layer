@@ -7,14 +7,20 @@ source_ids:
 indicators:
 - id: dev.composite_index
   label: Composite development index
-  unit: index 0-100
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4
   period_type: year
 - id: dev.domain_index
   label: Domain sub-index
-  unit: index 0-100
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
   dims:
   - domain
   geo_levels:
@@ -23,7 +29,10 @@ indicators:
   period_type: year
 - id: dev.rank_ci
   label: Rank 90% interval
-  unit: ranks
+  unit: '{rank}'
+  measure_type: rank
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4

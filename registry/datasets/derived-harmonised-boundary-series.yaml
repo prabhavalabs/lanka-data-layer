@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: harm.value
   label: Harmonised value
-  unit: varies
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: derived
   dims:
   - indicator
   - source_boundary_vintage
@@ -18,7 +21,10 @@ indicators:
   period_type: year
 - id: harm.allocation_share
   label: Crosswalk allocation share
-  unit: ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4

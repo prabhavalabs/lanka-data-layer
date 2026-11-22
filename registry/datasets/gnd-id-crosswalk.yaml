@@ -9,7 +9,10 @@ source_ids:
 indicators:
 - id: xwalk.gnd_match_rate
   label: Share of GN ids matched to a p-code
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - adm2
   period_type: snapshot

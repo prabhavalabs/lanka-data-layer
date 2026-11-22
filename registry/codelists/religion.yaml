@@ -1,0 +1,10 @@
+id: religion
+title: Religion (Department of Census and Statistics classification)
+codes:
+  - { code: total, label: All religions, total: true, sdmx: _T }
+  - { code: buddhist, label: Buddhist, parent: total }
+  - { code: hindu, label: Hindu, parent: total }
+  - { code: muslim, label: Islam, parent: total }
+  - { code: roman_catholic, label: Roman Catholic, parent: total }
+  - { code: other_christian, label: Other Christian, parent: total }
+  - { code: other, label: Other, parent: total }

@@ -8,28 +8,40 @@ source_ids:
 indicators:
 - id: dhs.tfr
   label: Total fertility rate
-  unit: births per woman
+  unit: '{birth}/{woman}'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: snapshot
 - id: dhs.stunting_u5
   label: Stunting, children under 5
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: snapshot
 - id: dhs.wasting_u5
   label: Wasting, children under 5
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: snapshot
 - id: dhs.anc4_coverage
   label: Women with 4+ antenatal visits
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2

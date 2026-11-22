@@ -8,7 +8,10 @@ source_ids:
 indicators:
 - id: tour.establishments
   label: Registered establishments
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - type
   geo_levels:

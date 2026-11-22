@@ -6,21 +6,30 @@ source_ids:
 indicators:
 - id: heal.maternal_mortality_ratio
   label: Maternal mortality ratio
-  unit: per 100k live births
+  unit: '/10*5{live_birth}'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: heal.low_birth_weight
   label: Low birth weight
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: heal.child_underweight
   label: Underweight children under 5 (growth monitoring)
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2

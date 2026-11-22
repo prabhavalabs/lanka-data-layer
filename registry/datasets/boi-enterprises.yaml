@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: econ.boi_enterprises
   label: BOI enterprises
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sector
   - zone
@@ -17,7 +20,10 @@ indicators:
   period_type: snapshot
 - id: econ.boi_available_land_ha
   label: Available BOI land
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - point
   - polygon

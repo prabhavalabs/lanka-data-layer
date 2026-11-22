@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: pop.intercensal_total
   label: Population (intercensal / projected)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - sex
   geo_levels:
@@ -19,7 +22,10 @@ indicators:
   period_type: year
 - id: pop.intercensal_ci
   label: Interval half-width
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   geo_levels:
   - adm3
   - adm4

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tran.bus_routes
   label: Bus routes
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - line
   - adm1
@@ -15,6 +18,9 @@ indicators:
 - id: tran.bus_route_km
   label: Bus route length
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   geo_levels:
   - line
   - adm1

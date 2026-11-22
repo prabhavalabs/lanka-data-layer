@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: econ.building_material_price
   label: Average building material price
-  unit: LKR/unit
+  unit: 'LKR/{unit}'
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - material
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: year
 - id: econ.minimum_wage_index
   label: Minimum wage rate index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - sector
   geo_levels:

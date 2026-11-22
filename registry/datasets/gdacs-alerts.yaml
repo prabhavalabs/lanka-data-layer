@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: dis.gdacs_alerts
   label: GDACS alerts
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - hazard
   - alert_level
@@ -25,4 +28,5 @@ enrichment:
   - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+kind: features
 publication_class: A

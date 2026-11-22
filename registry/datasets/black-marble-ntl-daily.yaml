@@ -7,6 +7,9 @@ indicators:
 - id: ntl.blackmarble_radiance
   label: Daily NTL radiance
   unit: nW/cm2/sr
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

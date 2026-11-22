@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: tour.attractions
   label: Attractions
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - category
   - designation

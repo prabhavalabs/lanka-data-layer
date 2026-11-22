@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: census24.pop_total
   label: Enumerated population
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sex
   geo_levels:
@@ -19,7 +22,10 @@ indicators:
   period_type: snapshot
 - id: census24.pop_age_sex
   label: Population by age group and sex
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sex
   - age_group
@@ -31,7 +37,10 @@ indicators:
   period_type: snapshot
 - id: census24.pop_change_2012
   label: Population change 2012-2024
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm1
@@ -40,7 +49,10 @@ indicators:
   period_type: snapshot
 - id: census24.sex_ratio
   label: Males per 100 females
-  unit: ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm1

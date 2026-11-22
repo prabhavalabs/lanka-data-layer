@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: urb.zone_area
   label: Zoned area by zone type
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - zone_type
   geo_levels:
@@ -23,4 +26,5 @@ enrichment:
   - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
   aggregations:
   - zoned capacity vs current built-up (ghsl)
+kind: features
 publication_class: C

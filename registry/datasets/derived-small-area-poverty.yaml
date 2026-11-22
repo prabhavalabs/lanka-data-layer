@@ -7,14 +7,20 @@ source_ids:
 indicators:
 - id: pov.sae_headcount
   label: Modelled poverty headcount
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4
   period_type: year
 - id: pov.sae_ci_width
   label: 95% interval width
-  unit: percentage points
+  unit: '{percentage_point}'
+  measure_type: rate
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4

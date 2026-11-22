@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: dis.landslide_warning_level
   label: Landslide warning level
-  unit: level 0-3
+  unit: '{level}'
+  measure_type: category
+  aggregation: none
+  class: official
   geo_levels:
   - adm3
   period_type: day

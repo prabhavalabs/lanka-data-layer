@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: env.fire_detections
   label: Active fire detections
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - sensor
   geo_levels:

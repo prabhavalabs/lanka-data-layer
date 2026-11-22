@@ -6,13 +6,21 @@ source_ids:
 indicators:
 - id: econ.gdp_current
   label: GDP at current market prices
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: quarter
 - id: econ.gva_by_industry
   label: Gross value added by industry
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - industry
   - price_basis
@@ -21,7 +29,10 @@ indicators:
   period_type: quarter
 - id: econ.gdp_growth_real
   label: Real GDP growth
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: quarter

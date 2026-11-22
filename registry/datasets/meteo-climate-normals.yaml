@@ -8,6 +8,9 @@ indicators:
 - id: wx.normal_rain
   label: Normal monthly rainfall
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - station
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: month
 - id: wx.normal_temp
   label: Normal monthly mean temperature
-  unit: deg C
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - station
   geo_levels:
@@ -30,4 +36,5 @@ limits:
 enrichment:
   joins:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+kind: features
 publication_class: B

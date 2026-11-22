@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: budget.allocation
   label: Budget allocation
-  unit: LKR thousand
+  unit: LKR
+  unit_mult: 3
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - head
   - programme
@@ -16,7 +20,11 @@ indicators:
   period_type: year
 - id: budget.actual_prev_year
   label: Actual expenditure (t-2)
-  unit: LKR thousand
+  unit: LKR
+  unit_mult: 3
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - head
   - programme

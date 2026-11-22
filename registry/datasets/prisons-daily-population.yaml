@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: just.prisoners
   label: Prison population
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - status
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: day
 - id: just.occupancy_rate
   label: Prison occupancy rate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: day

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: water.reservoir_storage_pct
   label: Reservoir storage (percent of capacity)
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - reservoir
   geo_levels:
@@ -23,4 +26,5 @@ enrichment:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
   aggregations:
   - 'cross-source: storage vs hydropower generation (nso) and Yala season sowing'
+kind: features
 publication_class: B

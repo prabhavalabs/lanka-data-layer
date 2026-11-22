@@ -9,6 +9,9 @@ indicators:
 - id: tran.expressway_km
   label: Expressway length
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - status
   - route
@@ -19,7 +22,10 @@ indicators:
   period_type: snapshot
 - id: tran.expressway_interchanges
   label: Interchanges
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - status
   geo_levels:

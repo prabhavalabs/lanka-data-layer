@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: env.ndvi
   label: NDVI
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

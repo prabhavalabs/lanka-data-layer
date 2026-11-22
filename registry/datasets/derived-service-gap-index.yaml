@@ -7,14 +7,20 @@ source_ids:
 indicators:
 - id: idx.service_gap
   label: Service gap index
-  unit: index 0-100
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4
   period_type: snapshot
 - id: idx.service_gap_rank
   label: Rank within district
-  unit: rank
+  unit: '{rank}'
+  measure_type: rank
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4

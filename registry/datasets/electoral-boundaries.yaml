@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: elec.pd_count
   label: Polling divisions per electoral district
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - polygon
   period_type: snapshot
@@ -25,4 +28,5 @@ enrichment:
   - PD x GN population-weighted overlap table
   aggregations:
   - PD -> ED -> national
+kind: features
 publication_class: A

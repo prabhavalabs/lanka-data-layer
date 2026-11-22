@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: dasy.value
   label: Disaggregated value
-  unit: varies
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: derived
   dims:
   - indicator
   geo_levels:
@@ -16,7 +19,10 @@ indicators:
   period_type: year
 - id: dasy.quality_flag
   label: Disaggregation quality class
-  unit: class
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: derived
   geo_levels:
   - adm4
   period_type: year

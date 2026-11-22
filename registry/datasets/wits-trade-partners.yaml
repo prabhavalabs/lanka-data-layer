@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: trade.bilateral
   label: Trade value by partner and product
-  unit: USD thousand
+  unit: USD
+  unit_mult: 3
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - partner
   - product

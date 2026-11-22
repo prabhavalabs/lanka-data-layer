@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: haz.landslide_zone_area
   label: Area by landslide hazard class
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - hazard_class
   geo_levels:

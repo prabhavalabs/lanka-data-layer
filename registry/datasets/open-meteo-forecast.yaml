@@ -7,13 +7,19 @@ indicators:
 - id: wx.forecast_rain
   label: Forecast precipitation
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - point
   - adm3
   period_type: day
 - id: wx.forecast_tmax
   label: Forecast max temperature
-  unit: deg C
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - point
   - adm3

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: heal.notified_cases
   label: Notified cases
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - disease
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: day
 - id: heal.notified_rate
   label: Notified cases per 100,000
-  unit: per 100k
+  unit: '/10*5'
+  measure_type: rate
+  aggregation: none
+  class: official
   dims:
   - disease
   geo_levels:

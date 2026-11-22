@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: educ.univ_admissions
   label: University admissions
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - stream
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: educ.univ_admission_rate
   label: Admissions per eligible candidate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   - adm2

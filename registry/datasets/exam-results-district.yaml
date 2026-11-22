@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: educ.ol_pass_rate
   label: O/L qualified for A/L
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - sex
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: year
 - id: educ.al_eligible_rate
   label: A/L eligible for university
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - stream
   geo_levels:

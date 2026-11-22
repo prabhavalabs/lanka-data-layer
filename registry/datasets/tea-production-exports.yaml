@@ -7,6 +7,9 @@ indicators:
 - id: agri.tea_production
   label: Tea production
   unit: kg
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - elevation
   geo_levels:
@@ -15,6 +18,9 @@ indicators:
 - id: agri.tea_exports
   label: Tea exports
   unit: kg
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: month

@@ -7,6 +7,9 @@ indicators:
 - id: terrain.nasadem_elevation
   label: Elevation (NASADEM)
   unit: m
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

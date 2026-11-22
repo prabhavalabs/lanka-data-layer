@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: elec.parl_votes
   label: Votes by party
-  unit: votes
+  unit: '{vote}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - election
   - party
@@ -18,7 +21,10 @@ indicators:
   period_type: snapshot
 - id: elec.parl_seats
   label: Seats won
-  unit: seats
+  unit: '{seat}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - election
   - party
@@ -28,7 +34,10 @@ indicators:
   period_type: snapshot
 - id: elec.parl_turnout
   label: Turnout
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - election
   geo_levels:

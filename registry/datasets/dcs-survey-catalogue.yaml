@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: meta.surveys_catalogued
   label: Surveys in catalogue
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - survey_series
   geo_levels:

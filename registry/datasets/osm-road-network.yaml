@@ -7,6 +7,9 @@ indicators:
 - id: tran.osm_road_km
   label: Road length by class
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - highway_class
   geo_levels:
@@ -20,6 +23,9 @@ indicators:
 - id: tran.osm_road_density
   label: Road density
   unit: km/km2
+  measure_type: rate
+  aggregation: none
+  class: third_party
   dims:
   - highway_class
   geo_levels:

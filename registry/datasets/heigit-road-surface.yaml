@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tran.paved_share
   label: Share of road length paved
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - line
   - adm1

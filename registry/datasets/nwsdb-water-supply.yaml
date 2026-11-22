@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: water.connections
   label: Water supply connections
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm1
@@ -14,7 +17,10 @@ indicators:
   period_type: year
 - id: water.pipe_borne_coverage
   label: Pipe-borne water coverage
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm1
@@ -22,7 +28,10 @@ indicators:
   period_type: year
 - id: water.non_revenue_water
   label: Non-revenue water
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm1

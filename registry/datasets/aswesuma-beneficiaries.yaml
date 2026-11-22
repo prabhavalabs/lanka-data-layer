@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: soc.aswesuma_families
   label: Beneficiary families
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - category
   geo_levels:
@@ -16,7 +19,10 @@ indicators:
   period_type: snapshot
 - id: soc.aswesuma_share
   label: Beneficiary families per 100 households
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - adm2
   - adm3

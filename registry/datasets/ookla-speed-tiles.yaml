@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tech.ookla_download_mbps
   label: Average download speed
-  unit: Mbps
+  unit: Mbit/s
+  measure_type: mean
+  aggregation: none
+  class: third_party
   dims:
   - network_type
   geo_levels:

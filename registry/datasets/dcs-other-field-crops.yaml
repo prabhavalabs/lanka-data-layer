@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: agri.ofc_extent
   label: OFC extent
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - crop
   - season
@@ -16,7 +19,10 @@ indicators:
   period_type: year
 - id: agri.ofc_production
   label: OFC production
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - crop
   - season

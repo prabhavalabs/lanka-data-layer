@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: lc.unit_profile_share
   label: Land cover profile share
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: derived
   dims:
   - lc_class
   - source

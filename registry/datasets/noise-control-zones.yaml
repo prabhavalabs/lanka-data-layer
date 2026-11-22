@@ -9,6 +9,9 @@ indicators:
 - id: envi.silent_zone_area
   label: Silent-zone area
   unit: km2
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - polygon
   - adm3
@@ -16,7 +19,10 @@ indicators:
   period_type: snapshot
 - id: envi.noise_limit_db
   label: Permissible noise level
-  unit: dB(A)
+  unit: 'dB{A}'
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - zone_type
   - time_of_day

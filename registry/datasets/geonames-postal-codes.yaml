@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: postal.code_count
   label: Postal codes per unit
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - adm1
   - adm2

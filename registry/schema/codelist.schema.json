@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/registry/schema/codelist.schema.json",
+  "title": "Lanka Data Layer dimension codelist",
+  "description": "One codelist (02-standard-model.md §3). File: registry/codelists/<id>.yaml; the file stem must equal `id`. Every observed dimension code must be listed here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "codes"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "maxLength": 80
+    },
+    "title": {
+      "type": "string",
+      "minLength": 2
+    },
+    "sdmx_ref": {
+      "type": "string",
+      "minLength": 3,
+      "description": "SDMX codelist this one aligns with, e.g. SDMX:CL_SEX(2.1)."
+    },
+    "codes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "label"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.+<>-]{1,64}$"
+          },
+          "label": {
+            "$ref": "#/$defs/label"
+          },
+          "parent": {
+            "type": "string",
+            "minLength": 1
+          },
+          "total": {
+            "type": "boolean",
+            "description": "The total member (SDMX _T); at most one per codelist."
+          },
+          "sdmx": {
+            "type": "string",
+            "minLength": 1,
+            "description": "SDMX cross-domain code when ours differs (F, M, _T, Y15T19)."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "label": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "en"
+          ],
+          "properties": {
+            "en": {
+              "type": "string",
+              "minLength": 1
+            },
+            "si": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ta": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}

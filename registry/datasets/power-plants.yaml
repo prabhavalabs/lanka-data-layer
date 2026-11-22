@@ -8,6 +8,9 @@ indicators:
 - id: ener.gem_plant_capacity_mw
   label: Installed capacity
   unit: MW
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - technology
   - status
@@ -19,7 +22,10 @@ indicators:
   period_type: snapshot
 - id: ener.gem_plant_count
   label: Power plants
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - technology
   - status

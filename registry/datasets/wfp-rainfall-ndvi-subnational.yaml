@@ -7,18 +7,27 @@ indicators:
 - id: clim.wfp_rainfall_dekad
   label: Dekadal rainfall
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm2
   period_type: day
 - id: clim.wfp_rainfall_anomaly
   label: Rainfall anomaly vs long-term mean
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm2
   period_type: day
 - id: env.wfp_ndvi_anomaly
   label: NDVI anomaly
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm2
   period_type: day

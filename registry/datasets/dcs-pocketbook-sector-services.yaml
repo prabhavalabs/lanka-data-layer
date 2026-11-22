@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: pb.energy_supply
   label: Primary energy supply
-  unit: ktoe
+  unit: '{ktoe}'
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - source
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: year
 - id: pb.telecom_subscriptions
   label: Telecom subscriptions
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - service
   geo_levels:
@@ -22,7 +28,11 @@ indicators:
   period_type: year
 - id: pb.passenger_km
   label: Passenger kilometres
-  unit: million pkm
+  unit: '{passenger}.km'
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - mode
   geo_levels:
@@ -30,7 +40,10 @@ indicators:
   period_type: year
 - id: pb.tourist_arrivals
   label: Tourist arrivals
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: year

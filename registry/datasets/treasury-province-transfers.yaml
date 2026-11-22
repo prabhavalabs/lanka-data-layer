@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: fisc.pc_transfers
   label: Transfers to provincial councils
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - grant_type
   geo_levels:
@@ -15,6 +19,9 @@ indicators:
 - id: fisc.pc_transfers_per_capita
   label: Transfers per capita
   unit: LKR
+  measure_type: mean
+  aggregation: none
+  class: official
   geo_levels:
   - adm1
   period_type: year

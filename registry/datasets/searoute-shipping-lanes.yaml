@@ -7,6 +7,9 @@ indicators:
 - id: tran.sea_route_km
   label: Sea route distance
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - origin
   - destination
@@ -21,4 +24,5 @@ limits:
 enrichment:
   joins:
   - port points
+kind: features
 publication_class: A

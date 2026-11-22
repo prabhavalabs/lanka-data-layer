@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: haz.th_level
   label: Hazard level
-  unit: category
+  unit: '{category}'
+  measure_type: category
+  aggregation: none
+  class: third_party
   dims:
   - hazard
   geo_levels:

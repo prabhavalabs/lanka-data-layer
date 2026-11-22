@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: port.teu
   label: Container throughput
-  unit: TEU
+  unit: '{TEU}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - port
   - movement_type
@@ -16,7 +19,10 @@ indicators:
   period_type: month
 - id: port.ship_arrivals
   label: Ship arrivals
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - port
   geo_levels:
@@ -34,4 +40,5 @@ enrichment:
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
   - 'cross-source: AIS calls from imf-portwatch-lka'
+kind: features
 publication_class: B

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tran.graph_edges
   label: Routable edges
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - mode
   geo_levels:

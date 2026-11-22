@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: re.condo_asking_index
   label: Condominium asking price index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - segment
   geo_levels:

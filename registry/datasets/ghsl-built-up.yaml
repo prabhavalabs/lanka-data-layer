@@ -7,6 +7,9 @@ indicators:
 - id: built.surface_m2
   label: Built-up surface
   unit: m2
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - use
   geo_levels:
@@ -19,6 +22,9 @@ indicators:
 - id: built.volume_m3
   label: Built-up volume
   unit: m3
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - use
   geo_levels:
@@ -30,7 +36,10 @@ indicators:
   period_type: year
 - id: built.share_pct
   label: Built-up share of land
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm1
   - adm2

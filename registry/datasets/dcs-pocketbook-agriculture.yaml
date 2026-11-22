@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: agri.crop_extent
   label: Crop extent
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - crop
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: agri.crop_production
   label: Crop production
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - crop
   geo_levels:
@@ -23,7 +29,10 @@ indicators:
   period_type: year
 - id: agri.cost_of_production
   label: Cost of production per hectare
-  unit: LKR/ha
+  unit: LKR/har
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - crop
   geo_levels:
@@ -31,7 +40,10 @@ indicators:
   period_type: year
 - id: agri.livestock_production
   label: Livestock product output
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - product
   geo_levels:
@@ -39,7 +51,10 @@ indicators:
   period_type: year
 - id: agri.fish_production
   label: Fish production
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - fishery_type
   geo_levels:
@@ -47,7 +62,10 @@ indicators:
   period_type: year
 - id: agri.paddy_irrigation_share
   label: Paddy area by water source
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - water_source
   geo_levels:
@@ -55,7 +73,10 @@ indicators:
   period_type: year
 - id: agri.calorie_availability
   label: Per-capita calorie availability
-  unit: kcal/day
+  unit: kcal/d
+  measure_type: mean
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: year

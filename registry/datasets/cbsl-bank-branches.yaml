@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: fin.bank_branches
   label: Bank branches
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - bank_type
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: fin.branches_per_100k
   label: Bank branches per 100,000 persons
-  unit: per 100k
+  unit: '/10*5'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2

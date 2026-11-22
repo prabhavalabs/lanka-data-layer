@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: exp.heat_person_days
   label: Person-days of extreme heat
-  unit: person-days
+  unit: '{person}.d'
+  measure_type: count
+  aggregation: sum
+  class: derived
   geo_levels:
   - adm1
   - adm2
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: exp.heat_elderly_days
   label: Elderly (60+) person-days of extreme heat
-  unit: person-days
+  unit: '{person}.d'
+  measure_type: count
+  aggregation: sum
+  class: derived
   geo_levels:
   - adm1
   - adm2

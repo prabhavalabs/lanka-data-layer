@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: urb.builtup_growth
   label: Built-up surface growth per 5-year epoch
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: derived
   geo_levels:
   - adm1
   - adm2
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: urb.land_consumption_ratio
   label: Land consumption rate / population growth rate (SDG 11.3.1)
-  unit: ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: derived
   geo_levels:
   - adm1
   - adm2

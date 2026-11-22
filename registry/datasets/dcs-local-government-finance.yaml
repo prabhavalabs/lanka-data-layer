@@ -7,7 +7,11 @@ source_ids:
 indicators:
 - id: lgov.revenue
   label: Local authority revenue
-  unit: LKR thousand
+  unit: LKR
+  unit_mult: 3
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - revenue_type
   geo_levels:
@@ -16,7 +20,11 @@ indicators:
   period_type: year
 - id: lgov.expenditure
   label: Local authority expenditure
-  unit: LKR thousand
+  unit: LKR
+  unit_mult: 3
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - expenditure_type
   geo_levels:
@@ -26,6 +34,9 @@ indicators:
 - id: lgov.revenue_per_capita
   label: LA revenue per resident
   unit: LKR
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - polygon
   period_type: year

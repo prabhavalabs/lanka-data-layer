@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: tran.accidents_fatal
   label: Fatal road accidents
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - road_user
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: year
 - id: tran.fatalities_per_100k
   label: Road fatalities per 100,000
-  unit: per 100k
+  unit: '/10*5'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2

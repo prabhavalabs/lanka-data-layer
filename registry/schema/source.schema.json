@@ -30,48 +30,116 @@
       "minLength": 2,
       "description": "Publishing organisation, full name (e.g. 'Department of Census and Statistics')."
     },
-    "title": { "type": "string", "minLength": 3 },
-    "homepage": { "$ref": "#/$defs/url" },
+    "title": {
+      "type": "string",
+      "minLength": 3
+    },
+    "homepage": {
+      "$ref": "#/$defs/url"
+    },
     "access": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["method", "endpoint", "auth"],
+      "required": [
+        "method",
+        "endpoint",
+        "auth"
+      ],
       "properties": {
         "method": {
-          "enum": ["api", "xlsx", "pdf", "csv", "zip", "osm_pbf", "raster", "git", "html", "gtfs"]
+          "enum": [
+            "api",
+            "xlsx",
+            "pdf",
+            "csv",
+            "zip",
+            "osm_pbf",
+            "raster",
+            "git",
+            "html",
+            "gtfs"
+          ]
         },
         "endpoint": {
           "type": "string",
           "minLength": 3,
           "description": "URL or URL template ({placeholders} allowed) of the machine access point."
         },
-        "auth": { "enum": ["none", "key", "manual"] }
+        "auth": {
+          "enum": [
+            "none",
+            "key",
+            "manual"
+          ]
+        }
       }
     },
     "licence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "status"],
+      "required": [
+        "id",
+        "status"
+      ],
       "properties": {
         "id": {
           "type": "string",
           "pattern": "^[a-z0-9][a-z0-9.+-]*$",
           "description": "Licence id, lowercase (cc-by-4.0, odbl-1.0, cc-by-igo-3.0, lk-gov-unstated, ...)."
         },
-        "status": { "enum": ["open", "attribution", "permission_unclear", "restricted"] },
-        "url": { "$ref": "#/$defs/url" },
-        "attribution": { "type": "string", "minLength": 3 }
+        "status": {
+          "enum": [
+            "open",
+            "attribution",
+            "permission_unclear",
+            "restricted"
+          ]
+        },
+        "url": {
+          "$ref": "#/$defs/url"
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 3
+        },
+        "spdx": {
+          "type": "string",
+          "minLength": 2,
+          "description": "SPDX id; derived from id for common licences."
+        },
+        "redistribution": {
+          "enum": [
+            "bulk",
+            "api",
+            "link",
+            "internal"
+          ],
+          "description": "Redistribution tier (08 §2); derived from status when omitted. May only be stricter than the derived tier."
+        }
       }
     },
     "cadence": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["frequency"],
+      "required": [
+        "frequency"
+      ],
       "properties": {
         "frequency": {
-          "enum": ["realtime", "daily", "weekly", "monthly", "quarterly", "annual", "irregular", "one_off"]
+          "enum": [
+            "realtime",
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "annual",
+            "irregular",
+            "one_off"
+          ]
         },
-        "release_calendar_url": { "$ref": "#/$defs/url" },
+        "release_calendar_url": {
+          "$ref": "#/$defs/url"
+        },
         "expected_lag_days": {
           "type": "integer",
           "minimum": 0,
@@ -83,56 +151,126 @@
     "geo": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["levels", "join"],
+      "required": [
+        "levels",
+        "join"
+      ],
       "properties": {
         "levels": {
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": { "$ref": "#/$defs/geoLevel" }
+          "items": {
+            "$ref": "#/$defs/geoLevel"
+          }
         },
-        "join": { "enum": ["pcode", "name_match", "spatial", "grid", "none"] }
+        "join": {
+          "enum": [
+            "pcode",
+            "name_match",
+            "spatial",
+            "grid",
+            "none"
+          ]
+        }
       }
     },
     "themes": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": { "$ref": "#/$defs/theme" }
+      "items": {
+        "$ref": "#/$defs/theme"
+      }
     },
     "datasets": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "$ref": "#/$defs/slug" },
+      "items": {
+        "$ref": "#/$defs/slug"
+      },
       "description": "Dataset ids (registry/datasets/<id>.yaml) fed by this source."
     },
-    "priority": { "enum": ["P0", "P1", "P2", "P3"] },
-    "effort": { "enum": ["S", "M", "L"] },
-    "status": { "enum": ["planned", "active", "blocked"] },
+    "priority": {
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    "effort": {
+      "enum": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    "status": {
+      "enum": [
+        "planned",
+        "active",
+        "blocked"
+      ]
+    },
     "verified_at": {
       "type": "string",
       "format": "date",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
       "description": "Date a human last confirmed access + licence (YYYY-MM-DD)."
     },
-    "notes": { "type": "string" },
+    "notes": {
+      "type": "string"
+    },
     "dc_refs": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "description": "Slugs of the equivalent developing-country.org datasets (for cross-checking only)."
     }
   },
   "$defs": {
-    "slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$", "maxLength": 80 },
-    "url": { "type": "string", "pattern": "^https?://", "format": "uri" },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "maxLength": 80
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^https?://",
+      "format": "uri"
+    },
     "geoLevel": {
-      "enum": ["national", "adm1", "adm2", "adm3", "adm4", "point", "line", "polygon", "raster"]
+      "enum": [
+        "national",
+        "adm1",
+        "adm2",
+        "adm3",
+        "adm4",
+        "point",
+        "line",
+        "polygon",
+        "raster"
+      ]
     },
     "theme": {
       "enum": [
-        "AGRI", "ECON", "EDUC", "ENER", "ENVI", "GOVE", "HEAL",
-        "INTR", "JUST", "REGI", "SOCI", "TECH", "TRAN"
+        "AGRI",
+        "ECON",
+        "EDUC",
+        "ENER",
+        "ENVI",
+        "GOVE",
+        "HEAL",
+        "INTR",
+        "JUST",
+        "REGI",
+        "SOCI",
+        "TECH",
+        "TRAN"
       ],
       "description": "EU DCAT-AP data theme codes."
     }

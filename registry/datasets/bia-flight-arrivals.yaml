@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: air.arrivals_flights
   label: Inbound flights
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - origin
   - airline
@@ -16,7 +19,10 @@ indicators:
   period_type: day
 - id: air.passengers
   label: Air passengers
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - airport
   - direction
@@ -35,4 +41,5 @@ enrichment:
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
   - connectivity by origin country vs sltda arrivals
+kind: features
 publication_class: A

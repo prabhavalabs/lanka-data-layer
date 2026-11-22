@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tech.subscriptions
   label: Telecom subscriptions
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - service
   geo_levels:

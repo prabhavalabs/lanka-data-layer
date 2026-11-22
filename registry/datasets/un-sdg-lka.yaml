@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: sdg.value
   label: SDG series value
-  unit: various
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   dims:
   - goal
   - target

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: port.daily_calls
   label: Port calls
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - port
   - vessel_type
@@ -15,7 +18,10 @@ indicators:
   period_type: day
 - id: port.est_trade_volume
   label: Estimated trade volume
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - port
   - flow
@@ -34,4 +40,5 @@ enrichment:
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
   - 'cross-source: compare with slpa-port-statistics'
+kind: features
 publication_class: A

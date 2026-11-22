@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: pop.kontur_h3
   label: Population per H3 r8 cell
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - raster
   - adm1

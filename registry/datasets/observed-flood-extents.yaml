@@ -9,7 +9,10 @@ source_ids:
 indicators:
 - id: dis.flooded_area
   label: Observed flooded area
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - event
   geo_levels:
@@ -21,7 +24,10 @@ indicators:
   period_type: day
 - id: dis.pop_in_observed_flood
   label: Population in observed flood extent
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - event
   geo_levels:

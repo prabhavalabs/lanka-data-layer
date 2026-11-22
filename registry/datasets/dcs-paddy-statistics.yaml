@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: agri.paddy_sown_ha
   label: Paddy extent sown
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - season
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: agri.paddy_harvested_ha
   label: Paddy extent harvested
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - season
   geo_levels:
@@ -24,7 +30,10 @@ indicators:
   period_type: year
 - id: agri.paddy_production_t
   label: Paddy production
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - season
   geo_levels:
@@ -33,7 +42,10 @@ indicators:
   period_type: year
 - id: agri.paddy_yield
   label: Average paddy yield
-  unit: kg/ha
+  unit: kg/har
+  measure_type: rate
+  aggregation: none
+  class: official
   dims:
   - season
   geo_levels:

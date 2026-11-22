@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: census24.hh_water_source
   label: Households by drinking water source
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - water_source
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: snapshot
 - id: census24.hh_toilet
   label: Households by toilet facility
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - toilet_type
   geo_levels:
@@ -24,7 +30,10 @@ indicators:
   period_type: snapshot
 - id: census24.hh_lighting
   label: Households by lighting source
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - lighting
   geo_levels:
@@ -33,7 +42,10 @@ indicators:
   period_type: snapshot
 - id: census24.hh_cooking_fuel
   label: Households by cooking fuel
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - fuel
   geo_levels:
@@ -42,7 +54,10 @@ indicators:
   period_type: snapshot
 - id: census24.hh_waste_disposal
   label: Households by waste disposal method
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - method
   geo_levels:

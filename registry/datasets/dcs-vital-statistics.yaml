@@ -7,35 +7,50 @@ source_ids:
 indicators:
 - id: vital.births
   label: Registered live births
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: vital.deaths
   label: Registered deaths
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: vital.infant_deaths
   label: Infant deaths
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: vital.crude_birth_rate
   label: Crude birth rate
-  unit: per 1,000
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: vital.marriages
   label: Registered marriages
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

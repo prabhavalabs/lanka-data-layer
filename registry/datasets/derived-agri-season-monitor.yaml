@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: agri.season_stress_index
   label: Season stress index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
   dims:
   - season
   geo_levels:

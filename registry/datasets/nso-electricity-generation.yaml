@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: ener.generation_mwh
   label: Electricity generation
-  unit: MWh
+  unit: MW.h
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - source
   geo_levels:
@@ -15,12 +18,18 @@ indicators:
 - id: ener.demand_mw_15min
   label: System demand (15-min)
   unit: MW
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: day
 - id: ener.renewable_share
   label: Renewable share of generation
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: day

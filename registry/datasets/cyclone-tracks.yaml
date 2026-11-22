@@ -6,13 +6,19 @@ source_ids:
 indicators:
 - id: haz.cyclone_tracks
   label: Cyclone tracks within 300 km
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - line
   period_type: year
 - id: haz.max_wind_near_lk
   label: Max sustained wind within 300 km
-  unit: knots
+  unit: '[kn_i]'
+  measure_type: mean
+  aggregation: none
+  class: third_party
   dims:
   - storm
   geo_levels:
@@ -29,4 +35,5 @@ enrichment:
   - track buffer overlay with ADM2
   aggregations:
   - cyclone return frequency per coastal district
+kind: features
 publication_class: A

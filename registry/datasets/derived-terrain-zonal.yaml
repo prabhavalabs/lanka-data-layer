@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: terrain.unit_profile
   label: Terrain statistic
-  unit: m or degrees
+  unit: '{m_or_deg}'
+  measure_type: mean
+  aggregation: none
+  class: derived
   dims:
   - statistic
   geo_levels:

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: gov.cpi_score
   label: CPI score
-  unit: 0-100
+  unit: '{score}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year

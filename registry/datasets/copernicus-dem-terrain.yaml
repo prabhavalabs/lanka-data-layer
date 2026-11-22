@@ -7,6 +7,9 @@ indicators:
 - id: terrain.elevation_mean
   label: Mean elevation
   unit: m
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -16,7 +19,10 @@ indicators:
   period_type: snapshot
 - id: terrain.slope_mean
   label: Mean slope
-  unit: degrees
+  unit: deg
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -26,7 +32,10 @@ indicators:
   period_type: snapshot
 - id: terrain.steep_share
   label: Share of area with slope > 30 deg
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm1
   - adm2

@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: pov.headcount_ratio
   label: Poverty headcount ratio (official line)
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - sector
   geo_levels:
@@ -16,19 +19,28 @@ indicators:
   period_type: year
 - id: pov.poverty_gap
   label: Poverty gap index
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: year
 - id: pov.squared_gap
   label: Squared poverty gap
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: year
 - id: pov.poor_population
   label: Population below poverty line
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

@@ -8,38 +8,57 @@ indicators:
 - id: wdi.ny_gdp_mktp_cd
   label: GDP (current US$)
   unit: USD
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   geo_levels:
   - national
   period_type: year
 - id: wdi.ny_gdp_pcap_pp_kd
   label: GDP per capita, PPP (constant 2021 int'l $)
-  unit: intl $
+  unit: '{int_dollar}'
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year
 - id: wdi.si_pov_dday
   label: Poverty headcount at $3.00/day (2021 PPP)
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year
 - id: wdi.sp_dyn_le00_in
   label: Life expectancy at birth
-  unit: years
+  unit: a
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year
 - id: wdi.eg_elc_accs_zs
   label: Access to electricity
-  unit: percent of population
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year
 - id: wdi.series
   label: Any WDI series (generic, keyed by series code)
-  unit: various
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   dims:
-  - series_code
+  - id: series_code
+    codelist: wdi-series
   geo_levels:
   - national
   period_type: year

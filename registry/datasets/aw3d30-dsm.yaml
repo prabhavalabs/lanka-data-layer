@@ -7,6 +7,9 @@ indicators:
 - id: terrain.aw3d30_elevation
   label: Elevation (AW3D30)
   unit: m
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

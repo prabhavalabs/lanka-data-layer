@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: acc.heigit_share_within
   label: Population within threshold of facility
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   dims:
   - facility
   - threshold

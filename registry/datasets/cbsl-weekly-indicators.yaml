@@ -6,13 +6,19 @@ source_ids:
 indicators:
 - id: mon.policy_rate
   label: Overnight policy rate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: day
 - id: mon.tbill_yield
   label: Treasury bill yield
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - tenor
   geo_levels:
@@ -20,13 +26,21 @@ indicators:
   period_type: day
 - id: mon.gross_official_reserves
   label: Gross official reserves
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: month
 - id: mon.broad_money
   label: Broad money (M2b)
-  unit: LKR billion
+  unit: LKR
+  unit_mult: 9
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: month

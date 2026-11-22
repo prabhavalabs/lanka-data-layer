@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: clim.wc_tavg
   label: Mean temperature (normal)
-  unit: degC
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -18,6 +21,9 @@ indicators:
 - id: clim.wc_prec
   label: Precipitation (normal)
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -27,7 +33,10 @@ indicators:
   period_type: month
 - id: clim.wc_bio
   label: Bioclimatic variable
-  unit: varies
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   dims:
   - bio_var
   geo_levels:

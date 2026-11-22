@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: tran.gtfs_stops
   label: Transit stops
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - feed
   geo_levels:
@@ -19,7 +22,10 @@ indicators:
   period_type: snapshot
 - id: tran.gtfs_trips_per_day
   label: Scheduled trips per stop per weekday
-  unit: trips/day
+  unit: '{trip}/d'
+  measure_type: rate
+  aggregation: sum
+  class: third_party
   dims:
   - feed
   geo_levels:

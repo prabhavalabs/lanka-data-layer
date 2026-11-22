@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: econ.investment_per_capita
   label: Investment per capita
-  unit: LKR or USD
+  unit: '{currency}'
+  measure_type: mean
+  aggregation: none
+  class: derived
   dims:
   - channel
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: econ.boi_jobs_per_1000
   label: BOI jobs per 1,000 working-age residents
-  unit: per 1,000
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: derived
   geo_levels:
   - adm2
   - adm3

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: dis.di_events
   label: Disaster records
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - hazard
   geo_levels:
@@ -16,7 +19,10 @@ indicators:
   period_type: year
 - id: dis.di_deaths
   label: Deaths
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - hazard
   geo_levels:
@@ -26,7 +32,10 @@ indicators:
   period_type: year
 - id: dis.di_houses_destroyed
   label: Houses destroyed
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - hazard
   geo_levels:
@@ -36,7 +45,10 @@ indicators:
   period_type: year
 - id: dis.di_affected
   label: Persons affected
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - hazard
   geo_levels:

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: census24.functional_difficulty
   label: Population with functional difficulty
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - domain
   - severity

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: heal.inpatient_discharges
   label: Inpatient discharges
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - icd_group
   - sex
@@ -17,7 +20,10 @@ indicators:
   period_type: year
 - id: heal.hospital_deaths
   label: Hospital deaths
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - icd_group
   geo_levels:

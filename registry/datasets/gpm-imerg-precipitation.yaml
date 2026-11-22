@@ -7,6 +7,9 @@ indicators:
 - id: clim.imerg_precip_daily
   label: Daily precipitation (IMERG)
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

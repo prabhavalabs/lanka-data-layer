@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tran.metro_stops
   label: Proposed metro stops
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - line
   geo_levels:
@@ -23,4 +26,5 @@ enrichment:
   - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
   aggregations:
   - input to derived-transit-access scenarios
+kind: features
 publication_class: A

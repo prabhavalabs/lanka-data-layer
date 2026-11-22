@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: fisc.revenue
   label: Government revenue
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - revenue_type
   geo_levels:
@@ -14,7 +18,11 @@ indicators:
   period_type: year
 - id: fisc.expenditure
   label: Government expenditure
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - expenditure_type
   geo_levels:
@@ -22,13 +30,20 @@ indicators:
   period_type: year
 - id: fisc.overall_balance_gdp
   label: Overall fiscal balance
-  unit: percent of GDP
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: year
 - id: fisc.cg_debt
   label: Central government debt
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - debt_type
   geo_levels:

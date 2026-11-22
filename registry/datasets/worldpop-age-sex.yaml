@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: pop.grid_age_sex
   label: Population by age group and sex
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - sex
   - age_group
@@ -19,7 +22,10 @@ indicators:
   period_type: year
 - id: pop.grid_dependency_ratio
   label: Age dependency ratio
-  unit: ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm1
   - adm2
@@ -28,7 +34,10 @@ indicators:
   period_type: year
 - id: pop.grid_under5
   label: Children under 5
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - raster
   - adm1

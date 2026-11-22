@@ -9,7 +9,10 @@ source_ids:
 indicators:
 - id: lab.unemployment_rate_sub
   label: Unemployment rate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - sex
   geo_levels:
@@ -19,7 +22,10 @@ indicators:
   period_type: year
 - id: lab.informal_share
   label: Informal sector share of employment
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm1
@@ -27,7 +33,10 @@ indicators:
   period_type: year
 - id: lab.employment_by_industry
   label: Employment by industry
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - industry
   geo_levels:
@@ -36,7 +45,10 @@ indicators:
   period_type: year
 - id: lab.employment_by_occupation
   label: Employment by occupation
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - occupation
   geo_levels:

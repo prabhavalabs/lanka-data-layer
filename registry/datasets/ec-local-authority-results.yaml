@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: elec.lg_votes
   label: Votes by party (LA)
-  unit: votes
+  unit: '{vote}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - election
   - party
@@ -16,7 +19,10 @@ indicators:
   period_type: snapshot
 - id: elec.lg_seats
   label: Seats by party (LA)
-  unit: seats
+  unit: '{seat}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - election
   - party
@@ -25,7 +31,10 @@ indicators:
   period_type: snapshot
 - id: elec.lg_turnout
   label: Turnout (LA)
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - election
   geo_levels:
@@ -42,4 +51,5 @@ enrichment:
   - LA name -> LA polygon (union of ADM4 GN units per LA) -> ADM2/ADM1
   aggregations:
   - LA -> district -> national
+kind: features
 publication_class: A

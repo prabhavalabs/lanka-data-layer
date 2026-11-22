@@ -7,6 +7,9 @@ indicators:
 - id: ener.wind_power_density
   label: Wind power density at 100 m
   unit: W/m2
+  measure_type: rate
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

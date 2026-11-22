@@ -7,7 +7,11 @@ source_ids:
 indicators:
 - id: econ.gdp_expenditure
   label: GDP by expenditure component
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - component
   - price_basis

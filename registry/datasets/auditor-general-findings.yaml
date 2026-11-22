@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: audit.opinion
   label: Audit opinion type
-  unit: category
+  unit: '{category}'
+  measure_type: category
+  aggregation: none
+  class: official
   dims:
   - entity
   geo_levels:
@@ -16,7 +19,11 @@ indicators:
   period_type: year
 - id: audit.findings_value
   label: Value of quantified audit findings
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - entity
   - finding_type

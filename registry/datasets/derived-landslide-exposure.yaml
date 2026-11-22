@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: exp.landslide_susceptibility
   label: Landslide susceptibility class
-  unit: class 1-4
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: derived
   geo_levels:
   - raster
   - adm3
@@ -15,7 +18,10 @@ indicators:
   period_type: snapshot
 - id: exp.landslide_pop
   label: Population in high susceptibility
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   geo_levels:
   - adm1
   - adm2

@@ -7,7 +7,11 @@ source_ids:
 indicators:
 - id: econ.pgdp
   label: Provincial GDP, current prices
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - sector
   geo_levels:
@@ -16,12 +20,18 @@ indicators:
 - id: econ.pgdp_per_capita
   label: Provincial GDP per capita
   unit: LKR
+  measure_type: mean
+  aggregation: none
+  class: official
   geo_levels:
   - adm1
   period_type: year
 - id: econ.pgdp_share
   label: Province share of national GDP
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - adm1
   period_type: year

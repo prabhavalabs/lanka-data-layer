@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: biz.overture_places
   label: Places by category
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - category
   geo_levels:
@@ -18,7 +21,10 @@ indicators:
   period_type: snapshot
 - id: biz.places_per_1000
   label: Places per 1,000 population
-  unit: per 1,000
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm1
   - adm2

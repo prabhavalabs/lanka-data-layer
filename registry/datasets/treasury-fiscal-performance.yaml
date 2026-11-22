@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: fisc.outturn_vs_budget
   label: Outturn vs budget estimate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - line_item
   geo_levels:
@@ -14,7 +17,11 @@ indicators:
   period_type: year
 - id: fisc.in_year_revenue
   label: In-year revenue (cumulative)
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: month

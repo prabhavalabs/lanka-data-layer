@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: census24.housing_units
   label: Housing units by structure type
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - structure_type
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: snapshot
 - id: census24.housing_material
   label: Housing units by principal material
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - element
   - material
@@ -25,7 +31,10 @@ indicators:
   period_type: snapshot
 - id: census24.housing_tenure
   label: Households by tenure
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - tenure
   geo_levels:
@@ -34,7 +43,10 @@ indicators:
   period_type: snapshot
 - id: census24.vacant_units
   label: Vacant housing units
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: pip.headcount
   label: Poverty headcount at international line
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   dims:
   - poverty_line
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: year
 - id: pip.gini
   label: Gini index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year

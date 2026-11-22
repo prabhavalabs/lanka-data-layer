@@ -7,6 +7,9 @@ indicators:
 - id: env.pm25
   label: PM2.5 concentration
   unit: ug/m3
+  measure_type: rate
+  aggregation: none
+  class: third_party
   dims:
   - station
   geo_levels:
@@ -23,4 +26,5 @@ enrichment:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+kind: features
 publication_class: A

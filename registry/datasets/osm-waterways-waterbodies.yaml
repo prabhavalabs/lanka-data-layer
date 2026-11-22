@@ -7,6 +7,9 @@ indicators:
 - id: env.osm_waterway_km
   label: Waterway length
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - type
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: snapshot
 - id: env.osm_tank_count
   label: Tanks/reservoirs
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - polygon
   - adm1

@@ -6,13 +6,19 @@ source_ids:
 indicators:
 - id: heal.dengue_incidence_lagged_rain
   label: Incidence vs 4-week lagged rainfall
-  unit: correlation
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: derived
   geo_levels:
   - adm2
   period_type: year
 - id: heal.dengue_risk_class
   label: Dengue risk class
-  unit: class 1-4
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: derived
   geo_levels:
   - adm2
   - polygon

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: env.agb_density
   label: Aboveground biomass density
-  unit: Mg/ha
+  unit: Mg/har
+  measure_type: rate
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

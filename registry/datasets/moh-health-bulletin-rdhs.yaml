@@ -6,14 +6,20 @@ source_ids:
 indicators:
 - id: heal.mo_per_100k
   label: Medical officers per 100,000
-  unit: per 100k
+  unit: '/10*5'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: heal.beds_by_rdhs
   label: Hospital beds
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - hospital_type
   geo_levels:
@@ -22,7 +28,10 @@ indicators:
   period_type: year
 - id: heal.opd_visits
   label: OPD visits
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

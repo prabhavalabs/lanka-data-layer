@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: ener.customers
   label: Electricity customers
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - tariff_category
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: ener.sales_gwh
   label: Electricity sales
-  unit: GWh
+  unit: GW.h
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - tariff_category
   geo_levels:
@@ -25,6 +31,9 @@ indicators:
 - id: ener.plant_capacity_mw
   label: Installed capacity
   unit: MW
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - plant
   - source

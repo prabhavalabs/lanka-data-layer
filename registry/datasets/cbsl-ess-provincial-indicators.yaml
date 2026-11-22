@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: ess.provincial_indicator
   label: Provincial indicator value
-  unit: various
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: official
   dims:
   - indicator
   geo_levels:

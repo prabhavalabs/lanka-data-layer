@@ -6,13 +6,19 @@ source_ids:
 indicators:
 - id: hdr.hdi
   label: Human Development Index
-  unit: index 0-1
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year
 - id: hdr.gii
   label: Gender Inequality Index
-  unit: index 0-1
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year

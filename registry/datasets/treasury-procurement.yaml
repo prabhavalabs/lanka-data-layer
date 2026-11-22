@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: proc.bids_per_tender
   label: Average bids per tender
-  unit: count
+  unit: '{count}'
+  measure_type: mean
+  aggregation: none
+  class: official
   dims:
   - agency
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: year
 - id: proc.single_bid_share
   label: Share of single-bid tenders
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - agency
   geo_levels:
@@ -22,7 +28,11 @@ indicators:
   period_type: year
 - id: proc.contract_value
   label: Contract value
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - agency
   - status

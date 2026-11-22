@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: unicef.value
   label: UNICEF indicator
-  unit: various
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   dims:
   - indicator
   - sex

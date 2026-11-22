@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: water.baseline_stress
   label: Baseline water stress
-  unit: score 0-5
+  unit: '{score}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   geo_levels:
   - polygon
   - adm1

@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: pop.hrsl_total
   label: Population (HRSL)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -17,7 +20,10 @@ indicators:
   period_type: snapshot
 - id: pop.hrsl_group
   label: Population by demographic group (HRSL)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - group
   geo_levels:

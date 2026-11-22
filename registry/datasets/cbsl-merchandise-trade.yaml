@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: trade.exports_usd
   label: Merchandise exports
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - category
   geo_levels:
@@ -14,7 +18,11 @@ indicators:
   period_type: month
 - id: trade.imports_usd
   label: Merchandise imports
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - category
   geo_levels:
@@ -22,7 +30,11 @@ indicators:
   period_type: month
 - id: trade.balance_usd
   label: Trade balance
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: month

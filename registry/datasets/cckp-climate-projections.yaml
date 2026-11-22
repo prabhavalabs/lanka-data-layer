@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: clim.proj_tas_change
   label: Projected temperature change
-  unit: deg C
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: third_party
   dims:
   - scenario
   - period
@@ -16,7 +19,10 @@ indicators:
   period_type: snapshot
 - id: clim.proj_pr_change
   label: Projected precipitation change
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   dims:
   - scenario
   - period

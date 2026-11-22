@@ -7,6 +7,9 @@ indicators:
 - id: tran.osm_trail_km
   label: Trail and cycleway length
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - type
   geo_levels:

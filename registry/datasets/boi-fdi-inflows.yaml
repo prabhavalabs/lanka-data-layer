@@ -7,7 +7,11 @@ source_ids:
 indicators:
 - id: econ.boi_fdi_usd
   label: FDI realised (BOI)
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - sector
   - origin_country
@@ -16,7 +20,10 @@ indicators:
   period_type: quarter
 - id: econ.boi_projects
   label: BOI projects approved/contracted
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - stage
   - sector
@@ -26,7 +33,10 @@ indicators:
   period_type: year
 - id: econ.boi_employment
   label: Employment in BOI enterprises
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sector
   geo_levels:

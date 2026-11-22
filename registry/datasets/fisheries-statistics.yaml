@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: agri.fish_production_district
   label: Fish production
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - fishery_type
   geo_levels:
@@ -16,7 +19,10 @@ indicators:
   period_type: year
 - id: agri.fishing_boats
   label: Fishing boats
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - boat_type
   geo_levels:
@@ -25,7 +31,10 @@ indicators:
   period_type: year
 - id: agri.fisher_population
   label: Active fishers
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

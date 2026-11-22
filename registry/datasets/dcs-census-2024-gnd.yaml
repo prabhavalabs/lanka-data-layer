@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: census24.gnd_pop
   label: Population (GN)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sex
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: snapshot
 - id: census24.gnd_age_band
   label: Population by broad age band (GN)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - age_band
   geo_levels:
@@ -23,7 +29,10 @@ indicators:
   period_type: snapshot
 - id: census24.gnd_households
   label: Households (GN)
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - adm4
   period_type: snapshot

@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: census_hist.pop_total
   label: Population (historic census)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - census_year
   geo_levels:
@@ -18,7 +21,10 @@ indicators:
   period_type: snapshot
 - id: census_hist.pop_by_ethnicity
   label: Population by ethnicity (historic census)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - census_year
   - ethnicity

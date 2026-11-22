@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: tran.new_registrations
   label: New vehicle registrations
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - vehicle_class
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: month
 - id: tran.registered_fleet
   label: Cumulative registered vehicles
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - vehicle_class
   geo_levels:

@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: debt.guarantees
   label: Outstanding guarantees
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - beneficiary
   geo_levels:
@@ -14,7 +18,11 @@ indicators:
   period_type: quarter
 - id: debt.letters_of_comfort
   label: Letters of comfort issued
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - beneficiary
   geo_levels:

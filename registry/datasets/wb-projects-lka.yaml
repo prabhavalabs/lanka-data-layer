@@ -7,6 +7,9 @@ indicators:
 - id: aid.wb_commitment
   label: World Bank commitment
   unit: USD
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - project
   - sector
@@ -17,7 +20,10 @@ indicators:
   period_type: year
 - id: aid.wb_project_locations
   label: Project location count
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - point
   - adm1

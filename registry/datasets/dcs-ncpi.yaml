@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: econ.cpi.ncpi_index
   label: NCPI index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - group
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: month
 - id: econ.cpi.ncpi_yoy
   label: NCPI inflation, year-on-year
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - group
   geo_levels:

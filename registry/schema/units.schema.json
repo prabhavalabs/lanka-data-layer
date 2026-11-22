@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/registry/schema/units.schema.json",
+  "title": "Lanka Data Layer units of measure",
+  "description": "registry/units.yaml: every unit an indicator may use (UCUM case-sensitive codes, ISO 4217 for money).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "units"
+  ],
+  "properties": {
+    "units": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "label",
+          "kind"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "pattern": "^[!-~]{1,64}$"
+          },
+          "label": {
+            "$ref": "#/$defs/label"
+          },
+          "kind": {
+            "enum": [
+              "count",
+              "ratio",
+              "currency",
+              "physical",
+              "index",
+              "score"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "label": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "en"
+          ],
+          "properties": {
+            "en": {
+              "type": "string",
+              "minLength": 1
+            },
+            "si": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ta": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    }
+  }
+}

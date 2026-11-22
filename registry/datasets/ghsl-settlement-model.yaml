@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: urban.smod_class_share
   label: Population share by settlement class
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   dims:
   - smod_class
   geo_levels:
@@ -18,7 +21,10 @@ indicators:
   period_type: year
 - id: urban.degurba_class
   label: Degree of urbanisation of unit
-  unit: class
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm3
   - adm4

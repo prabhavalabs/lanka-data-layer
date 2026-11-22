@@ -7,6 +7,9 @@ indicators:
 - id: water.basin_area
   label: Basin area
   unit: km2
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - basin_level
   geo_levels:
@@ -15,6 +18,9 @@ indicators:
 - id: water.river_discharge
   label: Long-term average discharge
   unit: m3/s
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - line
   period_type: snapshot
@@ -29,4 +35,5 @@ enrichment:
   - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
   aggregations:
   - basin -> ADM overlay for upstream rainfall
+kind: features
 publication_class: A

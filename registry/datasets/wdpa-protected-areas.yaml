@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: env.wdpa_area
   label: Protected area (WDPA)
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   dims:
   - iucn_cat
   geo_levels:

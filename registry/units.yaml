@@ -1,0 +1,83 @@
+# Units of measure (UCUM case-sensitive codes; ISO 4217 for money).
+# Validated by schema/units.schema.json, synced to catalog.units_of_measure.
+# `{annotation}` codes are UCUM unity annotations for countables.
+units:
+  - { code: '%', label: 'percent', kind: ratio }
+  - { code: '/10*3', label: 'per 1,000', kind: ratio }
+  - { code: '/10*4', label: 'per 10,000', kind: ratio }
+  - { code: '/10*5', label: 'per 100,000', kind: ratio }
+  - { code: '/10*5{live_birth}', label: 'per 100,000 live births', kind: ratio }
+  - { code: '/km2', label: 'per km²', kind: ratio }
+  - { code: '/{person}', label: 'per person', kind: ratio }
+  - { code: '1', label: 'ratio (unitless)', kind: ratio }
+  - { code: 'Cel', label: 'degrees Celsius', kind: physical }
+  - { code: 'GW.h', label: 'gigawatt-hours', kind: physical }
+  - { code: 'LKR', label: 'Sri Lanka rupees', kind: currency }
+  - { code: 'LKR/har', label: 'rupees per hectare', kind: currency }
+  - { code: 'LKR/kg', label: 'rupees per kilogram', kind: currency }
+  - { code: 'LKR/{unit}', label: 'rupees per unit', kind: currency }
+  - { code: 'MW', label: 'megawatts', kind: physical }
+  - { code: 'MW.h', label: 'megawatt-hours', kind: physical }
+  - { code: 'Mbit/s', label: 'megabits per second', kind: physical }
+  - { code: 'Mg/har', label: 'tonnes per hectare', kind: ratio }
+  - { code: 'USD', label: 'US dollars', kind: currency }
+  - { code: 'W/m2', label: 'watts per square metre', kind: ratio }
+  - { code: '[kn_i]', label: 'knots', kind: physical }
+  - { code: '[pH]', label: 'pH', kind: physical }
+  - { code: 'a', label: 'years', kind: physical }
+  - { code: 'd', label: 'days', kind: physical }
+  - { code: 'dB{A}', label: 'decibels (A-weighted)', kind: physical }
+  - { code: 'deg', label: 'degrees', kind: physical }
+  - { code: 'g/kg', label: 'grams per kilogram', kind: ratio }
+  - { code: 'har', label: 'hectares', kind: physical }
+  - { code: 'kW.h/m2/d', label: 'kWh per m² per day', kind: ratio }
+  - { code: 'kW.h/{kWp}/d', label: 'kWh per kWp per day', kind: ratio }
+  - { code: 'kcal/d', label: 'kilocalories per day', kind: physical }
+  - { code: 'kg', label: 'kilograms', kind: physical }
+  - { code: 'kg/har', label: 'kilograms per hectare', kind: ratio }
+  - { code: 'km', label: 'kilometres', kind: physical }
+  - { code: 'km/km2', label: 'kilometres per km²', kind: ratio }
+  - { code: 'km2', label: 'square kilometres', kind: physical }
+  - { code: 'm', label: 'metres', kind: physical }
+  - { code: 'm2', label: 'square metres', kind: physical }
+  - { code: 'm2/{person}', label: 'square metres per person', kind: ratio }
+  - { code: 'm3', label: 'cubic metres', kind: physical }
+  - { code: 'm3/m3', label: 'volumetric fraction', kind: ratio }
+  - { code: 'm3/s', label: 'cubic metres per second', kind: physical }
+  - { code: 'min', label: 'minutes', kind: physical }
+  - { code: 'min/{customer}', label: 'minutes per customer', kind: ratio }
+  - { code: 'mm', label: 'millimetres', kind: physical }
+  - { code: 'mo', label: 'months', kind: physical }
+  - { code: 'nW/cm2/sr', label: 'radiance (nW/cm²/sr)', kind: physical }
+  - { code: 'nW/cm2/sr.km2', label: 'radiance × area', kind: physical }
+  - { code: 'nW/cm2/sr/{person}', label: 'radiance per person', kind: ratio }
+  - { code: 't', label: 'tonnes', kind: physical }
+  - { code: 't{CO2e}', label: 'tonnes CO₂-equivalent', kind: physical }
+  - { code: 'ug/m3', label: 'micrograms per cubic metre', kind: ratio }
+  - { code: '{TEU}', label: 'twenty-foot equivalent units', kind: count }
+  - { code: '{birth}/a', label: 'births per year', kind: count }
+  - { code: '{birth}/{woman}', label: 'births per woman', kind: ratio }
+  - { code: '{category}', label: 'category', kind: score }
+  - { code: '{class}', label: 'class', kind: score }
+  - { code: '{count}', label: 'count', kind: count }
+  - { code: '{currency}', label: 'currency (series-specific)', kind: currency }
+  - { code: '{index}', label: 'index', kind: index }
+  - { code: '{int_dollar}', label: 'international dollars (PPP)', kind: currency }
+  - { code: '{interruption}/{customer}', label: 'interruptions per customer', kind: ratio }
+  - { code: '{ktoe}', label: 'kilotonnes of oil equivalent', kind: physical }
+  - { code: '{level}', label: 'level', kind: score }
+  - { code: '{m_or_deg}', label: 'metres or degrees (series-specific)', kind: physical }
+  - { code: '{passenger}.km', label: 'passenger-kilometres', kind: physical }
+  - { code: '{percentage_point}', label: 'percentage points', kind: ratio }
+  - { code: '{person}', label: 'persons', kind: count }
+  - { code: '{person}.d', label: 'person-days', kind: count }
+  - { code: '{phase}', label: 'phase', kind: score }
+  - { code: '{pregnancy}/a', label: 'pregnancies per year', kind: count }
+  - { code: '{rank}', label: 'rank', kind: score }
+  - { code: '{score}', label: 'score', kind: score }
+  - { code: '{seat}', label: 'seats', kind: count }
+  - { code: '{species}', label: 'species', kind: count }
+  - { code: '{train}/d', label: 'trains per day', kind: count }
+  - { code: '{trip}/d', label: 'trips per day', kind: count }
+  - { code: '{various}', label: 'series-specific unit', kind: score }
+  - { code: '{vote}', label: 'votes', kind: count }

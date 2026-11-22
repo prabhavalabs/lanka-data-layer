@@ -7,6 +7,9 @@ indicators:
 - id: haz.flood_depth
   label: Flood depth
   unit: m
+  measure_type: mean
+  aggregation: none
+  class: third_party
   dims:
   - return_period
   geo_levels:
@@ -18,7 +21,10 @@ indicators:
   period_type: snapshot
 - id: haz.flood_area_share
   label: Share of area flooded
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   dims:
   - return_period
   geo_levels:

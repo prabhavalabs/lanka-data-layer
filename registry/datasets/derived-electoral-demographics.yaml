@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: elec.pd_profile
   label: Polling division demographic profile
-  unit: various
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: derived
   dims:
   - indicator
   geo_levels:
@@ -30,4 +33,5 @@ enrichment:
     ADM4 values roll up by p-code'
   aggregations:
   - PD -> ED
+kind: features
 publication_class: A

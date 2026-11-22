@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: econ.new_companies
   label: New company registrations
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - company_type
   geo_levels:

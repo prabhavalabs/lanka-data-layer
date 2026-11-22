@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: econ.remittances_usd
   label: Workers' remittances
-  unit: USD million
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   period_type: month

@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: acc.pop_in_walkshed
   label: Population within walkshed of transit
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - mode
   - walk_minutes
@@ -19,14 +22,20 @@ indicators:
   period_type: snapshot
 - id: acc.transit_access_index
   label: Frequency-weighted transit access index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4
   period_type: snapshot
 - id: acc.scenario_new_coverage
   label: Additional population covered by scenario line
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - scenario
   geo_levels:

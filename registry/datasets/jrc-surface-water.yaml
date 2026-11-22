@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: water.occurrence
   label: Water occurrence
-  unit: percent of time
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -16,7 +19,10 @@ indicators:
   period_type: snapshot
 - id: water.permanent_area
   label: Permanent water area
-  unit: ha
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   geo_levels:
   - adm1
   - adm2

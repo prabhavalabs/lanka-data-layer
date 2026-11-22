@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: fx.neer
   label: NEER index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - basket
   geo_levels:
@@ -14,7 +17,10 @@ indicators:
   period_type: month
 - id: fx.reer
   label: REER index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - basket
   geo_levels:

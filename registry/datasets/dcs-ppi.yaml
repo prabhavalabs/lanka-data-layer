@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: econ.ppi_index
   label: Producer price index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - sector
   geo_levels:

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: ilo.value
   label: ILOSTAT indicator
-  unit: various
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   dims:
   - indicator
   - sex

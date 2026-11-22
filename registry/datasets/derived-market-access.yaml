@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: acc.market_minutes
   label: Travel time to nearest town
-  unit: minutes
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: derived
   dims:
   - town_size
   - mode
@@ -18,7 +21,10 @@ indicators:
   period_type: snapshot
 - id: acc.pop_within_market_60
   label: Population within 60 min of a 50k town
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   geo_levels:
   - adm2
   - adm3

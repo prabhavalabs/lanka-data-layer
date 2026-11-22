@@ -9,6 +9,9 @@ indicators:
 - id: admin.area_km2
   label: Land area of admin unit
   unit: km2
+  measure_type: sum
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm1
@@ -18,7 +21,10 @@ indicators:
   period_type: snapshot
 - id: admin.child_count
   label: Number of child units
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm1
@@ -39,4 +45,5 @@ enrichment:
   aggregations:
   - admin hierarchy table (parent p-codes) used for every roll-up
   - areas for density denominators
+kind: boundaries
 publication_class: A

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: clim.t2m_mean
   label: Mean 2 m air temperature
-  unit: deg C
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -15,7 +18,10 @@ indicators:
   period_type: month
 - id: clim.t2m_max_days_35
   label: Days with Tmax >= 35 C
-  unit: days
+  unit: d
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -25,6 +31,9 @@ indicators:
 - id: clim.soil_moisture
   label: Volumetric soil moisture (top layer)
   unit: m3/m3
+  measure_type: rate
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

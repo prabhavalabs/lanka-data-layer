@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: econ.establishments
   label: Establishments
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - industry
   - size_class
@@ -17,7 +20,10 @@ indicators:
   period_type: snapshot
 - id: econ.persons_engaged
   label: Persons engaged
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - industry
   geo_levels:

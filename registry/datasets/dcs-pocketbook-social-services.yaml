@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: pb.health_institutions
   label: Government health institutions
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - type
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: pb.exam_pass_rate
   label: GCE O/L and A/L pass rates
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - exam
   geo_levels:
@@ -23,7 +29,10 @@ indicators:
   period_type: year
 - id: pb.vocational_trainees
   label: Vocational trainees
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - provider
   geo_levels:
@@ -31,7 +40,10 @@ indicators:
   period_type: year
 - id: pb.local_services
   label: Local authority service counts
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - service
   geo_levels:
@@ -39,7 +51,10 @@ indicators:
   period_type: year
 - id: pb.disaster_affected
   label: Persons affected by natural disasters
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - hazard
   geo_levels:

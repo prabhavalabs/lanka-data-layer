@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tran.bus_fleet
   label: Buses in operation
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - operator
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: tran.route_permits
   label: Route permits
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - route_type
   geo_levels:
@@ -24,7 +30,10 @@ indicators:
   period_type: year
 - id: tran.bus_crashes
   label: Bus-involved crashes
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - severity
   geo_levels:

@@ -7,21 +7,30 @@ source_ids:
 indicators:
 - id: pov.mpi
   label: Multidimensional Poverty Index
-  unit: index 0-1
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: pov.mpi_headcount
   label: MPI headcount ratio
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: pov.mpi_indicator_deprivation
   label: Censored headcount by indicator
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - indicator
   geo_levels:

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: conf.acled_events
   label: ACLED events
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - event_type
   geo_levels:

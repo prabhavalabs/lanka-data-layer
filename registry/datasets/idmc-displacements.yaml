@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: disp.new_displacements
   label: New internal displacements
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - cause
   - hazard

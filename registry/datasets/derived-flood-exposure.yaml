@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: exp.flood_pop
   label: Population in flood zone
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - return_period
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: snapshot
 - id: exp.flood_buildings
   label: Buildings in flood zone
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - return_period
   geo_levels:
@@ -28,7 +34,10 @@ indicators:
   period_type: snapshot
 - id: exp.flood_facilities
   label: Facilities in flood zone
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - facility_type
   - return_period

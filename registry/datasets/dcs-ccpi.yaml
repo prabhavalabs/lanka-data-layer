@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: econ.cpi.ccpi_index
   label: CCPI index (2021=100)
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - coicop_group
   geo_levels:
@@ -15,13 +18,19 @@ indicators:
   period_type: month
 - id: econ.cpi.ccpi_yoy
   label: CCPI headline inflation, year-on-year
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: month
 - id: econ.cpi.ccpi_core_yoy
   label: CCPI core inflation, year-on-year
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   geo_levels:
   - national
   period_type: month

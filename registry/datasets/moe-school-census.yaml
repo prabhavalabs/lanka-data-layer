@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: educ.gov_schools
   label: Government schools
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - school_type
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: year
 - id: educ.students
   label: Students
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - grade_band
   - sex
@@ -28,7 +34,10 @@ indicators:
   period_type: year
 - id: educ.teachers
   label: Teachers
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm1
@@ -36,7 +45,10 @@ indicators:
   period_type: year
 - id: educ.small_schools
   label: Schools with fewer than 50 students
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

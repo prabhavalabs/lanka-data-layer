@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: derived.per_capita
   label: Per-capita value of a count indicator
-  unit: per person
+  unit: '/{person}'
+  measure_type: rate
+  aggregation: none
+  class: derived
   dims:
   - source_indicator
   geo_levels:
@@ -18,7 +21,10 @@ indicators:
   period_type: year
 - id: derived.per_km2
   label: Density of a count indicator
-  unit: per km2
+  unit: '/km2'
+  measure_type: rate
+  aggregation: none
+  class: derived
   dims:
   - source_indicator
   geo_levels:

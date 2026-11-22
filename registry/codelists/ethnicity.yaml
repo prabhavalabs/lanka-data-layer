@@ -1,0 +1,14 @@
+id: ethnicity
+title: Ethnic group (Department of Census and Statistics classification)
+codes:
+  - { code: total, label: All ethnic groups, total: true, sdmx: _T }
+  - { code: sinhala, label: Sinhala, parent: total }
+  - { code: sri_lankan_tamil, label: Sri Lankan Tamil, parent: total }
+  - { code: indian_tamil, label: Indian Tamil, parent: total }
+  - { code: moor, label: Sri Lanka Moor, parent: total }
+  - { code: burgher, label: Burgher, parent: total }
+  - { code: malay, label: Malay, parent: total }
+  - { code: sri_lanka_chetty, label: Sri Lanka Chetty, parent: total }
+  - { code: bharatha, label: Bharatha, parent: total }
+  - { code: veddha, label: Veddha, parent: total }
+  - { code: other, label: Other, parent: total }

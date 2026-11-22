@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: places.wikidata_items
   label: Wikidata items with coordinates
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - class
   geo_levels:

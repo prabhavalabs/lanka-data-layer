@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: tour.rooms
   label: Registered rooms
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - establishment_type
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: tour.occupancy_rate
   label: Room occupancy rate
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
   dims:
   - region
   geo_levels:

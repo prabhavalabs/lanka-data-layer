@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: imf.weo_value
   label: WEO series value
-  unit: various
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
   dims:
   - series
   - vintage

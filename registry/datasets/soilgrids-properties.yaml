@@ -7,6 +7,9 @@ indicators:
 - id: soil.soc
   label: Soil organic carbon (0-30 cm)
   unit: g/kg
+  measure_type: rate
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -15,7 +18,10 @@ indicators:
   period_type: snapshot
 - id: soil.ph
   label: Soil pH (0-5 cm)
-  unit: pH
+  unit: '[pH]'
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

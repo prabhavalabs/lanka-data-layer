@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: pop.midyear_district
   label: Mid-year population
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sex
   geo_levels:

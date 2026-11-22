@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: ener.saidi
   label: SAIDI
-  unit: minutes/customer
+  unit: 'min/{customer}'
+  measure_type: rate
+  aggregation: none
+  class: official
   dims:
   - licensee
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: quarter
 - id: ener.saifi
   label: SAIFI
-  unit: interruptions/customer
+  unit: '{interruption}/{customer}'
+  measure_type: rate
+  aggregation: none
+  class: official
   dims:
   - licensee
   geo_levels:

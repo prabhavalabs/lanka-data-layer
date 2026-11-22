@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: fisc.revenue_outturn
   label: Revenue outturn
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - tax_type
   geo_levels:

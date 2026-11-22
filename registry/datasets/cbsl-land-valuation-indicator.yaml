@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: re.lvi
   label: Land valuation indicator
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - land_use
   geo_levels:

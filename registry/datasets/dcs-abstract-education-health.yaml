@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: educ.schools_district
   label: Government schools
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - school_type
   geo_levels:
@@ -15,21 +18,30 @@ indicators:
   period_type: year
 - id: educ.pupil_teacher_ratio
   label: Pupil-teacher ratio
-  unit: ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: heal.hospital_beds
   label: Government hospital beds
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2
   period_type: year
 - id: heal.beds_per_1000
   label: Beds per 1,000 population
-  unit: per 1,000
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - national
   - adm2

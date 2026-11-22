@@ -8,6 +8,9 @@ indicators:
 - id: tran.rda_road_km
   label: National road length
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - road_class
   geo_levels:

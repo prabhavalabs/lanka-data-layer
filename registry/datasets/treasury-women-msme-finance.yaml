@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: fin.women_msme_credit
   label: Credit to women-led MSMEs
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - lender_type
   geo_levels:

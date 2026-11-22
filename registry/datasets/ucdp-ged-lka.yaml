@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: conf.events
   label: Organised violence events
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - violence_type
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: year
 - id: conf.fatalities_best
   label: Fatalities (best estimate)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - point
   - adm1

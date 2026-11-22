@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: acc.map_tt_healthcare
   label: Travel time to healthcare
-  unit: minutes
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: third_party
   dims:
   - mode
   geo_levels:
@@ -17,7 +20,10 @@ indicators:
   period_type: snapshot
 - id: acc.map_tt_city
   label: Travel time to city 50k+
-  unit: minutes
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1

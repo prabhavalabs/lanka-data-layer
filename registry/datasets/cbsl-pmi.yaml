@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: econ.pmi
   label: PMI
-  unit: index (50=neutral)
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
   dims:
   - sector
   - component

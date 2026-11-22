@@ -7,6 +7,9 @@ indicators:
 - id: price.wfp_market
   label: Commodity price at market
   unit: LKR/kg
+  measure_type: mean
+  aggregation: none
+  class: third_party
   dims:
   - commodity
   - market

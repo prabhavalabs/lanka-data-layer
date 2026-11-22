@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: pop.wpp_total
   label: Total population (UN WPP)
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - sex
   - age_group
@@ -16,13 +19,19 @@ indicators:
   period_type: year
 - id: pop.wpp_tfr
   label: Total fertility rate
-  unit: births per woman
+  unit: '{birth}/{woman}'
+  measure_type: rate
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   period_type: year
 - id: pop.wpp_life_expectancy
   label: Life expectancy at birth
-  unit: years
+  unit: a
+  measure_type: mean
+  aggregation: none
+  class: third_party
   dims:
   - sex
   geo_levels:

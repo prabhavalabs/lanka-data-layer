@@ -7,6 +7,9 @@ indicators:
 - id: clim.rain_daily
   label: Daily rainfall
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -16,6 +19,9 @@ indicators:
 - id: clim.rain_monthly
   label: Monthly rainfall
   unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
   geo_levels:
   - raster
   - adm1
@@ -25,7 +31,10 @@ indicators:
   period_type: month
 - id: clim.rain_anomaly
   label: Monthly rainfall anomaly vs 1991-2020
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm1
   - adm2
@@ -34,7 +43,10 @@ indicators:
   period_type: month
 - id: clim.spi_3
   label: Standardised Precipitation Index (3-month)
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
   geo_levels:
   - adm1
   - adm2

@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: places.geonames_features
   label: Named features per unit
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   dims:
   - feature_class
   geo_levels:

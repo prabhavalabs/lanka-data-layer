@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: haz.multi_exposed_pop
   label: Population exposed
-  unit: persons
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - hazard
   - intensity
@@ -18,7 +21,10 @@ indicators:
   period_type: snapshot
 - id: haz.multi_exposed_buildings
   label: Buildings exposed
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
   dims:
   - hazard
   geo_levels:
@@ -27,7 +33,10 @@ indicators:
   period_type: snapshot
 - id: haz.multi_index
   label: Multi-hazard exposure index
-  unit: index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
   geo_levels:
   - adm3
   - adm4

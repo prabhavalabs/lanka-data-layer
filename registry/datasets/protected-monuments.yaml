@@ -8,7 +8,10 @@ source_ids:
 indicators:
 - id: heritage.protected_monuments
   label: Protected monuments
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - type
   geo_levels:

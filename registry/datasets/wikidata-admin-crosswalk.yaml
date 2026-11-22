@@ -7,7 +7,10 @@ source_ids:
 indicators:
 - id: xwalk.wikidata_qid_coverage
   label: Share of units with a Wikidata QID
-  unit: percent
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
   geo_levels:
   - national
   - adm1

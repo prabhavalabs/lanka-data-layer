@@ -6,7 +6,11 @@ source_ids:
 indicators:
 - id: soe.profit
   label: SOE profit/loss
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - soe
   - sector
@@ -15,7 +19,11 @@ indicators:
   period_type: year
 - id: soe.liabilities
   label: SOE total liabilities
-  unit: LKR million
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - soe
   geo_levels:

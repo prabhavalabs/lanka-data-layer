@@ -7,6 +7,9 @@ indicators:
 - id: tran.road_length_km
   label: Road length by class
   unit: km
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - road_class
   geo_levels:
@@ -15,7 +18,10 @@ indicators:
   period_type: year
 - id: tran.new_vehicle_registrations
   label: New vehicle registrations
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - vehicle_class
   geo_levels:
@@ -23,7 +29,10 @@ indicators:
   period_type: year
 - id: tran.port_cargo_tonnes
   label: Cargo handled by port
-  unit: tonnes
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
   dims:
   - port
   - cargo_type
@@ -33,7 +42,10 @@ indicators:
   period_type: year
 - id: tran.road_accidents
   label: Road accidents and fatalities
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - severity
   geo_levels:

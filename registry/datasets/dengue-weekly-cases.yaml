@@ -7,14 +7,20 @@ source_ids:
 indicators:
 - id: heal.dengue_cases
   label: Dengue cases
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - adm2
   - polygon
   period_type: day
 - id: heal.dengue_incidence
   label: Dengue incidence per 100,000
-  unit: per 100k
+  unit: '/10*5'
+  measure_type: rate
+  aggregation: none
+  class: official
   geo_levels:
   - adm2
   - polygon

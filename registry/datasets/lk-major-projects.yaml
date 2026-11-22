@@ -11,7 +11,10 @@ source_ids:
 indicators:
 - id: proj.major_projects
   label: Major projects
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
   dims:
   - sector
   - status

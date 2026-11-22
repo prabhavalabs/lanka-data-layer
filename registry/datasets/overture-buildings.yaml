@@ -6,7 +6,10 @@ source_ids:
 indicators:
 - id: built.overture_buildings
   label: Buildings
-  unit: count
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
   geo_levels:
   - adm1
   - adm2
@@ -16,6 +19,9 @@ indicators:
 - id: built.overture_footprint_m2
   label: Building footprint area
   unit: m2
+  measure_type: sum
+  aggregation: sum
+  class: third_party
   geo_levels:
   - adm1
   - adm2
