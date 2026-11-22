@@ -203,6 +203,16 @@ pub struct Variables {
 }
 
 impl Variables {
+    /// Every variable, mutably (x, y, controls, weight, group).
+    pub fn all_mut(&mut self) -> impl Iterator<Item = &mut Variable> {
+        self.x
+            .iter_mut()
+            .chain(self.y.iter_mut())
+            .chain(self.controls.iter_mut())
+            .chain(self.weight.iter_mut())
+            .chain(self.group.iter_mut())
+    }
+
     /// `(role, variable)` in a fixed order: x, y, controls, weight, group.
     #[must_use]
     pub fn roles(&self) -> Vec<(String, &Variable)> {

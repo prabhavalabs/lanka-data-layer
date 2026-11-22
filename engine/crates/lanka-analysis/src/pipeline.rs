@@ -405,6 +405,17 @@ fn parse_transform(v: &Variable) -> Result<Transform> {
 #[allow(clippy::too_many_lines)]
 pub async fn resolve(env: &Env, req: &Request) -> Result<Resolved> {
     let cat = &env.catalog;
+    // dims codes in their stored spelling (`RP100` → `rp100`), so the
+    // request, its fingerprint and the alignment agree with the frame.
+    let mut canon = req.clone();
+    for v in canon.variables.all_mut() {
+        for (k, c) in &mut v.dims {
+            if let Some(s) = cat.dims.canonical_code(k, c) {
+                *c = s.to_owned();
+            }
+        }
+    }
+    let req = &canon;
     let profile = cat.profile().map_err(|e| anyhow::anyhow!("{e}"))?;
     let method = env.methods.get(&req.method).ok_or_else(|| {
         bad(
