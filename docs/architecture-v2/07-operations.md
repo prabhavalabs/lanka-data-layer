@@ -113,7 +113,7 @@ Internal observability (not public): JSON logs to stdout → journald; `GET /int
 
 ## 5. Security
 
-Threat model: the platform is public, read-only and anonymous; there are no user accounts and no personal data. What needs protecting is (1) integrity of published numbers, (2) availability, (3) the host — the realistic attack surface being **untrusted documents** from ~170 upstream sites parsed by C/C++ tools.
+Threat model (public data plane): the platform is public, read-only and anonymous; there are no user accounts and no personal data. When the app plane is enabled, the additional assets, threats and controls are those of [12 §11](12-enterprise-and-byod.md#11-security-what-changes). What needs protecting is (1) integrity of published numbers, (2) availability, (3) the host — the realistic attack surface being **untrusted documents** from ~170 upstream sites parsed by C/C++ tools.
 
 ### 5.1 Untrusted document handling
 
@@ -131,7 +131,7 @@ Threat model: the platform is public, read-only and anonymous; there are no user
 
 - Roles of [05 §7](05-storage-and-performance.md#7-roles-pooling-timeouts): the public process connects as `lanka_api` (read-only, 5 s timeout). A SQL injection in the API — already structurally prevented by prepared statements — could still not write.
 - Postgres listens on the compose network and `127.0.0.1:55432` only; `scram-sha-256`; no superuser use by applications.
-- No endpoint accepts SQL, a URL to fetch, or a file upload.
+- No endpoint accepts SQL or a URL to fetch. No `/v2` endpoint accepts a file upload; uploads exist only in the app plane and are handled as untrusted documents ([12 §5](12-enterprise-and-byod.md#5-bring-your-own-data)).
 - Containers: non-root, read-only root filesystems, `cap_drop: ALL`, no Docker socket anywhere.
 - Host: existing hardening (key-only SSH, ufw allowing 22/80/443, fail2ban, unattended-upgrades) is assumed from the VPS notes **[A]**.
 

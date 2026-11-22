@@ -1,6 +1,6 @@
 # Lanka Data Layer — target architecture (v2)
 
-Status: **design, not yet implemented**. Date: 2026-11-21.
+Status: **design, not yet implemented**. Date: 2026-11-21; extended 2026-11-22 with map composition, the analysis engine and workspaces (documents 10–12, ADRs 0018–0026).
 Supersedes the open parts of [`../data-platform-v2.md`](../data-platform-v2.md) (the foundation that `engine/` was built against). Where the two disagree, this set wins; every disagreement is listed in [09-roadmap.md §2](09-roadmap.md#2-what-changes-in-the-existing-engine).
 The v1 contract in [`../architecture.md`](../architecture.md) stays binding for `/v1` and for three things v2 inherits unchanged: the canonical 0.001° grid formula, p-codes as the only admin join keys, and ≤ 6 decimal places on emitted coordinates.
 
@@ -8,7 +8,7 @@ Markers used throughout: **[A]** = assumption not verified by measurement or aga
 
 ## What this is
 
-One standardised, enriched, versioned, provenance-tracked data layer for Sri Lanka, built from ~174 sources / 263 datasets / 512 indicators, that anyone can query, download, self-host, extend or fork for another country. Two people must be able to run it; the design therefore prefers one database, one binary, one disk, and adds a moving part only where a named threshold is crossed.
+One standardised, enriched, versioned, provenance-tracked data layer for Sri Lanka, built from ~174 sources / 263 datasets / 512 indicators, that anyone can query, download, self-host, extend or fork for another country — and, on top of it, compose into layered maps, analyse ("does flood risk go with lower property prices, and where?") and combine with their own data. Two people must be able to run it; the design therefore prefers one database, one binary, one disk, and adds a moving part only where a named threshold is crossed.
 
 ## Document set
 
@@ -22,7 +22,11 @@ One standardised, enriched, versioned, provenance-tracked data layer for Sri Lan
 | [06-serving.md](06-serving.md) | REST v2, OGC API, MCP, CLI, bulk downloads, versioned URLs, embeds |
 | [07-operations.md](07-operations.md) | Compose topology, worker, status APIs, backups, security, sandboxing, CI/CD, tests |
 | [08-openness-and-governance.md](08-openness-and-governance.md) | Licensing, contribution model, self-hosting and forking, versioning policy, takedown |
-| [09-roadmap.md](09-roadmap.md) | Work packages WP-01…WP-25 and the keep/extend/rewrite list for `engine/` |
+| [09-roadmap.md](09-roadmap.md) | Work packages WP-01…WP-38 and the keep/extend/rewrite list for `engine/` |
+| [10-map-composition.md](10-map-composition.md) | The map document spec `ldl-map/1`, layer data delivery (frames, value tiles, columnar features), MapLibre + deck.gl rendering and budgets, saved maps, permalinks, embeds, export |
+| [11-analysis-engine.md](11-analysis-engine.md) | `lanka-analysis`: alignment onto a common support, method catalogue, guard rails, request/result contract, execution and caching, property-price data reality |
+| [12-enterprise-and-byod.md](12-enterprise-and-byod.md) | The app plane: accounts, workspaces, private data and uploads, API keys and quotas, white-label embeds, plugin points, audit, deployment profiles |
+| [ui-contract-explore.md](ui-contract-explore.md) | Front-end contract (TypeScript types, fixtures, rendering rules) for the layer panel and analysis UI |
 | [adr/](adr/) | One short record per major decision |
 
 ## Principles
@@ -34,7 +38,8 @@ One standardised, enriched, versioned, provenance-tracked data layer for Sri Lan
 5. **Codes, not names.** p-codes for admin units, namespaced codes for every other geography, codelists for every dimension, UCUM for units.
 6. **Boring technology.** PostgreSQL + PostGIS, a filesystem, nginx, one Rust binary, three external C/C++ tools run in a sandbox (poppler, GDAL, tippecanoe) and one optional batch container (Valhalla).
 7. **Country is configuration.** Everything Sri Lanka-specific lives in `country/lk/profile.yaml` and `registry/`; the engine has no `LK` literal.
-8. **Open by construction.** Open-source engine, open written spec, standard formats, anonymous read access, no account anywhere.
+8. **Open by construction.** Open-source engine, open written spec, standard formats, anonymous read access. No account is ever needed to read; accounts exist only to own things (saved maps, private data, keys) and live in a separate plane that can be switched off.
+9. **A result never travels without its caveats.** Attribution, estimate notices and analysis guard rails are part of the data contract (resolved map documents, analysis results), so maps, embeds, exports and agents cannot drop them.
 
 ## Decision summary
 
@@ -57,6 +62,15 @@ One standardised, enriched, versioned, provenance-tracked data layer for Sri Lan
 | 15 | Interfaces | REST v2 (OpenAPI 3.1) + OGC API Features/Tiles subset + MCP + CLI + bulk, all on one query core with two backends (Postgres, offline pack). | [0015](adr/0015-one-query-core-two-backends.md) |
 | 16 | Monitoring | Emit only: `/v2/health`, `/v2/status*`, run-event feed. Webhook alerts and the heartbeat ping are removed from the engine. | [0016](adr/0016-status-apis-only.md) |
 | 17 | Openness | Engine Apache-2.0, spec + registry metadata CC BY 4.0, data under per-source licences with four redistribution tiers; country profile makes the engine forkable. | [0017](adr/0017-licensing-and-country-profile.md) |
+| 18 | Maps | A map is an open JSON document, **`ldl-map/1`**: sources by reference (never values or URLs), an ordered tree of layers and groups with opacity, blend, filter and a small style model, embedded analysis requests; floating or frozen to a release. | [0018](adr/0018-map-document-spec.md) |
+| 19 | Layer data | Three shapes: **frames** (`/v2/frame`, joined by `feature-state`), **value tiles** (`ldl-v16`, ramps in a shader), **columnar points** (Arrow) / PMTiles. Restyle and time-step cost no request. | [0019](adr/0019-frames-value-tiles-columnar-features.md) |
+| 20 | Rendering | MapLibre owns the map; deck.gl interleaved for rasters, points, aggregation and every blended layer; stated budgets for a 12-layer map, enforced in CI. | [0020](adr/0020-maplibre-deckgl-rendering.md) |
+| 21 | Analysis | `lanka-analysis`: resolve → plan → **align** (enrichment methods) → compute (`lanka-stats`, also compiled to WASM) → guard → present. Results are immutable, fingerprinted (`an_…`), cached, drawable as layers; sync in `serve`, async in an interactive job lane. | [0021](adr/0021-analysis-engine.md) |
+| 22 | Guard rails | Structured guards in every result (MAUP, ecological fallacy, minimum n, spatially adjusted significance, shared lineage, never causal wording); `block` returns no numbers. | [0022](adr/0022-analysis-guard-rails.md) |
+| 23 | Accounts | A separate **app plane** (`/app/v1`, role `lanka_app`, schemas `app` + `ws`); OIDC sign-in only; anonymous snapshots for sharing; `/v2` stays anonymous and cacheable. | [0023](adr/0023-app-plane-optional-accounts.md) |
+| 24 | Private data | Uploads go through the ingestion pipeline into a parallel `ws` schema with the same shapes (`@workspace/id`), geocoded to p-codes/grid, private by default, labelled when shared. | [0024](adr/0024-workspace-data-plane-byod.md) |
+| 25 | Price data | No scraping of listing portals; prices by licence or BYOD; synthetic sample for the demo; fenced interpolation rule for point samples. | [0025](adr/0025-price-data-and-point-sample-policy.md) |
+| 26 | Editions | One Apache-2.0 edition; deployment profiles (`public`, `mirror`, `private`, `laptop`); plans as rows; plugins compiled in via a distribution binary; hash-chained audit log. | [0026](adr/0026-one-open-edition-profiles-and-plugins.md) |
 
 ## The system on one page
 
@@ -113,6 +127,30 @@ One standardised, enriched, versioned, provenance-tracked data layer for Sri Lan
    browsers · REST/OGC clients · MCP clients · `lanka` CLI (online, or offline against a downloaded pack)
 ```
 
+### Maps, analysis and workspaces on the same page
+
+```
+   browser: MapLibre (basemap, areas via feature-state, labels) + deck.gl interleaved (rasters, points, bins, blend)
+            lanka-stats.wasm in a worker (classification, previews)        map document  ldl-map/1  = the map
+        │ resolve            │ frames / value tiles / points / PMTiles          │ analysis requests        │ save · share · upload
+        ▼                    ▼                                                  ▼                          ▼
+┌───────────────────────────── host nginx :443 ─────────────────────────────────────────────────────────────────────────┐
+│  /v2/*  /mcp  /dl/*      PUBLIC DATA PLANE  anonymous, proxy_cache          /app/v1/*   APP PLANE  credentials, no cache │
+└───────────────┬───────────────────────────────────────────────────────────────────────────┬───────────────────────────┘
+                ▼                                                                           ▼
+  lanka serve ── lanka-query (Scope: Public | Workspace) ── lanka-mapdoc (validate, resolve) ── lanka-app (identity,
+      │              │                                                                          workspaces, keys, quotas,
+      │              ├─ /v2/frame · /v2/grids/{id}/values · /v2/features/{ds}/points            maps, uploads, audit)
+      │              └─ lanka-analysis: resolve → plan → ALIGN → COMPUTE → GUARD → present
+      │                    align = lanka-enrich methods + lanka-grid kernels      compute = lanka-stats (native)
+      │                    sync ≤ 2 s in serve │ else ops.jobs lane 'interactive' ──► analyst (lanka worker --lane interactive)
+      ▼
+  PostgreSQL   pool A lanka_api (RO)        pool B lanka_analysis            pool C lanka_app (RLS by workspace)
+               catalog · geo · data · serve analysis.results/aligned/weights app.* (users, workspaces, maps, keys, audit)
+                                                                             ws.*  (private datasets: same shapes as data.*)
+  store/       grids · tiles · datasets     analysis/<an_id>/…               ws/<workspace>/raw|extract|tiles
+```
+
 ## What changes against the foundation, in one list
 
 Kept as built: Postgres/PostGIS as the store; the four schemas; the registry format and its JSON Schemas; content-addressed raw archive; `discover → … → publish` stage order; publication classes A/B/C; `data.releases` as an immutable dataset → version map; `NOTIFY lanka_release`; the catalogue snapshot hot-swap; the envelope; grid arrays + COG; the three connectors' parsing logic and their tests.
@@ -128,6 +166,14 @@ Changed (details and rationale in the ADRs):
 - New crates: `lanka-store`, `lanka-grid`, `lanka-enrich`, `lanka-export`, `lanka-mcp`; `lanka-core::query` moves to `lanka-query` with a backend trait.
 - New schema `serve` for release-time materialisations; new schema `stage` for unlogged load tables.
 - Code licence MIT → Apache-2.0 (needs the owner's confirmation; see open questions).
+
+Added by documents 10–12 (nothing above is undone):
+
+- New crates: `lanka-mapdoc`, `lanka-stats`, `lanka-analysis`, `lanka-app`; a WebAssembly build of `lanka-stats` for the web app.
+- New schemas `app` (identity, workspaces, maps, keys, audit), `ws` (private data, same shapes as `data.*`), `analysis` (results, aligned columns, spatial weights); new roles `lanka_app`, `lanka_analysis`.
+- New endpoints `/v2/frame`, `/v2/grids/{id}/values/…`, `/v2/features/{dataset}/points`, `/v2/analyses*`, and the app plane `/app/v1/*`.
+- New compose service `analyst` (`lanka worker --lane interactive`); `ops.jobs` gains a `lane` and the kinds `analysis`, `upload`, `sync`.
+- Amended statements: "no account anywhere" → no account needed to read; "no authenticated surface" and "no file upload" now hold for `/v2` only; the interpolation policy gains one fenced case for point samples in analysis.
 
 ## Open questions for the owner
 

@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Status of all records: **proposed** (2026-11-21), pending the owner's review of this design set.
+Status of all records: **proposed** (0001–0017: 2026-11-21; 0018–0026: 2026-11-22), pending the owner's review of this design set.
 
 | ADR | Decision |
 |---|---|
@@ -21,3 +21,12 @@ Status of all records: **proposed** (2026-11-21), pending the owner's review of 
 | [0015](0015-one-query-core-two-backends.md) | One query core with a Postgres backend and an offline pack backend |
 | [0016](0016-status-apis-only.md) | Monitoring: emit health, status and run events; no alert delivery |
 | [0017](0017-licensing-and-country-profile.md) | Apache-2.0 engine, open spec, tiered data redistribution, country as configuration |
+| [0018](0018-map-document-spec.md) | The map is an open, versioned document (`ldl-map/1`) |
+| [0019](0019-frames-value-tiles-columnar-features.md) | Layer data as frames, value tiles and columnar features (extends 0014) |
+| [0020](0020-maplibre-deckgl-rendering.md) | MapLibre owns the map; deck.gl is interleaved for data layers and blending |
+| [0021](0021-analysis-engine.md) | Analysis is align → compute → guard over the enrichment methods, with fingerprinted results |
+| [0022](0022-analysis-guard-rails.md) | Guard rails are part of the analysis result contract |
+| [0023](0023-app-plane-optional-accounts.md) | A separate app plane with optional accounts; anonymous read is untouched |
+| [0024](0024-workspace-data-plane-byod.md) | Private data in a parallel `ws` schema, entering through the ingestion pipeline |
+| [0025](0025-price-data-and-point-sample-policy.md) | No scraped listings; price data by licence or BYOD; fenced interpolation of point samples |
+| [0026](0026-one-open-edition-profiles-and-plugins.md) | One open-source edition, deployment profiles, compiled-in plugins |

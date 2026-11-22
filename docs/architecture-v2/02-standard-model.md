@@ -20,9 +20,12 @@ This document is the normative core. It will be extracted into `spec/` as **Lank
 | Artifact, extract | sha256 hex | — | Content address. |
 | Method, recipe | `<id>@<semver>` | `areal_weighting@1.2.0` | [04](04-enrichment.md). |
 | External | Wikidata QID, ISO 3166-2, GADM GID, GeoNames id, OSM id | `Q35482`, `LK-11` | Stored in `geo.unit_xrefs(unit_key, system, value)`; never used as join keys inside the platform. |
+| Workspace dataset / indicator | `@<workspace>/<id>` | `@acme/prices-2026`, `@acme/re.asking_price_median` | Private or community data ([12 §4](12-enterprise-and-byod.md#4-the-workspace-data-plane)). The `@` cannot occur in a registry id, so these never shadow public identifiers. Not part of releases. |
+| Map, map snapshot | `m_` + 12 Crockford base32 chars; `ms_` + 16 hex | `m_7k2q9x4w8n1c`, `ms_41c0a9e77b1d2f08` | [10 §5](10-map-composition.md#5-storage). A snapshot id is the hash of its canonical JSON. |
+| Analysis result | `an_` + 16 hex | `an_5e1f0c22ab904d71` | Fingerprint of the resolved request ([11 §9](11-analysis-engine.md#9-caching-and-materialisation)). |
 
 **Persistent URIs.** Every identified thing has an HTTP URI under the deployment's base (`site.base_url` in the profile; production `https://lanka-data-layer.prabhavalabs.com`):
-`/id/area/{code}`, `/id/dataset/{id}`, `/id/indicator/{id}`, `/id/version/{dsv}`, `/id/release/{data_version}`, `/id/obs/{obs_id}`, `/id/feature/{dataset}/{key}`, `/id/entity/{lke}`. They 303-redirect to the web page for browsers and to the `/v2` JSON for `Accept: application/json` / `application/ld+json`. These URIs are what DCAT, PROV and schema.org output uses as `@id`.
+`/id/area/{code}`, `/id/dataset/{id}`, `/id/indicator/{id}`, `/id/version/{dsv}`, `/id/release/{data_version}`, `/id/obs/{obs_id}`, `/id/feature/{dataset}/{key}`, `/id/entity/{lke}`, `/id/map/{id}`, `/id/analysis/{id}`. They 303-redirect to the web page for browsers and to the `/v2` JSON for `Accept: application/json` / `application/ld+json`. These URIs are what DCAT, PROV and schema.org output uses as `@id`.
 
 **Surrogate keys.** Inside Postgres, observations reference `geo.units.key`, `catalog.indicators.key`, `catalog.dim_sets.key` and `catalog.datasets.key` (all `int4`). A surrogate is assigned once per code, never reassigned, never exposed, and resolved only from the code. This is a storage optimisation; the p-code rule is unchanged.
 
@@ -243,7 +246,9 @@ Migration from the 0001 enum: `reported→(reported, normal)`, `revised→(repor
 | 13 | `TOP_CODED` | source top/bottom-codes the value |
 | 14 | `UNOFFICIAL_GEOM` | geometry digitised or approximate (BOI zones, plans) |
 | 15 | `SUPERSEDED_BOUNDARY` | geography is not in the reference vintage |
-| 16–31 | reserved | |
+| 16 | `INTERPOLATED_SPACE` | value comes from spatial interpolation of point samples (IDW, kriging) — added 2026-11-22 for [11 §3](11-analysis-engine.md#3-alignment); propagating |
+| 17 | `DISAGGREGATED` | value was allocated from a coarser unit (dasymetric allocation, or a parent value inherited by its children) — added 2026-11-22; propagating |
+| 18–31 | reserved | |
 
 **Uncertainty.** `lo`/`hi` are mandatory for `class = estimated` indicators unless the indicator declares `quality_class` instead (a dimension-like attribute `A|B|C|D` stored in bits 28–29 of `flags` — reserved for this). Validators reject an estimated dataset version that has neither.
 

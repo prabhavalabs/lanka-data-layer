@@ -91,7 +91,7 @@ No Python, no R, no notebook at runtime.
 | `entity_resolution` | Conflate features from several sources into entities | features ×n, Wikidata | name similarity, distance (250 m), blocking | — (emits features + `geo.entities`) / match confidence per entity | — | #16 |
 | `calibrate_elasticity` | Fit a log-log relation between a proxy and an official aggregate; apply at lower level | proxy indicators, official aggregate | level, robust fit | estimated / interval from coefficient CI | — | #12 |
 
-**Interpolation policy (binding, from `value-added.md`).** `spatial_interp` refuses indicators whose `measure_type` is `count`/`sum`/`share` (counts and administrative statistics are never kriged; they use `dasymetric` or `crosswalk_rebase`). Population time interpolation uses `geometric` or `ratio_to_trend`, always raked to official controls. These are checks in the method's parameter validation, not guidance.
+**Interpolation policy (binding, from `value-added.md`).** `spatial_interp` refuses indicators whose `measure_type` is `count`/`sum`/`share` (counts and administrative statistics are never kriged; they use `dasymetric` or `crosswalk_rebase`). Population time interpolation uses `geometric` or `ratio_to_trend`, always raked to official controls. These are checks in the method's parameter validation, not guidance. On-demand analysis adds one fenced case for point samples of intensive socio-economic quantities (asking prices); it does not apply to recipes — see [11 §3.4](11-analysis-engine.md#34-interpolation-policy-for-point-samples-amends-04-3) and [ADR 0025](adr/0025-price-data-and-point-sample-policy.md).
 
 ## 4. Recipes
 

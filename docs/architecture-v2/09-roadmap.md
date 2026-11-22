@@ -9,6 +9,7 @@ Work packages are sized for one implementer sub-agent each (package-scoped, cont
 3. **Then the two multipliers**: declarative drivers (WP-07) and the PDF harness (WP-08) — 85 of 147 parity rows and ~238 of 338.5 person-days are PDF tables.
 4. **Value-added products are interleaved**, not left to the end: items 1–4 of the top 20 (harmonised boundaries, intercensal population, zonal population, per-capita) ship by WP-11, the open-input products (#6–#9, #11) by WP-18.
 5. Public interfaces (exports, OGC, MCP, CLI) come once there is enough data to make them worth pointing at (WP-09, WP-13…15), but the REST surface grows with each package.
+6. **Maps, analysis and workspaces (WP-26…38, [10](10-map-composition.md)–[12](12-enterprise-and-byod.md)) are a second track interleaved with the first**, ordered by what a visitor can see: composable maps on real data as soon as the foundation and the first layers exist (WP-26…28, alongside Phase B), analysis next (WP-29, WP-30), then ownership (accounts, private data), then teams and on-prem. The front-end track starts immediately against mock data ([ui-contract-explore.md](ui-contract-explore.md)) and switches to the real API package by package (§3, Phase G).
 
 ```
 WP-01 ─► WP-02 ─► WP-03 ─┬─► WP-04 ─┬─► WP-09 ─► WP-13 ─► WP-14, WP-15 ─► WP-20
@@ -16,7 +17,14 @@ WP-01 ─► WP-02 ─► WP-03 ─┬─► WP-04 ─┬─► WP-09 ─► WP-
                          ├─► WP-06 ─┴─► WP-10 ─► WP-11 ─► WP-17 ─► WP-18 ─► WP-21 ─► WP-22
                          ├─► WP-07 ─► WP-12 (batches)      WP-16 (after WP-07)
                          └─► WP-08 ─► WP-19 (batches)      WP-24 (after WP-13)   WP-23, WP-25 (ops, parallel)
+
+Second track (maps · analysis · workspaces):
+WP-01 ─► WP-26 ──┬─► WP-27 (needs WP-04, WP-05) ───────────────────────────► FE-2
+WP-03 ───────────┴─► WP-28 ─► WP-31 ─► WP-32 (needs WP-02) ─► WP-33 (needs WP-29) ─► WP-36 (needs WP-15)
+WP-05, WP-06, WP-26 ─► WP-29 ─► WP-30 ─► WP-37          WP-31 ─► WP-35          WP-34 (needs WP-14, WP-29)     WP-38 (any time)
 ```
+
+Recommended single-lead order through the first user-visible results: WP-01 → WP-02 → WP-03 → **WP-26** → WP-04 ‖ WP-05 ‖ WP-06 ‖ **WP-28** → **WP-27** → **WP-29** → WP-07 ‖ WP-08 (data track continues in sub-agents) → **WP-31** → **WP-30** → **WP-32** → **WP-33** → WP-09 … as before, with WP-34…38 after Phase E.
 
 ## 2. What changes in the existing `engine/`
 
@@ -49,6 +57,28 @@ WP-01 ─► WP-02 ─► WP-03 ─┬─► WP-04 ─┬─► WP-09 ─► WP-
 | `registry/datasets/*.yaml` (263) | mechanical migration | units → UCUM, dims → codelist refs, `measure_type`/`aggregation`/`class` filled by rule with a review list for the ambiguous ones (WP-01 script, output reviewed as one PR) |
 | `infra/v2/docker-compose.yml`, `postgresql.conf` | extend | [07 §1](07-operations.md#1-deployment-topology), [05 §6](05-storage-and-performance.md#6-loading-and-maintenance) |
 | `engine/README.md` env table | update | drop `LANKA_ALERT_WEBHOOK`, `LANKA_HEARTBEAT_URL`; `LANKA_DATA_DIR` → `LANKA_STORE_DIR` (old name accepted for one release) |
+| `engine/Cargo.toml` (second track) | extend | add members `lanka-mapdoc`, `lanka-stats`, `lanka-analysis`, `lanka-app`, `lanka-stats-wasm`; deps `openidconnect`, `jsonschema`, `chacha20poly1305`, `wasm-bindgen` (wasm crate only) |
+| `lanka-core/src/query.rs` → `lanka-query` | extend | `Backend::frame(&FramePlan)`, columnar points, value-tile reader; every data method takes `Scope { Public, Workspace }` |
+| `lanka-server/src/lib.rs` | extend | `/v2/frame`, `/v2/grids/{id}/values`, `/v2/features/{ds}/points`, `/v2/analyses*`; mounts `lanka-app` routes at `/app/v1` when `LANKA_APP_PLANE=on`; pools B and C |
+| `lanka-ingest` (worker) | extend | `--lane batch|interactive`; job kinds `analysis`, `upload`, `sync`; upload path reuses extract/standardise with an interactive mapping |
+| `lanka-store` | extend | namespaces `Analysis`, `Ws` (never under `/dl`) |
+| `infra/v2/docker-compose.yml` | extend | service `analyst`; `infra/v2/profiles/{public,mirror,private,laptop}` |
+| `spec/` | extend | `spec/map/1/` (schema, ramps, embed messages), `spec/analysis/1/` (request, result, per-method schemas, guard registry) |
+
+### Adjustments to earlier packages from documents 10–12
+
+These are additive. None changes a decision of documents 01–09.
+
+| Package | Adjustment | Cost |
+|---|---|---|
+| **WP-01** | (1) `lanka-core/src/flags.rs`: register bit 16 `INTERPOLATED_SPACE` and bit 17 `DISAGGREGATED`, both propagating ([02 §4](02-standard-model.md#4-the-observation)); `RESERVED_MASK` then covers bits 18–27 and 30–31; the round-trip property test covers 18 bits; the flag label rows in `0002` gain the two codes. (2) Migration `0002`: `CHECK (key < 1000000)` on `catalog.datasets.key`, reserving keys ≥ 1,000,000 (and their `obs_id` range) for workspace datasets. Nothing else: `ws.*` gets its own partition function in WP-32. | ≤ 0.25 d |
+| WP-03 | Migration `0003`: create `ops.jobs` with `lane text NOT NULL DEFAULT 'batch' CHECK (lane IN ('batch','interactive'))`, include `lane` in the claim index, and allow kinds `analysis`, `upload`, `sync` from the start. Worker claims by lane. | 0.25 d |
+| WP-04 | `admin` tileset: `pcode` present on every level's layer (for `promoteId`) and a `centroids` layer; registry `features` datasets declare typed `fields` (name, type, unit, measure type) next to `tiles.attrs`. | 0.5 d |
+| WP-05 | `geo.grid_layers` gains `overview: mean\|sum\|max\|mode`; grid PNG route keeps its shape (value tiles are WP-27). | 0.1 d |
+| WP-06 | Methods are callable as a library outside a recipe run (in-memory `OutputSink`, inputs from a `Backend`), because `lanka-analysis` uses them for alignment. | 0.5 d |
+| WP-13 | `Scope` threaded through `lanka-query`; `frame` in the conformance corpus; `/id/map/…`, `/id/analysis/…` persistent URIs. | 0.5 d |
+| WP-17 | The `exposure_overlay` kernel is delivered by WP-29 and `jrc-river-flood-hazard` ingestion by WP-27; WP-17 keeps the recipes, intervals and DesInventar validation (−1.5 d). | −1.5 d |
+| WP-21 | `spatial_interp` (IDW, ordinary/universal kriging) is delivered by WP-33; WP-21 keeps the climate recipes (−2 d). | −2 d |
 
 ## 3. Work packages
 
@@ -168,6 +198,82 @@ Format: **goal** · scope (paths) · inputs · acceptance · days · depends on.
 
 **WP-25 Backups, restore drill, CI hardening** — 4 d — depends: WP-03 (run in parallel with Phase B) — pgBackRest + restic profiles, `restore.sh`, `restore-drill.sh`, `cargo deny`, fuzz targets, image attestation; acceptance: a scripted restore to a scratch host passes `lanka rebuild --verify` and the corpus.
 
+### Phase G — maps, analysis, workspaces (second track)
+
+Migration numbers for this track are assigned in merge order after `0007`; the names are fixed: `app_snapshots`, `analysis`, `accounts`, `workspace_data`, `teams_embeds`.
+
+**WP-26 Map document spec and frames** — 5 d — depends: WP-01
+- Goal: the open map spec exists and area layers have their data shape.
+- Scope: `spec/map/1/{map.schema.json,ramps.json}`, `engine/crates/lanka-mapdoc/` (types, validation, limits, canonical JSON + hash, reference extraction), `lanka-core/src/query.rs` (`frame`), `lanka-server` (`GET /v2/frame`, JSON + Arrow), `lanka-cli` (`map validate`), generated TypeScript types published as `@lanka-data-layer/map-spec`.
+- Inputs: [10 §2, §3.1](10-map-composition.md#2-the-map-document--ldl-map1), [ui-contract-explore.md](ui-contract-explore.md).
+- Acceptance: the example document of [10 §7](10-map-composition.md#7-worked-example--flood-exposure-vs-property-prices-western-province) validates; 20 negative fixtures fail with a JSON-pointer path; unknown `x-*` keys survive a parse/serialise round trip; `/v2/frame` returns the 2024 census ADM4 population for one province with values equal to `/v2/indicators/{id}/map`; Arrow and JSON forms carry identical values; frame latency recorded in [10 §3.1](10-map-composition.md#31-frames); the generated TypeScript types compile against the fixtures of the UI contract.
+
+**WP-27 Layer data delivery** — 7 d — depends: WP-04, WP-05, WP-26
+- Goal: every layer type has a real data source.
+- Scope: `lanka-grid` (overview pyramids, `ldl-v16` encoder), `lanka-server` (`/v2/grids/{id}/values/{z}/{x}/{y}.png`, `/v2/features/{ds}/points` Arrow + JSON), `lanka-export/src/tiles.rs` (`centroids` layer, `dem` raster-dem tileset), `registry/connectors/jrc-flood-hazard.yaml` (+ zonal `haz.flood_area_share`), `lanka-mapdoc` resolver (`resolve` as a library function).
+- Acceptance: decoding a value tile reproduces the source cells exactly at native zoom (property test over random tiles) and within the declared quantisation error for `f32` layers; overview tiles equal the declared reducer; 250,000 points serialise under 5 MB and in < 150 ms **[A]**; JRC flood depth RP10–RP500 published as grid layers and ADM1–ADM4 shares; the resolver returns frame/values/points/tiles shapes by the size rules of [10 §3.3](10-map-composition.md#33-features); a 12-layer reference document renders in a headless-browser smoke test against a local stack.
+
+**WP-28 App plane I: snapshots, resolve, embed** — 4 d — depends: WP-03, WP-26
+- Goal: anyone can share and embed a composed map without an account.
+- Scope: `engine/crates/lanka-app/` (skeleton, `Scope`, rate identity), migration `app_snapshots` (schema `app`, `app.map_snapshots`, role `lanka_app` and its grants), `lanka-server` (`/app/v1/maps/snapshots`, `/app/v1/maps/resolve`, `/app/v1/maps/{id}`, `/resolved`, `/package`), nginx `location /app/` (no cache, own rate zone), `/v2/oembed` for map URLs, `LANKA_APP_PLANE` switch.
+- Acceptance: posting the same document twice returns one id; a 300 KB document is rejected; `lanka_app` cannot write `data.*`, `catalog.*`, `geo.*` and `lanka_api` cannot read `app.*` (integration tests); with the plane off, `/app/v1` is 404 and `/v2` is unaffected; the resolved document of the example carries attribution and the estimate notice; a response under `/app/` is never stored by nginx (test against the real config); snapshot rate limit enforced.
+
+**WP-29 Analysis core and tier-1 methods** — 10 d — depends: WP-05, WP-06, WP-26
+- Goal: "relate two layers" works end to end with guard rails.
+- Scope: `engine/crates/lanka-stats/` (`classify`, `describe`, `correlate`, `regress`, `compare`, `rng`, effective-n adjustment), `lanka-stats-wasm`, `engine/crates/lanka-analysis/` (request/result types, resolve, planner, alignment via `rollup`/`grid_zonal`/`features_zonal`/`sample`/`point_aggregate`, guard registry, result store, sync executor), `exposure_overlay` kernel, migration `analysis`, role `lanka_analysis`, `lanka-server` (`/v2/analysis/methods`, `/v2/analyses`, `/plan`, outputs, bundle), `spec/analysis/1/`, `docs/methods/analysis-*.md`.
+- Inputs: [11](11-analysis-engine.md).
+- Acceptance: `relate`, `regress`, `group_compare`, `exposure`, `zonal`, `describe`, `classify` pass unit tests on textbook data and reference fixtures from R to 1e-8; the same request returns the same id and bytes twice and after an unrelated release, and a new id after an input changes; every tier-1 guard has a positive and a negative test and the vocabulary scan passes; a blocked request returns no estimates; an open-data golden test (flood area share vs population density, ADM3, island) matches a committed result; native and WASM builds of `classify`/`correlate`/`regress` agree to the last bit on the fixtures; WASM bundle size recorded (target ≤ 500 KB compressed **[A]**); timings of [11 §8](11-analysis-engine.md#8-where-the-computation-runs) measured and written back.
+
+**WP-30 Spatial statistics and the interactive lane** — 9 d — depends: WP-29
+- Scope: `lanka-stats::{spatial,spreg,trend,fdr}`, `lanka-analysis` methods `autocorr`, `local_clusters`, `hotspots`, `spatial_regress`, `change`, `composite`, `isochrone` (cost-distance), weights build job, compose service `analyst`, async path (202, polling, events), cost model and budgets.
+- Acceptance: Moran, Geary, Lee, local Moran, Gi*, LM tests, spatial 2SLS and GMM agree with `spdep`/`spatialreg` fixtures; seeded permutations reproduce exactly; queen weights for ADM2–ADM4 built and their island lists recorded; an island-wide ADM4 `relate` with 999 permutations completes in the interactive lane while a long batch job is running (test with a long-running stub batch job); a job over its wall-clock or row budget is cancelled cleanly and reported; `relate` gains Lee's *L*, residual Moran and adjusted significance.
+
+**WP-31 Accounts, workspaces, saved maps, keys, quotas, audit** — 9 d — depends: WP-28
+- Scope: migration `accounts` (`app.users`, `identities`, `sessions`, `plans`, `workspaces`, `memberships`, `projects`, `api_keys`, `usage_daily`, `maps`, `map_versions`, `map_refs`, `audit_log`), `lanka-app` (OIDC sign-in, sessions, CSRF, workspace and map routes, keys, token buckets, audit chain), `lanka-cli` (`app plan set`, `app user disable`, `takedown --map`), row-level security policies.
+- Acceptance: sign-in against a test OIDC provider; a two-workspace isolation test over every `/app/v1` route; saved map versions are immutable and `If-Match` conflicts are detected; freezing a map pins its analysis results (they survive eviction); a revoked or expired key is rejected and never appears in logs; quota exhaustion returns 429 with `Retry-After` while `/v2` cached reads continue; the audit chain verifies and rejects an edited row; account deletion removes personal data and the personal workspace.
+
+**WP-32 Bring your own data** — 10 d — depends: WP-31, WP-02
+- Scope: migration `workspace_data` (schema `ws`), upload endpoints, profile + mapping + match-report API, geocoding modes of [12 §5.3](12-enterprise-and-byod.md#53-geocoding-modes), `lanka-extractd` op for `ogr2ogr`, private tiles, `lanka-query` `Scope::Workspace` for series/frame/features, visibility rules, deletion, `lanka-cli` (`takedown --workspace-dataset`).
+- Acceptance: a CSV with coordinates, a CSV with district/DSD names (including three deliberately ambiguous names that must land in the match report, not be guessed), an XLSX with p-codes, a GeoJSON and a zipped Shapefile each import and appear as layers and in a mixed public + private frame; a malformed-file corpus fails cleanly inside limits; columns flagged as personal data default to dropped; a private dataset is unreachable from `/v2`, from another workspace, and from an embed without a token (tests); delete removes partition, blobs, tiles and dependent results; re-uploading a new month with the stored mapping produces a new version whose diff is only the new rows.
+
+**WP-33 Point samples, interpolation, reference analysis** — 7 d — depends: WP-29, WP-32
+- Scope: `lanka-stats::interp` (IDW, variogram fitting, ordinary/universal kriging, leave-one-out), method `interpolate`, point-support `relate`/`regress` with fixed effects and distance rings, grid distance transform, the synthetic `@demo/property-asking-prices-sample` generator (documented formula, seeded), `docs/methods/analysis-point-samples.md`.
+- Acceptance: kriging agrees with `gstat` fixtures; the fenced rule of [11 §3.4](11-analysis-engine.md#34-interpolation-policy-for-point-samples-amends-04-3) is enforced by tests (a count variable is refused; an unmasked price surface is refused); the Western Province example runs end to end from the document of [10 §7](10-map-composition.md#7-worked-example--flood-exposure-vs-property-prices-western-province) and its result equals a committed golden file, with `SYNTHETIC_INPUT` present; the generator's planted effect (a known price discount inside the flood zone) is recovered by `group_compare` within its interval.
+
+**WP-34 MCP and CLI for analysis and maps** — 3 d — depends: WP-14, WP-29
+- Scope: `lanka-mcp` tools of [11 §11.2](11-analysis-engine.md#112-mcp), `lanka analyze`, `lanka analysis …`, `lanka map validate|resolve`.
+- Acceptance: a scripted agent transcript (search → relate → read guards → create map link) passes; every analysis tool's text block starts with the guards; `lanka analyze` against an offline pack reproduces the server's id for a tabular request.
+
+**WP-35 Teams, projects, white-label embeds** — 6 d — depends: WP-31
+- Scope: migration `teams_embeds` (`app.embed_profiles`, `embed_tokens`, `read_log`), team workspaces and roles, projects, embed tokens and per-profile `frame-ancestors`, the `postMessage` contract (`spec/map/1/embed-messages.schema.json`), `@lanka-data-layer/embed` loader, audit export, read auditing.
+- Acceptance: an embed of a private map works only with a valid token and only inside an allowed origin; attribution and notices render under every profile (visual test with the credit switched off); role matrix test; audit export verifies against the chain head.
+
+**WP-36 On-prem profile, upstream sync, workspace connectors, distribution binary** — 8 d — depends: WP-32, WP-15
+- Scope: `infra/v2/profiles/`, `LANKA_ANONYMOUS=off`, `sync` job (`lanka pull --into-db` on a schedule, `--from-dir` for air-gapped sites), overlay connectors with `target.workspace`, hosted scheduled pulls with the hardened fetcher and `app.secrets`, `lanka_cli::run` + registry hooks, an example `lanka-dist-example` crate with one extra analysis method, `docs/self-hosting/private.md`.
+- Acceptance: a scripted install of the `private` profile on a clean host signs in through a test IdP, syncs a release from a test upstream with identical dsvs, runs the reference analysis with the same result id as upstream, and refuses anonymous `/v2`; the example distribution binary lists its extra method in `/v2/analysis/methods`; the fork test of [07 §8](07-operations.md#8-testing-strategy) runs with the app plane on.
+
+**WP-37 Tier-3 analysis** — 6 d — optional, when a user needs it — depends: WP-30
+- `gwr`, `isochrone_network` (Valhalla on demand in the `private` profile), `zones` support (user polygons as units), `ws.grids` (user rasters).
+
+**WP-38 Property-price data programme** — 3 d of work plus elapsed time — depends: none
+- Written requests to two listing portals, CBSL and the Valuation Department for an aggregated price product (schema in [11 §10](11-analysis-engine.md#10-data-reality-property-prices)); read and record each portal's current terms; register the sources as `planned`/`blocked` with the outcome; ingest `cbsl-land-valuation-indicator` and `cbsl-condominium-prices` as time series (class B).
+- Acceptance: `registry/sources/` reflects each request and reply; the registry notes replace the **[A]** markers of [11 §10](11-analysis-engine.md#10-data-reality-property-prices); no scraped data anywhere in the registry or fixtures (CI check on fixture provenance notes).
+
+#### Front-end track against this plan
+
+The web team builds against [ui-contract-explore.md](ui-contract-explore.md) from day one; the table says which package turns each increment from mock to real.
+
+| Increment | Content | Mock from | Real when |
+|---|---|---|---|
+| FE-0 | Spike: deck.gl interleaved with the pinned MapLibre; `multiply` blend; value-tile shader on synthetic tiles | now | — |
+| FE-1 | Layer panel, style editor, legend, time slider, document state + undo | now | — |
+| FE-2 | Real area, raster and point layers | — | WP-26 (frames) + WP-04/05 + WP-27 |
+| FE-3 | Share link, fork, embed route, image export | now (local drafts, URL fragment) | WP-28 |
+| FE-4 | Relate, inside/outside, exposure, stats cards with guards | now | WP-29; clusters/hot spots WP-30 |
+| FE-5 | Sign-in, saved maps and versions, keys | now | WP-31 |
+| FE-6 | Upload wizard, match report, private layers | now | WP-32; price example WP-33 |
+| FE-7 | Team settings, embed profiles | later | WP-35 |
+
 Remaining parity waves 5–7 (developments + transport analyses 20.25 d; remaining P0/P1 PDF series 71.25 d; P2/P3 long tail 110.75 d) are data batches of the WP-12/WP-19 kind and are scheduled by priority once Phase E is done; they need no new engine capability.
 
 ## 4. Totals and milestones
@@ -182,8 +288,12 @@ Remaining parity waves 5–7 (developments + transport analyses 20.25 d; remaini
 | M6 Series + documents | WP-12, WP-19 | — | 113.5 | waves 3–4: 67 of 148 parity rows at exact parity |
 | M7 Value-added programme | WP-17, 18, 21, 22 | 62 | — | accessibility, exposure, poverty, indices |
 | M8 Consolidation | WP-20, WP-24 | 12 | — | Hono retired; spec published; fork test green |
+| **M2a Composable maps** (after M2's WP-04/05) | WP-26…28 | 16 | — | layered maps on real data; share and embed without an account |
+| **M3a Analysis** | WP-29, WP-30, WP-34 | 22 | — | relate / compare / exposure / clusters with guard rails, citable results, agent tools |
+| **M4a Ownership** | WP-31…33 | 26 | — | accounts, saved maps, keys, private uploads, the flood-vs-price reference analysis |
+| **M9 Teams and on-prem** | WP-35, WP-36 (+ WP-37 optional 6, WP-38 3) | 14 | — | team workspaces, white-label embeds, private instance profile |
 
-Engineering ≈ 185 d; parity data to wave 4 ≈ 136 d; remaining parity ≈ 202 d. With one lead plus sub-agents in parallel on the data batches, M1–M5 is roughly four to five months **[A]**.
+Engineering ≈ 185 d for documents 01–09 plus ≈ 87 d for documents 10–12 (78 d without the optional WP-37 and the outreach package), less 3.5 d moved out of WP-17/WP-21; parity data to wave 4 ≈ 136 d; remaining parity ≈ 202 d. With one lead plus sub-agents in parallel on the data batches, M1–M5 is roughly four to five months **[A]**; interleaving M2a and M3a as recommended in §1 adds about seven weeks of lead time before M5 and puts composable maps in front of users at the end of M2 **[A]**.
 
 ## 5. Open questions
 
@@ -199,3 +309,10 @@ Engineering ≈ 185 d; parity data to wave 4 ≈ 136 d; remaining parity ≈ 202
 | Q8 | Intraday release cuts for `live` datasets (≤ 1/h): wanted, or is one release per day enough? | Enabled | WP-03 |
 | Q9 | Is a second small box acceptable before the scale-out triggers fire, to isolate heavy routing/raster jobs from the API from day one? | No — single VPS until a trigger | WP-18 |
 | Q10 | Sinhala/Tamil translations of indicator labels: who reviews them? | Left empty until a reviewer exists | none |
+| Q11 | Is anything charged for (hosted team plan, managed private instances, support), or is the hosted service free with operator-set limits? The design has plans as rows and no billing code either way. | Free; limits set by the operator | none (WP-31 plan values) |
+| Q12 | Enabling sign-in makes the operator a controller of personal data (handle, e-mail) and a host of user content. Which legal entity is named in the privacy notice and terms, and who answers takedown and deletion requests? | Prabhava Labs; sign-in stays switched off on the public instance until both documents exist | WP-31 go-live |
+| Q13 | Sign-in through GitHub and Google (OIDC) is a login-time dependency on third parties. Acceptable, or must the public instance run its own identity provider / e-mail links (adds a mail system)? | GitHub + Google | WP-31 |
+| Q14 | May private uploads be hosted on the single public VPS (encrypted volume, small quotas), or should hosted private data wait for a second box, leaving BYOD to the on-prem profile at first? | Hosted, with the free-plan quotas of [12 §6](12-enterprise-and-byod.md#6-api-keys-quotas-plans) | WP-32 go-live |
+| Q15 | Workspace data with `public` visibility appears on the public site as community data. Launch with it, or with `private` and `unlisted` only until there is moderation capacity? | `private` + `unlisted` only at launch | WP-32 |
+| Q16 | Approach listing portals, CBSL and the Valuation Department for an aggregated price product, and who signs the requests? | Yes; the owner signs | WP-38 |
+| Q17 | The `analyst` service takes the VPS to ~13.8 GB of 15 GB at peak. Accept, lower anonymous analysis limits, or take the second box of Q9 now? | Accept; `analyst` is the first service to move | WP-30 |
