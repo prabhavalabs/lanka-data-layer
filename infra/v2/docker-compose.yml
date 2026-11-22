@@ -1,14 +1,60 @@
-# Lanka Data Layer v2 — data platform services (PostgreSQL + PostGIS).
+# Lanka Data Layer v2 — data platform services (07 §1).
 #
-#   cp infra/v2/.env.example infra/v2/.env   # then set a real password
-#   docker compose -f infra/v2/docker-compose.yml --env-file infra/v2/.env up -d
+#   cp infra/v2/.env.example infra/v2/.env   # then set real passwords
+#   docker compose -f infra/v2/docker-compose.yml --env-file infra/v2/.env up -d --build
 #
-# Network rule (same as v1): every port binds 127.0.0.1 only. Host nginx is
-# the only public listener; Postgres is never exposed on 0.0.0.0.
+# Network rule (same as v1): every published port binds 127.0.0.1 only. Host
+# nginx is the only public listener; Postgres is never exposed on 0.0.0.0.
+#
+# Services:
+#   db           PostgreSQL 18 + PostGIS 3.6
+#   migrate      one-shot: `lanka db migrate --set-role-passwords` as the admin
+#                role (schema, ownership → lanka_owner, grants, role passwords)
+#   serve        `lanka serve` as lanka_api (read-only role), store read-only
+#   serve-green  the blue/green twin used by infra/v2/deploy.sh (profile green)
+#   worker       `lanka worker` as lanka_ingest: scheduler tick + job executor
 #
 # The v1 stack (infra/docker-compose.yml: Hono api + lanka.sqlite) keeps
 # running untouched beside this until /v2 reaches parity.
 name: lanka-v2
+
+x-lanka: &lanka
+  image: ${LANKA_IMAGE:-lanka:dev}
+  build:
+    context: ../../engine
+    dockerfile: ../infra/v2/Dockerfile
+    args:
+      GIT_REV: ${LANKA_GIT_REV:-unknown}
+  user: "10001:10001"
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+x-serve: &serve
+  <<: *lanka
+  command: ["serve", "--bind", "0.0.0.0:8601"]
+  environment:
+    DATABASE_URL: postgres://lanka_api:${LANKA_API_PASSWORD:?set LANKA_API_PASSWORD}@db:5432/${POSTGRES_DB:-lanka}
+    LANKA_STORE_DIR: /store
+    LANKA_GIT_REV: ${LANKA_GIT_REV:-unknown}
+  volumes:
+    - ${LANKA_STORE_HOST:-/srv/lanka/store}:/store:ro
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+  healthcheck:
+    test: ["CMD", "/usr/local/bin/lanka", "probe", "http://127.0.0.1:8601/v2/health"]
+    interval: 15s
+    timeout: 6s
+    retries: 4
+    start_period: 10s
+  deploy:
+    resources:
+      limits: { memory: 1g }
 
 services:
   db:
@@ -46,6 +92,64 @@ services:
       resources:
         limits:
           memory: 7g
+
+  migrate:
+    <<: *lanka
+    command: ["db", "migrate", "--set-role-passwords"]
+    restart: "no"
+    environment:
+      # The admin role: owns the migration run only; applications never use it.
+      DATABASE_URL: postgres://${POSTGRES_USER:-lanka}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-lanka}
+      LANKA_API_PASSWORD: ${LANKA_API_PASSWORD:?set LANKA_API_PASSWORD}
+      LANKA_INGEST_PASSWORD: ${LANKA_INGEST_PASSWORD:?set LANKA_INGEST_PASSWORD}
+      LANKA_RECIPE_PASSWORD: ${LANKA_RECIPE_PASSWORD:-}
+    volumes:
+      - ${LANKA_REPO_DIR:-../..}/registry:/app/registry:ro
+      - ${LANKA_REPO_DIR:-../..}/country:/app/country:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  serve:
+    <<: *serve
+    ports:
+      - "127.0.0.1:${LANKA_SERVE_PORT:-8601}:8601"
+
+  serve-green:
+    <<: *serve
+    profiles: [green]
+    ports:
+      - "127.0.0.1:${LANKA_SERVE_GREEN_PORT:-8611}:8601"
+
+  worker:
+    <<: *lanka
+    command: ["worker"]
+    environment:
+      DATABASE_URL: postgres://lanka_ingest:${LANKA_INGEST_PASSWORD:?set LANKA_INGEST_PASSWORD}@db:5432/${POSTGRES_DB:-lanka}
+      LANKA_STORE_DIR: /store
+      LANKA_REGISTRY_DIR: /app/registry
+      LANKA_GIT_REV: ${LANKA_GIT_REV:-unknown}
+      LANKA_WORKER_SLOTS: ${LANKA_WORKER_SLOTS:-4}
+      LANKA_TRAIN_AT: ${LANKA_TRAIN_AT:-20:30}
+      LANKA_LIVE_TRAINS: ${LANKA_LIVE_TRAINS:-true}
+      # sources that read local exports for now, e.g. hdx-cod-ab-lka=/inputs/layers
+      LANKA_LOCAL_INPUTS: ${LANKA_LOCAL_INPUTS:-}
+      LANKA_WORKER_GRACE: "50"
+    volumes:
+      - ${LANKA_STORE_HOST:-/srv/lanka/store}:/store:rw
+      - ${LANKA_REPO_DIR:-../..}/registry:/app/registry:ro
+      - ${LANKA_REPO_DIR:-../..}/country:/app/country:ro
+      - ${LANKA_INPUTS_HOST:-/srv/lanka/inputs}:/inputs:ro
+    tmpfs:
+      - /tmp:size=512m
+    # SIGTERM → running jobs get LANKA_WORKER_GRACE seconds, then re-queue.
+    stop_grace_period: 60s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits: { memory: 2g, cpus: "5" }
 
 volumes:
   lanka_pgdata:
