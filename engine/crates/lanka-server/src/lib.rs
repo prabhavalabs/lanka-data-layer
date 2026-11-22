@@ -42,6 +42,9 @@ pub struct AppState {
     started: std::time::Instant,
     /// Blob store root (read-only for the server); checked by /v2/health.
     store_dir: Option<std::path::PathBuf>,
+    /// The app plane (`/app/v1`), when `LANKA_APP_PLANE=on`. `/v2` handlers
+    /// only ask whether it is mounted (oEmbed) and never use its pool.
+    app: Option<lanka_app::AppPlane>,
 }
 
 impl AppState {
@@ -55,7 +58,22 @@ impl AppState {
                 .or_else(|| std::env::var_os("LANKA_DATA_DIR"))
                 .filter(|v| !v.is_empty())
                 .map(std::path::PathBuf::from),
+            app: None,
         })
+    }
+
+    /// A catalogue accessor for the app plane (the same swapped snapshot).
+    #[must_use]
+    pub fn catalog_fn(&self) -> lanka_app::CatalogFn {
+        let st = self.clone();
+        Arc::new(move || st.catalog())
+    }
+
+    /// Mounts the app plane (`/app/v1`).
+    #[must_use]
+    pub fn with_app_plane(mut self, plane: lanka_app::AppPlane) -> Self {
+        self.app = Some(plane);
+        self
     }
 
     /// The current snapshot (an `Arc` clone; never blocks on reloads).
@@ -986,6 +1004,59 @@ async fn reverse(
     respond(&headers, &uri, r, meta)
 }
 
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct OEmbedParams {
+    /// A map URL of this deployment: `/m/{id}`, `/m/{id}@{seq}`, `/embed/m/{id}`, `/id/map/{id}`.
+    pub url: Option<String>,
+    /// `json` (the only format served).
+    pub format: Option<String>,
+    pub maxwidth: Option<u32>,
+    pub maxheight: Option<u32>,
+}
+
+/// oEmbed 1.0 (`rich`, an iframe to `/embed/m/{id}`) for map URLs
+/// (10 §6.1). Depends only on the URL and the deployment: it never reads
+/// the app plane, so it is cacheable like every `/v2` response.
+#[utoipa::path(get, path = "/v2/oembed", tag = "embeds", params(OEmbedParams),
+    responses((status = 200, description = "oEmbed 1.0 rich response"),
+              (status = 404, body = ErrorBody, description = "not a map URL of this deployment, or maps are not hosted here"),
+              (status = 501, body = ErrorBody, description = "format other than json")))]
+async fn oembed(State(st): State<AppState>, Query(p): Query<OEmbedParams>) -> ApiResult {
+    let cat = st.catalog();
+    let dv = cat.data_version.clone();
+    if p.format.as_deref().is_some_and(|f| f != "json") {
+        return Err(
+            ApiError::new(StatusCode::NOT_IMPLEMENTED, "only format=json is served")
+                .with_version(dv),
+        );
+    }
+    let Some(url) = p.url.as_deref().filter(|u| !u.trim().is_empty()) else {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "url is required").with_version(dv));
+    };
+    let Some(plane) = &st.app else {
+        return Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            "not_found: maps are not hosted on this deployment (app plane off)",
+        )
+        .with_version(dv));
+    };
+    let base = plane.public_url();
+    let Some(m) = lanka_app::embed::parse_map_url(url, &base) else {
+        return Err(ApiError::new(
+            StatusCode::NOT_FOUND,
+            format!("not_found: not a map URL of {base}"),
+        )
+        .with_version(dv));
+    };
+    let o = lanka_app::embed::oembed(&m, &base, "Lanka Data Layer", p.maxwidth, p.maxheight);
+    let mut res = axum::Json(o).into_response();
+    res.headers_mut().insert(
+        header::CACHE_CONTROL,
+        HeaderValue::from_static(CACHE_FLOATING),
+    );
+    Ok(res)
+}
+
 async fn openapi_json() -> Response {
     let mut res = axum::Json(openapi::ApiDoc::openapi()).into_response();
     res.headers_mut().insert(
@@ -1003,7 +1074,8 @@ async fn fallback() -> ApiError {
 }
 
 pub fn router(state: AppState) -> Router {
-    Router::new()
+    let app_plane = state.app.as_ref().map(lanka_app::AppPlane::router);
+    let v2 = Router::new()
         .route("/v2/health", get(health))
         .route("/v2/status", get(status_summary))
         .route("/v2/status/sources", get(status_sources))
@@ -1020,28 +1092,49 @@ pub fn router(state: AppState) -> Router {
         .route("/v2/r/{data_version}/frame", get(frame_release))
         .route("/v2/observations/{id}/provenance", get(provenance))
         .route("/v2/reverse", get(reverse))
+        .route("/v2/oembed", get(oembed))
         .route("/v2/openapi.json", get(openapi_json))
         .fallback(fallback)
         .with_state(state)
-        .layer(CompressionLayer::new())
         .layer(
             CorsLayer::new()
                 .allow_origin(tower_http::cors::Any)
                 .allow_methods([axum::http::Method::GET]),
-        )
+        );
+    // The app plane keeps its own CORS and limits; off = its routes do not
+    // exist (404 through the /v2 fallback) and /v2 is unchanged.
+    let all = match app_plane {
+        Some(app) => app.merge(v2),
+        None => v2,
+    };
+    all.layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
 }
 
-/// Binds and serves until SIGINT/SIGTERM.
+/// Binds and serves until SIGINT/SIGTERM. `LANKA_APP_PLANE=on` mounts the
+/// app plane on its own pool (role `lanka_app`, see `lanka_app::connect`).
 pub async fn serve(pool: PgPool, bind: SocketAddr) -> anyhow::Result<()> {
-    let state = AppState::new(pool).await?;
+    let mut state = AppState::new(pool).await?;
     state.spawn_reloader();
+    let cfg = lanka_app::AppConfig::from_env()?;
+    if cfg.enabled {
+        let app_pool = lanka_app::connect(&cfg, &state.pool.connect_options()).await?;
+        let plane = lanka_app::AppPlane::new(app_pool, state.catalog_fn(), cfg);
+        plane.spawn_expiry();
+        tracing::info!(snapshot_rate = %plane.config().snapshot_rate, "app plane on (/app/v1)");
+        state = state.with_app_plane(plane);
+    } else {
+        tracing::info!("app plane off (LANKA_APP_PLANE): /app/v1 is 404");
+    }
     let app = router(state);
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(%bind, "lanka-server listening");
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shutdown())
-        .await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(shutdown())
+    .await?;
     Ok(())
 }
 
@@ -1072,6 +1165,10 @@ mod tests {
     /// A router over a lazy (never-connected) pool: exercises every path
     /// that must not touch the database.
     fn app() -> Router {
+        app_with(false)
+    }
+
+    fn app_with(plane: bool) -> Router {
         let pool = sqlx::postgres::PgPoolOptions::new()
             .acquire_timeout(Duration::from_millis(500))
             .connect_lazy("postgres://nobody@127.0.0.1:1/none")
@@ -1084,13 +1181,204 @@ mod tests {
             profile: Some(Arc::new(profile)),
             ..Catalog::default()
         };
-        let state = AppState {
-            pool,
+        let mut state = AppState {
+            pool: pool.clone(),
             catalog: Arc::new(RwLock::new(Arc::new(cat))),
             started: std::time::Instant::now(),
             store_dir: None,
+            app: None,
         };
+        if plane {
+            let cfg = lanka_app::AppConfig {
+                enabled: true,
+                public_url: Some("https://maps.example.org".into()),
+                ip_salt: Some("test".into()),
+                ..lanka_app::AppConfig::default()
+            };
+            let p = lanka_app::AppPlane::new(pool, state.catalog_fn(), cfg);
+            state = state.with_app_plane(p);
+        }
         router(state)
+    }
+
+    async fn send(
+        router: Router,
+        req: axum::http::Request<Body>,
+    ) -> (StatusCode, HeaderMap, serde_json::Value) {
+        let res = router.oneshot(req).await.expect("response");
+        let status = res.status();
+        let headers = res.headers().clone();
+        let bytes = res.into_body().collect().await.expect("body").to_bytes();
+        let v = serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
+        (status, headers, v)
+    }
+
+    fn post_json(uri: &str, body: String) -> axum::http::Request<Body> {
+        axum::http::Request::post(uri)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(body))
+            .expect("request")
+    }
+
+    fn get_req(uri: &str) -> axum::http::Request<Body> {
+        axum::http::Request::get(uri)
+            .body(Body::empty())
+            .expect("request")
+    }
+
+    const MAP_URL: &str =
+        "/v2/oembed?url=https%3A%2F%2Fmaps.example.org%2Fm%2Fms_0123456789abcdef%3Ft%3D2024";
+
+    #[tokio::test]
+    async fn app_plane_off_is_404_and_v2_is_unaffected() {
+        let (on, off) = (app_with(true), app_with(false));
+        // /app/v1 does not exist with the plane off
+        for req in [
+            post_json("/app/v1/maps/snapshots", "{}".into()),
+            post_json("/app/v1/maps/resolve", "{}".into()),
+            get_req("/app/v1/maps/ms_0123456789abcdef"),
+            get_req("/app/v1/maps/ms_0123456789abcdef/resolved"),
+            get_req("/app/v1/maps/ms_0123456789abcdef/package"),
+            get_req("/app/v1/openapi.json"),
+        ] {
+            let uri = req.uri().to_string();
+            let (status, _, v) = send(off.clone(), req).await;
+            assert_eq!(status, StatusCode::NOT_FOUND, "{uri}");
+            assert_eq!(v["success"], false, "{uri}");
+        }
+        // /v2 answers identically either way
+        for uri in [
+            "/v2/catalog?q=x",
+            "/v2/openapi.json",
+            "/v2/areas/XX1",
+            "/v2/frame?indicators=a.b",
+            "/v2/nope",
+        ] {
+            let a = send(on.clone(), get_req(uri)).await;
+            let b = send(off.clone(), get_req(uri)).await;
+            assert_eq!((a.0, &a.2), (b.0, &b.2), "{uri}");
+            assert_eq!(
+                a.1.get(header::CACHE_CONTROL),
+                b.1.get(header::CACHE_CONTROL),
+                "{uri}"
+            );
+        }
+        let (status, _, v) = send(off.clone(), get_req(MAP_URL)).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        assert!(
+            v["message"]
+                .as_str()
+                .is_some_and(|m| m.contains("app plane off"))
+        );
+    }
+
+    #[tokio::test]
+    async fn app_plane_on_mounts_its_routes() {
+        let app = app_with(true);
+        // validation before any query
+        let (status, h, v) = send(
+            app.clone(),
+            post_json("/app/v1/maps/resolve", r#"{"spec":"ldl-map/1"}"#.into()),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert_eq!(v["payload"]["type"], "invalid_document");
+        assert!(
+            v["payload"]["problems"]
+                .as_array()
+                .is_some_and(|p| !p.is_empty())
+        );
+        assert_eq!(
+            h.get(header::CACHE_CONTROL).map(|v| v.as_bytes()),
+            Some(&b"no-store"[..])
+        );
+        assert_eq!(
+            h.get("x-robots-tag").map(|v| v.as_bytes()),
+            Some(&b"noindex"[..])
+        );
+        // a body over the read limit is 413 without being parsed
+        let huge = format!("{{\"x\":\"{}\"}}", "a".repeat(lanka_app::routes::MAX_BODY));
+        let (status, _, v) = send(app.clone(), post_json("/app/v1/maps/snapshots", huge)).await;
+        assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+        assert_eq!(v["payload"]["type"], "too_large");
+        // saved maps are WP-31; bad ids are 400 before any query
+        let (status, _, _) = send(app.clone(), get_req("/app/v1/maps/m_abc")).await;
+        assert_eq!(status, StatusCode::NOT_FOUND);
+        let (status, _, _) = send(app.clone(), get_req("/app/v1/maps/nope")).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        // its own OpenAPI document
+        let (status, _, v) = send(app.clone(), get_req("/app/v1/openapi.json")).await;
+        assert_eq!(status, StatusCode::OK);
+        for p in [
+            "/app/v1/maps/snapshots",
+            "/app/v1/maps/resolve",
+            "/app/v1/maps/{id}",
+            "/app/v1/maps/{id}/resolved",
+            "/app/v1/maps/{id}/package",
+        ] {
+            assert!(v["paths"].get(p).is_some(), "missing {p}");
+        }
+        // CORS: POST from any origin (no credentials) on /app/v1; /v2 stays GET-only
+        let pre = |uri: &str| {
+            axum::http::Request::options(uri)
+                .header(header::ORIGIN, "https://host.example")
+                .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "content-type")
+                .body(Body::empty())
+                .expect("request")
+        };
+        let (_, h, _) = send(app.clone(), pre("/app/v1/maps/snapshots")).await;
+        let methods = h
+            .get(header::ACCESS_CONTROL_ALLOW_METHODS)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_owned();
+        assert!(methods.contains("POST"), "{methods}");
+        assert!(h.get(header::ACCESS_CONTROL_ALLOW_CREDENTIALS).is_none());
+        let (_, h, _) = send(app.clone(), pre("/v2/catalog")).await;
+        let methods = h
+            .get(header::ACCESS_CONTROL_ALLOW_METHODS)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_owned();
+        assert!(!methods.contains("POST"), "{methods}");
+    }
+
+    #[tokio::test]
+    async fn oembed_answers_for_map_urls() {
+        let app = app_with(true);
+        let (status, h, v) = send(app.clone(), get_req(MAP_URL)).await;
+        assert_eq!(status, StatusCode::OK, "{v}");
+        assert_eq!(
+            (v["version"].as_str(), v["type"].as_str()),
+            (Some("1.0"), Some("rich"))
+        );
+        assert!(
+            v["html"].as_str().is_some_and(
+                |s| s.contains("https://maps.example.org/embed/m/ms_0123456789abcdef?t=2024")
+            ),
+            "{v}"
+        );
+        assert!(h.get(header::CACHE_CONTROL).is_some());
+        for (uri, code) in [
+            (
+                "/v2/oembed?url=https%3A%2F%2Fevil.example%2Fm%2Fms_0123456789abcdef",
+                StatusCode::NOT_FOUND,
+            ),
+            (
+                "/v2/oembed?url=https%3A%2F%2Fmaps.example.org%2Fdatasets%2Fx",
+                StatusCode::NOT_FOUND,
+            ),
+            (
+                "/v2/oembed?url=https%3A%2F%2Fmaps.example.org%2Fm%2Fms_0123456789abcdef&format=xml",
+                StatusCode::NOT_IMPLEMENTED,
+            ),
+            ("/v2/oembed", StatusCode::BAD_REQUEST),
+        ] {
+            let (status, _, v) = send(app.clone(), get_req(uri)).await;
+            assert_eq!(status, code, "{uri}");
+            assert_eq!(v["success"], false, "{uri}");
+        }
     }
 
     async fn get(uri: &str) -> (StatusCode, serde_json::Value) {
@@ -1155,6 +1443,7 @@ mod tests {
             "/v2/r/{data_version}/frame",
             "/v2/observations/{id}/provenance",
             "/v2/reverse",
+            "/v2/oembed",
         ] {
             assert!(v["paths"].get(p).is_some(), "missing {p}");
         }
