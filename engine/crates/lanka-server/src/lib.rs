@@ -2,9 +2,10 @@
 //!
 //! - Envelope `{success, message, payload, meta}`; `meta` cites data_version,
 //!   exact dataset versions, sources and licences for everything touched.
-//! - Every GET carries `ETag: "<data_version>-<route hash>"` and
-//!   `Cache-Control: public, max-age=300, stale-while-revalidate=86400`;
-//!   `If-None-Match` is answered with 304 (cheap revalidation after releases).
+//! - Every GET carries `ETag: "<data_version>-<hash(route, query, dsvs)>"`
+//!   and `Cache-Control: public, max-age=300, stale-while-revalidate=86400`
+//!   (a day for release- or version-pinned frames); `If-None-Match` is
+//!   answered with 304 — for current-release frames before any query.
 //! - Errors: 400 validation, 404 not_found / not_in_coverage, 500 masked.
 //! - The catalog snapshot is swapped atomically on `NOTIFY lanka_release`.
 
@@ -31,6 +32,7 @@ use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use utoipa::{IntoParams, OpenApi};
 
+pub mod frame_codec;
 pub mod openapi;
 
 #[derive(Clone)]
@@ -171,6 +173,54 @@ pub struct ErrorBody {
     pub meta: Meta,
 }
 
+/// `"<data_version>-<hash(path, query, dsvs touched)>"`.
+fn etag_of(uri: &Uri, meta: &Meta) -> String {
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    uri.path().hash(&mut h);
+    uri.query().unwrap_or_default().hash(&mut h);
+    meta.dataset_versions
+        .iter()
+        .for_each(|d| d.dsv.hash(&mut h));
+    format!(
+        "\"{}-{:016x}\"",
+        meta.data_version.as_deref().unwrap_or("0"),
+        h.finish()
+    )
+}
+
+const CACHE_FLOATING: &str = "public, max-age=300, stale-while-revalidate=86400";
+/// Responses pinned to a release or exact versions: their data never
+/// changes (boundary geometry is release-pinned with WP-10, hence not
+/// `immutable` yet).
+const CACHE_PINNED: &str = "public, max-age=86400, stale-while-revalidate=604800";
+
+/// 304 when `If-None-Match` carries `etag`.
+fn not_modified(headers: &HeaderMap, etag: &str, cache: &'static str) -> Option<Response> {
+    let hit = headers
+        .get(header::IF_NONE_MATCH)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.split(',').any(|t| t.trim() == etag || t.trim() == "*"));
+    if !hit {
+        return None;
+    }
+    let mut res = StatusCode::NOT_MODIFIED.into_response();
+    if let Ok(v) = HeaderValue::from_str(etag) {
+        res.headers_mut().insert(header::ETAG, v);
+    }
+    res.headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static(cache));
+    Some(res)
+}
+
+fn with_cache(mut res: Response, etag: &str, cache: &'static str) -> ApiResult {
+    let etag_val = HeaderValue::from_str(etag)
+        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "etag"))?;
+    res.headers_mut().insert(header::ETAG, etag_val);
+    res.headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static(cache));
+    Ok(res)
+}
+
 /// Serialises an OK envelope with ETag/Cache-Control, honouring If-None-Match.
 fn respond<T: Serialize>(
     headers: &HeaderMap,
@@ -178,34 +228,25 @@ fn respond<T: Serialize>(
     payload: T,
     meta: Meta,
 ) -> ApiResult {
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    uri.path().hash(&mut h);
-    uri.query().unwrap_or_default().hash(&mut h);
-    meta.dataset_versions
-        .iter()
-        .for_each(|d| d.dsv.hash(&mut h));
-    let etag = format!(
-        "\"{}-{:016x}\"",
-        meta.data_version.as_deref().unwrap_or("0"),
-        h.finish()
-    );
-    let cache = HeaderValue::from_static("public, max-age=300, stale-while-revalidate=86400");
-    let etag_val = HeaderValue::from_str(&etag)
-        .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "etag"))?;
-    if headers
-        .get(header::IF_NONE_MATCH)
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|v| v.split(',').any(|t| t.trim() == etag || t.trim() == "*"))
-    {
-        let mut res = StatusCode::NOT_MODIFIED.into_response();
-        res.headers_mut().insert(header::ETAG, etag_val);
-        res.headers_mut().insert(header::CACHE_CONTROL, cache);
-        return Ok(res);
+    respond_cached(headers, uri, payload, meta, CACHE_FLOATING)
+}
+
+fn respond_cached<T: Serialize>(
+    headers: &HeaderMap,
+    uri: &axum::http::Uri,
+    payload: T,
+    meta: Meta,
+    cache: &'static str,
+) -> ApiResult {
+    let etag = etag_of(uri, &meta);
+    if let Some(r) = not_modified(headers, &etag, cache) {
+        return Ok(r);
     }
-    let mut res = axum::Json(Envelope::ok(payload, meta)).into_response();
-    res.headers_mut().insert(header::ETAG, etag_val);
-    res.headers_mut().insert(header::CACHE_CONTROL, cache);
-    Ok(res)
+    with_cache(
+        axum::Json(Envelope::ok(payload, meta)).into_response(),
+        &etag,
+        cache,
+    )
 }
 
 fn parse_pcode(cat: &Catalog, s: &str) -> Result<Pcode, ApiError> {
@@ -688,6 +729,206 @@ async fn indicator_map(
     respond(&headers, &uri, m, meta)
 }
 
+#[derive(Debug, Default, Deserialize, IntoParams)]
+pub struct FrameParams {
+    /// Comma-separated indicator ids (≤ 8), e.g. `census24.pop_total,census24.sex_ratio`.
+    pub indicators: Option<String>,
+    /// Admin level (0 = national … 4).
+    pub level: Option<String>,
+    /// Geography scheme (default: the admin scheme; the only one served today).
+    pub scheme: Option<String>,
+    /// Restrict to units under this p-code.
+    pub parent: Option<String>,
+    /// Comma-separated period codes, or `latest` (default: the latest held at the level, per indicator).
+    pub periods: Option<String>,
+    /// First period (inclusive), instead of `periods`.
+    pub from: Option<String>,
+    /// Last period (inclusive).
+    pub to: Option<String>,
+    /// `[<indicator>:]<dims>` entries separated by `|`, e.g. `census24.pop_total:sex=total|sex=female`;
+    /// an entry selects the combinations containing its pairs (default: every combination).
+    pub dims: Option<String>,
+    /// Comma-separated exact dataset versions (`dsv_…`) to read instead of the release's.
+    pub dsv: Option<String>,
+    /// `json` (default) | `arrow` (Arrow IPC stream) | `csv`.
+    pub format: Option<String>,
+}
+
+fn split_list(s: Option<&str>) -> Vec<String> {
+    s.unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+async fn frame_response(
+    st: &AppState,
+    release: Option<String>,
+    p: FrameParams,
+    headers: &HeaderMap,
+    uri: &Uri,
+) -> ApiResult {
+    let cat = st.catalog();
+    let dv = || cat.data_version.clone();
+    let level: i16 = match p.level.as_deref().map(str::trim) {
+        None | Some("") => {
+            return Err(
+                ApiError::new(StatusCode::BAD_REQUEST, "level is required (0..4)")
+                    .with_version(dv()),
+            );
+        }
+        Some(l) => l.parse().map_err(|_| {
+            ApiError::new(StatusCode::BAD_REQUEST, "level must be an integer 0..4")
+                .with_version(dv())
+        })?,
+    };
+    let format = p.format.as_deref().unwrap_or("json");
+    if !matches!(format, "json" | "arrow" | "csv") {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            format!("format \"{format}\": valid values: json | arrow | csv (parquet with WP-09)"),
+        )
+        .with_version(dv()));
+    }
+    let q = lanka_core::frame::FrameQuery {
+        indicators: split_list(p.indicators.as_deref()),
+        level,
+        scheme: p.scheme.filter(|s| !s.is_empty()),
+        parent: p.parent.filter(|s| !s.is_empty()),
+        periods: split_list(p.periods.as_deref()),
+        from: p.from.filter(|s| !s.is_empty()),
+        to: p.to.filter(|s| !s.is_empty()),
+        dims: p.dims.filter(|s| !s.is_empty()),
+        pin: lanka_core::frame::FramePin {
+            release,
+            dsvs: split_list(p.dsv.as_deref()),
+        },
+    };
+    let pinned = !q.pin.is_current();
+    let cache = if pinned { CACHE_PINNED } else { CACHE_FLOATING };
+    // Current release: the dsv set is known from the snapshot, so a
+    // revalidation is answered without touching Postgres.
+    if !pinned {
+        let ds: Vec<&str> = q
+            .indicators
+            .iter()
+            .filter_map(|i| cat.indicators.get(i).map(|x| x.dataset_id.as_str()))
+            .collect();
+        let etag = etag_of(uri, &cat.meta_for(with_boundaries(&cat, ds), Vec::new()));
+        if let Some(r) = not_modified(headers, &etag, cache) {
+            return Ok(r);
+        }
+    }
+    let f = lanka_core::frame::frame(&st.pool, &cat, &q)
+        .await
+        .map_err(|e| ApiError::from(e).with_version(dv()))?;
+    let mut meta = cat.meta_for(
+        with_boundaries(&cat, f.versions.iter().map(|v| v.dataset.as_str())),
+        Vec::new(),
+    );
+    if pinned {
+        meta.data_version.clone_from(&f.data_version);
+        for v in &f.versions {
+            if let Some(m) = meta
+                .dataset_versions
+                .iter_mut()
+                .find(|m| m.dataset == v.dataset)
+            {
+                *m = v.clone();
+            }
+        }
+    }
+    match format {
+        "arrow" | "csv" => {
+            let etag = etag_of(uri, &meta);
+            if let Some(r) = not_modified(headers, &etag, cache) {
+                return Ok(r);
+            }
+            let (body, ctype) = if format == "arrow" {
+                let b = frame_codec::arrow(&f, &meta).map_err(|e| {
+                    tracing::error!(error = %e, "arrow encode");
+                    ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "internal error")
+                })?;
+                (b, frame_codec::ARROW_STREAM)
+            } else {
+                (frame_codec::csv(&f).into_bytes(), "text/csv; charset=utf-8")
+            };
+            let mut res = body.into_response();
+            let h = res.headers_mut();
+            h.insert(header::CONTENT_TYPE, HeaderValue::from_static(ctype));
+            if let Some(v) = meta
+                .data_version
+                .as_deref()
+                .and_then(|v| HeaderValue::from_str(v).ok())
+            {
+                h.insert("x-data-version", v);
+            }
+            let versions: Vec<String> = meta
+                .dataset_versions
+                .iter()
+                .map(|d| format!("{}={}", d.dataset, d.dsv))
+                .collect();
+            if let Ok(v) = HeaderValue::from_str(&versions.join(",")) {
+                h.insert("x-dataset-versions", v);
+            }
+            with_cache(res, &etag, cache)
+        }
+        _ => respond_cached(headers, uri, f, meta, cache),
+    }
+}
+
+/// A frame: values of up to 8 indicators on one admin level, across periods and dims, as one code array
+/// plus one value array per (indicator, dims, period) — for MapLibre `feature-state` joins (10 §3.1).
+/// `codes` are every unit of the reference boundary set at the level (under `parent`); `null` = no value.
+/// `format=arrow` returns the same table as an Arrow IPC stream (Float64 values), `format=csv` a CSV.
+/// Limits: 64 columns, 64 periods per indicator, codes × columns ≤ 500,000.
+#[utoipa::path(get, path = "/v2/frame", tag = "indicators", params(FrameParams),
+    responses((status = 200, description = "Frame (JSON envelope; Arrow IPC stream with `format=arrow`; CSV with `format=csv`)",
+               content((Envelope<lanka_core::frame::Frame> = "application/json"),
+                       (Vec<u8> = "application/vnd.apache.arrow.stream"), (String = "text/csv"))),
+              (status = 304, description = "Not modified (ETag tied to the release and dataset versions)"),
+              (status = 400, body = ErrorBody), (status = 404, body = ErrorBody)))]
+async fn frame(
+    State(st): State<AppState>,
+    Query(p): Query<FrameParams>,
+    headers: HeaderMap,
+    uri: Uri,
+) -> ApiResult {
+    frame_response(&st, None, p, &headers, &uri).await
+}
+
+/// A frame pinned to a release (`data_version`): the values that release served, cacheable for a day.
+#[utoipa::path(get, path = "/v2/r/{data_version}/frame", tag = "indicators",
+    params(("data_version" = String, Path, description = "Release id, e.g. 20261122.1"), FrameParams),
+    responses((status = 200, description = "Frame at that release",
+               content((Envelope<lanka_core::frame::Frame> = "application/json"),
+                       (Vec<u8> = "application/vnd.apache.arrow.stream"), (String = "text/csv"))),
+              (status = 304, description = "Not modified"),
+              (status = 400, body = ErrorBody), (status = 404, body = ErrorBody)))]
+async fn frame_release(
+    State(st): State<AppState>,
+    Path(data_version): Path<String>,
+    Query(p): Query<FrameParams>,
+    headers: HeaderMap,
+    uri: Uri,
+) -> ApiResult {
+    let valid = data_version.split_once('.').is_some_and(|(d, n)| {
+        d.len() == 8
+            && d.bytes().all(|b| b.is_ascii_digit())
+            && !n.is_empty()
+            && n.bytes().all(|b| b.is_ascii_digit())
+    });
+    if !valid {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "data_version must be YYYYMMDD.N",
+        ));
+    }
+    frame_response(&st, Some(data_version), p, &headers, &uri).await
+}
+
 /// Row-level provenance of one observation: artifact sha256, locator, verbatim value, review.
 #[utoipa::path(get, path = "/v2/observations/{id}/provenance", tag = "provenance",
     params(("id" = i64, Path, description = "Observation id")),
@@ -775,6 +1016,8 @@ pub fn router(state: AppState) -> Router {
         .route("/v2/areas/{pcode}", get(area))
         .route("/v2/indicators/{id}/series", get(series))
         .route("/v2/indicators/{id}/map", get(indicator_map))
+        .route("/v2/frame", get(frame))
+        .route("/v2/r/{data_version}/frame", get(frame_release))
         .route("/v2/observations/{id}/provenance", get(provenance))
         .route("/v2/reverse", get(reverse))
         .route("/v2/openapi.json", get(openapi_json))
@@ -908,6 +1151,8 @@ mod tests {
             "/v2/areas/{pcode}",
             "/v2/indicators/{id}/series",
             "/v2/indicators/{id}/map",
+            "/v2/frame",
+            "/v2/r/{data_version}/frame",
             "/v2/observations/{id}/provenance",
             "/v2/reverse",
         ] {
@@ -928,6 +1173,26 @@ mod tests {
         let (status, v) = get("/v2/status").await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(v["payload"]["overall"], "failing");
+    }
+
+    #[tokio::test]
+    async fn frame_validates_before_any_query() {
+        for (uri, needle) in [
+            ("/v2/frame?indicators=a.b", "level is required"),
+            (
+                "/v2/frame?indicators=a.b&level=x",
+                "level must be an integer",
+            ),
+            ("/v2/frame?indicators=a.b&level=2&format=xml", "format"),
+            ("/v2/r/latest/frame?indicators=a.b&level=2", "YYYYMMDD.N"),
+        ] {
+            let (status, v) = get(uri).await;
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{uri}");
+            assert!(
+                v["message"].as_str().is_some_and(|m| m.contains(needle)),
+                "{uri}: {v}"
+            );
+        }
     }
 
     #[tokio::test]

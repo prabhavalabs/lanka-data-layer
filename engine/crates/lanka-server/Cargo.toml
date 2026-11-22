@@ -9,6 +9,9 @@ publish.workspace = true
 
 [dependencies]
 lanka-core.workspace = true
+arrow-array.workspace = true
+arrow-schema.workspace = true
+arrow-ipc.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
 serde.workspace = true

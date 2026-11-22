@@ -24,6 +24,8 @@ use utoipa::OpenApi;
         super::area,
         super::series,
         super::indicator_map,
+        super::frame,
+        super::frame_release,
         super::provenance,
         super::reverse,
     ),
@@ -31,7 +33,7 @@ use utoipa::OpenApi;
         (name = "ops", description = "Health and status: emitted for external monitoring (no alert delivery)"),
         (name = "catalog", description = "Datasets, sources, licences, freshness"),
         (name = "areas", description = "Admin units by p-code; reverse geocoding"),
-        (name = "indicators", description = "Series and choropleth data"),
+        (name = "indicators", description = "Series, choropleth data and frames"),
         (name = "provenance", description = "Row-level lineage of every value"),
     )
 )]

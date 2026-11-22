@@ -11,7 +11,8 @@ Design: [docs/architecture-v2/](../docs/architecture-v2/README.md) (the standard
 | `lanka-core` | standard-model types — country profile, geography codes (profile-driven p-codes + `scheme:code`), periods (`freq` + `time_start`, full grammar), units/measure semantics, `basis`/`status`/method/review codes, flag registry, dims, dsv multiset hashing — plus the canonical grid (pinned to the v1 test vectors), envelope, Postgres pool + embedded migrations, catalog snapshot (surrogate-key maps) and every read query. No country literal: everything country-specific comes from `country/<id>/profile.yaml`. |
 | `lanka-store` | the blob store behind one `BlobStore` trait (`FsStore` today; S3/Garage later): content-addressed `raw/` (L0) and `extract/` (L1), immutable named objects, atomic temp + fsync + rename |
 | `lanka-ingest` | registry loader + JSON-Schema validation + sync (profile, units, codelists, connector specs, schedules), connector SDK v2 (`discover` → `extract` → `standardise`), declarative drivers (`http_json`; `registry/connectors/*.yaml`), code connectors (`dcs-census-2024`, `hdx-cod-ab-lka`), L1 Parquet extracts, layered change detection, run tracking + the event feed, validate → stage (binary COPY + set-based diff, incremental dsv, range-versioned) → gate → approve/review, the job queue (`jobs.rs`), scheduler (`scheduler.rs`), release train (`train.rs`) and `lanka worker` (`worker.rs`), the WP-01 registry migration |
-| `lanka-server` | axum `/v2/*` (data, health, status) + OpenAPI (utoipa) |
+| `lanka-mapdoc` | the `ldl-map/1` map document (WP-26): serde types (`x-*` keys preserved), validation (embedded `spec/map/1/map.schema.json` + limits/references, JSON-pointer problems), RFC 8785 canonical JSON + content hash, references (`app.map_refs`), resolution against the catalogue, the ramp/tone registry, generated TypeScript |
+| `lanka-server` | axum `/v2/*` (data, frames, health, status) + OpenAPI (utoipa) |
 | `lanka-cli` | the `lanka` binary |
 
 Toolchain: Rust 1.94+ (edition 2024; sqlx 0.9 needs 1.94). Crate versions are pinned exactly in `Cargo.toml`.
@@ -54,6 +55,10 @@ curl -s localhost:8601/v2/areas/LK11 | jq '.payload.indicators[0], .meta.dataset
 curl -s 'localhost:8601/v2/indicators/wdi.ny_gdp_mktp_cd/series?geo=LK&from=2020'
 curl -s 'localhost:8601/v2/indicators/wdi.series/series?geo=LK&dims=series_code=SP.POP.TOTL'
 curl -s 'localhost:8601/v2/indicators/census24.pop_total/map?level=3&parent=LK1&dims=sex:total'
+curl -s 'localhost:8601/v2/frame?indicators=census24.pop_total,census24.sex_ratio&level=3&dims=sex=total'
+curl -s 'localhost:8601/v2/frame?indicators=census24.pop_total&level=2&format=arrow' -o frame.arrow
+curl -s 'localhost:8601/v2/r/20261122.1/frame?indicators=wdi.ny_gdp_mktp_cd&level=0&from=2015&to=2023'
+lanka map validate my-map.json && lanka map resolve my-map.json
 curl -s localhost:8601/v2/observations/<obs_id>/provenance
 curl -s 'localhost:8601/v2/reverse?lat=6.9344&lon=79.8428'
 curl -s localhost:8601/v2/openapi.json
@@ -155,6 +160,27 @@ source row hash identically, so the incremental dsv equals a full recomputation 
 property test checks this after every release). A source that itself publishes a "revised" flag maps it
 to a flag or note, not to this status. No existing dsv changed (the four foundation versions hold no
 `revised` rows).
+
+### Decision note: returning to earlier content (A → B → A, migration 0008)
+
+*Context.* The dsv is path-independent (05 §3), so a delivery that restores the content of an older,
+superseded version has that version's dsv. Staging found the old row by dsv and returned `unchanged`:
+the restored content was never published and B stayed current.
+
+*Decision.* A dsv names **content**, not a version row. Migration `0008_version_reinstatement.sql`
+drops `UNIQUE (dsv)` (plain index + a partial unique index over open versions: two rows with one
+dsv are never both staged/in review/approved). Staging is blocked only by an *open* or *withdrawn*
+version with the same content; a superseded one is not: the delivery stages a new version (new seq)
+whose rows reinstate A's values against B (`vfrom = seq`, B's rows closed at release, `revised`
+derived as usual), with A's dsv. The old version row and every release that pinned it are untouched,
+so history and `as_of` stay reconstructable. `lanka review approve <dsv>` addresses the open row;
+boundary versions (`geo_load`) reuse only open/rejected rows. Readers that resolve a dsv to rows
+(`/v2/frame?dsv=`) take the latest released seq — the rows are identical.
+
+*Test.* The range-version property test now draws half its histories from a pool of 2–3 contents
+(A → B → A, A → B → C → A …) and checks: same content ⇒ same dsv, a revisit is `published` as a new
+version row, current rows = delivered content, every released seq and every release pin reconstructs.
+It fails on the old code.
 
 ### Observation indexes (migration 0003)
 
@@ -294,6 +320,89 @@ docker compose -f infra/v2/docker-compose.yml --env-file infra/v2/.env up -d --b
 | `LANKA_LOG_JSON` | false | JSON log lines |
 | `RUST_LOG` | `info,sqlx=warn` | tracing filter |
 
+## Map documents and frames (WP-26)
+
+Design: [10 §2–§3.1](../docs/architecture-v2/10-map-composition.md), [ADR 0018](../docs/architecture-v2/adr/0018-map-document-spec.md),
+[ADR 0019](../docs/architecture-v2/adr/0019-frames-value-tiles-columnar-features.md), [ui-contract-explore.md](../docs/architecture-v2/ui-contract-explore.md).
+
+- **Spec** `spec/map/1/` (CC BY 4.0): `map.schema.json` (normative, draft 2020-12), `ramps.json` (ramps and
+  `ldl.tone.*` tones, light/dark variants), `index.d.ts` + `package.json` (`@lanka-data-layer/map-spec`,
+  generated by `lanka map types`). `lanka-mapdoc/schema/` holds byte-identical copies (the image builds from
+  `engine/` only); a test fails when they drift, another when `index.d.ts` is stale.
+- **Validation** (`lanka map validate <file>…`, exit 1 on problems): schema first, then what it cannot say —
+  32 layers / 8 groups / depth 3 / 16 sources / 6 analyses / 256 KB canonical JSON / 100 KB inline GeoJSON,
+  unique node ids, every layer/analysis/panel reference, layer type ↔ source kind (10 §2.5), CQL2 arity,
+  breaks ascending and matching `classes`, ramp names and kinds, tones, categorical `mapping` values
+  (colours for colour channels, numbers for width/size), zoom/bbox/time order. Every problem is
+  `{path: <JSON pointer>, code, message}`. Fixtures: the 10 §7 example and the web-v2 starter maps
+  validate; 39 negative fixtures fail at their pointer; `x-*` keys at every level survive parse → serialise.
+- **Canonical JSON** is RFC 8785 (UTF-16 key order, ECMAScript numbers); the content hash leaves out `id`,
+  `meta.updated_at` and `null` members (null ≡ absent); `lanka map hash` prints `ms_<16 hex>`.
+- **Resolution** (`lanka_mapdoc::resolve`, `lanka map resolve [--freeze]`; the HTTP routes are WP-28's):
+  per source the dataset versions read (document `pin` release, `{dsv}`, or latest), the frame URL
+  (`/v2/r/<release>/frame?…` when pinned, `dsv=` for exact versions, `from/to` = `time.range` for
+  time-bound sources, one URL per level for `byZoom`), the admin tileset join (`/v2/tiles/admin/…`, built by
+  WP-04), class/basis, attribution (every active source behind every dataset read, plus external hosts),
+  notices and problems. Not served yet → `shape: "unavailable"` + `NOT_SERVED` (features, grids: WP-27;
+  analyses: WP-29). Workspace ids → `access: "denied"` + `PRIVATE_DATA`.
+- **Frames** `GET /v2/frame` and `GET /v2/r/{data_version}/frame` (`lanka_core::frame`): `indicators` (≤ 8),
+  `level`, `parent`, `periods` | `from`/`to` (default: the latest at the level, per indicator), `dims`
+  (`[<indicator>:]<pairs>` entries joined by `|`; an entry selects the combinations containing its pairs;
+  unscoped entries apply to indicators that have those dimensions; default all), `dsv` (exact versions),
+  `format=json|arrow|csv`. `codes` = every unit of the reference boundary set at the level (sorted), so
+  arrays line up with the tileset; `null` = no value. Columns ordered (indicator, dims, period), ids
+  `c0…`; `basis`/`status` scalar when uniform, else 05 §2 codes; `lo`/`hi`/`flags` null when absent;
+  `stats` = n, min, max, mean, p0/5/25/50/75/95/100 (R type 7). Limits: 64 columns, 64 periods per
+  indicator, codes × columns ≤ 500,000 (400 with the reason). Reads: one indexed range read per indicator
+  (current release on the partial `_map` index; pinned on `vfrom ≤ seq ≤ vto`).
+- **Caching**: `ETag = "<data_version>-<hash(path, query, dsvs)>"`; for current-release frames the ETag is
+  computed from the catalogue snapshot and `If-None-Match` is answered 304 **before** any query.
+  `Cache-Control`: 300 s + SWR 1 d floating; 1 d + SWR 7 d pinned (not `immutable` while boundary geometry
+  is updated in place, WP-10). Arrow/CSV carry `X-Data-Version` and `X-Dataset-Versions`; Arrow schema
+  metadata carries `ldl:frame` (support) and `ldl:meta` (the full envelope meta, so attribution travels).
+
+Measured on the local release (release build, laptop, curl, 200 requests; 2026-11-22, release 20261121.4):
+
+| Request | Bytes (raw / gzip) | p50 | p99 |
+|---|---|---|---|
+| census pop_total ADM3 (339 codes × 1 col) | — | 5.0 ms | 10.2 ms |
+| census pop_total + pop_by_religion ADM3 (339 × 7), JSON | 22,990 / 8,109 | 7.7 ms | 10.0 ms |
+| same, Arrow (Float64) / CSV | 29,064 / 10,588 · 13,179 | 7.6 ms | 11.8 ms |
+| census pop_total ADM2, 3 sex columns | — | 2.8 ms | 3.8 ms |
+| `/v2/indicators/census24.pop_total/map` ADM3 (for comparison) | — | 2.7 ms | 3.4 ms |
+| `/v2/r/20261121.4/frame` WDI GDP national 2015–2023 (9 cols, pinned) | — | 3.5 ms | 4.0 ms |
+| `If-None-Match` revalidation (304, no query) | 0 | 0.31 ms | — |
+
+`/v2/frame` equals `/v2/indicators/census24.pop_total/map` at ADM2 (25/25) and ADM3 (339/339), and the Arrow
+form equals the JSON bit for bit (2,373 cells). The ADM4 island-wide target of 10 §3.1 (p50 25 ms) is not
+measurable yet: no indicator is loaded at ADM4 (census is ADM2/ADM3, WDI national).
+
+### Decision note: WP-26 spec decisions and deviations
+
+- *Client extensions of web-v2* (`web-v2/src/lib/map-spec.ts`). **Promoted into `/1`**: `blend: "overlay"`
+  (the reference renderer draws every layer MapLibre-native with custom-layer blending and has the backdrop
+  pass; a renderer without one draws it as `normal` and says so); named tones `ldl.tone.<name>` as colours
+  (registry in `ramps.json`; unknown tones are errors); basemap `ldl-auto` (follow the viewer's scheme);
+  `features.time: {field, match}` (was `x-time`); numeric categorical mappings (width/size by category) and
+  `scale.range` (output px); `clamp` with open (`null`) ends. **Kept client-only** (`x-*`, preserved,
+  ignored by other readers): `x-relief` (raster shaded by the DEM), `x-casing` (stroke casing), `x-coast`
+  (basemap coastline), `x-data` / `x-partial` / `x-moran` / `x-spearman` (mock analysis payloads).
+- *Semantics fixed while validating real documents*: a period bound to the time cursor in a document
+  without `time` shows the latest period (web presets do this); layer `opacity` is optional (default 1;
+  10 §7's label layer has none); saved-map ids are `m_[0-9a-z_]{1,40}`.
+- *Registry changes*: `ldl.div.blue-orange` (dark) centre `#333b45` → `#2b3038` — the old centre was within
+  1.7 L* of its neighbour under deuteranopia. The CVD test: monotonic L* with steps ≥ 2 for normal, protan
+  and deutan; order only under tritan (ColorBrewer YlOrRd has a 1.3 L* tritan step).
+- *Frames*: values are **Float64** in Arrow (10 §3.1 says Float32) so JSON and Arrow carry identical values
+  (WDI GDP needs > 24 bits); codes/basis/status not dictionary-encoded yet. `support.unmatched` counts rows
+  at the level whose unit is not in the boundary set. `format=parquet` → 400 (WP-09). Only the admin scheme.
+- *Contract additions* (ui-contract-explore.md §4 to update): `shape: "unavailable"`, problem `NOT_SERVED`,
+  notice `LICENCE_UNCLEAR` (census licence is `permission_unclear`), `ResolvedSource.versions[]`,
+  `shape: "frame"` gains `by_zoom[]`.
+- *Rendering*: web-v2 found every layer type works MapLibre-native with custom layers for blending (no
+  deck.gl). Server outputs are unaffected (frames, value tiles and columnar points are renderer-neutral);
+  ADR 0020 and 10 §4 should be revised by the doc owner.
+
 ## Tests and checks
 
 ```bash
@@ -303,8 +412,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 
 # + the Postgres tests (create and drop throwaway databases): full cycle on a
-#   synthetic country profile, 0001 → 0002 migration parity, and WP-03 operations (roles,
-#   approval → train, job queue crash/retry/cancel, scheduler, worker --once, status, event order):
+#   synthetic country profile, 0001 → 0002 migration parity, WP-03 operations (roles,
+#   approval → train, job queue crash/retry/cancel, scheduler, worker --once, status, event order)
+#   and WP-26 frames (frame = map endpoint, periods × dims, release/dsv pins, A → B → A, limits):
 LANKA_TEST_DATABASE_URL=postgres://lanka:<password>@127.0.0.1:55432/postgres cargo test --workspace
 #   (+ the range-version property test and the 1 M-row staging test; the < 10 s budget is
 #   asserted in release builds: add --release)
