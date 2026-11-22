@@ -1,0 +1,897 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@import "@fontsource-variable/geist/wght.css";
+@import "@fontsource-variable/geist-mono/wght.css";
+@import "@fontsource/noto-sans-sinhala/sinhala-400.css";
+@import "@fontsource/noto-sans-sinhala/sinhala-600.css";
+@import "@fontsource/noto-sans-tamil/tamil-400.css";
+@import "@fontsource/noto-sans-tamil/tamil-600.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ------------------------------------------------------------------
+   Lanka Data Layer v2 — "survey instrument" design language.
+   Dark shell is the brand default (hero, explorer); the light "sheet"
+   theme is for reading pages. One accent (rose) for selection and links
+   only — never for data. Data colours live in src/lib/palettes.ts.
+   ------------------------------------------------------------------ */
+:root,
+:root.dark {
+  color-scheme: dark;
+  --bg: #0b0e12;
+  --bg2: #0e1217;
+  --bg3: #131922;
+  --bg4: #182029;
+  --line: #1c232c;
+  --line2: #29323d;
+  --ink: #e8edf2;
+  --ink2: #9aa7b4;
+  --ink3: #6b7885;
+  --brand: #d8446b;
+  --brand-ink: #f0668a;
+  --brand-soft: rgba(216, 68, 107, 0.13);
+  --on-brand: #ffffff;
+  --ok: #46c263;
+  --warn: #e8a33d;
+  --bad: #f0694a;
+  --ok-soft: rgba(70, 194, 99, 0.13);
+  --warn-soft: rgba(232, 163, 61, 0.13);
+  --bad-soft: rgba(240, 105, 74, 0.13);
+  --glass: rgba(13, 17, 22, 0.62);
+  --glass-line: rgba(255, 255, 255, 0.08);
+  --glass-hi: rgba(255, 255, 255, 0.06);
+  --scrim: rgba(4, 6, 9, 0.6);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -6px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 28px 64px -16px rgba(0, 0, 0, 0.7), 0 6px 18px rgba(0, 0, 0, 0.35);
+  --grid-line: rgba(255, 255, 255, 0.045);
+  --chart-grid: rgba(255, 255, 255, 0.07);
+  --chart-axis: #56626e;
+
+  /* hero scene, as CSS: the horizon haze the backdrop paints before the 3D island does (and behind the
+     poster when there is no WebGL). Mirrors sky.horizon in src/features/hero/sceneTheme.ts; keep the two in step. */
+  --hero-haze: #18364f;
+
+  /* code panels (light overrides in :root.light) */
+  --code-bg: #090c10;
+  --code-line: #1a2029;
+  --code-ink: #dfe6ed;
+  --code-ink2: #8d9aa7;
+  --code-ink3: #5b6875;
+  --tok-key: #8ab4f8;
+  --tok-str: #6bd9a5;
+  --tok-num: #f0b15c;
+  --tok-kw: #f0668a;
+  --tok-com: #5b6875;
+}
+
+:root.light {
+  color-scheme: light;
+  --bg: #fbfbfa;
+  --bg2: #ffffff;
+  --bg3: #f3f4f3;
+  --bg4: #e9ebea;
+  --line: #e6e8e7;
+  --line2: #d3d7d6;
+  --ink: #14181c;
+  --ink2: #515c66;
+  --ink3: #7d8891;
+  --brand: #c22f5a;
+  --brand-ink: #b02550;
+  --brand-soft: rgba(194, 47, 90, 0.08);
+  --on-brand: #ffffff;
+  --ok: #18803a;
+  --warn: #a8610a;
+  --bad: #c2401f;
+  --ok-soft: rgba(24, 128, 58, 0.09);
+  --warn-soft: rgba(168, 97, 10, 0.1);
+  --bad-soft: rgba(194, 64, 31, 0.09);
+  --glass: rgba(251, 251, 250, 0.72);
+  --glass-line: rgba(20, 24, 28, 0.09);
+  --glass-hi: rgba(255, 255, 255, 0.7);
+  --scrim: rgba(20, 24, 28, 0.32);
+  --shadow-sm: 0 1px 2px rgba(20, 24, 28, 0.06);
+  --shadow-md: 0 8px 24px -8px rgba(20, 24, 28, 0.14), 0 2px 6px rgba(20, 24, 28, 0.05);
+  --shadow-lg: 0 28px 64px -18px rgba(20, 24, 28, 0.24), 0 6px 18px rgba(20, 24, 28, 0.07);
+  --grid-line: rgba(20, 24, 28, 0.05);
+  --chart-grid: rgba(20, 24, 28, 0.08);
+  --chart-axis: #98a2ab;
+
+  --hero-haze: #cfe4f4;
+
+  /* code panels follow the theme */
+  --code-bg: #f5f6f5;
+  --code-line: #e3e6e5;
+  --code-ink: #1c2329;
+  --code-ink2: #4f5b66;
+  --code-ink3: #8a949c;
+  --tok-key: #1f5fbf;
+  --tok-str: #12784a;
+  --tok-num: #a35a00;
+  --tok-kw: #c22f5a;
+  --tok-com: #8a949c;
+}
+
+:root {
+  --font-sans: "Geist Variable", "Noto Sans Sinhala", "Noto Sans Tamil", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 0.625rem;
+
+  /* motion tokens (emil-design-eng / animate skill tables) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-press: 140ms;
+  --dur-fast: 180ms;
+  --dur-base: 240ms;
+  --dur-slow: 420ms;
+
+  --nav-h: 56px;
+
+  /* shadcn semantic mapping */
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --card: var(--bg2);
+  --card-foreground: var(--ink);
+  --popover: var(--bg2);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: var(--on-brand);
+  --secondary: var(--bg3);
+  --secondary-foreground: var(--ink);
+  --muted: var(--bg3);
+  --muted-foreground: var(--ink2);
+  --accent: var(--bg4);
+  --accent-foreground: var(--ink);
+  --destructive: var(--bad);
+  --border: var(--line);
+  --input: var(--line2);
+  --ring: var(--brand);
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg2);
+  --color-bg3: var(--bg3);
+  --color-bg4: var(--bg4);
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad-soft: var(--bad-soft);
+  --color-glass: var(--glass);
+  --color-glass-line: var(--glass-line);
+  --color-code-bg: var(--code-bg);
+  --color-code-line: var(--code-line);
+  --color-code-ink: var(--code-ink);
+  --color-code-ink2: var(--code-ink2);
+  --color-code-ink3: var(--code-ink3);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+
+  --shadow-soft: var(--shadow-md);
+  --shadow-lift: var(--shadow-lg);
+
+  --ease-out-strong: var(--ease-out);
+  --ease-in-out-strong: var(--ease-in-out);
+  --ease-drawer: var(--ease-drawer);
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-padding-top: calc(var(--nav-h) + 24px);
+    background: var(--bg);
+  }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.55;
+    font-feature-settings: "ss01", "cv11";
+    min-height: 100svh;
+    overflow-x: clip;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--brand) 38%, transparent);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button,
+  a,
+  [role="button"],
+  [role="tab"],
+  label {
+    touch-action: manipulation;
+  }
+  button,
+  [role="button"],
+  [role="tab"] {
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: pointer;
+  }
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  @media (pointer: fine) {
+    input,
+    textarea,
+    select {
+      font-size: inherit;
+    }
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  p {
+    text-wrap: pretty;
+  }
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+  }
+  :lang(si) {
+    font-family: "Noto Sans Sinhala", var(--font-sans);
+    line-height: 1.5;
+  }
+  :lang(ta) {
+    font-family: "Noto Sans Tamil", var(--font-sans);
+    line-height: 1.5;
+  }
+}
+
+/* ---------------- type scale (size-specific tracking) ---------------- */
+@utility t-display {
+  font-size: clamp(2.5rem, 1.4rem + 4.6vw, 4.75rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  font-weight: 600;
+}
+@utility t-h1 {
+  font-size: clamp(2rem, 1.3rem + 2.6vw, 3.25rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+@utility t-h2 {
+  font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+@utility t-h3 {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+  font-weight: 600;
+}
+@utility t-lead {
+  font-size: clamp(1.02rem, 0.95rem + 0.35vw, 1.2rem);
+  line-height: 1.5;
+  letter-spacing: -0.008em;
+  color: var(--ink2);
+}
+@utility t-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  color: var(--ink3);
+}
+@utility t-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum", "ss01";
+}
+
+/* ---------------- surfaces ---------------- */
+@utility glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--glass-line);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow-md);
+}
+@utility surface {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+}
+@utility hairline-grid {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+/* graticule tick marks at the corners of a framed block */
+@utility ticks {
+  position: relative;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    pointer-events: none;
+    border-color: var(--ink3);
+    opacity: 0.7;
+  }
+  &::before {
+    top: -1px;
+    left: -1px;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+  &::after {
+    bottom: -1px;
+    right: -1px;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+  }
+}
+
+/* press feedback — every pressable gets it */
+@utility pressable {
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease,
+    opacity var(--dur-fast) ease;
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* link underline that draws from the left on hover (fine pointers only) */
+@utility link-draw {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--dur-base) var(--ease-out);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-size: 100% 1px;
+    }
+  }
+}
+
+/* ---------------- scroll reveal ---------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 620ms var(--ease-out),
+    transform 620ms var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 60ms);
+  will-change: opacity, transform;
+}
+.reveal[data-in="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------------- footer skyline ---------------- */
+.skyline {
+  color: color-mix(in oklab, var(--ink3) 78%, transparent);
+}
+.skyline svg {
+  stroke-width: 1.35;
+}
+.skyline-grid {
+  opacity: 0.38;
+  stroke-width: 1;
+}
+.skyline-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 3200ms var(--ease-in-out);
+}
+.skyline-part {
+  opacity: 0;
+  transition: opacity 700ms var(--ease-out) var(--d, 0ms);
+}
+.skyline-detail {
+  opacity: 0.8;
+  stroke-width: 1.05;
+}
+.skyline-faint {
+  opacity: 0.5;
+  stroke-width: 1;
+}
+.skyline-point {
+  fill: currentColor;
+  stroke: none;
+}
+.skyline-point-accent {
+  fill: var(--brand);
+  stroke: none;
+}
+.skyline-halo {
+  stroke: var(--brand);
+  stroke-width: 1;
+  opacity: 0.45;
+}
+.skyline-label text {
+  fill: var(--ink3);
+  stroke: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.skyline-label .skyline-lat {
+  opacity: 0.62;
+  letter-spacing: 0.02em;
+}
+.skyline[data-in="true"] .skyline-line {
+  stroke-dashoffset: 0;
+}
+.skyline[data-in="true"] .skyline-part {
+  opacity: 1;
+}
+@media (max-width: 639px) {
+  .skyline svg {
+    stroke-width: 2;
+  }
+  .skyline-detail,
+  .skyline-faint,
+  .skyline-grid {
+    stroke-width: 1.6;
+  }
+}
+
+/* ---------------- hero loader: glass cube on a turntable ---------------- */
+.hero-loader {
+  --s: 56px;
+  --stage: 132px;
+  position: absolute;
+  top: 73%;
+  left: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  /* exit: the cube opens out into the scene it was standing in for */
+  transition:
+    opacity 480ms var(--ease-out),
+    transform 720ms var(--ease-out),
+    filter 480ms var(--ease-out);
+  animation: hero-loader-in 520ms var(--ease-out) 100ms backwards;
+}
+@media (min-width: 1024px) {
+  .hero-loader {
+    --s: 76px;
+    --stage: 176px;
+    top: 51%;
+    left: 69%;
+  }
+}
+.hero-loader.is-done {
+  opacity: 0;
+  transform: scale(1.22);
+  filter: blur(5px);
+}
+.hero-loader-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--stage);
+  height: var(--stage);
+  perspective: 620px;
+  transform-style: preserve-3d;
+  animation: hero-float 3.6s ease-in-out infinite alternate;
+}
+.hero-loader-glow {
+  position: absolute;
+  inset: -34%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in oklab, var(--brand) 30%, transparent), transparent 72%);
+  transform: translateZ(-120px);
+}
+.hero-loader-shadow {
+  position: absolute;
+  width: calc(var(--s) * 1.9);
+  height: calc(var(--s) * 1.9);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.42), transparent 78%);
+  transform: translateY(calc(var(--s) * 0.92)) rotateX(68deg);
+}
+.light .hero-loader-shadow {
+  background: radial-gradient(closest-side, rgb(20 24 28 / 0.2), transparent 78%);
+}
+.hero-cube {
+  position: relative;
+  width: var(--s);
+  height: var(--s);
+  transform-style: preserve-3d;
+  animation: hero-cube-spin 5.2s linear infinite;
+}
+.hero-cube-face {
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in oklab, var(--ink) 52%, transparent);
+  background: linear-gradient(135deg, color-mix(in oklab, var(--brand) 20%, transparent), color-mix(in oklab, var(--ink) 4%, transparent) 64%);
+  box-shadow: inset 0 0 calc(var(--s) * 0.32) color-mix(in oklab, var(--brand) 18%, transparent);
+}
+.hero-cube-face.is-front {
+  transform: translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-back {
+  transform: rotateY(180deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-right {
+  transform: rotateY(90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-left {
+  transform: rotateY(-90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-top {
+  transform: rotateX(90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-face.is-bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--s) / 2));
+}
+.hero-cube-core {
+  --s: 24px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--s);
+  height: var(--s);
+  margin: calc(var(--s) / -2);
+  transform-style: preserve-3d;
+  animation: hero-core-spin 3.1s linear infinite;
+}
+.hero-cube-core .hero-cube-face {
+  border-color: color-mix(in oklab, var(--brand-ink) 90%, white);
+  background: color-mix(in oklab, var(--brand) 62%, transparent);
+  box-shadow: 0 0 16px color-mix(in oklab, var(--brand) 70%, transparent);
+}
+.hero-cube-orbit {
+  position: absolute;
+  inset: 6%;
+  border: 1px dashed color-mix(in oklab, var(--ink) 26%, transparent);
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  animation: hero-orbit 7s linear infinite;
+}
+.hero-cube-orbit > span {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--brand-ink);
+  box-shadow: 0 0 10px 1px var(--brand);
+}
+.hero-loader-readout {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink3);
+  white-space: nowrap;
+}
+.hero-loader-label {
+  color: var(--ink2);
+}
+.hero-loader-track {
+  position: relative;
+  width: 148px;
+  height: 1px;
+  margin-top: 10px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--ink3) 34%, transparent);
+}
+.hero-loader-track > span {
+  position: absolute;
+  inset: 0;
+  background: var(--brand-ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms linear;
+}
+@keyframes hero-loader-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+@keyframes hero-cube-spin {
+  from {
+    transform: rotateX(-22deg) rotateY(-45deg);
+  }
+  to {
+    transform: rotateX(-22deg) rotateY(315deg);
+  }
+}
+@keyframes hero-core-spin {
+  from {
+    transform: rotateX(0deg) rotateY(0deg);
+  }
+  to {
+    transform: rotateX(360deg) rotateY(-360deg);
+  }
+}
+@keyframes hero-orbit {
+  from {
+    transform: rotateX(68deg) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(68deg) rotateZ(360deg);
+  }
+}
+@keyframes hero-float {
+  from {
+    transform: translateY(-3px);
+  }
+  to {
+    transform: translateY(4px);
+  }
+}
+
+/* ---------------- drawers / overlays ---------------- */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sheet-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes sheet-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes sheet-in-bottom {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes sheet-out-bottom {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 37%, var(--bg3) 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* thin scrollbars inside panels: invisible until the panel is hovered or focused */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  overscroll-behavior: contain;
+  transition: scrollbar-color 0.2s ease-out;
+}
+.scroll-thin:hover,
+.scroll-thin:focus-within {
+  scrollbar-color: var(--line2) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 999px;
+}
+.scroll-thin:hover::-webkit-scrollbar-thumb,
+.scroll-thin:focus-within::-webkit-scrollbar-thumb {
+  background: var(--line2);
+}
+
+/* MapLibre chrome re-skinned */
+.maplibregl-map {
+  font-family: var(--font-sans);
+}
+.maplibregl-ctrl-attrib {
+  background: transparent !important;
+  color: var(--ink3);
+  font-size: 10px;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--ink3);
+}
+.maplibregl-ctrl-group {
+  background: var(--glass) !important;
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-md) !important;
+  border-radius: 10px !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--glass-line) !important;
+}
+.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) brightness(0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    transform: none;
+    transition: opacity 240ms ease;
+    transition-delay: 0ms;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .pressable:active {
+    transform: none;
+  }
+  /* hero loader: nothing spins, the cube rests at its three-quarter view and simply fades */
+  .hero-cube,
+  .hero-cube-core,
+  .hero-cube-orbit,
+  .hero-loader-stage,
+  .hero-loader {
+    animation: none;
+  }
+  .hero-cube {
+    transform: rotateX(-22deg) rotateY(-45deg);
+  }
+  .hero-cube-core {
+    transform: rotateX(18deg) rotateY(30deg);
+  }
+  .hero-cube-orbit {
+    transform: rotateX(68deg);
+  }
+  .hero-loader.is-done {
+    transform: none;
+    filter: none;
+  }
+  /* skyline: no pen travel, the finished drawing simply fades in */
+  .skyline-line {
+    stroke-dashoffset: 0;
+    opacity: 0;
+    transition: opacity 400ms ease;
+  }
+  .skyline[data-in="true"] .skyline-line {
+    opacity: 1;
+  }
+  .skyline-part {
+    transition: opacity 400ms ease;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--bg2);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  :root {
+    --line: var(--line2);
+  }
+  .glass {
+    background: var(--bg2);
+    border-color: var(--ink3);
+  }
+}
+
+@keyframes prov-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}

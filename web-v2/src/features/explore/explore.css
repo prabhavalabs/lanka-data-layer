@@ -1,0 +1,49 @@
+/* The area drawer's motion. Only transform and opacity are animated. */
+@keyframes explore-drawer-in {
+  from {
+    transform: translateX(calc(100% + 24px));
+  }
+}
+@keyframes explore-drawer-out {
+  to {
+    transform: translateX(calc(100% + 24px));
+  }
+}
+@keyframes explore-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes explore-sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes explore-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+.explore-drawer[data-state='open'] {
+  animation: explore-drawer-in 380ms var(--ease-drawer);
+}
+.explore-drawer[data-state='closed'] {
+  animation: explore-drawer-out 240ms var(--ease-drawer) forwards;
+}
+.explore-sheet[data-state='open'] {
+  animation: explore-sheet-in 400ms var(--ease-drawer);
+}
+.explore-sheet[data-state='closed'] {
+  animation: explore-sheet-out 260ms var(--ease-drawer) forwards;
+}
+.explore-fade {
+  animation: explore-fade-in 200ms var(--ease-out);
+}
+/* Large mobile sheets are solid: map labels must not ghost through a surface that holds controls.
+   That also means no backdrop blur, which a dragged sheet would have to recompute over the map
+   on every frame. */
+.explore-solid {
+  background: var(--bg);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
