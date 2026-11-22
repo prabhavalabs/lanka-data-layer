@@ -185,6 +185,17 @@ pub fn package(
                 }));
                 continue;
             }
+            Shape::Values { .. }
+            | Shape::Dem { .. }
+            | Shape::Points { .. }
+            | Shape::Tiles { .. }
+            | Shape::Geojson { .. } => {
+                metadata_only.push(only(
+                    "grid and feature layers are served as tiles and columnar points; dataset downloads arrive with the exports (WP-09)"
+                        .to_owned(),
+                ));
+                continue;
+            }
             Shape::Unavailable => {
                 metadata_only.push(only(
                     "not drawable on this deployment; see resolved.problems".to_owned(),

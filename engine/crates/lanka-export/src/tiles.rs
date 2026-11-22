@@ -417,7 +417,17 @@ pub async fn build_all(
     force: bool,
 ) -> Result<Vec<Built>> {
     let plans = plans(pool, registry, profile).await?;
+    // The raster-dem tileset (WP-27) is built from the elevation grid layer,
+    // when there is one.
+    let has_dem: bool =
+        sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM geo.grid_layers WHERE id = $1)")
+            .bind(crate::dem::ELEVATION_LAYER)
+            .fetch_one(pool)
+            .await?;
     for o in only {
+        if o == crate::dem::DEM && has_dem {
+            continue;
+        }
         if !plans.iter().any(|p| &p.id == o) {
             bail!(
                 "no tileset {o:?} can be built (known: {})",
@@ -437,6 +447,13 @@ pub async fn build_all(
         let b = build(pool, store, profile, p, force)
             .await
             .with_context(|| format!("tileset {}", p.id))?;
+        tracing::info!(tileset = %b.id, sha16 = %b.sha16, bytes = b.bytes, built = b.built, "tileset");
+        out.push(b);
+    }
+    if has_dem && (only.is_empty() || only.iter().any(|o| o == crate::dem::DEM)) {
+        let b = crate::dem::build(pool, store, force)
+            .await
+            .context("tileset dem")?;
         tracing::info!(tileset = %b.id, sha16 = %b.sha16, bytes = b.bytes, built = b.built, "tileset");
         out.push(b);
     }

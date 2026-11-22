@@ -11,6 +11,7 @@ publish.workspace = true
 lanka-core.workspace = true
 lanka-store.workspace = true
 lanka-ingest.workspace = true
+lanka-grid.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
 futures.workspace = true
