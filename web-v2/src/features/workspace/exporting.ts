@@ -100,7 +100,7 @@ function drawLegend(ctx: CanvasRenderingContext2D, e: Entry, x: number, y: numbe
 }
 
 /** The visible map area with a caption block drawn in: title, legend, attribution. */
-export async function exportPng(engine: MapEngine, doc: MapDocument, entries: Entry[], crop: { left: number; top: number; right: number; bottom: number }, dark: boolean) {
+export async function exportPng(engine: MapEngine, doc: MapDocument, entries: Entry[], crop: { left: number; top: number; right: number; bottom: number }, dark: boolean, credits: string[] = ['Lanka Data Layer · sample data']) {
   await document.fonts?.ready
   const shot = await engine.snapshot()
   const box = engine.map.getContainer().getBoundingClientRect()
@@ -142,17 +142,24 @@ export async function exportPng(engine: MapEngine, doc: MapDocument, entries: En
   let cy = y + pad + 22 + 8
   for (const e of shown) cy = drawLegend(ctx, e, x + pad, cy, cw - pad * 2, ink, ink3) + 4
 
-  // attribution is part of the bitmap
-  const credit = 'Lanka Data Layer · mock data · © OpenStreetMap contributors · OpenFreeMap'
+  // attribution (and every notice of the resolved document) is part of the bitmap, wrapped to the free width
   ctx.font = `10.5px ${FONT}`
-  const tw = ctx.measureText(credit).width
+  const maxW = Math.max(180, W - cw - 14 * 3 - 16)
+  const lines: string[] = []
+  for (const part of [...credits, '© OpenStreetMap contributors · OpenFreeMap']) {
+    const last = lines[lines.length - 1]
+    if (last !== undefined && ctx.measureText(`${last} · ${part}`).width <= maxW) lines[lines.length - 1] = `${last} · ${part}`
+    else lines.push(part)
+  }
+  const tw = Math.min(maxW, Math.max(...lines.map((l) => ctx.measureText(l).width)))
+  const lh = 15, bh = lines.length * lh + 8
   ctx.fillStyle = `rgba(${r},${g},${b},0.82)`
   ctx.beginPath()
-  ctx.roundRect(W - tw - 14 - 16, H - 14 - 22, tw + 16, 22, 11)
+  ctx.roundRect(W - tw - 14 - 16, H - 14 - bh, tw + 16, bh, 10)
   ctx.fill()
   ctx.fillStyle = ink3
   ctx.textBaseline = 'middle'
-  ctx.fillText(credit, W - tw - 14 - 8, H - 14 - 11)
+  lines.forEach((l, i) => ctx.fillText(l, W - tw - 14 - 8, H - 14 - bh + 4 + lh * i + lh / 2, maxW))
 
   const blob = await new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'))
   if (blob) download(blob, `${slug(doc.title)}.png`)

@@ -22,6 +22,8 @@ const iconBtn = cn('pressable grid size-7 shrink-0 place-items-center rounded-md
 /* ---------------- one row ---------------- */
 type RowProps = {
   row: Row
+  /** drawn from the bundled sample data, not the engine */
+  sample?: boolean
   selected: boolean
   solo: boolean
   /** another node is soloed and this one is not part of it */
@@ -105,7 +107,7 @@ function RowMenu({ node, kit, onRename, onZoom }: { node: LayerNode; kit: ItemKi
 const DROPDOWN: ItemKit = { Item: DropdownMenuItem, Separator: DropdownMenuSeparator }
 const CONTEXT: ItemKit = { Item: ContextMenuItem, Separator: ContextMenuSeparator }
 
-const LayerRow = memo(function LayerRow({ row, selected, solo, muted, renaming, dragging, into, focusable, scheme, touch, onRename, onZoom }: RowProps) {
+const LayerRow = memo(function LayerRow({ row, sample, selected, solo, muted, renaming, dragging, into, focusable, scheme, touch, onRename, onZoom }: RowProps) {
   const { node, depth, hidden, lockedBy } = row
   const group = isGroup(node)
   const blend = !group && node.blend !== 'normal' ? BLEND_MODES.find((b) => b.id === node.blend)?.tag : null
@@ -169,6 +171,11 @@ const LayerRow = memo(function LayerRow({ row, selected, solo, muted, renaming, 
           )}
           {!renaming && (
             <>
+              {sample && (
+                <span title="Sample data: the engine does not serve this source" className="shrink-0 rounded-[4px] border border-dashed border-line2 px-1 font-mono text-[9px] leading-[14px] tracking-[0.04em] text-ink3">
+                  SAMPLE
+                </span>
+              )}
               {blend && <span className="shrink-0 rounded-[4px] border border-line2 px-1 font-mono text-[9px] leading-[14px] tracking-[0.04em] text-ink3">{blend}</span>}
               {node.opacity < 0.995 && <span className="t-num shrink-0 font-mono text-[10.5px] text-ink3">{Math.round(node.opacity * 100)}%</span>}
               <span className="flex shrink-0 items-center">
@@ -227,7 +234,7 @@ function LayerTree({ onAdd }: { onAdd: () => void }) {
   const layers = useWs((s) => s.doc!.layers)
   const selected = useWs((s) => s.selected)
   const solo = useWs((s) => s.solo)
-  const { scheme, engine, desktop } = useWorkspace()
+  const { scheme, engine, desktop, data } = useWorkspace()
   const rows = useMemo(() => rowsOf(layers), [layers])
   const [renaming, setRenaming] = useState<string | null>(null)
   const [drag, setDrag] = useState<{ id: string; into: string | null } | null>(null)
@@ -462,6 +469,7 @@ function LayerTree({ onAdd }: { onAdd: () => void }) {
         <LayerRow
           key={row.node.id}
           row={row}
+          sample={data.get(row.node.id)?.origin === 'sample'}
           selected={row.node.id === selected}
           solo={row.node.id === solo}
           muted={!inSolo(row)}

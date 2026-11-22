@@ -1,15 +1,20 @@
-// The map document, `ldl-map/1`, and the analysis request and result, `ldl-analysis/1`: the TypeScript
-// mirror of docs/architecture-v2/ui-contract-explore.md (contract v0, 2026-11-22) and 10-map-composition.md §2.
+// The map document, `ldl-map/1`, and the analysis request and result, `ldl-analysis/1`.
+//
+// The normative types are the ones generated from spec/map/1/map.schema.json (`lanka map types`), vendored
+// verbatim in ../vendor/map-spec/index.d.ts. The types below are this client's stricter reading of them:
+// the subset it edits and draws, with the literal unions narrowed. The `Conforms` checks at the bottom of the
+// file fail the build if any of them stops being assignable to the generated type.
 //
 // A document names data, it never holds it. `layers` is ordered bottom → top (draw order); the
-// layer panel shows the reverse. Everything prefixed `x-` or marked (client) below is an extension
-// of this mockup that a strict `/1` reader ignores.
+// layer panel shows the reverse. Everything prefixed `x-` is a client extension that a strict `/1`
+// reader ignores and preserves (`x-relief`, `x-casing`, `x-coast`, and the mock analysis payloads).
+import type * as Spec from '@/vendor/map-spec'
 
 export const MAP_SPEC = 'ldl-map/1' as const
 export const ANALYSIS_SPEC = 'ldl-analysis/1' as const
 
 /* ---------------- blend ---------------- */
-/** `/1` lists the first six. `overlay` needs the backdrop inside the shader; this client has the isolation pass for it. */
+/** All seven are in `/1`; `overlay` needs the backdrop, which this client's isolation pass provides. */
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'add'
 export const BLEND_MODES: { id: BlendMode; label: string; tag: string; hint: string; inSpec: boolean }[] = [
   { id: 'normal', label: 'Normal', tag: '', hint: 'Drawn over what is below', inSpec: true },
@@ -18,7 +23,7 @@ export const BLEND_MODES: { id: BlendMode; label: string; tag: string; hint: str
   { id: 'screen', label: 'Screen', tag: 'SCR', hint: 'Lightens: glow on a dark basemap', inSpec: true },
   { id: 'lighten', label: 'Lighten', tag: 'LGT', hint: 'Keeps the lighter of the two', inSpec: true },
   { id: 'add', label: 'Add', tag: 'ADD', hint: 'Sums light, clipping at white', inSpec: true },
-  { id: 'overlay', label: 'Overlay', tag: 'OVR', hint: 'Contrast: multiply the darks, screen the lights', inSpec: false },
+  { id: 'overlay', label: 'Overlay', tag: 'OVR', hint: 'Contrast: multiply the darks, screen the lights', inSpec: true },
 ]
 
 /* ---------------- time ---------------- */
@@ -30,7 +35,7 @@ export type TimeConfig = { cursor: string; range: [string, string]; freq: 'A'; p
 export type Version = 'latest' | { dsv: string }
 export type IndicatorSource = { kind: 'indicator'; indicator: string; /** two columns on one support, for a bivariate layer */ indicators?: string[]; level: number; scheme?: 'admin'; parent?: string; period: PeriodRef; dims?: Record<string, string>; version?: Version }
 export type BoundariesSource = { kind: 'boundaries'; scheme: 'admin'; level: number; parent?: string; version?: Version }
-export type FeaturesSource = { kind: 'features'; dataset: string; within?: string; fields?: string[]; version?: Version; /** (client) bind a date field to the time cursor */ 'x-time'?: { field: string; match: 'exact' | 'asof' } }
+export type FeaturesSource = { kind: 'features'; dataset: string; /** one `kind` of the dataset (`hospital`, `station`) */ featureKind?: string; within?: string; fields?: string[]; version?: Version; /** bind a date field to the time cursor */ time?: { field: string; match: 'exact' | 'asof' } }
 export type GridSource = { kind: 'grid'; grid: string; dims?: Record<string, string>; period: PeriodRef; version?: Version }
 export type AnalysisSource = { kind: 'analysis'; ref: string; output: string }
 export type Source = IndicatorSource | BoundariesSource | FeaturesSource | GridSource | AnalysisSource
@@ -50,8 +55,8 @@ export type Scale = {
   transform?: 'linear' | 'sqrt' | 'log'
   /** absolute clamp of a continuous scale; null = the data's own end */
   clamp?: [number | null, number | null]
-  /** categorical: code → colour (a hex, or a named tone) */
-  mapping?: Record<string, string>
+  /** categorical: code → colour (a hex, or a named tone) for colour channels, code → px for width and size */
+  mapping?: Record<string, string | number>
   /** output range in px, for `size` and `stroke.width` */
   range?: [number, number]
 }
@@ -197,7 +202,8 @@ export type RelateParams = {
   scale_sensitivity?: number[]
 }
 export type GroupCompareParams = {
-  zone: { source?: string; grid?: string; dataset?: string; where?: Cql }
+  /** points support: a source and a condition; areal support (the engine today): the `group` variable at or above `threshold` */
+  zone: { source?: string; grid?: string; dataset?: string; where?: Cql; threshold?: number; label?: string }
   rings_m?: number[]
   compare: 'inside_vs_outside' | 'inside_vs_ring'
   within_groups?: { level: number } | null
@@ -206,7 +212,7 @@ export type GroupCompareParams = {
 }
 type RequestBase = { spec: typeof ANALYSIS_SPEC; pin?: 'latest' | { release: string }; override?: GuardCode[]; /** `an_…` once the document is frozen */ result?: string }
 export type RelateRequest = RequestBase & { method: 'relate'; support: Extract<Support, { kind: 'admin' }>; variables: { x: Variable; y: Variable; controls?: Variable[] }; params: RelateParams }
-export type GroupCompareRequest = RequestBase & { method: 'group_compare'; support: Extract<Support, { kind: 'points' }>; variables: { y: Variable }; params: GroupCompareParams }
+export type GroupCompareRequest = RequestBase & { method: 'group_compare'; support: Support; variables: { y: Variable; group?: Variable }; params: GroupCompareParams }
 export type AnalysisRequest = RelateRequest | GroupCompareRequest
 
 /* ---------------- analyses: result, `ldl-analysis-result/1` ---------------- */
@@ -476,7 +482,7 @@ export function pruneSources(doc: MapDocument): MapDocument {
   const used = new Set(allLayers(doc.layers).map((l) => l.source))
   for (const a of Object.values(doc.analyses)) {
     if (a.method === 'relate') for (const v of [a.variables.x, a.variables.y, ...(a.variables.controls ?? [])]) v.source && used.add(v.source)
-    else for (const id of [a.support.source, a.params.zone.source]) id && used.add(id)
+    else for (const id of [a.support.kind === 'points' ? a.support.source : undefined, a.params.zone.source, a.variables.y.source, a.variables.group?.source]) id && used.add(id)
   }
   const sources = Object.fromEntries(Object.entries(doc.sources).filter(([id]) => used.has(id)))
   return Object.keys(sources).length === Object.keys(doc.sources).length ? doc : { ...doc, sources }
@@ -489,4 +495,19 @@ export function resolvePeriod(ref: PeriodRef | undefined, time: TimeConfig | nul
   // as-of: the newest period not after the cursor
   return available.filter((p) => p <= want).pop() ?? available[0] ?? last
 }
-export const isTimeBound = (s: Source | undefined) => !!s && (((s.kind === 'indicator' || s.kind === 'grid') && typeof s.period === 'object') || (s.kind === 'features' && !!s['x-time']))
+export const isTimeBound = (s: Source | undefined) => !!s && (((s.kind === 'indicator' || s.kind === 'grid') && typeof s.period === 'object') || (s.kind === 'features' && !!s.time))
+
+/* ---------------- conformance to the generated `/1` types ---------------- */
+/** Compiles only when `Client` is assignable to `Generated`. */
+type Conforms<Generated, Client extends Generated> = Client
+export type SpecConformance = [
+  Conforms<Spec.MapDocument, MapDocument>,
+  Conforms<Spec.Source, Source>,
+  Conforms<Spec.LayerNode, LayerNode>,
+  Conforms<Spec.Style, Style>,
+  Conforms<Spec.Scale, Scale>,
+  Conforms<Spec.Panel, Panel>,
+  Conforms<Spec.Cql2, Cql>,
+  Conforms<Spec.AnalysisRequest, AnalysisRequest>,
+]
+export type { Spec }

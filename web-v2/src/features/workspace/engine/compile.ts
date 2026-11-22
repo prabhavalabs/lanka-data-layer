@@ -1,20 +1,23 @@
 // `toMapLibre(style)`: one layer of the document + the data it resolved to → MapLibre sources and
 // layers, a legend model and a tooltip. Pure: the engine diffs what comes out against what is installed.
 import type { Feature, FeatureCollection } from 'geojson'
-import type { BoundariesPayload, FeaturesPayload, FieldMeta, FrameColumn, FramePayload, GridPayload, LayerData } from '@/api/workspace'
+import type { BoundariesPayload, DemPayload, FeaturesPayload, FieldMeta, FrameColumn, FramePayload, GridPayload, LayerData, ValuesPayload } from '@/api/workspace'
+import { WORLDCOVER } from '@/api/real/registry'
+import { registerPaint, valueAt } from '@/api/real/valueTiles'
+import type { AdminTiles, TileRef } from '@/mocks/layers'
 import type { Theme } from '@/lib/hooks'
 import { clausesOf, dashKind, matches, resolvePeriod, type BlendMode, type Cql, type FieldBinding, type Fill, type Layer, type Scale, type Source, type TimeConfig } from '@/lib/map-spec'
-import { bivariateColors, categorical, paperColor, rampClasses, rampStops, toneColor } from '@/lib/palettes'
+import { bivariateColors, categorical, hexToRgb, paperColor, rampAt, rampClasses, rampStops, toneColor } from '@/lib/palettes'
 import { classBreaks, classIndex, extent, tercileBreaks } from '@/lib/stats'
 import { sample, type Frame as GridFrame, type Grid } from '@/mocks/synth'
 import { fmtWith } from '../format'
 import { gridSample, paintHillshade, paintRaster } from './raster'
 
-export type Env = { scheme: Theme; time: TimeConfig | null; glyphs: boolean; font: string[]; relief: (exaggeration: number) => Grid | undefined }
+export type Env = { scheme: Theme; time: TimeConfig | null; glyphs: boolean; font: string[]; relief: (exaggeration: number) => Grid | undefined; /** the map's zoom now, for reading values out of tiles */ zoom?: () => number }
 type Expr = unknown[]
 export type MlLayer = {
   id: string
-  type: 'fill' | 'line' | 'circle' | 'symbol' | 'heatmap' | 'raster'
+  type: 'fill' | 'line' | 'circle' | 'symbol' | 'heatmap' | 'raster' | 'hillshade'
   source: string
   sourceLayer?: string
   paint: Record<string, unknown>
@@ -23,11 +26,16 @@ export type MlLayer = {
   /** paint properties that carry the layer's opacity, with their value at 100 % */
   opacity: Record<string, number | Expr>
   hit?: boolean
+  /** the zoom range of this part (within the document layer's own) */
+  minzoom?: number
+  maxzoom?: number
 }
 export type MlSource =
   | { id: string; kind: 'geojson'; data: FeatureCollection; options?: Record<string, unknown> }
   | { id: string; kind: 'canvas'; frame: GridFrame; key: string; paint: (canvas: HTMLCanvasElement) => void }
-  | { id: string; kind: 'vector'; url: string }
+  | { id: string; kind: 'vector'; url?: string; tiles?: string[]; minzoom?: number; maxzoom?: number; promoteId?: string; tileSize?: number }
+  | { id: string; kind: 'raster'; tiles: string[]; minzoom: number; maxzoom: number }
+  | { id: string; kind: 'raster-dem'; tiles: string[]; minzoom: number; maxzoom: number; encoding: 'terrarium' | 'mapbox' }
 export type LegendItem = { label: string; color: string; shape: 'square' | 'dot' | 'line' | 'ring' | 'dash'; width?: number }
 export type LegendModel = (
   | { kind: 'classes'; colors: string[]; breaks: number[]; unit: string; hatch?: boolean }
@@ -52,6 +60,12 @@ export type Compiled = {
   /** raster value under the cursor */
   probe?: (lngLat: [number, number]) => Tip | null
   problem?: string
+  /** per-unit state for a frame drawn on the boundary tiles: feature-state keyed by p-code */
+  states?: { source: string; sourceLayer: string; key: string; values: [string, Record<string, unknown>][] }[]
+  /** hover and selection outline through feature-state (`hl`, `sel`) on this tiled source */
+  tiled?: { source: string; sourceLayer: string }
+  /** draw through the compositor even at normal blend (a hillshade has no opacity of its own) */
+  isolate?: boolean
 }
 
 const EMPTY: Compiled = { layers: [], sources: [], areal: false, overlap: false, legend: null }
@@ -76,7 +90,7 @@ export function resolveScale(values: number[], scale: Scale, scheme: Theme, cate
   if (scale.type === 'categorical') {
     const keys = scale.mapping ? Object.keys(scale.mapping) : (categories ?? [])
     const palette = categorical(scheme)
-    return { kind: 'categorical', keys, colors: keys.map((k, i) => (scale.mapping ? toneColor(scale.mapping[k], scheme) : palette[Math.min(i, palette.length - 1)])), other: palette[palette.length - 1] }
+    return { kind: 'categorical', keys, colors: keys.map((k, i) => (scale.mapping ? toneColor(String(scale.mapping[k]), scheme) : palette[Math.min(i, palette.length - 1)])), other: palette[palette.length - 1] }
   }
   if (scale.type === 'continuous') {
     const [lo, hi] = extent(values)
@@ -156,9 +170,11 @@ const textField = (template: string): Expr | string => {
   const exprs = parts.map((p) => (p.startsWith('{') ? (['to-string', ['get', p.slice(1, -1)]] as Expr) : p))
   return exprs.length === 1 ? (typeof exprs[0] === 'string' ? exprs[0] : exprs[0]) : ['concat', ...exprs]
 }
-function labelLayer(layer: Layer, source: string, env: Env, sortField?: string, offset = 0): MlLayer[] {
+function labelLayer(layer: Layer, source: string, env: Env, sortField?: string, offset = 0, tiled?: { sourceLayer: string; filter?: Expr }): MlLayer[] {
   const l = layer.style.label
   if (!l || !env.glyphs) return []
+  // the boundary tiles name units `name_en`; the template's `{name}` means that there
+  const text = tiled ? l.text.replace(/\{name\}/g, '{name_en}') : l.text
   const ink = toneColor('ink', env.scheme)
   return [
     {
@@ -167,7 +183,7 @@ function labelLayer(layer: Layer, source: string, env: Env, sortField?: string, 
       source,
       paint: { 'text-color': ink, 'text-halo-color': l.halo && l.halo !== 'none' ? toneColor(l.halo, env.scheme) : paperColor(env.scheme), 'text-halo-width': l.halo === 'none' ? 0 : 1.4, 'text-halo-blur': 0.4 },
       layout: {
-        'text-field': textField(l.text),
+        'text-field': textField(text),
         'text-font': env.font,
         'text-size': ['interpolate', ['linear'], ['zoom'], 6, l.size * 0.9, 11, l.size * 1.15],
         'text-anchor': offset ? 'top' : 'center',
@@ -177,6 +193,7 @@ function labelLayer(layer: Layer, source: string, env: Env, sortField?: string, 
         'text-max-width': 7,
         ...(sortField ? { 'symbol-sort-key': ['to-number', ['get', sortField], 0] } : {}),
       },
+      ...(tiled ? { sourceLayer: tiled.sourceLayer, filter: tiled.filter } : {}),
       opacity: { 'text-opacity': 1 },
     },
   ]
@@ -201,7 +218,71 @@ export function columnAt(data: FramePayload, field: string, source: Source | und
 }
 export const DEFAULT_FILL: FieldBinding = { field: 'value', scale: { type: 'quantile', classes: 5, ramp: 'ldl.seq.blue' } }
 
-function frameBase(layer: Layer, data: FramePayload, env: Env, colors: (string | null)[], dimmed: string[], estimated: string[]): Pick<Compiled, 'layers' | 'sources'> {
+/** Only the units of the frame's parent, on a tileset that holds the whole country. */
+const parentFilter = (t: AdminTiles): Expr | undefined => (t.parent ? ['==', ['index-of', t.parent, ['to-string', ['get', 'pcode']]], 0] : undefined)
+/** Hover and selection outlines, switched per unit by feature-state: no geometry has to be looked up. */
+function outlineLayers(layer: Layer, src: string, sourceLayer: string, env: Env, filter?: Expr): MlLayer[] {
+  const on = (k: string) => ['boolean', ['feature-state', k], false]
+  const sel = env.scheme === 'dark' ? '#d8446b' : '#c22f5a'
+  return [
+    { id: sid(layer.id, 'hl-casing'), type: 'line', source: src, sourceLayer, filter, paint: { 'line-color': paperColor(env.scheme), 'line-width': ['case', on('sel'), 4.5, on('hl'), 4, 0], 'line-opacity': ['case', on('sel'), 0.85, 0.7] }, layout: { 'line-join': 'round' }, opacity: {} },
+    { id: sid(layer.id, 'hl-line'), type: 'line', source: src, sourceLayer, filter, paint: { 'line-color': ['case', on('sel'), sel, toneColor('ink', env.scheme)], 'line-width': ['case', on('sel'), 2, on('hl'), 1.6, 0] }, layout: { 'line-join': 'round' }, opacity: {} },
+  ]
+}
+/** A frame on the engine's boundary tiles: colours, dimming and the estimate flag travel as feature-state. */
+function frameTiled(layer: Layer, data: FramePayload, t: AdminTiles, env: Env, colors: (string | null)[], dimmed: string[], estimated: string[]): Pick<Compiled, 'layers' | 'sources' | 'states' | 'tiled'> {
+  const src = sid(layer.id)
+  const base = parentFilter(t)
+  const stroke = layer.style.stroke
+  const w = typeof stroke?.width === 'number' ? stroke.width : 0.5
+  const dim = new Set(dimmed)
+  const values: [string, Record<string, unknown>][] = data.codes.map((c, i) => [c, { c: colors[i] ?? null, d: dim.has(c) }])
+  const layers: MlLayer[] = [
+    {
+      id: sid(layer.id, 'fill'),
+      type: 'fill',
+      source: src,
+      sourceLayer: t.sourceLayer,
+      filter: base,
+      paint: { 'fill-color': ['to-color', ['coalesce', ['feature-state', 'c'], NODATA[env.scheme]]], 'fill-antialias': true },
+      layout: {},
+      opacity: { 'fill-opacity': dimmed.length ? ['case', ['boolean', ['feature-state', 'd'], false], 0.1, 1] : 1 },
+      hit: true,
+    },
+  ]
+  if (layer.style.uncertainty === 'hatch' && estimated.length)
+    layers.push({ id: sid(layer.id, 'hatch'), type: 'fill', source: src, sourceLayer: t.sourceLayer, paint: { 'fill-pattern': 'ws-hatch' }, layout: {}, filter: all(base, ['in', ['get', 'pcode'], ['literal', estimated]]), opacity: { 'fill-opacity': 0.6 } })
+  if (w > 0)
+    layers.push({
+      id: sid(layer.id, 'line'),
+      type: 'line',
+      source: src,
+      sourceLayer: t.sourceLayer,
+      filter: base,
+      paint: { 'line-color': strokeColor(layer, env, 'paper'), 'line-width': zoomed(w, 0.5, 2.2) },
+      layout: { 'line-join': 'round' },
+      opacity: { 'line-opacity': w < 0.45 ? (env.scheme === 'dark' ? 0.5 : 0.7) : env.scheme === 'dark' ? 0.8 : 0.6 },
+    })
+  // below the zoom the tiles carry this level from, the same fill draws from shapes decoded out of deeper tiles
+  const sources: MlSource[] = [{ id: src, kind: 'vector', tiles: t.tiles, minzoom: t.minzoom, maxzoom: t.maxzoom, promoteId: 'pcode' }]
+  const states = [{ source: src, sourceLayer: t.sourceLayer }]
+  if (data.geometry.features.length && t.gate) {
+    const low = sid(layer.id, 'low')
+    sources.push({ id: low, kind: 'geojson', data: data.geometry, options: { promoteId: 'pcode' } })
+    layers[0] = { ...layers[0], minzoom: t.gate }
+    layers.unshift({ ...layers[0], id: sid(layer.id, 'fill-low'), source: low, sourceLayer: undefined, minzoom: undefined, maxzoom: t.gate })
+    states.push({ source: low, sourceLayer: '' })
+  }
+  layers.push(...outlineLayers(layer, src, t.sourceLayer, env, base))
+  if (layer.style.label && env.glyphs) layers.push(...labelLayer(layer, src, env, undefined, 0, { sourceLayer: t.centroidsLayer, filter: all(['==', ['get', 'level'], t.level], base) }))
+  // the key only has to change when a state does
+  let key = ''
+  for (let i = 0; i < colors.length; i++) key += `${colors[i] ?? '-'}${dim.has(data.codes[i]) ? '*' : ''},`
+  return { layers, sources, states: states.map((st) => ({ ...st, key, values })), tiled: { source: src, sourceLayer: t.sourceLayer } }
+}
+
+function frameBase(layer: Layer, data: FramePayload, env: Env, colors: (string | null)[], dimmed: string[], estimated: string[]): Pick<Compiled, 'layers' | 'sources' | 'states' | 'tiled'> {
+  if (data.tiles) return frameTiled(layer, data, data.tiles, env, colors, dimmed, estimated)
   const src = sid(layer.id)
   const pairs: unknown[] = []
   data.codes.forEach((c, i) => colors[i] && pairs.push(c, colors[i]))
@@ -264,14 +345,14 @@ function choropleth(layer: Layer, source: Source | undefined, data: FramePayload
     areal: true,
     overlap: false,
     legend: scale.kind === 'classes' ? { kind: 'classes', colors: scale.colors, breaks: scale.breaks, unit: col.unit, hatch: estimated.length > 0 && layer.style.uncertainty === 'hatch', period: cols.length > 1 ? col.period : undefined } : scale.kind === 'continuous' ? { kind: 'ramp', stops: scale.stops, domain: scale.domain, unit: col.unit, period: cols.length > 1 ? col.period : undefined } : null,
-    lookup: frameLookup(data),
+    lookup: data.tiles ? undefined : frameLookup(data),
     tip: (p) => {
       const i = at.get(String(p.pcode))
       if (i === undefined) return null
       const v = col.values[i]
       const rows = [{ label: cols.length > 1 ? `${col.label} · ${col.period}` : col.label, value: fmtWith(v, col.unit) }]
       if (col.n) rows.push({ label: 'Listings', value: String(col.n[i]) })
-      return { title: data.names[i], code: data.codes[i], swatch: colors[i] ?? NODATA[env.scheme], rows, note: col.basis?.[i] === 'estimated' && col.n ? 'Modelled: fewer than three listings' : undefined }
+      return { title: String(p.name_en ?? data.names[i] ?? data.codes[i]), code: data.codes[i], swatch: colors[i] ?? NODATA[env.scheme], rows, note: col.basis?.[i] === 'estimated' && col.n ? 'Modelled: fewer than three listings' : undefined }
     },
   }
 }
@@ -281,8 +362,9 @@ export function bivariateBreaks(layer: Layer, data: FramePayload, source: Source
   if (!f) return null
   const x = columnAt(data, f.x.field, source, time).col, y = columnAt(data, f.y.field, source, time).col
   if (!x || !y) return null
-  const bx = f.x.scale.breaks?.length === 2 ? f.x.scale.breaks : tercileBreaks(x.values.filter(num))
-  const by = f.y.scale.breaks?.length === 2 ? f.y.scale.breaks : tercileBreaks(y.values.filter(num))
+  // explicit breaks first, then the engine's own (an analysis output), then thirds of the data
+  const bx = f.x.scale.breaks?.length === 2 ? f.x.scale.breaks : x.breaks?.length === 2 ? x.breaks : tercileBreaks(x.values.filter(num))
+  const by = f.y.scale.breaks?.length === 2 ? f.y.scale.breaks : y.breaks?.length === 2 ? y.breaks : tercileBreaks(y.values.filter(num))
   return { x, y, bx, by, palette: f.palette }
 }
 function bivariate(layer: Layer, source: Source | undefined, data: FramePayload, env: Env): Compiled {
@@ -304,7 +386,7 @@ function bivariate(layer: Layer, source: Source | undefined, data: FramePayload,
     areal: true,
     overlap: false,
     legend: { kind: 'bivariate', colors: palette, x: titleCase(short(b.x)), y: titleCase(short(b.y)) },
-    lookup: frameLookup(data),
+    lookup: data.tiles ? undefined : frameLookup(data),
     tip: (p) => {
       const i = at.get(String(p.pcode))
       if (i === undefined) return null
@@ -313,14 +395,16 @@ function bivariate(layer: Layer, source: Source | undefined, data: FramePayload,
         { label: short(b.y), value: fmtWith(b.y.values[i], b.y.unit) },
       ]
       if (b.y.n) rows.push({ label: 'Listings', value: String(b.y.n[i]) })
-      return { title: data.names[i], code: data.codes[i], swatch: colors[i] ?? NODATA[env.scheme], rows, note: b.y.basis?.[i] === 'estimated' ? 'Price modelled: fewer than three listings' : undefined }
+      return { title: String(p.name_en ?? data.names[i] ?? data.codes[i]), code: data.codes[i], swatch: colors[i] ?? NODATA[env.scheme], rows, note: b.y.basis?.[i] === 'estimated' && b.y.n ? 'Price modelled: fewer than three listings' : undefined }
     },
   }
 }
 
 /* ---------------- features: polygons, lines, points, clusters, heat ---------------- */
 type Vector = { collection: FeatureCollection; fields: FieldMeta[]; title?: string; tiles?: FeaturesPayload['tiles'] }
-const vectorOf = (data: LayerData): Vector | null => (data.kind === 'features' ? data : data.kind === 'boundaries' ? { collection: data.collection, fields: [], title: 'name' } : data.kind === 'frame' ? { collection: data.geometry, fields: [], title: 'name' } : null)
+const adminVector = (t: AdminTiles, collection: FeatureCollection): Vector => ({ collection, fields: [], title: 'name_en', tiles: { tiles: t.tiles, minzoom: t.minzoom, maxzoom: t.maxzoom, sourceLayer: t.sourceLayer, filter: parentFilter(t) } })
+const vectorOf = (data: LayerData): Vector | null =>
+  data.kind === 'features' ? data : data.kind === 'boundaries' ? (data.tiles ? adminVector(data.tiles, data.collection) : { collection: data.collection, fields: [], title: 'name' }) : data.kind === 'frame' ? (data.tiles ? adminVector(data.tiles, data.geometry) : { collection: data.geometry, fields: [], title: 'name' }) : null
 const valuesOf = (v: Vector) => (field: string) => v.collection.features.map((f) => Number(f.properties?.[field])).filter(Number.isFinite)
 const categoriesOf = (v: Vector, field: string) => v.fields.find((f) => f.id === field)?.categories ?? [...new Set(v.collection.features.map((f) => String(f.properties?.[field])))].sort()
 function boundColor(v: Vector, c: string | FieldBinding | undefined, env: Env, fallback: 'ink' | 'paper' | 'grey' = 'ink'): { paint: string | Expr; scale: Resolved | null; field?: string } {
@@ -331,7 +415,7 @@ function boundColor(v: Vector, c: string | FieldBinding | undefined, env: Env, f
 function boundLegend(v: Vector, b: ReturnType<typeof boundColor>, shape: LegendItem['shape'], constantLabel: string, width?: number): LegendModel | null {
   const meta = v.fields.find((f) => f.id === b.field)
   if (!b.scale) return { kind: 'categories', items: [{ label: constantLabel, color: b.paint as string, shape, width }] }
-  if (b.scale.kind === 'categorical') return { kind: 'categories', items: b.scale.keys.map((k, i) => ({ label: k, color: (b.scale as Extract<Resolved, { kind: 'categorical' }>).colors[i], shape, width })) }
+  if (b.scale.kind === 'categorical') return { kind: 'categories', items: b.scale.keys.map((k, i) => ({ label: k.replace(/_/g, ' '), color: (b.scale as Extract<Resolved, { kind: 'categorical' }>).colors[i], shape, width })) }
   if (b.scale.kind === 'classes') return { kind: 'classes', colors: b.scale.colors, breaks: b.scale.breaks, unit: meta?.unit ?? '', note: meta?.label }
   return { kind: 'ramp', stops: b.scale.stops, domain: b.scale.domain, unit: meta?.unit ?? '', note: meta?.label }
 }
@@ -346,12 +430,18 @@ const featureTip = (v: Vector, layerName: string, env: Env, colorOf?: (p: Record
 }
 /** A time-bound feature source shows what existed by the cursor. */
 const timeFilter = (source: Source | undefined, env: Env): Expr | undefined => {
-  const t = source?.kind === 'features' ? source['x-time'] : undefined
+  const t = source?.kind === 'features' ? source.time : undefined
   if (!t || !env.time) return undefined
   return [t.match === 'exact' ? '==' : '<=', get(t.field), Number(env.time.cursor)]
 }
+const isTileRef = (t: FeaturesPayload['tiles']): t is TileRef => !!t && 'tiles' in t
 const vectorSource = (layer: Layer, v: Vector, options?: Record<string, unknown>): { id: string; source: MlSource; sourceLayer?: string; base?: Expr } =>
-  v.tiles ? { id: 'ws-tiles', source: { id: 'ws-tiles', kind: 'vector', url: v.tiles.url }, sourceLayer: v.tiles.sourceLayer, base: v.tiles.filter as Expr } : { id: sid(layer.id), source: { id: sid(layer.id), kind: 'geojson', data: v.collection, options } }
+  isTileRef(v.tiles)
+    ? // the engine's tiles: one source per layer, with the zoom range of the archive so nothing above it is requested
+      { id: sid(layer.id), source: { id: sid(layer.id), kind: 'vector', tiles: v.tiles.tiles, minzoom: v.tiles.minzoom, maxzoom: v.tiles.maxzoom, ...(v.title === 'name_en' ? { promoteId: 'pcode' } : {}) }, sourceLayer: v.tiles.sourceLayer, base: v.tiles.filter as Expr | undefined }
+    : v.tiles
+      ? { id: 'ws-tiles', source: { id: 'ws-tiles', kind: 'vector', url: v.tiles.url }, sourceLayer: v.tiles.sourceLayer, base: v.tiles.filter as Expr }
+      : { id: sid(layer.id), source: { id: sid(layer.id), kind: 'geojson', data: v.collection, options } }
 
 function polygon(layer: Layer, source: Source | undefined, v: Vector, env: Env): Compiled {
   const s = vectorSource(layer, v)
@@ -383,14 +473,17 @@ function polygon(layer: Layer, source: Source | undefined, v: Vector, env: Env):
       return index.get(String(p.pcode ?? p.id)) ?? null
     }
   }
+  const admin = isTileRef(v.tiles) && v.title === 'name_en'
+  if (admin) layers.push(...outlineLayers(layer, s.id, s.sourceLayer!, env, s.base))
   return {
     layers,
     sources: [s.source],
     areal: !none,
     overlap: false,
     legend: none ? boundLegend(v, sc, 'ring', layer.name) : boundLegend(v, f, 'square', layer.name),
-    lookup: byId(),
+    lookup: isTileRef(v.tiles) ? undefined : byId(),
     tip: featureTip(v, layer.name, env),
+    ...(admin ? { tiled: { source: s.id, sourceLayer: s.sourceLayer! } } : {}),
   }
 }
 
@@ -529,6 +622,13 @@ function heatmap(layer: Layer, source: Source | undefined, v: Vector, env: Env):
 }
 
 function label(layer: Layer, data: LayerData, env: Env): Compiled {
+  const admin = data.kind === 'boundaries' || data.kind === 'frame' ? data.tiles : undefined
+  if (admin) {
+    const style = layer.style.label ?? { text: '{name}', size: 11 }
+    const src = sid(layer.id)
+    const layers = labelLayer({ ...layer, style: { ...layer.style, label: style } }, src, env, undefined, 0, { sourceLayer: admin.centroidsLayer, filter: all(['==', ['get', 'level'], admin.level], parentFilter(admin), cqlToMl(layer.filter)) })
+    return { layers, sources: [{ id: src, kind: 'vector', tiles: admin.tiles, minzoom: admin.minzoom, maxzoom: admin.maxzoom }], areal: false, overlap: false, legend: null, problem: env.glyphs ? undefined : 'Labels need the basemap fonts, which are offline.' }
+  }
   const pts: FeatureCollection | null = data.kind === 'boundaries' ? data.centroids : data.kind === 'features' && data.geometry === 'point' ? data.collection : data.kind === 'frame' ? { type: 'FeatureCollection', features: data.codes.map((c, i) => ({ type: 'Feature', properties: { pcode: c, name: data.names[i] }, geometry: { type: 'Point', coordinates: data.centroids[i] } })) } : null
   if (!pts) return { ...EMPTY, problem: 'Labels need points or areas.' }
   const style = layer.style.label ?? { text: '{name}', size: 11 }
@@ -584,6 +684,90 @@ function hillshade(layer: Layer, data: GridPayload, env: Env): Compiled {
   }
 }
 
+/* ---------------- grids from the engine: value tiles and the terrain tileset ---------------- */
+const rgbOf = (hex: string): [number, number, number] => hexToRgb(hex).map((c) => Math.round(c)) as [number, number, number]
+function valuesScale(layer: Layer, data: ValuesPayload, scheme: Theme): Resolved {
+  const binding = isBinding(layer.style.fill) ? layer.style.fill : { field: 'value', scale: { type: 'continuous' as const, ramp: gridRamp(data) } }
+  const range = layer.style.range ?? [null, null]
+  const lo = range[0] ?? -Infinity, hi = range[1] ?? Infinity
+  const values: number[] = []
+  for (const v of data.sample) if (v >= lo && v <= hi) values.push(v)
+  return resolveScale(values, binding.scale, scheme, data.values.categories ? Object.keys(data.values.categories) : undefined)
+}
+const gridRamp = (data: ValuesPayload) => (data.unit === 'm' ? 'ldl.seq.blue' : 'ldl.seq.violet')
+/** Value tiles coloured through the protocol: the style is a lookup table, so restyling refetches nothing. */
+function valuesRaster(layer: Layer, data: ValuesPayload, env: Env): Compiled {
+  const scale = valuesScale(layer, data, env.scheme)
+  const range = layer.style.range ?? [null, null]
+  const lo = range[0] ?? -Infinity, hi = range[1] ?? Infinity
+  const stops = scale.kind === 'continuous' ? scale.stops : []
+  const warpT = (v: number) => (scale.kind === 'continuous' ? (scale.transform === 'log' ? Math.log(Math.max(1e-9, v)) : scale.transform === 'sqrt' ? Math.sqrt(Math.max(0, v)) : v) : v)
+  const d0 = scale.kind === 'continuous' ? warpT(scale.domain[0]) : 0, d1 = scale.kind === 'continuous' ? warpT(scale.domain[1]) : 1
+  const classRgb = scale.kind === 'classes' ? scale.colors.map(rgbOf) : scale.kind === 'categorical' ? scale.colors.map(rgbOf) : []
+  const otherRgb = scale.kind === 'categorical' ? rgbOf(scale.other) : null
+  const color = (v: number): [number, number, number] | null => {
+    if (!(v >= lo && v <= hi)) return null
+    if (scale.kind === 'classes') return classRgb[classIndex(v, scale.breaks)]
+    if (scale.kind === 'categorical') {
+      const i = scale.keys.indexOf(String(Math.round(v)))
+      return i >= 0 ? classRgb[i] : otherRgb
+    }
+    const t = Math.min(1, Math.max(0, (warpT(v) - d0) / (d1 - d0 || 1)))
+    return rampAt(stops, t).map((c) => Math.round(c)) as [number, number, number]
+  }
+  const paintKey = JSON.stringify([scale, range])
+  const url = registerPaint(data.values.template, data.values, paintKey, color)
+  const unitLabel = data.values.categories && layer.style.fill && isBinding(layer.style.fill) && layer.style.fill.scale.type === 'categorical'
+  return {
+    layers: [{ id: sid(layer.id, 'raster'), type: 'raster', source: sid(layer.id), paint: { 'raster-fade-duration': 0, 'raster-resampling': layer.style.resample === 'nearest' ? 'nearest' : 'linear' }, layout: {}, opacity: { 'raster-opacity': 1 } }],
+    sources: [{ id: sid(layer.id), kind: 'raster', tiles: [url], minzoom: data.values.minzoom, maxzoom: data.values.maxzoom }],
+    areal: true,
+    overlap: false,
+    legend:
+      scale.kind === 'classes'
+        ? { kind: 'classes', colors: scale.colors, breaks: scale.breaks, unit: data.unit }
+        : scale.kind === 'continuous'
+          ? { kind: 'ramp', stops: scale.stops, domain: scale.domain, unit: data.unit }
+          : { kind: 'categories', items: scale.keys.map((k, i) => ({ label: categoryLabel(layer, k), color: scale.colors[i], shape: 'square' as const })) },
+    probe: ([lon, lat]) => {
+      const v = valueAt(data.values.template, data.values, lon, lat, env.zoom?.() ?? 8, data.values.minzoom, data.values.maxzoom)
+      if (v === null || v < lo || v > hi) return null
+      const c = color(v)
+      const swatch = c ? `rgb(${c.join(',')})` : undefined
+      return { title: layer.name, swatch, rows: [{ label: data.label, value: unitLabel ? categoryLabel(layer, String(Math.round(v))) : fmtWith(v, data.unit) }] }
+    },
+  }
+}
+/** Class codes of a categorical grid, named (WorldCover is the one served today). */
+const categoryLabel = (_layer: Layer, code: string) => WORLDCOVER[code]?.label ?? code
+/** Shaded relief from the engine's raster-dem tiles, drawn by MapLibre; opacity goes through the compositor. */
+function demHillshade(layer: Layer, data: DemPayload, env: Env): Compiled {
+  const dark = env.scheme === 'dark'
+  return {
+    layers: [
+      {
+        id: sid(layer.id, 'hillshade'),
+        type: 'hillshade',
+        source: sid(layer.id),
+        paint: {
+          'hillshade-exaggeration': Math.min(1, Math.max(0, layer.style.exaggeration ?? 0.6)),
+          'hillshade-illumination-direction': 315,
+          'hillshade-shadow-color': dark ? '#000000' : '#263442',
+          'hillshade-highlight-color': dark ? 'rgba(255,255,255,0.18)' : '#ffffff',
+          'hillshade-accent-color': dark ? '#000000' : '#36424f',
+        },
+        layout: {},
+        opacity: {},
+      },
+    ],
+    sources: [{ id: sid(layer.id), kind: 'raster-dem', tiles: data.tiles, minzoom: data.minzoom, maxzoom: data.maxzoom, encoding: data.encoding }],
+    areal: true,
+    overlap: false,
+    isolate: true,
+    legend: { kind: 'relief' },
+  }
+}
+
 /* ---------------- entry ---------------- */
 /**
  * The colour scheme a layer draws in. A ramp is oriented so that "more" is its strongest end; under a
@@ -604,9 +788,9 @@ export function compileLayer(layer: Layer, source: Source | undefined, data: Lay
     case 'bivariate':
       return data.kind === 'frame' ? bivariate(layer, source, data, env) : wrong('two variables on admin units')
     case 'raster':
-      return data.kind === 'grid' ? raster(layer, data, env) : wrong('a value grid')
+      return data.kind === 'grid' ? raster(layer, data, env) : data.kind === 'values' ? valuesRaster(layer, data, env) : wrong('a value grid')
     case 'hillshade':
-      return data.kind === 'grid' ? hillshade(layer, data, env) : wrong('an elevation grid')
+      return data.kind === 'grid' ? hillshade(layer, data, env) : data.kind === 'dem' ? demHillshade(layer, data, env) : wrong('an elevation grid')
     case 'polygon':
       return v && (data.kind !== 'features' || data.geometry === 'polygon') ? polygon(layer, source, v, env) : wrong('polygons')
     case 'line':

@@ -9,6 +9,7 @@ import type { RampName } from '@/lib/palettes'
 import { RAMP_OF } from '@/lib/palettes'
 import { INDICATORS, valueFor } from './db'
 import * as synth from './synth'
+import { REAL_FEATURES, REAL_GRIDS, REAL_INDICATORS } from '@/api/real/registry'
 
 /* ---------------- registry: indicators, grids, feature sets ---------------- */
 export type DataClass = 'official' | 'estimated' | 'synthetic'
@@ -23,18 +24,30 @@ export type IndicatorMeta = {
   description: string
   dataset: string
   class: DataClass
-  /** levels 3 and 4 exist for Western Province only in this mockup */
+  /** levels 3 and 4 exist for Western Province only in the sample data */
   scope?: string
+  /** the engine's indicator id and dimension filter, when `id` is a client key for one series of it */
+  indicator?: string
+  dims?: Record<string, string>
+  /** served by the engine (src/api/real/registry.ts) rather than sample data */
+  real?: boolean
 }
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i))
-export const INDICATOR_META: IndicatorMeta[] = [
+const SAMPLE_INDICATORS: IndicatorMeta[] = [
   ...INDICATORS.map((i): IndicatorMeta => ({ id: i.id, label: i.label, short: i.short, unit: i.unit, ramp: RAMP_OF[i.ramp], periods: i.years.map(String), levels: [1, 2], description: i.description, dataset: i.dataset, class: 'official' })),
   { id: 'exp.flood_pop_share', label: 'Population in the flood zone', short: 'Flood exposure', unit: '%', ramp: 'ldl.seq.blue', periods: ['2026'], levels: [1, 2, 3, 4], description: 'Share of residents living where the modelled 1-in-100-year river flood is deeper than 0.15 m.', dataset: 'flood-exposure', class: 'estimated' },
   { id: '@demo/re.asking_price_per_perch_median', label: 'Median asking price per perch', short: 'Asking price', unit: 'LKR/perch', ramp: 'ldl.seq.orange', periods: range(2022, 2026), levels: [1, 2, 3, 4], description: 'Median asking price of residential land in a synthetic sample of listings. Modelled where a unit has fewer than three.', dataset: 'property-asking-prices-sample', class: 'synthetic' },
   { id: 'est.pop_density', label: 'Population density (grid estimate)', short: 'Density', unit: 'per km²', ramp: 'ldl.seq.violet', periods: ['2026'], levels: [3, 4], description: 'Residents per square kilometre, aggregated from the population grid.', dataset: 'pop-grid-100m', class: 'estimated', scope: 'LK1' },
   { id: 'acc.travel_time_city', label: 'Drive time to Colombo', short: 'To Colombo', unit: 'min', ramp: 'ldl.seq.teal', periods: ['2026'], levels: [3, 4], description: 'Typical drive time from the unit to Colombo Fort.', dataset: 'access-health', class: 'estimated', scope: 'LK1' },
 ]
-export const indicatorMeta = (id: string) => INDICATOR_META.find((i) => i.id === id)
+export const INDICATOR_META: IndicatorMeta[] = [...REAL_INDICATORS, ...SAMPLE_INDICATORS]
+const sameDims = (a: Record<string, string> | undefined, b: Record<string, string> | undefined) => {
+  const ka = Object.keys(a ?? {}), kb = Object.keys(b ?? {})
+  return ka.length === kb.length && ka.every((k) => String(a![k]).toLowerCase() === String(b?.[k] ?? '').toLowerCase())
+}
+/** By client key, or by the engine's indicator id and dims (a document names the latter). */
+export const indicatorMeta = (id: string, dims?: Record<string, string>) =>
+  INDICATOR_META.find((i) => i.id === id && !i.indicator) ?? INDICATOR_META.find((i) => i.id === id) ?? INDICATOR_META.find((i) => i.indicator === id && sameDims(i.dims, dims)) ?? INDICATOR_META.find((i) => i.indicator === id)
 export const LEVELS: Record<number, { name: string; plural: string; code: string }> = {
   1: { name: 'Province', plural: 'provinces', code: 'ADM1' },
   2: { name: 'District', plural: 'districts', code: 'ADM2' },
@@ -42,19 +55,20 @@ export const LEVELS: Record<number, { name: string; plural: string; code: string
   4: { name: 'GN division', plural: 'GN divisions', code: 'ADM4' },
 }
 
-export type GridMeta = { id: string; label: string; unit: string; ramp: RampName; periods: string[]; dataset: string; class: DataClass; description: string }
-export const GRID_META: GridMeta[] = [
+export type GridMeta = { id: string; label: string; unit: string; ramp: RampName; periods: string[]; dataset: string; class: DataClass; description: string; real?: boolean }
+const SAMPLE_GRIDS: GridMeta[] = [
   { id: 'haz.flood_depth', label: 'Flood depth, 1-in-100-year', unit: 'm', ramp: 'ldl.seq.blue', periods: ['2026'], dataset: 'flood-hazard', class: 'estimated', description: 'Modelled depth of standing water in a 1-in-100-year river flood.' },
   { id: 'pop.density', label: 'Population density', unit: 'per km²', ramp: 'ldl.seq.violet', periods: synth.POP_YEARS.map(String), dataset: 'pop-grid-100m', class: 'estimated', description: 'Residents per square kilometre on the population grid.' },
   { id: '@demo/re.asking_price_surface', label: 'Asking price surface', unit: 'LKR/perch', ramp: 'ldl.seq.orange', periods: ['2026'], dataset: 'property-asking-prices-sample', class: 'synthetic', description: 'Listing prices interpolated by inverse-distance weighting; blank where no listing is within 6.5 km.' },
   { id: 'acc.hospital_drive_time', label: 'Drive time to nearest hospital', unit: 'min', ramp: 'ldl.seq.teal', periods: ['2026'], dataset: 'access-health', class: 'estimated', description: 'Minutes by road to the nearest base hospital or above.' },
   { id: 'dem', label: 'Elevation', unit: 'm', ramp: 'ldl.seq.green', periods: ['2026'], dataset: 'dem', class: 'official', description: 'Height above sea level.' },
 ]
+export const GRID_META: GridMeta[] = [...REAL_GRIDS, ...SAMPLE_GRIDS]
 export const gridMeta = (id: string) => GRID_META.find((g) => g.id === id)
 
 export type FieldMeta = { id: string; label: string; kind: 'number' | 'category'; unit?: string; domain?: [number, number]; categories?: string[] }
-export type FeatureSetMeta = { id: string; label: string; geometry: 'point' | 'line' | 'polygon'; fields: FieldMeta[]; title?: string; class: DataClass }
-export const FEATURE_META: FeatureSetMeta[] = [
+export type FeatureSetMeta = { id: string; label: string; geometry: 'point' | 'line' | 'polygon'; fields: FieldMeta[]; title?: string; class: DataClass; real?: boolean }
+const SAMPLE_FEATURES: FeatureSetMeta[] = [
   {
     id: '@demo/property-asking-prices-sample', label: 'Land listings (sample)', geometry: 'point', title: 'land_use', class: 'synthetic',
     fields: [
@@ -84,10 +98,20 @@ export const FEATURE_META: FeatureSetMeta[] = [
   { id: 'roads', label: 'Road network', geometry: 'line', title: 'class', class: 'official', fields: [{ id: 'class', label: 'Class', kind: 'category', categories: ['motorway', 'trunk', 'primary', 'secondary'] }] },
   { id: 'protected-areas', label: 'Protected areas', geometry: 'polygon', title: 'name', class: 'official', fields: [{ id: 'designation', label: 'Designation', kind: 'category', categories: ['National park', 'Nature reserve', 'Protected area'] }, { id: 'area_km2', label: 'Area', kind: 'number', unit: 'km²', domain: [0, 1300] }] },
 ]
+export const FEATURE_META: FeatureSetMeta[] = [...REAL_FEATURES, ...SAMPLE_FEATURES]
 export const featureMeta = (id: string) => FEATURE_META.find((f) => f.id === id)
 
 /* ---------------- payloads ---------------- */
-export type FrameColumn = { id: string; indicator: string; period: string; unit: string; label: string; class: DataClass; values: (number | null)[]; n?: number[]; basis?: ('observed' | 'estimated')[] }
+/**
+ * Where a payload came from: `api` is the engine; `sample` is this bundle's sample data, used for a source
+ * the API does not serve (or every source, when the API cannot be reached). Absent = sample.
+ */
+export type Origin = { origin?: 'api' | 'sample' }
+/** Vector tiles of the engine (`/v2/tiles/{id}/{z}/{x}/{y}.mvt`), with the zoom range the archive holds. */
+export type TileRef = { tiles: string[]; minzoom: number; maxzoom: number; sourceLayer: string; filter?: unknown[] }
+/** The admin boundary tileset a frame joins to by p-code (`promoteId: 'pcode'`, feature-state). */
+export type AdminTiles = TileRef & { level: number; parent?: string; centroidsLayer: string; /** the zoom the tiles carry this level from; below it `geometry` (decoded shapes) draws the fill */ gate?: number }
+export type FrameColumn = { id: string; indicator: string; period: string; unit: string; label: string; class: DataClass; values: (number | null)[]; n?: number[]; basis?: ('observed' | 'estimated')[]; /** class breaks the engine drew this column with (an analysis output), in its own units */ breaks?: number[] }
 export type FramePayload = {
   kind: 'frame'
   support: { scheme: 'admin'; level: number; parent?: string; n: number }
@@ -99,12 +123,28 @@ export type FramePayload = {
   centroids: [number, number][]
   national?: Record<string, number>
   fields: FieldMeta[]
-}
-export type GridPayload = { kind: 'grid'; grid: synth.Grid; id: string; unit: string; label: string; period: string; domain: [number, number]; class: DataClass }
+  /** real frames carry no geometry: they colour the admin tileset through feature-state */
+  tiles?: AdminTiles
+} & Origin
+export type GridPayload = { kind: 'grid'; grid: synth.Grid; id: string; unit: string; label: string; period: string; domain: [number, number]; class: DataClass } & Origin
+/** `ldl-v16` value tiles (10 §3.2): numbers per pixel, coloured in the browser; `sample` is a decoded overview for breaks and histograms. */
+export type ValuesPayload = {
+  kind: 'values'
+  id: string
+  unit: string
+  label: string
+  period: string
+  domain: [number, number]
+  class: DataClass
+  values: { template: string; scale: number; offset: number; nodata: number; minzoom: number; maxzoom: number; reducer?: string; categories?: Record<string, string> }
+  sample: Float32Array
+} & Origin
+/** Terrain for shading: a Terrarium raster-dem tileset. */
+export type DemPayload = { kind: 'dem'; tiles: string[]; minzoom: number; maxzoom: number; encoding: 'terrarium' | 'mapbox' } & Origin
 /** `tiles`: the set is too large for GeoJSON and comes as vector tiles (here: the basemap's own). */
-export type FeaturesPayload = { kind: 'features'; geometry: 'point' | 'line' | 'polygon'; collection: FeatureCollection; fields: FieldMeta[]; title?: string; class: DataClass; tiles?: { url: string; sourceLayer: string; filter: unknown[] } }
-export type BoundariesPayload = { kind: 'boundaries'; level: number; collection: FeatureCollection; centroids: FeatureCollection<Point> }
-export type LayerData = FramePayload | GridPayload | FeaturesPayload | BoundariesPayload
+export type FeaturesPayload = { kind: 'features'; geometry: 'point' | 'line' | 'polygon'; collection: FeatureCollection; fields: FieldMeta[]; title?: string; class: DataClass; tiles?: { url: string; sourceLayer: string; filter: unknown[] } | TileRef; count?: number } & Origin
+export type BoundariesPayload = { kind: 'boundaries'; level: number; collection: FeatureCollection; centroids: FeatureCollection<Point>; tiles?: AdminTiles } & Origin
+export type LayerData = FramePayload | GridPayload | ValuesPayload | DemPayload | FeaturesPayload | BoundariesPayload
 
 const finite = (a: ArrayLike<number>): [number, number] => {
   let lo = Infinity, hi = -Infinity
@@ -239,6 +279,8 @@ export type CatalogueItem = {
   /** the dataset page, where one exists */
   dataset?: string
   presets: Preset[]
+  /** bundled sample data: the engine does not serve it */
+  sample?: boolean
 }
 const TIME = { bind: 'time' as const, match: 'asof' as const }
 /** A tint laid over other layers: it darkens on a light basemap and lightens on a dark one. */
@@ -305,9 +347,9 @@ export const PRESET = {
     id: 'places:point', label: 'Towns', hint: 'Dots with names', type: 'point', name: 'Towns and cities', source: { kind: 'features', dataset: 'places' },
     style: { size: { field: 'population', scale: { type: 'continuous', transform: 'sqrt', range: [1.8, 5.5] } }, fill: 'ldl.tone.ink', stroke: { color: 'ldl.tone.paper', width: 1.2 }, label: { text: '{name}', size: 11.5 } },
   }),
-  rivers: (): Preset => ({ id: 'rivers:line', label: 'Rivers', hint: 'Width by class', type: 'line', name: 'Rivers', source: { kind: 'features', dataset: 'waterways' }, style: { stroke: { color: 'ldl.tone.blue', width: { field: 'class', scale: { type: 'categorical', mapping: { 'Main river': '2.2', River: '1.4', Stream: '0.8' } } } } }, opacity: 0.9 }),
+  rivers: (): Preset => ({ id: 'rivers:line', label: 'Rivers', hint: 'Width by class', type: 'line', name: 'Rivers', source: { kind: 'features', dataset: 'waterways' }, style: { stroke: { color: 'ldl.tone.blue', width: { field: 'class', scale: { type: 'categorical', mapping: { 'Main river': 2.2, River: 1.4, Stream: 0.8 } } } } }, opacity: 0.9 }),
   rail: (): Preset => ({ id: 'rail:line', label: 'Lines', hint: 'Dashed, with a casing', type: 'line', name: 'Railway lines', source: { kind: 'features', dataset: 'railways' }, style: { stroke: { color: 'ldl.tone.ink', width: 1.2, dash: [4.5, 2.4], 'x-casing': true } }, opacity: 0.9 }),
-  roads: (): Preset => ({ id: 'roads:line', label: 'Roads', hint: 'Width and colour by class', type: 'line', name: 'Main roads', source: { kind: 'features', dataset: 'roads' }, style: { stroke: { color: 'ldl.tone.grey', width: { field: 'class', scale: { type: 'categorical', mapping: { motorway: '2.4', trunk: '1.9', primary: '1.3', secondary: '0.8' } } } } }, opacity: 0.8 }),
+  roads: (): Preset => ({ id: 'roads:line', label: 'Roads', hint: 'Width and colour by class', type: 'line', name: 'Main roads', source: { kind: 'features', dataset: 'roads' }, style: { stroke: { color: 'ldl.tone.grey', width: { field: 'class', scale: { type: 'categorical', mapping: { motorway: 2.4, trunk: 1.9, primary: 1.3, secondary: 0.8 } } } } }, opacity: 0.8 }),
   protectedAreas: (scheme: Theme = 'light'): Preset => ({
     id: 'protected:polygon', label: 'Areas', hint: 'Filled by designation', type: 'polygon', name: 'Protected areas', source: { kind: 'features', dataset: 'protected-areas' },
     style: { fill: { field: 'designation', scale: { type: 'categorical', mapping: { 'National park': 'ldl.tone.green', 'Nature reserve': 'ldl.tone.teal', 'Protected area': 'ldl.tone.grey' } } }, stroke: { color: 'ldl.tone.green', width: 0.8, dash: [4.5, 2.4] } },
@@ -322,6 +364,8 @@ const LDL = 'Lanka Data Layer (derived)'
 const CCBY = { label: 'CC BY 4.0', status: 'attribution' as LicenceStatus }
 const ODBL = { label: 'ODbL 1.0', status: 'attribution' as LicenceStatus }
 const UNSTATED = { label: 'No stated licence', status: 'unclear' as LicenceStatus }
+/** The sample catalogue: everything when the engine is unreachable; otherwise only what it has no counterpart for. */
+export const SAMPLE_ONLY = new Set(['property-asking-prices-sample', 'access-health', 'health-facilities', 'places'])
 export const catalogue = (scheme: Theme): CatalogueItem[] => [
   { id: 'flood-hazard', title: 'River flood hazard', summary: 'Modelled depth of a 1-in-100-year river flood on the 500 m grid.', theme: 'Hazard', publisher: LDL, licence: CCBY, coverage: 'Sri Lanka', updated: '2026-10-02', shape: 'Grid', class: 'estimated', presets: [PRESET.floodRaster(scheme)] },
   { id: 'flood-exposure', title: 'Flood exposure', summary: 'Share of residents inside the 1-in-100-year flood extent, for every admin unit.', theme: 'Hazard', publisher: LDL, licence: CCBY, coverage: 'Districts island-wide · DS and GN in Western Province', updated: '2026-10-02', shape: 'Areas', class: 'estimated', dataset: 'flood-exposure', presets: [choropleth('exp.flood_pop_share', 2), choropleth('exp.flood_pop_share', 3, 'LK1'), choropleth('exp.flood_pop_share', 4, 'LK1')] },

@@ -1,7 +1,9 @@
-// Mock of the app plane's map store (10-map-composition §5, §6.1): starter maps that ship with the
-// product, and the visitor's own maps kept in localStorage in place of `app.maps`.
+// The starter maps that ship with the product, and the visitor's own maps kept in localStorage in place
+// of `app.maps` (10-map-composition §5, §6.1; saved maps arrive with WP-31). The starters are written
+// against the engine's datasets, except the flood-vs-price showcase, which runs on the synthetic sample.
 import { blankDocument, GENERATOR, instantiate, uid, type Group, type Layer, type LayerNode, type LayerTemplate, type MapDocument, type Source, type TimeConfig } from '@/lib/map-spec'
 import type { Theme } from '@/lib/hooks'
+import { realChoropleth, REAL_PRESET } from '@/api/real/registry'
 import { PRESET } from './layers'
 
 const KEY = 'ldl-maps/1'
@@ -34,8 +36,65 @@ function builder(title: string, description: string) {
   return { doc, add, source, group, done }
 }
 
+/** The engine's flood hazard against census population density, DS divisions island-wide: the WP-29 golden pair. */
+function floodVsDensity(scheme: Theme): MapDocument {
+  const b = builder('Flood exposure vs population density', 'How the share of each DS division inside the modelled 1-in-100-year river flood extent relates to how densely it is populated. JRC flood hazard against Census 2024. Associations between areas, not causes.')
+  b.source('flood_share', realChoropleth('haz.flood_area_share:rp100', 3).source)
+  b.source('density', realChoropleth('derived.per_km2:pop', 3).source)
+  b.source('flood', REAL_PRESET.floodDepth(scheme).source)
+  b.source('rel_biv', { kind: 'analysis', ref: 'rel', output: 'bivariate' })
+  b.source('dsd', { kind: 'boundaries', scheme: 'admin', level: 3 })
+  b.doc.analyses = {
+    rel: {
+      spec: 'ldl-analysis/1',
+      method: 'relate',
+      support: { kind: 'admin', level: 3 },
+      // labels are part of the request (and so of its id): these are the engine's golden request's own
+      variables: { x: { source: 'flood_share', label: 'flood area share (1-in-100-year)' }, y: { source: 'density', transform: 'log', label: 'population density' } },
+      params: { correlation: ['pearson', 'spearman'], regression: 'ols', robust: true, spatial: { weights: 'knn6', local: 'none', permutations: 999 }, bivariate: { classes: 3, method: 'quantile' }, scale_sensitivity: [2] },
+    },
+    zone: {
+      spec: 'ldl-analysis/1',
+      method: 'group_compare',
+      support: { kind: 'admin', level: 3 },
+      variables: { y: { source: 'density', transform: 'log', label: 'population density' }, group: { source: 'flood_share', label: 'flood area share (1-in-100-year)' } },
+      params: { zone: { threshold: 20, label: 'at least 20 % of the area in the 1-in-100-year flood extent' }, compare: 'inside_vs_outside', tests: ['welch', 'mann_whitney'], bootstrap: 999 },
+    },
+  }
+  b.doc.panels = [
+    { id: 'p_legend', type: 'legend' },
+    { id: 'p_scatter', type: 'chart', chart: 'scatter', analysis: 'rel', linked: 'l_biv', options: { fit: ['ols', 'robust'], density: 'points', brush: true } },
+    { id: 'p_stats', type: 'stats', analysis: 'rel' },
+    { id: 'p_zone', type: 'stats', analysis: 'zone' },
+  ]
+  return b.done('m_flood_density', [
+    b.add(REAL_PRESET.boundaryLabels(3), { name: 'DS division names' }, 'dsd'),
+    b.add(REAL_PRESET.boundaryLines(3), { name: 'DS divisions', opacity: 0.35 }, 'dsd'),
+    b.add(REAL_PRESET.rivers(), { opacity: 0.7 }),
+    b.add(REAL_PRESET.floodDepth(scheme), { id: 'l_flood', opacity: scheme === 'dark' ? 0.5 : 0.6 }, 'flood'),
+    b.group('Flood × density', [
+      b.add(
+        {
+          type: 'bivariate',
+          name: 'Flood area share × population density',
+          source: { kind: 'analysis', ref: 'rel', output: 'bivariate' },
+          style: { fill: { bivariate: { x: { field: 'x', scale: { type: 'quantile', classes: 3 } }, y: { field: 'y', scale: { type: 'quantile', classes: 3 } }, palette: 'ldl.biv.blue-orange' } }, stroke: { color: 'ldl.tone.paper', width: 0.3 }, uncertainty: 'off' },
+          opacity: 0.9,
+        },
+        { id: 'l_biv' },
+        'rel_biv',
+      ),
+    ]),
+    b.group(
+      'Inputs',
+      [b.add(realChoropleth('haz.flood_area_share:rp100', 3), { name: 'Flood area share, 1-in-100-year', visible: false }, 'flood_share'), b.add(realChoropleth('derived.per_km2:pop', 3), { name: 'Population density', visible: false }, 'density')],
+      { collapsed: true },
+    ),
+  ])
+}
+
 function floodVsPrices(scheme: Theme): MapDocument {
-  const b = builder('Flood exposure vs property prices', 'Where modelled 1-in-100-year river flooding coincides with lower asking prices in Western Province. Associations, not causes.')
+  const b = builder('Flood exposure vs property prices (synthetic sample)', 'A showcase on the synthetic sample: where modelled flooding coincides with lower asking prices in Western Province. Every input here is demonstration data, not market or survey data. Associations, not causes.')
   b.doc.extent = { geo: 'LK1' }
   b.doc.view = { center: [80.03, 6.85], zoom: 9.35, bounds: [79.8, 6.36, 80.3, 7.32] }
   b.source('exposure', { kind: 'indicator', indicator: 'exp.flood_pop_share', dims: { return_period: 'RP100' }, level: 4, parent: 'LK1', period: 'latest' })
@@ -125,29 +184,39 @@ function floodVsPrices(scheme: Theme): MapDocument {
   ])
 }
 
-function hospitalAccess(_scheme: Theme): MapDocument {
-  void _scheme
-  const b = builder('Access to hospitals', 'Drive time to the nearest base hospital or above, with the facilities themselves and the roads that reach them.')
+function hospitalAccess(scheme: Theme): MapDocument {
+  const b = builder('Access to hospitals', 'Hospitals and clinics mapped in OpenStreetMap against where people live (WorldPop 2025), with the main roads that reach them.')
   return b.done('m_hospital_access', [
-    b.add(PRESET.towns(), { opacity: 0.9 }),
-    b.add(PRESET.hospitals()),
-    b.add(PRESET.roads(), { opacity: 0.55 }),
-    b.add(PRESET.boundaryLines(2), { opacity: 0.45 }),
-    b.add(PRESET.driveRaster(), { opacity: 0.85 }),
-    b.add(PRESET.choropleth('access.hospital.drive_min', 2), { name: 'Mean drive time by district', visible: false }),
-    b.add(PRESET.hillshade(), { opacity: 0.5 }),
+    b.add(REAL_PRESET.hospitals(), { opacity: 0.95 }),
+    b.add(REAL_PRESET.clinics(), { visible: false }),
+    b.add(REAL_PRESET.roads(), { opacity: 0.55 }),
+    b.add(REAL_PRESET.boundaryLines(2), { opacity: 0.45 }),
+    b.add(REAL_PRESET.population(), { opacity: 0.85 }),
+    b.add(realChoropleth('pop.grid_total', 3), { name: 'Modelled population by DS division', visible: false }),
+    b.add(REAL_PRESET.hillshade(), { opacity: scheme === 'dark' ? 0.6 : 0.45 }),
   ])
 }
 
 function populationAndRail(scheme: Theme): MapDocument {
-  const b = builder('Population and rail', 'Where people live against the railway that serves them, 2012 to 2026.')
-  b.doc.time = TIME('2024', '2012', '2026')
+  const b = builder('Population and rail', 'Where people live, by DS division (Census 2024), against the railway and its stations.')
+  void scheme
   return b.done('m_population_rail', [
-    b.add(PRESET.towns(), { opacity: 0.9 }),
-    b.add({ ...PRESET.rail(), style: { stroke: { color: 'ldl.tone.ink', width: { field: 'trains_per_day', scale: { type: 'continuous', transform: 'sqrt', range: [0.8, 3.6] } }, 'x-casing': true } } }, { name: 'Railway, by trains per day' }),
-    b.add(PRESET.protectedAreas(scheme)),
-    b.add(PRESET.boundaryLines(1), { opacity: 0.4 }),
-    b.add({ ...PRESET.popRaster(), style: { ...PRESET.popRaster().style, 'x-relief': true } }, { opacity: 0.9 }),
+    b.add(REAL_PRESET.stations(), { opacity: 0.95 }),
+    b.add(REAL_PRESET.rail(), { name: 'Railway', opacity: 0.95 }),
+    b.add(REAL_PRESET.boundaryLines(1), { opacity: 0.45 }),
+    b.add(realChoropleth('derived.per_km2:pop', 3), { name: 'Population density', opacity: 0.85 }),
+  ])
+}
+
+function landAndTerrain(scheme: Theme): MapDocument {
+  const b = builder('Land cover and terrain', 'ESA WorldCover land cover over shaded Copernicus terrain, with protected areas and the irrigation tanks and reservoirs mapped in OpenStreetMap.')
+  return b.done('m_land_terrain', [
+    b.add(REAL_PRESET.protectedAreas(scheme), { opacity: scheme === 'dark' ? 0.5 : 0.35 }),
+    b.add(REAL_PRESET.waterBodies(scheme)),
+    b.add(REAL_PRESET.hillshade(), { opacity: scheme === 'dark' ? 0.75 : 0.6 }),
+    b.add(REAL_PRESET.landCover(), { opacity: 0.8 }),
+    b.add(realChoropleth('lc.class_share:50', 3, { type: 'jenks' }), { name: 'Built-up share by DS division', visible: false }),
+    b.add(REAL_PRESET.elevation(), { visible: false }),
   ])
 }
 
@@ -164,7 +233,7 @@ export function glance(indicator = 'pop.density', level = 2, _scheme: Theme = 'd
   ])
 }
 
-export const STARTERS: ((scheme: Theme) => MapDocument)[] = [floodVsPrices, hospitalAccess, populationAndRail, (scheme) => glance(undefined, undefined, scheme)]
+export const STARTERS: ((scheme: Theme) => MapDocument)[] = [floodVsDensity, hospitalAccess, populationAndRail, landAndTerrain, floodVsPrices, (scheme) => glance(undefined, undefined, scheme)]
 /** Starters are written for the scheme they open in: a tint multiplies on a light map and screens on a dark one. */
 const starterCache = new Map<string, MapDocument>()
 const starter = (id: string, scheme: Theme): MapDocument | undefined => {
@@ -179,7 +248,7 @@ const starter = (id: string, scheme: Theme): MapDocument | undefined => {
   return starterCache.get(key)
 }
 export const isStarter = (id: string | undefined) => !!id && !!starter(id, 'dark')
-export const DEFAULT_MAP = 'm_flood_prices'
+export const DEFAULT_MAP = 'm_flood_density'
 
 /* ---------------- the visitor's own maps ---------------- */
 type Store = Record<string, MapDocument>

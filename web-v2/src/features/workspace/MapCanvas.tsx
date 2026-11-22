@@ -47,6 +47,8 @@ export function MapCanvas(p: Props) {
       },
     )
     l.engine.current = engine
+    // a handle for debugging in development builds only
+    if (import.meta.env.DEV) (window as unknown as { __ldl?: MapEngine }).__ldl = engine
     return () => {
       l.engine.current = null
       engine.dispose()

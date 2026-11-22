@@ -15,10 +15,13 @@ import {
   type LngLatBoundsLike,
   type MapGeoJSONFeature,
   type PaddingOptions,
+  type RasterTileSource,
   type StyleSpecification,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import { getJson } from '@/api/http'
+import { installValueProtocol } from '@/api/real/valueTiles'
 import type { LayerData } from '@/api/workspace'
 import { LK_BOUNDS } from '@/lib/geo'
 import type { Theme } from '@/lib/hooks'
@@ -29,6 +32,7 @@ import { compileLayer, type Compiled, type Env, type LegendModel, type MlLayer, 
 import { Compositor, isoId } from './compositor'
 
 setWorkerUrl(workerUrl)
+installValueProtocol()
 
 const MAX_BOUNDS: LngLatBoundsLike = [
   [73.4, 3.1],
@@ -69,6 +73,10 @@ export type EngineEvents = {
 }
 type Installed = { spec: MlLayer; opacity: string }
 type InstalledSource = { kind: MlSource['kind']; options: string; data: unknown; key: string; canvas?: HTMLCanvasElement }
+/** What decides whether a source can be updated in place or must be replaced. */
+const sourceOptions = (w: MlSource) =>
+  w.kind === 'geojson' ? JSON.stringify(w.options ?? {}) : w.kind === 'vector' ? JSON.stringify([w.url, w.tiles, w.minzoom, w.maxzoom, w.promoteId]) : w.kind === 'raster' ? JSON.stringify([w.minzoom, w.maxzoom]) : w.kind === 'raster-dem' ? JSON.stringify([w.tiles, w.minzoom, w.maxzoom, w.encoding]) : ''
+type StateTarget = { source: string; sourceLayer: string; id: string }
 
 function bboxOf(fc: FeatureCollection | Feature): [[number, number], [number, number]] | null {
   let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity
@@ -121,6 +129,11 @@ export class MapEngine {
   private pickRaf = 0
   private hoverKey = ''
   private selected: Feature | null = null
+  private selectedCode: string | null = null
+  /** feature-state applied per tiled source (its compiled key), and the unit outlined on hover and on selection */
+  private stateKeys = new Map<string, string>()
+  private hlTarget: StateTarget | null = null
+  private selTargets: StateTarget[] = []
   private disposed = false
 
   constructor(container: HTMLElement, opts: { scheme: Theme; basemap: StyleSpecification | null | undefined; padding: PaddingOptions; reducedMotion: boolean; view: MapDocument['view'] }, events: EngineEvents) {
@@ -145,7 +158,8 @@ export class MapEngine {
     this.map = map
     map.touchZoomRotate.disableRotation()
     map.keyboard.disableRotation()
-    map.addControl(new AttributionControl({ compact: true }), 'bottom-right')
+    this.attribution = new AttributionControl({ compact: true })
+    map.addControl(this.attribution, 'bottom-right')
     map.setPadding(opts.padding)
     this.applyView(opts.view, 0)
     this.compositor.attach(map)
@@ -187,6 +201,19 @@ export class MapEngine {
     }
   }
   dispose: () => void
+  private attribution: AttributionControl
+  private credits = ''
+  /** The resolved document's attribution and notices, always drawn (ui-contract §4): there is no way to hide them. */
+  setAttribution(items: string[]) {
+    const key = items.join('\n')
+    if (key === this.credits || this.disposed) return
+    this.credits = key
+    this.map.removeControl(this.attribution)
+    this.attribution = new AttributionControl({ compact: true, customAttribution: items })
+    this.map.addControl(this.attribution, 'bottom-right')
+    // on a phone the credits start folded behind their (i): one tap shows them, they are never removed
+    if (this.map.getContainer().clientWidth < 768) this.map.getContainer().querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show')
+  }
 
   /* ---------------- basemap ---------------- */
   /** Remember where the basemap keeps its water and its labels, and quiet what the workspace draws itself. */
@@ -195,6 +222,9 @@ export class MapEngine {
     this.installed.clear()
     this.sources.clear()
     this.isoInstalled.clear()
+    this.stateKeys.clear()
+    this.hlTarget = null
+    this.selTargets = []
     this.order = ''
     const style = map.getStyle()
     const base = style.layers ?? []
@@ -251,7 +281,7 @@ export class MapEngine {
   }
   private env(): Env {
     const s = this.state!
-    return { scheme: s.scheme, time: s.time, glyphs: this.glyphs, font: this.font, relief: (z) => s.relief.get(z) }
+    return { scheme: s.scheme, time: s.time, glyphs: this.glyphs, font: this.font, relief: (z) => s.relief.get(z), zoom: () => this.map.getZoom() }
   }
   private visible(node: LayerNode, chain: LayerNode[]): boolean {
     const s = this.state!
@@ -316,7 +346,7 @@ export class MapEngine {
         changed = true
       }
       if (!c.out.layers.length) return { drew: false, areal: true }
-      const isolate = node.blend !== 'normal' || this.forceIso.has(node.id)
+      const isolate = node.blend !== 'normal' || this.forceIso.has(node.id) || !!c.out.isolate
       if (isolate) {
         ops.push(isoId(node.id, false))
         iso.add(node.id)
@@ -358,8 +388,9 @@ export class MapEngine {
     }
     for (const [id, cur] of [...this.sources]) {
       const w = wantSources.get(id)
-      const options = w?.kind === 'geojson' ? JSON.stringify(w.options ?? {}) : ''
+      const options = w ? sourceOptions(w) : ''
       if (w && w.kind === cur.kind && options === cur.options) continue
+      this.stateKeys.delete(id)
       for (const [lid, l] of [...this.installed]) {
         if (l.spec.source !== id) continue
         if (map.getLayer(lid)) map.removeLayer(lid)
@@ -382,8 +413,24 @@ export class MapEngine {
         }
       } else if (w.kind === 'vector') {
         if (!cur) {
-          map.addSource(id, { type: 'vector', url: w.url })
-          this.sources.set(id, { kind: 'vector', options: '', data: null, key: '' })
+          // the engine's tiles come with their zoom range inline: requests above `maxzoom` would 404, so MapLibre over-zooms instead
+          map.addSource(id, w.url ? { type: 'vector', url: w.url } : { type: 'vector', tiles: w.tiles, minzoom: w.minzoom ?? 0, maxzoom: w.maxzoom ?? 14, ...(w.promoteId ? { promoteId: w.promoteId } : {}) })
+          this.sources.set(id, { kind: 'vector', options: sourceOptions(w), data: null, key: '' })
+        }
+      } else if (w.kind === 'raster') {
+        const key = w.tiles.join()
+        if (!cur) {
+          map.addSource(id, { type: 'raster', tiles: w.tiles, minzoom: w.minzoom, maxzoom: w.maxzoom, tileSize: 256 })
+          this.sources.set(id, { kind: 'raster', options: sourceOptions(w), data: null, key })
+        } else if (cur.key !== key) {
+          // a new paint of the same value tiles: recoloured from memory by the protocol, nothing is fetched
+          ;(map.getSource(id) as RasterTileSource | undefined)?.setTiles(w.tiles)
+          cur.key = key
+        }
+      } else if (w.kind === 'raster-dem') {
+        if (!cur) {
+          map.addSource(id, { type: 'raster-dem', tiles: w.tiles, minzoom: w.minzoom, maxzoom: w.maxzoom, encoding: w.encoding, tileSize: 256 })
+          this.sources.set(id, { kind: 'raster-dem', options: sourceOptions(w), data: null, key: '' })
         }
       } else {
         const f = w.frame
@@ -423,10 +470,11 @@ export class MapEngine {
       if (!same(old.opacity, w.opacity)) cur.opacity = ''
       cur.spec = w
     }
-    for (const [id] of want) {
+    for (const [id, w] of want) {
       const zoom = this.docLayer(owner.get(id)!)?.zoom
+      const lo = Math.max(zoom?.[0] ?? 0, w.minzoom ?? 0), hi = Math.min(zoom?.[1] ?? 24, w.maxzoom ?? 24)
       const l = map.getLayer(id)
-      if (l && (l.minzoom !== (zoom?.[0] ?? 0) || l.maxzoom !== (zoom?.[1] ?? 24))) map.setLayerZoomRange(id, zoom?.[0] ?? 0, zoom?.[1] ?? 24)
+      if (l && (l.minzoom !== lo || l.maxzoom !== hi)) map.setLayerZoomRange(id, lo, hi)
     }
     for (const id of iso) {
       if (this.isoInstalled.has(id)) continue
@@ -450,6 +498,19 @@ export class MapEngine {
       const waterBefore = lift ? (ops.slice(coast).find((id) => map.getLayer(id)) ?? 'ws-hl-casing') : (this.waterHome && map.getLayer(this.waterHome) ? this.waterHome : ops.find((id) => map.getLayer(id)))
       for (const id of this.waterIds) if (map.getLayer(id)) map.moveLayer(id, waterBefore)
       for (const id of this.symbolIds) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', s.basemap.labels === 'off' ? 'none' : 'visible')
+    }
+
+    // 5. per-unit colours of frames on the boundary tiles
+    for (const { out } of this.compiled.values()) for (const st of out.states ?? []) {
+      if (!map.getSource(st.source) || this.stateKeys.get(st.source) === st.key) continue
+      const at = st.sourceLayer ? { source: st.source, sourceLayer: st.sourceLayer } : { source: st.source }
+      map.removeFeatureState(at)
+      for (const [code, state] of st.values) map.setFeatureState({ ...at, id: code }, state)
+      this.stateKeys.set(st.source, st.key)
+      // the outline states went with the rest
+      if (this.hlTarget?.source === st.source) this.hlTarget = null
+      this.selTargets = this.selTargets.filter((t) => t.source !== st.source)
+      if (this.selectedCode) this.selectTiled(this.selectedCode)
     }
 
     this.owner = owner
@@ -550,12 +611,33 @@ export class MapEngine {
     if (!tip) return this.setHover(null, '')
     const key = hit.feature ? `${hit.layerId}:${String(hit.properties.pcode ?? hit.properties.id ?? hit.feature.id ?? tip.title)}` : `${hit.layerId}:${tip.rows[0]?.value}`
     if (key === this.hoverKey) return
-    const geometry = hit.feature ? (c?.lookup?.(hit.properties) ?? (hit.feature.geometry.type === 'Point' ? ({ type: 'Feature', properties: {}, geometry: hit.feature.geometry } as Feature) : null)) : null
-    this.setHover({ layerId: hit.layerId, tip, code: hit.code }, key, geometry)
+    const tiled = hit.feature && hit.code ? c?.tiled : undefined
+    const geometry = hit.feature && !tiled ? (c?.lookup?.(hit.properties) ?? (hit.feature.geometry.type === 'Point' ? ({ type: 'Feature', properties: {}, geometry: hit.feature.geometry } as Feature) : null)) : null
+    this.setHover({ layerId: hit.layerId, tip, code: hit.code }, key, geometry, tiled && hit.code ? { ...tiled, id: hit.code } : null)
   }
-  private setHover(hover: Hover | null, key: string, geometry: Feature | null = null) {
+  /** Outline one unit of a tiled source by feature-state (tile-clipped geometry would show the tile seams). */
+  private setHl(target: StateTarget | null) {
+    const cur = this.hlTarget
+    if (cur && target && cur.source === target.source && cur.id === target.id) return
+    if (cur && this.map.getSource(cur.source)) this.map.setFeatureState(cur, { hl: false })
+    this.hlTarget = target
+    if (target && this.map.getSource(target.source)) this.map.setFeatureState(target, { hl: true })
+  }
+  private selectTiled(code: string | null) {
+    for (const t of this.selTargets) if (this.map.getSource(t.source)) this.map.setFeatureState(t, { sel: false })
+    this.selTargets = []
+    if (!code) return
+    for (const { out } of this.compiled.values()) {
+      if (!out.tiled || !this.map.getSource(out.tiled.source)) continue
+      const t = { ...out.tiled, id: code }
+      this.map.setFeatureState(t, { sel: true })
+      this.selTargets.push(t)
+    }
+  }
+  private setHover(hover: Hover | null, key: string, geometry: Feature | null = null, tiled: StateTarget | null = null) {
     if (key === this.hoverKey && !hover) return
     this.hoverKey = key
+    if (this.ready) this.setHl(tiled)
     if (this.ready) (this.map.getSource('ws-hl') as GeoJSONSource | undefined)?.setData(geometry ?? EMPTY)
     this.map.getCanvas().style.cursor = hover ? 'pointer' : ''
     this.events.onHover(hover)
@@ -578,12 +660,19 @@ export class MapEngine {
     let feature: Feature | null = null
     if (code) for (const { out } of this.compiled.values()) if ((feature = out.lookup?.({ pcode: code }) ?? null)) break
     ;(this.map.getSource('ws-hl') as GeoJSONSource | undefined)?.setData(feature ?? EMPTY)
+    // a unit on the boundary tiles: the first tiled layer that holds it
+    const tiled = !feature && code ? [...this.compiled.values()].find(({ out }) => out.tiled && out.states?.[0]?.values.some(([c]) => c === code))?.out.tiled : undefined
+    this.setHl(tiled && code ? { ...tiled, id: code } : null)
   }
   select(code: string | null) {
     let feature: Feature | null = null
     if (code) for (const { out } of this.compiled.values()) if ((feature = out.lookup?.({ pcode: code }) ?? null)) break
     this.selected = feature
-    if (this.ready) (this.map.getSource('ws-sel') as GeoJSONSource | undefined)?.setData(feature ?? EMPTY)
+    this.selectedCode = code
+    if (this.ready) {
+      ;(this.map.getSource('ws-sel') as GeoJSONSource | undefined)?.setData(feature ?? EMPTY)
+      this.selectTiled(feature ? null : code)
+    }
   }
 
   /* ---------------- what the panels read ---------------- */
@@ -644,14 +733,26 @@ export class MapEngine {
   /** Frame everything a layer draws. */
   fitLayer(layerId: string) {
     const data = this.state?.data.get(layerId)
-    const box = !data ? null : data.kind === 'grid' ? ([[data.grid.west, data.grid.south], [data.grid.east, data.grid.north]] as [[number, number], [number, number]]) : bboxOf(data.kind === 'frame' ? data.geometry : data.collection)
-    if (box) this.fit(data?.kind === 'grid' || (data?.kind === 'features' && data.tiles) ? LK_BOUNDS : box, 28, 12)
+    if (!data) return
+    if (data.kind === 'values' || data.kind === 'dem' || ((data.kind === 'frame' || data.kind === 'boundaries' || data.kind === 'features') && data.tiles)) {
+      const parent = (data.kind === 'frame' || data.kind === 'boundaries') && data.tiles?.parent
+      if (parent) return this.focus(parent)
+      const own = data.kind === 'features' && data.collection.features.length ? bboxOf(data.collection) : null
+      return this.fit(own ?? LK_BOUNDS, 28, 12)
+    }
+    const box = data.kind === 'grid' ? ([[data.grid.west, data.grid.south], [data.grid.east, data.grid.north]] as [[number, number], [number, number]]) : bboxOf(data.kind === 'frame' ? data.geometry : data.collection)
+    if (box) this.fit(data.kind === 'grid' ? LK_BOUNDS : box, 28, 12)
   }
   focus(code: string) {
     let feature: Feature | null = null
     for (const { out } of this.compiled.values()) if ((feature = out.lookup?.({ pcode: code }) ?? null)) break
     const box = feature && bboxOf(feature)
-    if (box) this.fit(box, this.map.getContainer().clientWidth < 768 ? 20 : 56, 10.5)
+    const pad = this.map.getContainer().clientWidth < 768 ? 20 : 56
+    if (box) return this.fit(box, pad, 10.5)
+    // a unit drawn from the boundary tiles: its extent comes from the area record
+    void getJson<{ bbox?: [number, number, number, number] }>(`/v2/areas/${encodeURIComponent(code)}`)
+      .then((a) => a.bbox && !this.disposed && this.fit([[a.bbox[0], a.bbox[1]], [a.bbox[2], a.bbox[3]]], pad, 10.5))
+      .catch(() => {})
   }
 
   /* ---------------- export ---------------- */

@@ -7,6 +7,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { apiAvailable } from '@/api/http'
+import { createSnapshot, snapshotError } from '@/api/real/share'
 import { DEFAULT_MAP, glance, isStarter, mapQuery, saveMap } from '@/api/workspace'
 import type { DocActions } from '@/features/workspace/DocBar'
 import { exportJson, shareLink } from '@/features/workspace/exporting'
@@ -28,7 +30,8 @@ const readDraft = (key: string): MapDocument | null => {
   }
 }
 
-export default function Explore() {
+/** `shared`: a snapshot opened at `/m/{id}` (read from the app plane, never written back: snapshots are immutable). */
+export default function Explore({ shared }: { shared?: MapDocument } = {}) {
   const [theme] = useTheme()
   const [params] = useSearchParams()
   const { hash } = useLocation()
@@ -44,16 +47,17 @@ export default function Explore() {
   const level = params.get('level') === '1' || area?.length === 3 ? 1 : 2
   const id = mapParam ?? (legacy || area ? 'm_glance' : DEFAULT_MAP)
   // what identifies the document, whatever theme it is shown in
-  const key = imported ? `import:${imported.n}` : inline ? `link:${inline.slice(0, 48)}` : mapParam === 'new' ? 'new' : `${id}:${legacy ?? ''}:${id === 'm_glance' ? level : ''}`
-  const stored = useQuery({ ...mapQuery(id, theme), enabled: !imported && !inline && mapParam !== 'new' && !(id === 'm_glance' && !!legacy) })
+  const key = shared && !imported ? `snap:${shared.id}` : imported ? `import:${imported.n}` : inline ? `link:${inline.slice(0, 48)}` : mapParam === 'new' ? 'new' : `${id}:${legacy ?? ''}:${id === 'm_glance' ? level : ''}`
+  const stored = useQuery({ ...mapQuery(id, theme), enabled: !shared && !imported && !inline && mapParam !== 'new' && !(id === 'm_glance' && !!legacy) })
   const linked = useQuery({ queryKey: ['map-link', inline], queryFn: () => decodeDocument(inline!), enabled: !!inline && !imported, staleTime: Infinity, retry: false })
   const opened = useMemo<Opened | null>(() => {
+    if (shared && !imported) return { doc: shared, origin: 'link' }
     if (imported) return { doc: imported.doc, origin: 'new' }
     if (inline) return linked.data ? { doc: linked.data, origin: 'link' } : null
     if (mapParam === 'new') return { doc: blankDocument(), origin: 'new' }
     if (id === 'm_glance' && legacy) return { doc: glance(legacy, level, theme), origin: 'starter' }
     return stored.data ? { doc: stored.data, origin: isStarter(id) ? 'starter' : 'own' } : null
-  }, [imported, inline, linked.data, mapParam, id, legacy, level, stored.data, theme])
+  }, [shared, imported, inline, linked.data, mapParam, id, legacy, level, stored.data, theme])
 
   /* ---- into the store ---- */
   const loaded = useRef('')
@@ -182,7 +186,19 @@ export default function Explore() {
       },
       share: async () => {
         const d = getWs().doc
-        if (d) await navigator.clipboard?.writeText(await shareLink(withView(d))).catch(() => {})
+        if (!d) return
+        // a snapshot on the app plane (`/m/ms_…`); without the engine, the whole document in the link's fragment
+        if (!(await apiAvailable())) {
+          await navigator.clipboard?.writeText(await shareLink(withView(d))).catch(() => {})
+          return 'Link copied (map in the link)'
+        }
+        try {
+          const snap = await createSnapshot(withView(d))
+          await navigator.clipboard?.writeText(snap.url).catch(() => {})
+          return `Link copied · ${snap.id}`
+        } catch (e) {
+          return snapshotError(e)
+        }
       },
       exportJson: () => {
         const d = getWs().doc

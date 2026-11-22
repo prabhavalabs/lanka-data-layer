@@ -82,7 +82,23 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
   const [addOpen, setAddOpen] = useState(false)
   const [mapsOpen, setMapsOpen] = useState(false)
   const { scheme, style } = useBasemap(doc, theme)
-  const { data, relief, loading } = useLayerData(doc, selected, solo)
+  const { data, relief, loading, resolved, shown: onScreen } = useLayerData(doc, selected, solo)
+  /* ---- attribution and notices of the resolved document, on the map and in exports ---- */
+  const credits = useMemo(() => {
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
+    const notices = (resolved?.notices ?? []).filter((n) => n.code !== 'PRIVATE_DATA' || Object.values(resolved?.sources ?? {}).some((r) => r.access === 'denied'))
+    const sample = allLayers(doc.layers).some((l) => onScreen.has(l.id) && data.get(l.id)?.origin === 'sample')
+    const html = [
+      ...notices.map((n) => `<strong>${esc(n.code === 'ESTIMATE' ? 'Estimates' : n.code === 'PRIVATE_DATA' ? 'Not served' : n.code.charAt(0) + n.code.slice(1).toLowerCase().replace(/_/g, ' '))}:</strong> ${esc(n.code === 'PRIVATE_DATA' ? 'Some layers name workspace data this map cannot read; they are drawn from bundled sample data.' : n.text)}`),
+      ...(sample ? ['<strong>Sample data:</strong> layers marked SAMPLE are bundled demonstration data, not served by the engine.'] : []),
+      ...[...new Set((resolved?.attribution ?? []).map((a) => a.text))].map(esc),
+    ]
+    const plain = [...new Set((resolved?.attribution ?? []).map((a) => a.publisher))]
+    return { html, plain: resolved ? ['Lanka Data Layer', ...plain, ...(sample ? ['includes sample data'] : [])] : ['Lanka Data Layer · sample data'] }
+  }, [resolved, doc.layers, data, onScreen])
+  useEffect(() => {
+    engine.current?.setAttribution(credits.html)
+  }, [credits, tick])
   const ctx = useMemo<WorkspaceCtx>(() => ({ engine, data, scheme, tick, desktop }), [data, scheme, tick, desktop])
   const onCompiled = useCallback(() => setTick((t) => t + 1), [])
   useEffect(() => {
@@ -175,8 +191,8 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
       const model = e.legend(l.id)
       return model ? [{ title: l.legend.title ?? l.name, model }] : []
     })
-    void exportPng(e, doc, entries, { left: padding.left - 12, top: 0, right: padding.right - 12, bottom: 0 }, scheme === 'dark')
-  }, [doc, solo, padding, scheme])
+    void exportPng(e, doc, entries, { left: padding.left - 12, top: 0, right: padding.right - 12, bottom: 0 }, scheme === 'dark', credits.plain)
+  }, [doc, solo, padding, scheme, credits])
   const all: DocActions = useMemo(() => ({ ...docActions, exportPng: onExportPng }), [docActions, onExportPng])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

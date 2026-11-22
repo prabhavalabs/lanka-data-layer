@@ -1,7 +1,7 @@
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { StyleSpecification } from 'maplibre-gl'
 import { createContext, useContext, useEffect, useMemo, useRef, type RefObject } from 'react'
-import { layerDataQuery, reliefQuery, type LayerData } from '@/api/workspace'
+import { layerDataQuery, reliefQuery, resolveQuery, type LayerData, type Resolved } from '@/api/workspace'
 import type { Theme } from '@/lib/hooks'
 import { allLayers, isGroup, type LayerNode, type MapDocument } from '@/lib/map-spec'
 import type { Grid } from '@/mocks/synth'
@@ -74,47 +74,65 @@ export function shownLayers(nodes: LayerNode[], solo: string | null): Set<string
  * Data for the layers that need it: those on screen, and the selected one (its inspector draws a
  * histogram). A hidden layer issues no request; its data is fetched on first reveal.
  */
+/** The document's sources as the engine resolved them; `fresh` is false while a newer resolution is on its way. */
+export function useResolved(doc: Pick<MapDocument, 'sources' | 'pin'>): { resolved: Resolved | null | undefined; fresh: boolean } {
+  const q = useQuery(resolveQuery(doc.sources, doc.pin))
+  return { resolved: q.isError ? null : q.data, fresh: !q.isPlaceholderData && !q.isFetching }
+}
+/** A source's entry: undefined = not known yet (wait), null = not served (sample data). */
+export function resolvedFor(id: string, r: { resolved: Resolved | null | undefined; fresh: boolean }) {
+  if (r.resolved === undefined) return undefined
+  if (r.resolved === null) return null
+  const hit = r.resolved.sources[id]
+  if (hit) return hit
+  return r.fresh ? null : undefined
+}
+
 export function useLayerData(doc: MapDocument, selected: string | null, solo: string | null) {
   const layers = useMemo(() => allLayers(doc.layers), [doc.layers])
   const shown = useMemo(() => shownLayers(doc.layers, solo), [doc.layers, solo])
+  const resolution = useResolved(doc)
   // layers that share a source share one request; the cursor only changes the request of a grid (frames carry every period)
   const plan = useMemo(() => {
     const unique: { key: string; options: ReturnType<typeof layerDataQuery>; enabled: boolean }[] = []
     const at = layers.map((l) => {
-      const options = layerDataQuery(doc.sources[l.source], doc, doc.time)
+      const options = layerDataQuery(doc.sources[l.source], doc, doc.time, resolvedFor(l.source, resolution))
       const key = JSON.stringify(options.queryKey)
       const need = !!doc.sources[l.source] && (shown.has(l.id) || l.id === selected)
       let i = unique.findIndex((u) => u.key === key)
-      if (i < 0) i = unique.push({ key, options, enabled: need }) - 1
-      else if (need) unique[i].enabled = true
+      const can = options.enabled !== false
+      if (i < 0) i = unique.push({ key, options, enabled: need && can }) - 1
+      else if (need && can) unique[i].enabled = true
       return i
     })
     return { unique, at }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layers, doc.sources, doc.analyses, doc.time, shown, selected])
+  }, [layers, doc.sources, doc.analyses, doc.time, shown, selected, resolution.resolved, resolution.fresh])
   const results = useQueries({ queries: plan.unique.map((u) => ({ ...u.options, enabled: u.enabled })) })
   const last = useRef<{ ids: string[]; values: (LayerData | undefined)[]; map: Map<string, LayerData | undefined> }>({ ids: [], values: [], map: new Map() })
   const ids = layers.map((l) => l.id)
   const values = plan.at.map((i) => results[i]?.data)
   if (ids.length !== last.current.ids.length || ids.some((id, i) => id !== last.current.ids[i]) || values.some((v, i) => v !== last.current.values[i]))
     last.current = { ids, values, map: new Map(ids.map((id, i) => [id, values[i]])) }
-  const loading = layers.some((l, i) => shown.has(l.id) && results[plan.at[i]]?.isFetching)
+  const loading = resolution.resolved === undefined || layers.some((l, i) => shown.has(l.id) && results[plan.at[i]]?.isFetching)
 
   // the terrain model's shading, once per exaggeration in use
   const reliefs = useMemo(() => {
     const z = new Set<number>()
-    for (const l of layers) {
-      if (!shown.has(l.id)) continue
-      if (l.type === 'hillshade') z.add(l.style.exaggeration ?? 1)
-      if (l.type === 'raster' && l.style['x-relief']) z.add(1)
+    for (const [i, l] of layers.entries()) {
+      // only the sample terrain needs this; the engine's relief is a raster-dem drawn by MapLibre itself
+      if (!shown.has(l.id) || results[plan.at[i]]?.data?.origin === 'api') continue
+      if (l.type === 'hillshade' && results[plan.at[i]]?.data) z.add(l.style.exaggeration ?? 1)
+      if (l.type === 'raster' && l.style['x-relief'] && results[plan.at[i]]?.data) z.add(1)
     }
     return [...z].sort()
-  }, [layers, shown])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layers, shown, values])
   const reliefResults = useQueries({ queries: reliefs.map((z) => reliefQuery(z)) })
   const reliefRef = useRef<{ key: string; map: Map<number, Grid> }>({ key: '', map: new Map() })
   const key = reliefs.map((z, i) => `${z}:${reliefResults[i].data ? 1 : 0}`).join()
   if (key !== reliefRef.current.key) reliefRef.current = { key, map: new Map(reliefs.flatMap((z, i) => (reliefResults[i].data ? [[z, reliefResults[i].data!] as [number, Grid]] : []))) }
-  return { data: last.current.map, relief: reliefRef.current.map, loading, shown }
+  return { data: last.current.map, relief: reliefRef.current.map, loading, shown, resolved: resolution.resolved }
 }
 
 /** A function that runs at most once per frame with the latest arguments: for slider drags that drive the map. */

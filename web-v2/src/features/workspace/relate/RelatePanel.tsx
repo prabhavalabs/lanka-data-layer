@@ -5,26 +5,37 @@
 // Rendering rules are the contract's (ui-contract-explore §6.4): guards above estimates, warnings open,
 // NOT_CAUSAL always visible, a blocked result shows no number, the server's sentences verbatim.
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDownUp, Ban, Check, CircleAlert, Info, Layers2, Plus, Quote } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
-import { analysisQuery, INDICATOR_META, indicatorMeta, LEVELS, type CompareResult, type RelateResult } from '@/api/workspace'
+import { ArrowDownUp, Ban, Check, CircleAlert, Info, Layers2, Play, Plus, Quote } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { ApiError, getJson } from '@/api/http'
+import { analysisQuery, engineRequest, INDICATOR_META, indicatorMeta, LEVELS, planQuery, type CompareResult, type RelateResult } from '@/api/workspace'
+import { loadKernel } from '@/lib/kernel'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useCopy } from '@/lib/hooks'
 import { allLayers, type AnalysisOutput, type AnalysisRequest, type Guard, type GuardCode, type MapDocument, type RelateRequest, type Source, type Variable } from '@/lib/map-spec'
-import { bivariateColors } from '@/lib/palettes'
+import { BIVARIATE, bivariateColors } from '@/lib/palettes'
 import { cn } from '@/lib/utils'
 import { useWorkspace } from '../context'
-import { fmt, fmtWith } from '../format'
+import { fmt, fmtWith, unitSuffix } from '../format'
 import { Field, Picker, Section, Seg } from '../inspector/controls'
 import { actions, useDoc } from '../store'
 import { Scatter } from './Scatter'
 
-/** Variables this mockup can align below district level (Western Province). */
-const VARS = INDICATOR_META.filter((m) => m.levels.includes(4))
+/** Variables a request can name: the engine's at the support level, or the sample's (Western Province, below districts). */
+const varsFor = (real: boolean, level: number) => INDICATOR_META.filter((m) => (real ? m.real && m.levels.includes(level) : !m.real && m.levels.includes(4)))
+/** The client key of a variable's indicator (a series of an engine indicator is keyed with its dims). */
 const indicatorOf = (v: Variable, sources: Record<string, Source>) => {
   const s = v.source ? sources[v.source] : undefined
-  return v.indicator ?? (s?.kind === 'indicator' ? s.indicator : '')
+  const id = v.indicator ?? (s?.kind === 'indicator' ? s.indicator : '')
+  const meta = indicatorMeta(id, v.dims ?? (s?.kind === 'indicator' ? s.dims : undefined))
+  return meta?.id ?? id
+}
+const isReal = (v: Variable, sources: Record<string, Source>) => !!indicatorMeta(indicatorOf(v, sources))?.real
+/** A variable naming one indicator series directly (the label is part of the engine request). */
+const varOf = (key: string, transform: Variable['transform']): Variable => {
+  const m = indicatorMeta(key)!
+  return { indicator: m.indicator ?? m.id, ...(m.dims ? { dims: { ...m.dims } } : {}), transform, ...(m.real ? { label: m.label.toLowerCase() } : {}) }
 }
 const fmtP = (p: number | undefined) => (p === undefined || Number.isNaN(p) ? '—' : p < 0.001 ? '< 0.001' : p.toFixed(p < 0.01 ? 3 : 2))
 /** A permutation p-value cannot go below 1 / (permutations + 1): at that floor it is a bound, not a value. */
@@ -42,8 +53,23 @@ const GUARD: Partial<Record<GuardCode, string>> = {
   ESTIMATED_INPUT: 'Modelled inputs',
   SYNTHETIC_INPUT: 'Synthetic sample',
   NO_CONTROLS: 'Nothing held constant',
+  PERIOD_MISMATCH: 'Different periods',
+  SIZE_CONFOUND: 'Size drives both',
+  SHARED_LINEAGE: 'Built from the same input',
+  LOW_COVERAGE: 'Low coverage',
+  OUTLIER_LEVERAGE: 'A few units dominate',
+  MULTICOLLINEAR: 'Controls overlap',
+  MULTIPLE_TESTING: 'Many tests',
 }
 
+/** The engine's flood hazard against census density at DS divisions: what "Relate" starts with when the engine is there. */
+export const ENGINE_RELATE: RelateRequest = {
+  spec: 'ldl-analysis/1',
+  method: 'relate',
+  support: { kind: 'admin', level: 3 },
+  variables: { x: varOf('haz.flood_area_share:rp100', 'identity'), y: varOf('derived.per_km2:pop', 'log') },
+  params: { correlation: ['pearson', 'spearman'], regression: 'ols', robust: true, spatial: { weights: 'knn6', local: 'none', permutations: 999 }, bivariate: { classes: 3, method: 'quantile' }, scale_sensitivity: [2] },
+}
 export const DEFAULT_RELATE: RelateRequest = {
   spec: 'ldl-analysis/1',
   method: 'relate',
@@ -87,10 +113,18 @@ function Guards({ guards, onAction }: { guards: Guard[]; onAction?: (request: Pa
               <div className="min-w-0">
                 <div className="text-[12.5px] leading-tight font-medium text-ink">{GUARD[g.code] ?? g.code}</div>
                 <p className="mt-1 text-[12px] leading-[1.5] text-ink2">{g.message}</p>
-                {g.action?.request && onAction && (
+                {g.action?.request && onAction ? (
                   <Button variant="outline" size="sm" onClick={() => onAction(g.action!.request!)} className="mt-2 h-7 px-2.5 text-[12.5px] max-md:h-9">
                     {g.action.label ?? 'Fix'}
                   </Button>
+                ) : (
+                  // the engine names a method to try instead; the ones that are not served yet are shown, marked as coming
+                  (g.action as { method?: string } | undefined)?.method && (
+                    <Button variant="outline" size="sm" disabled title={`${(g.action as { method?: string }).method} is not served yet`} className="mt-2 h-7 gap-1.5 px-2.5 text-[12.5px] max-md:h-9">
+                      {(g.action?.label ?? (g.action as { method?: string }).method)!.replace(/\s*\(WP-\d+\)$/, '')}
+                      <span className="font-mono text-[10px] text-ink3 uppercase">coming</span>
+                    </Button>
+                  )
                 )}
               </div>
             </li>
@@ -194,8 +228,16 @@ function Explain({ result }: { result: RelateResult | CompareResult }) {
 
 /** Medians with their intervals on one axis: inside the zone against the rings around it. */
 function Intervals({ result }: { result: CompareResult }) {
-  const unit = result['x-data']?.unit ?? ''
-  const groups = (result.estimates?.groups ?? []).filter((g) => g.n > 0)
+  const xd = result['x-data']
+  const unit = xd?.unit ?? ''
+  // engine results on a log scale are read back as geometric medians, in the variable's own units
+  const back = (v: number) => (xd?.transform === 'log' ? Math.exp(v) : v)
+  const groups = (result.estimates?.groups ?? [])
+    .filter((g) => g.n > 0)
+    .map((g) => {
+      const ci = ((g as { median_ci?: [number, number] }).median_ci ?? g.ci) as [number, number]
+      return result['x-engine'] ? { ...g, label: g.id === 'inside' ? 'Inside the zone' : g.id === 'outside' ? 'Outside' : g.label, median: back(g.median), ci: [back(ci[0]), back(ci[1])] as [number, number] } : g
+    })
   const lo = Math.min(...groups.map((g) => g.ci[0])), hi = Math.max(...groups.map((g) => g.ci[1]))
   const pad = (hi - lo) * 0.08 || 1
   const at = (v: number) => `${((v - (lo - pad)) / (hi - lo + 2 * pad)) * 100}%`
@@ -219,23 +261,25 @@ function Intervals({ result }: { result: CompareResult }) {
         <span className="t-num">{fmt(lo - pad, unit)}</span>
         <span className="t-num">{fmt(hi + pad, unit)}</span>
       </div>
-      <p className="t-label mt-1.5">median asking price, LKR per perch, with its 95% interval</p>
+      <p className="t-label mt-1.5">{result['x-engine'] && xd?.label ? `median ${xd.label.toLowerCase()}${unit ? `, ${unitSuffix(unit)}` : ''}${xd.transform === 'log' ? ' (from the log scale)' : ''}, with its 95% interval` : 'median asking price, LKR per perch, with its 95% interval'}</p>
     </div>
   )
 }
 
-function Setup({ doc, req }: { doc: MapDocument; req: RelateRequest }) {
+function Setup({ doc, req, write }: { doc: MapDocument; req: RelateRequest; write: (next: RelateRequest) => void }) {
   const x = indicatorOf(req.variables.x, doc.sources), y = indicatorOf(req.variables.y, doc.sources)
   const controls = (req.variables.controls ?? []).map((c) => indicatorOf(c, doc.sources))
-  const write = (next: RelateRequest) => actions.setAnalysis('rel', next)
+  const real = isReal(req.variables.x, doc.sources)
+  const vars = varsFor(real, real ? req.support.level : 4)
   const setVar = (axis: 'x' | 'y', id: string) => {
     const other = axis === 'x' ? y : x
     const cur = req.variables[axis]
     // picking the other axis's variable swaps the two
-    const vars = id === other ? { x: req.variables.y, y: req.variables.x } : { ...req.variables, [axis]: { indicator: id, transform: indicatorMeta(id)?.unit === 'LKR/perch' || id === 'est.pop_density' ? 'log' : (cur.transform ?? 'identity') } as Variable }
-    write({ ...req, variables: { ...req.variables, ...vars, controls: (req.variables.controls ?? []).filter((c) => indicatorOf(c, doc.sources) !== id) } })
+    const logged = indicatorMeta(id)?.unit === 'LKR/perch' || id === 'est.pop_density' || indicatorMeta(id)?.unit === 'per km²' || indicatorMeta(id)?.unit === 'people'
+    const vars2 = id === other ? { x: req.variables.y, y: req.variables.x } : { ...req.variables, [axis]: varOf(id, logged ? 'log' : (cur.transform ?? 'identity')) }
+    write({ ...req, variables: { ...req.variables, ...vars2, controls: (req.variables.controls ?? []).filter((c) => indicatorOf(c, doc.sources) !== id) } })
   }
-  const options = VARS.map((m) => ({ value: m.id, label: m.label }))
+  const options = vars.map((m) => ({ value: m.id, label: m.label }))
   const Log = ({ axis }: { axis: 'x' | 'y' }) => {
     const on = req.variables[axis].transform === 'log'
     return (
@@ -245,7 +289,7 @@ function Setup({ doc, req }: { doc: MapDocument; req: RelateRequest }) {
             log
           </button>
         </TooltipTrigger>
-        <TooltipContent>Take the logarithm: for prices and counts, where ratios matter more than differences</TooltipContent>
+        <TooltipContent>Take the logarithm: for prices, densities and counts, where ratios matter more than differences</TooltipContent>
       </Tooltip>
     )
   }
@@ -270,14 +314,14 @@ function Setup({ doc, req }: { doc: MapDocument; req: RelateRequest }) {
       </div>
       <Field label="Hold constant" stack>
         <div className="flex flex-wrap gap-1.5">
-          {VARS.filter((m) => m.id !== x && m.id !== y).map((m) => {
+          {vars.filter((m) => m.id !== x && m.id !== y).map((m) => {
             const on = controls.includes(m.id)
             return (
               <button
                 key={m.id}
                 type="button"
                 aria-pressed={on}
-                onClick={() => write({ ...req, variables: { ...req.variables, controls: on ? (req.variables.controls ?? []).filter((c) => indicatorOf(c, doc.sources) !== m.id) : [...(req.variables.controls ?? []), { indicator: m.id, transform: m.id === 'est.pop_density' ? 'log' : 'identity' }] } })}
+                onClick={() => write({ ...req, variables: { ...req.variables, controls: on ? (req.variables.controls ?? []).filter((c) => indicatorOf(c, doc.sources) !== m.id) : [...(req.variables.controls ?? []), varOf(m.id, m.id === 'est.pop_density' || m.unit === 'per km²' ? 'log' : 'identity')] } })}
                 className={cn('pressable inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[12px] outline-none max-md:h-9', on ? 'border-ink/60 bg-ink/10 text-ink' : 'border-line2 text-ink3 [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink2')}
               >
                 {on ? <Check className="size-3" /> : <Plus className="size-3" />}
@@ -287,22 +331,105 @@ function Setup({ doc, req }: { doc: MapDocument; req: RelateRequest }) {
           })}
         </div>
       </Field>
-      <Field label="Align to" stack hint="within Western Province">
+      <Field label="Align to" stack hint={real ? 'island-wide' : 'within Western Province'}>
         <Seg
           value={String(req.support.level)}
           label="Common support"
           onChange={(l) => write({ ...req, support: { ...req.support, level: Number(l) } })}
-          options={[2, 3, 4].map((l) => ({ value: String(l), label: `${LEVELS[l].name}s`, hint: l === 2 ? 'Three units: too few to estimate anything' : undefined }))}
+          options={(real ? [1, 2, 3] : [2, 3, 4]).map((l) => ({ value: String(l), label: `${LEVELS[l].name}s`, disabled: real && ![x, y].every((k) => indicatorMeta(k)?.levels.includes(l)), hint: real && l === 1 ? 'Nine units: too few to estimate anything' : !real && l === 2 ? 'Three units: too few to estimate anything' : undefined }))}
         />
       </Field>
     </Section>
   )
 }
 
+/** What the engine will do with the request, before it runs: units, cost and the guards already known; Run waits for it. */
+function PlanBar({ doc, req, dirty, onRun }: { doc: MapDocument; req: RelateRequest; dirty: boolean; onRun: () => void }) {
+  const engine = engineRequest(req, doc.sources)
+  const plan = useQuery({ ...planQuery(req, doc.sources), enabled: !!engine && dirty })
+  const preview = useQuery({ ...previewQuery(req, doc.sources), enabled: !!engine && dirty })
+  if (!dirty) return null
+  const err = plan.error instanceof ApiError ? plan.error : null
+  const ok = !engine || (!!plan.data && !err)
+  const n = plan.data?.support.n_expected
+  return (
+    <section className="border-t border-glass-line px-4 pt-3.5 pb-4">
+      {engine && (
+        <div className="mb-2.5 text-[12px] leading-[1.5] text-ink2" role="status">
+          {plan.isFetching ? (
+            <span className="t-label">planning…</span>
+          ) : err ? (
+            <span className="text-bad">{err.problem?.problems?.map((p) => `${p.message}`).join('; ') || err.message}</span>
+          ) : plan.data ? (
+            <span className="t-num font-mono text-[11.5px]">
+              {n !== undefined ? `${n.toLocaleString('en')} ${LEVELS[plan.data.support.level]?.plural ?? 'units'}` : ''} · {plan.data.cost.mode} · about {Math.max(1, Math.round(plan.data.cost.expected_ms))} ms{plan.data.guards.length ? ` · ${plan.data.guards.length} caveat${plan.data.guards.length > 1 ? 's' : ''} known in advance` : ''}
+            </span>
+          ) : null}
+        </div>
+      )}
+      {preview.data && (
+        <div className="mb-3 rounded-xl border border-dashed border-line2 px-3 py-2.5">
+          <div className="t-label mb-1 tracking-[0.08em] uppercase">Preview · in this browser</div>
+          <div className="t-num font-mono text-[12.5px] text-ink">
+            r {signed(preview.data.r)} · ρ {signed(preview.data.rho)} · n {preview.data.n.toLocaleString('en')}
+          </div>
+          <p className="mt-1 text-[11.5px] leading-[1.45] text-ink3">Unadjusted, with no intervals: run it for the engine’s result, its guards and its spatial adjustment.</p>
+        </div>
+      )}
+      <Button variant="primary" size="sm" disabled={!ok || plan.isFetching} onClick={onRun} className="h-8 w-full gap-1.5 text-[13px] max-md:h-10">
+        <Play className="!size-3.5" />
+        Run analysis
+      </Button>
+    </section>
+  )
+}
+
+/** Correlation of the two frames, computed by the engine's kernels compiled to WebAssembly: an instant, unadjusted preview. */
+function previewQuery(req: RelateRequest, sources: Record<string, Source>) {
+  const engine = engineRequest(req, sources)
+  return {
+    queryKey: ['analysis', 'preview', engine ? JSON.stringify(engine) : null],
+    queryFn: async () => {
+      const level = engine!.support.level
+      const frame = (v: NonNullable<typeof engine>['variables']['y']) => getJson<{ codes: string[]; columns: { values: (number | null)[] }[] }>('/v2/frame', { indicators: v.indicator, level, dims: v.dims ? Object.entries(v.dims).map(([k, d]) => `${k}=${d}`).join(';') : undefined })
+      const [k, fx, fy] = await Promise.all([loadKernel(), frame(engine!.variables.x!), frame(engine!.variables.y)])
+      if (!k) return null
+      const at = new Map(fy.codes.map((c, i) => [c, fy.columns[0]?.values[i]]))
+      const xs: number[] = [], ys: number[] = []
+      fx.codes.forEach((c, i) => {
+        const a = fx.columns[0]?.values[i], b = at.get(c)
+        if (typeof a === 'number' && typeof b === 'number') (xs.push(a), ys.push(b))
+      })
+      return k.previewRelate(Float64Array.from(xs), Float64Array.from(ys), (engine!.variables.x!.transform ?? 'identity') as 'identity', (engine!.variables.y.transform ?? 'identity') as 'identity')
+    },
+    staleTime: Infinity,
+    retry: false,
+  }
+}
+
+/** An engine's suggested layer, completed with what this renderer needs (named palettes, scale types). */
+function normalise(l: NonNullable<AnalysisOutput['suggested_layer']>): NonNullable<AnalysisOutput['suggested_layer']> {
+  const fill = l.style.fill as { bivariate?: { x: { field: string; scale?: object }; y: { field: string; scale?: object }; palette?: string } } | { field: string; scale: { type: string; mid?: number } } | undefined
+  if (fill && 'bivariate' in fill && fill.bivariate) {
+    const b = fill.bivariate
+    const palette = BIVARIATE.some((p) => p.name === b.palette) ? b.palette! : 'ldl.biv.blue-orange'
+    return { ...l, opacity: l.opacity ?? 0.9, style: { ...l.style, fill: { bivariate: { palette, x: { field: b.x.field, scale: { type: 'quantile', classes: 3, ...b.x.scale } }, y: { field: b.y.field, scale: { type: 'quantile', classes: 3, ...b.y.scale } } } }, stroke: { color: 'ldl.tone.paper', width: 0.3 } } }
+  }
+  if (fill && 'field' in fill && fill.scale?.type === 'diverging') return { ...l, opacity: l.opacity ?? 0.9, style: { ...l.style, fill: { field: fill.field, scale: { classes: 5, ramp: 'ldl.div.blue-orange', ...fill.scale, type: 'diverging' } } as never, stroke: { color: 'ldl.tone.paper', width: 0.3 } } }
+  return l
+}
+
 export function RelatePanel() {
   const doc = useDoc()!
   const { scheme, engine } = useWorkspace()
-  const req = doc.analyses.rel?.method === 'relate' ? doc.analyses.rel : null
+  const committed = doc.analyses.rel?.method === 'relate' ? doc.analyses.rel : null
+  // edits go to a draft; the engine plans it, and Run writes it into the document (and every layer bound to it)
+  const [draft, setDraft] = useState<RelateRequest | null>(null)
+  useEffect(() => setDraft(null), [committed])
+  const req = committed
+  const working = draft ?? committed
+  const dirty = !!draft && JSON.stringify(draft) !== JSON.stringify(committed)
+  const engineUp = useQuery({ queryKey: ['api-up'], queryFn: () => import('@/api/http').then((m) => m.apiAvailable()), staleTime: Infinity })
   const zoneReq = doc.analyses.zone?.method === 'group_compare' ? doc.analyses.zone : null
   const rel = useQuery(analysisQuery(req, doc.sources))
   const zone = useQuery(analysisQuery(zoneReq, doc.sources))
@@ -317,15 +444,16 @@ export function RelatePanel() {
         </div>
         <div>
           <h3 className="text-[15px] font-semibold tracking-[-0.015em] text-ink">Relate two layers</h3>
-          <p className="mt-1.5 text-[13px] leading-[1.55] text-ink2">Put two variables on the same units, see how they move together, and read what that does and does not show. In this mockup the units below district level exist for Western Province.</p>
+          <p className="mt-1.5 text-[13px] leading-[1.55] text-ink2">Put two variables on the same units, see how they move together, and read what that does and does not show. The engine runs it and says which caveats apply.</p>
         </div>
-        <Button variant="primary" onClick={() => actions.setAnalysis('rel', DEFAULT_RELATE, 'Analysis added')} className="self-start max-md:h-11">
-          Start with flood exposure and asking price
+        <Button variant="primary" onClick={() => actions.setAnalysis('rel', engineUp.data ? ENGINE_RELATE : DEFAULT_RELATE, 'Analysis added')} className="self-start max-md:h-11">
+          {engineUp.data ? 'Start with flood area and population density' : 'Start with flood exposure and asking price (sample)'}
         </Button>
       </div>
     )
 
   const r = rel.data as RelateResult | undefined
+  const real = !!r?.['x-engine']
   const z = zone.data as CompareResult | undefined
   const d = r?.['x-data'] ?? null
   const e = r?.estimates ?? null
@@ -346,17 +474,26 @@ export function RelatePanel() {
       actions.setVisible(existing.id, true)
       return actions.select(existing.id)
     }
-    if (o.suggested_layer) actions.add([{ ...o.suggested_layer, source: { kind: 'analysis', ref, output: o.id }, filter: o.suggested_layer.filter ?? undefined }])
+    if (o.suggested_layer) actions.add([{ ...normalise(o.suggested_layer), source: { kind: 'analysis', ref, output: o.id }, filter: o.suggested_layer.filter ?? undefined }])
   }
-  const outputs = [...(r?.outputs ?? []).map((o) => ['rel', o] as const), ...(z?.outputs ?? []).map((o) => ['zone', o] as const)].filter(([, o]) => o.suggested_layer)
+  // engine outputs this client can draw as layers: frames of numbers on admin units (bivariate classes, residuals)
+  const drawable = (ref: string, o: AnalysisOutput) => !!o.suggested_layer && (ref === 'rel' ? !(r?.['x-engine']) || o.id === 'bivariate' || o.id === 'residuals' : !z?.['x-engine'])
+  const outputs = [...(r?.outputs ?? []).map((o) => ['rel', o] as const), ...(z?.outputs ?? []).map((o) => ['zone', o] as const)].filter(([ref, o]) => drawable(ref, o))
   const shown = mode ?? ((d?.table.codes.length ?? 0) > 400 ? 'hexbin' : 'points')
   const partial = e?.['x-partial']
   const moran = e?.['x-moran']
 
   return (
     <div>
-      <Setup doc={doc} req={req} />
-      {!r ? (
+      <Setup doc={doc} req={working!} write={(next) => (engineRequest(next, doc.sources) ? setDraft(next) : actions.setAnalysis('rel', next))} />
+      <PlanBar doc={doc} req={working!} dirty={dirty} onRun={() => draft && actions.setAnalysis('rel', draft, 'Analysis run')} />
+      {rel.error ? (
+        <section className="border-t border-glass-line px-4 pt-4 pb-5">
+          <div className="t-label mb-2.5 tracking-[0.08em] uppercase">Not run</div>
+          <p className="text-[12.5px] leading-[1.5] text-bad">{rel.error instanceof ApiError ? (rel.error.problem?.problems?.map((p) => `${p.path}: ${p.message}`).join('; ') || rel.error.message) : String(rel.error)}</p>
+          {rel.error instanceof ApiError && rel.error.retryAfter !== null && <p className="t-label mt-1.5">try again in {rel.error.retryAfter} s</p>}
+        </section>
+      ) : !r ? (
         <div className="space-y-3 border-t border-glass-line p-4">
           <div className="skeleton h-14 w-full" />
           <div className="skeleton h-5 w-10/12" />
@@ -416,7 +553,7 @@ export function RelatePanel() {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-4 border-t border-dashed border-ink2" />
-                robust (Theil–Sen)
+                {real ? 'robust (Huber)' : 'robust (Theil–Sen)'}
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-4 border-t border-dotted border-ink3" />
@@ -430,18 +567,21 @@ export function RelatePanel() {
             <div className="grid grid-cols-2 gap-2">
               {e.spearman && <Stat label="Spearman ρ" value={signed(e.spearman.rho)} sub={`95% ${signed(e.spearman.ci[0])} to ${signed(e.spearman.ci[1])}`} hint="Rank correlation: does one rise as the other falls, whatever the shape. The better summary when many units are zero." />}
               {e.pearson && <Stat label="Pearson r" value={signed(e.pearson.r)} sub={`95% ${signed(e.pearson.ci[0])} to ${signed(e.pearson.ci[1])}`} hint="Linear correlation of the (transformed) values. The interval allows for neighbouring units not being independent." />}
-              {e.pearson && <Stat label="p, adjusted" value={fmtP(e.pearson.p_adjusted)} sub={`n effective ${e.pearson.n_effective?.toLocaleString('en')} of ${r.n.used.toLocaleString('en')}`} hint={`Adjusted for spatial dependence. Ignoring spatial dependence, p would be ${fmtP(e.pearson.p)}.`} />}
+              {e.pearson && <Stat label="p, adjusted" value={fmtP(e.pearson.p_adjusted)} sub={`n effective ${e.pearson.n_effective === undefined ? "—" : Math.round(e.pearson.n_effective).toLocaleString("en")} of ${r.n.used.toLocaleString('en')}`} hint={`Adjusted for spatial dependence. Ignoring spatial dependence, p would be ${fmtP(e.pearson.p)}.`} />}
               {partial ? <Stat label="Partial r" value={signed(partial.r)} sub={`holding ${partial.controls.length} constant · p ${fmtP(partial.p_adjusted)}`} hint={`Correlation left once ${partial.controls.join(' and ')} are held constant.`} /> : e.ols && <Stat label="R²" value={e.ols.r2.toFixed(2)} sub={e.ols.formula} />}
             </div>
             <h3 className="t-label mt-4 mb-2.5 tracking-[0.08em] uppercase">Spatial structure</h3>
             <div className="grid grid-cols-3 gap-2">
+              {real && e.residual_moran && <Stat label="Moran I · residuals" value={e.residual_moran.I.toFixed(2)} sub={`p ${fmtPerm(e.residual_moran.p_perm, d.permutations)}`} hint="How alike neighbouring units are in what the fitted line leaves unexplained. Clustered residuals mean plain standard errors are too small; the adjusted p allows for it." />}
+              {real && <Stat label="Lee’s L" value={<span className="text-[13px] text-ink3">coming</span>} sub="local statistics: WP-30" hint="Bivariate spatial association and its local clusters are not served by the engine yet." />}
               {moran && <Stat label="Moran I · x" value={moran.x.I.toFixed(2)} sub={`p ${fmtPerm(moran.x.p_perm, d.permutations)}`} hint={`How alike neighbouring units are in ${d.x.label.toLowerCase()}. 0 is no pattern, 1 is perfectly clustered.`} />}
               {moran && <Stat label="Moran I · y" value={moran.y.I.toFixed(2)} sub={`p ${fmtPerm(moran.y.p_perm, d.permutations)}`} hint={`How alike neighbouring units are in ${d.y.label.toLowerCase()}.`} />}
               {e.lee_l && <Stat label="Lee’s L" value={signed(e.lee_l.L)} sub={`p ${fmtPerm(e.lee_l.p_perm, d.permutations)}`} hint="Bivariate spatial association: the correlation of the two variables after each is smoothed over its neighbours." />}
             </div>
             <p className="t-label mt-2 leading-[1.5]">
-              {d.weights} · {d.permutations} permutations · {d.significant.toLocaleString('en')} units locally significant at FDR 5%
-              {e.residual_moran ? ` · residual Moran I ${e.residual_moran.I.toFixed(2)}` : ''}
+              {d.weights} · {d.permutations} permutations
+              {real ? ' · local clusters not served yet' : ` · ${d.significant.toLocaleString('en')} units locally significant at FDR 5%`}
+              {e.residual_moran && !real ? ` · residual Moran I ${e.residual_moran.I.toFixed(2)}` : ''}
             </p>
             {(e.scale_sensitivity?.length ?? 0) > 1 && (
               <>
@@ -460,7 +600,7 @@ export function RelatePanel() {
                       <tr key={s.level} className={cn('border-t border-line first:border-t-0', s.level === d.support.level ? 'text-ink' : 'text-ink2')}>
                         <td className="py-1.5 first-letter:uppercase">{LEVELS[s.level].plural}</td>
                         <td className="t-num py-1.5 text-right font-mono text-[11.5px] text-ink3">n {s.n.toLocaleString('en')}</td>
-                        <td className="t-num w-[72px] py-1.5 text-right font-mono text-[11.5px]">ρ {signed(s['x-spearman'] ?? 0)}</td>
+                        <td className="t-num w-[72px] py-1.5 text-right font-mono text-[11.5px]">{s['x-spearman'] === undefined ? '' : `ρ ${signed(s['x-spearman'])}`}</td>
                         <td className="t-num w-[72px] py-1.5 text-right font-mono text-[11.5px]">r {signed(s.pearson_r)}</td>
                       </tr>
                     ))}
@@ -475,8 +615,29 @@ export function RelatePanel() {
 
           {zoneReq && (
             <section className="border-t border-glass-line px-4 pt-3.5 pb-4">
-              <h3 className="t-label mb-2.5 tracking-[0.08em] uppercase">Inside the flood zone, or just outside it</h3>
-              {!z?.estimates ? (
+              <h3 className="t-label mb-2.5 tracking-[0.08em] uppercase">{z?.['x-engine'] ? 'Inside the flood zone or outside it' : 'Inside the flood zone, or just outside it'}</h3>
+              {zone.error ? (
+                <p className="text-[12.5px] leading-[1.5] text-bad">{zone.error instanceof ApiError ? zone.error.message : String(zone.error)}</p>
+              ) : z?.['x-engine'] && z.estimates ? (
+                <>
+                  <Guards guards={z.guards} />
+                  <p className="mt-3.5 text-[14px] leading-[1.4] font-semibold tracking-[-0.01em] text-ink">{z.interpretation?.summary}</p>
+                  <div className="mt-3 mb-3 flex items-baseline gap-2.5">
+                    <span className="t-num font-mono text-[26px] leading-none font-medium tracking-[-0.04em] text-ink">{signed(z.estimates.contrasts[0].diff, 2)}</span>
+                    <span className="t-num font-mono text-[11.5px] text-ink2">
+                      95% {signed(z.estimates.contrasts[0].ci[0], 2)} to {signed(z.estimates.contrasts[0].ci[1], 2)}
+                      {z['x-data']?.transform === 'log' ? ' on the log scale' : ''}
+                    </span>
+                  </div>
+                  <Intervals result={z} />
+                  <p className="mt-3 text-[12px] leading-[1.55] text-ink3">
+                    {z.estimates.contrasts[0].reading}. Welch p {fmtP(z.estimates.contrasts[0].p_welch)} · Mann–Whitney p {fmtP(z.estimates.contrasts[0].p_mann_whitney)}, ignoring spatial dependence.
+                  </p>
+                  <div className="mt-3">
+                    <Explain result={z} />
+                  </div>
+                </>
+              ) : !z?.estimates ? (
                 <div className="skeleton h-28 w-full" />
               ) : (
                 <>

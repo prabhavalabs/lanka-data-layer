@@ -28,8 +28,9 @@ export type RelateData = {
   weights: string
   permutations: number
 }
-export type RelateResult = AnalysisResultOf<RelateEstimates> & { 'x-data': RelateData | null }
-export type CompareResult = AnalysisResultOf<GroupCompareEstimates> & { 'x-data': { unit: string; threshold: number; within: string | null; points: FeatureCollection<Point> } | null }
+/** `x-engine`: computed by the engine (src/api/real/analysis.ts); absent = this mock, on the synthetic sample. */
+export type RelateResult = AnalysisResultOf<RelateEstimates> & { 'x-data': RelateData | null; 'x-engine'?: boolean }
+export type CompareResult = AnalysisResultOf<GroupCompareEstimates> & { 'x-data': { unit: string; threshold: number; within: string | null; points: FeatureCollection<Point>; /** engine results: the scale estimates are on, and what was measured */ transform?: string; label?: string } | null; 'x-engine'?: boolean }
 export type AnalysisResult = RelateResult | CompareResult
 export type { Guard }
 

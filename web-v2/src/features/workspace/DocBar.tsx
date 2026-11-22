@@ -20,7 +20,8 @@ export type DocActions = {
   open: (id: string) => void
   openDocument: (doc: MapDocument) => void
   blank: () => void
-  share: () => Promise<void>
+  /** copies a link; resolves to what to say about it */
+  share: () => Promise<string | void>
   exportPng: () => void
   exportJson: () => void
   /** null when the document came from a link and has never been saved */
@@ -31,7 +32,7 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
   const title = useWs((s) => s.doc!.title)
   const dirty = useWs((s) => s.doc !== s.saved)
   const updated = useWs((s) => s.saved?.meta.updated_at)
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
   const file = useRef<HTMLInputElement>(null)
   const [, force] = useState(0)
   // "saved 2 min ago" keeps itself current
@@ -43,9 +44,10 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
     doc.origin === 'link' ? { dot: 'bg-warn', text: 'From a link' } : doc.origin === 'new' ? { dot: 'bg-warn', text: 'Not saved' } : doc.origin === 'starter' ? (dirty ? { dot: 'bg-warn', text: 'Edited copy' } : { dot: 'bg-ink3', text: 'Starter' }) : dirty ? { dot: 'bg-warn', text: 'Unsaved' } : { dot: 'bg-ok', text: `Saved ${updated ? ago(updated) : ''}` }
   const canSave = dirty || doc.origin === 'link' || doc.origin === 'new'
   const share = async () => {
-    await doc.share()
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1600)
+    setCopied('Making a link…')
+    const said = await doc.share()
+    setCopied(said || 'Link copied')
+    window.setTimeout(() => setCopied(null), said && said !== 'Link copied' ? 4000 : 1600)
   }
   return (
     <div className={cn('px-3.5 pt-3 pb-2.5', compact && 'pt-2 pb-2')}>
@@ -66,7 +68,7 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
       <div className={cn('flex h-7 items-center gap-1.5 max-md:h-9', !compact && 'mt-1.5')}>
         <span className={cn('size-1.5 shrink-0 rounded-full', status.dot)} />
         <span className="t-label min-w-0 flex-1 truncate" role="status">
-          {copied ? 'Link copied' : status.text}
+          {copied ?? status.text}
         </span>
         <Button variant="ghost" size="sm" onClick={onMaps} className="h-7 gap-1.5 px-2 text-[12.5px] max-md:h-9">
           <FolderOpen className="!size-3.5" />

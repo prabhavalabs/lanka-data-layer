@@ -8,7 +8,7 @@ import { isBinding, isBivariate, layerScheme } from './engine/compile'
 /** Colours a binding will draw with, known from the style alone (no data needed, so hidden layers have a thumb too). */
 function swatches(b: FieldBinding, scheme: Theme, n = 4): string[] {
   const s = b.scale
-  if (s.type === 'categorical') return s.mapping ? Object.values(s.mapping).filter((v) => !/^[\d.]+$/.test(v)).map((v) => toneColor(v, scheme)).slice(0, n) : categorical(scheme).slice(0, n)
+  if (s.type === 'categorical') return s.mapping ? Object.values(s.mapping).filter((v): v is string => typeof v === 'string' && !/^[\d.]+$/.test(v)).map((v) => toneColor(v, scheme)).slice(0, n) : categorical(scheme).slice(0, n)
   return rampClasses(s.type === 'diverging' ? 'ldl.div.blue-orange' : (s.ramp ?? 'ldl.seq.blue'), scheme, n, s.reverse)
 }
 

@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Check, CircleDot, Grid3x3, Hexagon, Plus, Search, Spline } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { paintTile, islandTiles } from '@/api/real/valueTiles'
 import { catalogueQuery, layerDataQuery, reliefQuery, type CatalogueItem, type LayerData, type Preset } from '@/api/workspace'
 import { LicenceLight } from '@/components/common/bits'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils'
 import type { Grid } from '@/mocks/synth'
 import { colorAt, columnAt, compileLayer, isBinding, layerScheme, resolveScale } from './engine/compile'
 import { paintHillshade } from './engine/raster'
+import { resolvedFor, useResolved } from './context'
 import { actions } from './store'
 
 const SHAPE_ICON = { Areas: Hexagon, Grid: Grid3x3, Points: CircleDot, Lines: Spline, Polygons: Hexagon }
@@ -25,8 +27,26 @@ const mercY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) /
 /** The dataset in miniature: the same compile step the map uses, drawn onto a small canvas. */
 function Preview({ preset, scheme: mapScheme }: { preset: Preset; scheme: Theme }) {
   const canvas = useRef<HTMLCanvasElement>(null)
-  const { data } = useQuery(layerDataQuery(preset.source, { sources: {}, analyses: {} }, null))
+  const sources = useMemo(() => ({ p: preset.source }), [preset.source])
+  const resolution = useResolved({ sources, pin: 'latest' })
+  const { data } = useQuery(layerDataQuery(preset.source, { sources: {}, analyses: {} }, null, resolvedFor('p', resolution)))
   const { data: country } = useQuery({ queryKey: ['geo', 'country'], queryFn: geo.country, staleTime: Infinity })
+  // a frame on the boundary tiles is previewed on the bundled province and district outlines (same p-codes)
+  const level = data?.kind === 'frame' && data.tiles ? data.support.level : 0
+  const { data: outlines } = useQuery({ queryKey: ['geo', `adm${level}`], queryFn: () => (level === 1 ? geo.adm1() : geo.adm2()), staleTime: Infinity, enabled: level === 1 || level === 2 })
+  // value tiles: the overview tiles, coloured exactly as the map will colour them
+  const [tiles, setTiles] = useState<{ bitmap: ImageBitmap; west: number; east: number; north: number; south: number }[] | null>(null)
+  useEffect(() => {
+    setTiles(null)
+    if (data?.kind !== 'values') return
+    const src = compileLayer(instantiate(preset).layer, preset.source, data, { scheme: layerScheme(preset.blend, mapScheme), time: null, glyphs: false, font: [], relief: () => undefined }).sources[0]
+    if (src?.kind !== 'raster') return
+    let live = true
+    void Promise.all(islandTiles().map(async (t) => ({ ...t, bitmap: await paintTile(src.tiles[0].replace('{z}', String(t.z)).replace('{x}', String(t.x)).replace('{y}', String(t.y))) }))).then((out) => live && setTiles(out))
+    return () => {
+      live = false
+    }
+  }, [data, preset, mapScheme])
   const { data: relief } = useQuery(reliefQuery(preset.style.exaggeration ?? 1, preset.type === 'hillshade' || !!preset.style['x-relief']))
   const scheme = layerScheme(preset.blend, mapScheme)
   useEffect(() => {
@@ -57,25 +77,42 @@ function Preview({ preset, scheme: mapScheme }: { preset: Preset; scheme: Theme 
     ctx.fill()
     ctx.save()
     ctx.clip()
-    if (data) draw(ctx, preset, data, scheme, X, Y, ring, relief)
+    if (tiles) {
+      ctx.imageSmoothingEnabled = true
+      for (const t of tiles) ctx.drawImage(t.bitmap, X(t.west), Y(t.north), X(t.east) - X(t.west), Y(t.south) - Y(t.north))
+    } else if (data?.kind === 'frame' && data.tiles) {
+      // one multipolygon per code, from the bundled outlines (provinces, districts) or the decoded shapes (DS divisions)
+      const pool = (data.support.level <= 2 ? outlines?.features : data.geometry.features) ?? []
+      const parts = new Map<string, number[][][][]>()
+      for (const f of pool as GeoJSON.Feature[]) {
+        const g = f.geometry
+        const polys = g?.type === 'Polygon' ? [g.coordinates] : g?.type === 'MultiPolygon' ? g.coordinates : []
+        const k = String(f.properties?.pcode)
+        parts.set(k, [...(parts.get(k) ?? []), ...polys])
+      }
+      draw(ctx, preset, { ...data, geometry: { type: 'FeatureCollection', features: data.codes.map((c) => ({ type: 'Feature', properties: { pcode: c }, geometry: { type: 'MultiPolygon', coordinates: parts.get(c) ?? [] } })) } }, scheme, X, Y, ring, relief)
+    }
+    else if (data) draw(ctx, preset, data, scheme, X, Y, ring, relief)
     ctx.restore()
     ctx.beginPath()
     country.rings.forEach(ring)
     ctx.strokeStyle = dark ? 'rgba(232,237,242,0.28)' : 'rgba(20,24,28,0.3)'
     ctx.lineWidth = 0.8
     ctx.stroke()
-  }, [data, country, relief, preset, scheme, mapScheme])
+  }, [data, country, relief, preset, scheme, mapScheme, tiles, outlines])
+  const tiledNote = data && ((data.kind === 'features' && data.tiles) || (data.kind === 'boundaries' && data.tiles) || (data.kind === 'frame' && data.tiles && data.support.level >= 4)) ? (data.kind === 'features' ? 'drawn from vector tiles on the map' : 'drawn on the boundary tiles on the map') : data?.kind === 'dem' ? 'shaded from the terrain tiles on the map' : null
   return (
     <div className="relative overflow-hidden rounded-xl border border-line bg-bg3/50">
       <canvas ref={canvas} className="block h-[236px] w-full" role="img" aria-label={`Preview of ${preset.name}`} />
       {!data && <div className="skeleton absolute inset-0 rounded-none opacity-60" />}
-      {data?.kind === 'features' && data.tiles && <p className="absolute inset-x-0 bottom-2 text-center font-mono text-[10.5px] text-ink3">drawn from vector tiles on the map</p>}
+      {tiledNote && <p className="absolute inset-x-0 bottom-2 text-center font-mono text-[10.5px] text-ink3">{tiledNote}</p>}
     </div>
   )
 }
 function draw(ctx: CanvasRenderingContext2D, preset: Preset, data: LayerData, scheme: Theme, X: (lon: number) => number, Y: (lat: number) => number, ring: (r: number[][]) => void, relief: Grid | undefined) {
   const layer = instantiate(preset).layer
   const env = { scheme, time: null, glyphs: false, font: [], relief: () => relief }
+  if (data.kind === 'values' || data.kind === 'dem') return
   if (data.kind === 'grid') {
     const tmp = document.createElement('canvas')
     if (preset.type === 'hillshade') {
@@ -243,7 +280,7 @@ export function AddLayerDialog({ open, onOpenChange, scheme }: { open: boolean; 
                       <Icon className={cn('size-4 shrink-0', on ? 'text-ink2' : 'text-ink3')} strokeWidth={1.7} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13.5px] leading-tight font-medium">{c.title}</span>
-                        <span className="mt-0.5 block truncate text-[11.5px] text-ink3">{c.publisher}</span>
+                        <span className="mt-0.5 block truncate text-[11.5px] text-ink3">{c.sample ? `Sample data · ${c.publisher}` : c.publisher}</span>
                       </span>
                       <span className="shrink-0 font-mono text-[10.5px] text-ink3">{c.shape}</span>
                     </button>
@@ -265,6 +302,11 @@ export function AddLayerDialog({ open, onOpenChange, scheme }: { open: boolean; 
                       <Badge variant={CLASS_BADGE[item.class].variant} className="shrink-0">
                         {CLASS_BADGE[item.class].label}
                       </Badge>
+                      {item.sample && item.class !== 'synthetic' && (
+                        <Badge variant="outline" className="shrink-0" title="Bundled sample data: the engine does not serve this dataset">
+                          Sample
+                        </Badge>
+                      )}
                     </div>
                     <p className="mt-1.5 text-[13px] leading-[1.5] text-ink2">{item.summary}</p>
                     <dl className="mt-3.5 grid grid-cols-[76px_1fr] gap-x-3 gap-y-1.5 text-[12.5px] max-md:hidden">

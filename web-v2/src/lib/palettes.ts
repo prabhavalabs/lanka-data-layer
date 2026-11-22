@@ -25,7 +25,7 @@ export const ramp = (id: RampId, theme: Theme) => (theme === 'dark' ? DARK_RAMPS
 /** Diverging: cool <- neutral -> warm. Midpoint is a neutral grey, never a hue. */
 export const diverging = (theme: Theme) =>
   theme === 'dark'
-    ? ['#5a8fe6', '#3f66ac', '#2c3f63', '#333b45', '#6b4526', '#b0611f', '#e8873a']
+    ? ['#5a8fe6', '#3f66ac', '#2c3f63', '#2b3038', '#6b4526', '#b0611f', '#e8873a']
     : ['#2e67c0', '#6f9be0', '#b8cdf0', '#e3e5e6', '#f3c9a0', '#e3904a', '#bf5c15']
 
 /** Fixed-order categorical set (identity). Assigned in order, never cycled. */

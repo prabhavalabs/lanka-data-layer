@@ -62,21 +62,29 @@ function PeriodField({ layer, source, periods }: { layer: Layer; source: Extract
 }
 
 function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source: Source; data: LayerData | undefined; onRelate: () => void }) {
+  const sample = data?.origin === 'sample'
+  const sampleBadge = sample && (
+    <Badge variant="outline" title="Bundled sample data: the engine does not serve this source">
+      Sample
+    </Badge>
+  )
   if (source.kind === 'indicator') {
-    const meta = indicatorMeta(source.indicator)
-    const options = INDICATOR_META.filter((m) => m.levels.includes(source.level))
+    const meta = indicatorMeta(source.indicator, source.dims)
+    const real = !!meta?.real
+    // the engine's indicators for a layer drawn from the engine; sample ones for a sample layer
+    const options = INDICATOR_META.filter((m) => m.levels.includes(source.level) && !!m.real === real)
     return (
-      <Section title="Data" aside={meta && <Badge variant={CLASS_NOTE[meta.class].variant} title={CLASS_NOTE[meta.class].note}>{CLASS_NOTE[meta.class].label}</Badge>}>
+      <Section title="Data" aside={<span className="flex gap-1.5">{sampleBadge}{meta && <Badge variant={CLASS_NOTE[meta.class].variant} title={CLASS_NOTE[meta.class].note}>{CLASS_NOTE[meta.class].label}</Badge>}</span>}>
         {layer.type !== 'bivariate' && (
           <Field label="Indicator" stack>
             <Picker
-              value={source.indicator}
+              value={meta?.id ?? source.indicator}
               label="Indicator"
               className="h-9 text-[13px]"
               options={options.map((m) => ({ value: m.id, label: m.label }))}
               onChange={(id) => {
                 const next = indicatorMeta(id)!
-                actions.setSource(layer.id, (s) => ({ ...s, indicator: id, period: next.periods.length > 1 ? (s as typeof source).period : 'latest' }) as Source, 'Indicator changed')
+                actions.setSource(layer.id, (s) => ({ ...s, indicator: next.indicator ?? id, dims: next.dims ? { ...next.dims } : undefined, period: next.periods.length > 1 ? (s as typeof source).period : 'latest' }) as Source, 'Indicator changed')
                 if (layer.name === meta?.label) actions.rename(layer.id, next.label)
                 // a new variable starts on its own ramp, with breaks of its own
                 actions.setStyle(layer.id, (st) => (isBinding(st.fill) ? { ...st, fill: { ...st.fill, scale: { ...st.fill.scale, ramp: next.ramp, breaks: undefined, type: st.fill.scale.type === 'manual' ? 'quantile' : st.fill.scale.type } } } : st))
@@ -88,8 +96,8 @@ function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source
           <Seg
             value={String(source.level)}
             label="Admin level"
-            onChange={(v) => actions.setSource(layer.id, (s) => ({ ...s, level: Number(v), ...(Number(v) >= 3 ? { parent: 'LK1' } : { parent: undefined }) }) as Source, 'Admin level changed')}
-            options={[1, 2, 3, 4].map((l) => ({ value: String(l), label: LEVELS[l].code, disabled: !(meta?.levels ?? [1, 2]).includes(l), hint: l >= 3 ? `${LEVELS[l].plural}: Western Province only in this mockup` : LEVELS[l].plural }))}
+            onChange={(v) => actions.setSource(layer.id, (s) => ({ ...s, level: Number(v), ...(Number(v) >= 3 && !real ? { parent: 'LK1' } : { parent: undefined }) }) as Source, 'Admin level changed')}
+            options={[1, 2, 3, 4].map((l) => ({ value: String(l), label: LEVELS[l].code, disabled: !(meta?.levels ?? [1, 2]).includes(l), hint: l >= 3 && !real ? `${LEVELS[l].plural}: Western Province only in the sample data` : LEVELS[l].plural }))}
             className="[&_button]:font-mono [&_button]:text-[11px]"
           />
         </Field>
@@ -101,22 +109,25 @@ function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source
   if (source.kind === 'grid') {
     const meta = gridMeta(source.grid)
     return (
-      <Section title="Data" aside={meta && <Badge variant={CLASS_NOTE[meta.class].variant} title={CLASS_NOTE[meta.class].note}>{CLASS_NOTE[meta.class].label}</Badge>}>
+      <Section title="Data" aside={<span className="flex gap-1.5">{sampleBadge}{meta && <Badge variant={CLASS_NOTE[meta.class].variant} title={CLASS_NOTE[meta.class].note}>{CLASS_NOTE[meta.class].label}</Badge>}</span>}>
         <Field label="Grid">
           <span className="truncate text-[12.5px] text-ink">{meta?.label ?? source.grid}</span>
         </Field>
         <PeriodField layer={layer} source={source} periods={meta?.periods ?? []} />
-        {meta && <p className="text-[12px] leading-[1.5] text-ink3">{meta.description} Shown at about 500 m.</p>}
+        {meta && <p className="text-[12px] leading-[1.5] text-ink3">{meta.description} {data?.kind === 'values' ? 'Value tiles: the 0.001° cells themselves from zoom 10, coarser summaries below.' : data?.kind === 'dem' ? 'Terrain tiles, zoom 5 to 11.' : 'Shown at about 500 m.'}</p>}
       </Section>
     )
   }
   if (source.kind === 'features') {
     const meta = featureMeta(source.dataset)
-    const n = data?.kind === 'features' ? data.collection.features.length : 0
+    const n = data?.kind === 'features' ? data.count ?? data.collection.features.length : 0
     return (
-      <Section title="Data" aside={meta && <Badge variant={CLASS_NOTE[meta.class].variant} title={CLASS_NOTE[meta.class].note}>{CLASS_NOTE[meta.class].label}</Badge>}>
+      <Section title="Data" aside={<span className="flex gap-1.5">{sampleBadge}{meta && <Badge variant={CLASS_NOTE[meta.class].variant} title={CLASS_NOTE[meta.class].note}>{CLASS_NOTE[meta.class].label}</Badge>}</span>}>
         <Field label="Features">
-          <span className="truncate text-[12.5px] text-ink">{meta?.label ?? source.dataset}</span>
+          <span className="truncate text-[12.5px] text-ink">
+            {meta?.label ?? source.dataset}
+            {source.featureKind ? ` · ${source.featureKind.replace(/_/g, ' ')}` : ''}
+          </span>
           {n > 0 && <span className="t-label t-num shrink-0">{n.toLocaleString('en')}</span>}
         </Field>
         {data?.kind === 'features' && data.tiles && <p className="text-[12px] leading-[1.5] text-ink3">Too many features for one request: drawn from vector tiles, so it has no histogram here.</p>}
@@ -136,13 +147,13 @@ function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source
       </Section>
     )
   return (
-    <Section title="Data">
+    <Section title="Data" aside={sampleBadge || undefined}>
       <Field label="Units">
         <Seg
           value={String(source.level)}
           label="Admin level"
-          onChange={(v) => actions.setSource(layer.id, (s) => ({ ...s, level: Number(v), parent: Number(v) >= 3 ? 'LK1' : undefined }) as Source, 'Admin level changed')}
-          options={[1, 2, 3, 4].map((l) => ({ value: String(l), label: LEVELS[l].code, hint: l >= 3 ? `${LEVELS[l].plural}: Western Province only in this mockup` : LEVELS[l].plural }))}
+          onChange={(v) => actions.setSource(layer.id, (s) => ({ ...s, level: Number(v), parent: Number(v) >= 3 && sample ? 'LK1' : undefined }) as Source, 'Admin level changed')}
+          options={[1, 2, 3, 4].map((l) => ({ value: String(l), label: LEVELS[l].code, hint: l >= 3 && sample ? `${LEVELS[l].plural}: Western Province only in the sample data` : LEVELS[l].plural }))}
           className="[&_button]:font-mono [&_button]:text-[11px]"
         />
       </Field>
@@ -207,7 +218,7 @@ function SizeChannel({ value, onChange, data, min, max, step = 0.5, fallback, la
   const field = bound ? fields.find((f) => f.id === value.field) : undefined
   const [fixed, setFixed] = useLive(typeof value === 'number' ? value : fallback)
   const range = bound ? (value.scale.range ?? [min, max]) : [min, max]
-  const bind = (f: FieldMeta): FieldBinding => (f.kind === 'category' ? { field: f.id, scale: { type: 'categorical', mapping: Object.fromEntries((f.categories ?? []).map((c, i, a) => [c, String(+(max * 0.6 - ((max * 0.6 - min) * i) / Math.max(1, a.length - 1)).toFixed(1))])) } } : { field: f.id, scale: { type: 'continuous', transform: 'sqrt', range: [Math.max(min, fallback * 0.5), Math.min(max, fallback * 2.6)] } })
+  const bind = (f: FieldMeta): FieldBinding => (f.kind === 'category' ? { field: f.id, scale: { type: 'categorical', mapping: Object.fromEntries((f.categories ?? []).map((c, i, a) => [c, +(max * 0.6 - ((max * 0.6 - min) * i) / Math.max(1, a.length - 1)).toFixed(1)])) } } : { field: f.id, scale: { type: 'continuous', transform: 'sqrt', range: [Math.max(min, fallback * 0.5), Math.min(max, fallback * 2.6)] } })
   return (
     <>
       <Seg
@@ -232,7 +243,7 @@ function SizeChannel({ value, onChange, data, min, max, step = 0.5, fallback, la
           {field?.kind === 'category' && value.scale.mapping ? (
             Object.entries(value.scale.mapping).map(([k, v]) => (
               <Field key={k} label={k}>
-                <NumberSlider value={Number(v)} min={min} max={max} step={0.1} label={`${label} for ${k}`} format={(n) => `${n}${unit}`} onChange={(n) => onChange({ ...value, scale: { ...value.scale, mapping: { ...value.scale.mapping, [k]: String(n) } } }, `size:${k}`)} />
+                <NumberSlider value={Number(v)} min={min} max={max} step={0.1} label={`${label} for ${k}`} format={(n) => `${n}${unit}`} onChange={(n) => onChange({ ...value, scale: { ...value.scale, mapping: { ...value.scale.mapping, [k]: n } } }, `size:${k}`)} />
               </Field>
             ))
           ) : (
@@ -470,9 +481,11 @@ function BivariateSections({ layer, source, data, scheme }: P) {
 }
 
 function RasterSections({ layer, data, scheme }: P) {
-  const grid = data?.kind === 'grid' ? data : null
+  const grid = data?.kind === 'grid' || data?.kind === 'values' ? data : null
   const binding = isBinding(layer.style.fill) ? layer.style.fill : { field: 'value', scale: { type: 'continuous' as const, ramp: 'ldl.seq.blue' } }
-  const all = useMemo(() => (grid ? gridSample(grid.grid) : []), [grid])
+  // value tiles carry a decoded overview of the island for this; the sample grid is sampled directly
+  const all = useMemo(() => (!grid ? [] : grid.kind === 'grid' ? gridSample(grid.grid) : Array.from(grid.sample)), [grid])
+  const categorical = binding.scale.type === 'categorical'
   const [d0, d1] = useMemo(() => extent(all), [all])
   const range = layer.style.range ?? [null, null]
   const inRange = useMemo(() => all.filter((v) => v >= (range[0] ?? -Infinity) && v <= (range[1] ?? Infinity)), [all, range[0], range[1]])
@@ -486,9 +499,15 @@ function RasterSections({ layer, data, scheme }: P) {
   return (
     <>
       <Section title="Colour" aside={<span className="t-label">{unitSuffix(grid?.unit ?? '')}</span>}>
-        {grid && inRange.length ? <ScaleEditor scale={binding.scale} values={inRange} unit={grid.unit} scheme={scheme} smooth onChange={(scale, key) => patch((s) => ({ ...s, fill: { ...binding, scale } }), key)} /> : <div className="skeleton h-[68px]" />}
+        {categorical ? (
+          <p className="text-[12px] leading-[1.5] text-ink3">Each class in its published colour; the key lists them.</p>
+        ) : grid && inRange.length ? (
+          <ScaleEditor scale={binding.scale} values={inRange} unit={grid.unit} scheme={scheme} smooth onChange={(scale, key) => patch((s) => ({ ...s, fill: { ...binding, scale } }), key)} />
+        ) : (
+          <div className="skeleton h-[68px]" />
+        )}
       </Section>
-      <Section title="Range" aside={grid && <span className="t-label t-num">{fmt(shown[0], grid.unit)} – {fmt(shown[1], grid.unit)}</span>}>
+      {!categorical && <Section title="Range" aside={grid && <span className="t-label t-num">{fmt(shown[0], grid.unit)} – {fmt(shown[1], grid.unit)}</span>}>
         <Slider
           className="max-md:h-8"
           min={0}
@@ -506,7 +525,7 @@ function RasterSections({ layer, data, scheme }: P) {
           onValueCommit={endShown}
         />
         <p className="text-[12px] leading-[1.5] text-ink3">Cells outside the range are not drawn, so what is below shows through.</p>
-      </Section>
+      </Section>}
       <Section title="Rendering">
         <Field label="Cells">
           <Seg
@@ -519,9 +538,13 @@ function RasterSections({ layer, data, scheme }: P) {
             ]}
           />
         </Field>
-        <Field label="Relief" htmlFor={`relief-${layer.id}`} hint="shade with the terrain">
-          <Switch id={`relief-${layer.id}`} checked={!!layer.style['x-relief']} onCheckedChange={(v) => patch((s) => ({ ...s, 'x-relief': v }))} />
-        </Field>
+        {grid?.kind === 'grid' ? (
+          <Field label="Relief" htmlFor={`relief-${layer.id}`} hint="shade with the terrain">
+            <Switch id={`relief-${layer.id}`} checked={!!layer.style['x-relief']} onCheckedChange={(v) => patch((s) => ({ ...s, 'x-relief': v }))} />
+          </Field>
+        ) : (
+          <p className="text-[12px] leading-[1.5] text-ink3">For relief, add Terrain relief above this layer with a multiply blend.</p>
+        )}
       </Section>
     </>
   )

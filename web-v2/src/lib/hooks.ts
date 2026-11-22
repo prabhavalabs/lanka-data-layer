@@ -72,7 +72,7 @@ export function applyRouteDefaultTheme(pathname: string) {
     /* ignore */
   }
   if (stored === 'dark' || stored === 'light') return applyTheme(stored)
-  applyTheme(pathname === '/' || pathname.startsWith('/explore') ? 'dark' : 'light')
+  applyTheme(pathname === '/' || pathname.startsWith('/explore') || pathname.startsWith('/m/') ? 'dark' : 'light')
 }
 
 export function useTheme(): [Theme, (t: Theme) => void] {
