@@ -32,6 +32,7 @@ use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use utoipa::{IntoParams, OpenApi};
 
+pub mod analysis_api;
 pub mod features_api;
 pub mod frame_codec;
 pub mod grids;
@@ -49,6 +50,9 @@ pub struct AppState {
     app: Option<lanka_app::AppPlane>,
     /// Memory-mapped grid layers (WP-05), swapped with the catalogue.
     grids: Arc<RwLock<Arc<grids::GridSet>>>,
+    /// The analysis engine (WP-29) on its `lanka_analysis` pool; `None`
+    /// when the role or the blob store is unavailable.
+    analysis: Option<Arc<lanka_analysis::Engine>>,
 }
 
 /// Maps the served grid layers; an empty set when there is no store or profile.
@@ -87,7 +91,39 @@ impl AppState {
             store_dir,
             grids: Arc::new(RwLock::new(Arc::new(grids))),
             app: None,
+            analysis: None,
         })
+    }
+
+    /// Mounts the analysis engine (`/v2/analyses`).
+    #[must_use]
+    pub fn with_analysis(mut self, engine: lanka_analysis::Engine) -> Self {
+        self.analysis = Some(Arc::new(engine));
+        self
+    }
+
+    /// Builds the analysis engine on its own pool (role `lanka_analysis`).
+    pub async fn analysis_engine(&self) -> anyhow::Result<lanka_analysis::Engine> {
+        let pool = analysis_api::connect(&self.pool.connect_options()).await?;
+        let base = std::env::var("LANKA_PUBLIC_URL")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .or_else(|| {
+                self.catalog()
+                    .profile
+                    .as_deref()
+                    .map(|p| p.spec.site.base_url.clone())
+            })
+            .unwrap_or_default();
+        let rev = std::env::var("LANKA_GIT_REV").unwrap_or_else(|_| "unknown".to_owned());
+        let cat = self.catalog_fn();
+        Ok(lanka_analysis::Engine::new(
+            pool,
+            Arc::new(move || cat()),
+            self.store_dir.clone(),
+            base,
+            rev,
+        ))
     }
 
     /// A catalogue accessor for the app plane (the same swapped snapshot).
@@ -1176,6 +1212,14 @@ async fn fallback() -> ApiError {
 
 pub fn router(state: AppState) -> Router {
     let app_plane = state.app.as_ref().map(lanka_app::AppPlane::router);
+    // Analysis takes POST bodies (WP-29): its own CORS, so the rest of /v2
+    // stays GET-only.
+    let analysis = analysis_api::routes().with_state(state.clone()).layer(
+        CorsLayer::new()
+            .allow_origin(tower_http::cors::Any)
+            .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
+            .allow_headers([header::CONTENT_TYPE]),
+    );
     let v2 = Router::new()
         .route("/v2/health", get(health))
         .route("/v2/status", get(status_summary))
@@ -1210,6 +1254,7 @@ pub fn router(state: AppState) -> Router {
         );
     // The app plane keeps its own CORS and limits; off = its routes do not
     // exist (404 through the /v2 fallback) and /v2 is unchanged.
+    let v2 = analysis.merge(v2);
     let all = match app_plane {
         Some(app) => app.merge(v2),
         None => v2,
@@ -1232,6 +1277,15 @@ pub async fn serve(pool: PgPool, bind: SocketAddr) -> anyhow::Result<()> {
         state = state.with_app_plane(plane);
     } else {
         tracing::info!("app plane off (LANKA_APP_PLANE): /app/v1 is 404");
+    }
+    match state.analysis_engine().await {
+        Ok(e) => {
+            tracing::info!("analysis engine on (/v2/analyses, role lanka_analysis)");
+            state = state.with_analysis(e);
+        }
+        Err(e) => {
+            tracing::warn!(error = %format!("{e:#}"), "analysis engine off: /v2/analyses answers 503")
+        }
     }
     let app = router(state);
     let listener = tokio::net::TcpListener::bind(bind).await?;
@@ -1295,6 +1349,7 @@ mod tests {
             store_dir: None,
             app: None,
             grids: Arc::new(RwLock::new(Arc::new(grids::GridSet::default()))),
+            analysis: None,
         };
         if plane {
             let cfg = lanka_app::AppConfig {

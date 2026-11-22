@@ -907,3 +907,133 @@ round-trips), `crates/lanka-grid/tests/v1_parity.rs` (set `LANKA_V1_PARITY_DIR` 
   driver's `zonal:` entries can move into recipes (follow-up; `share` is not in the method yet).
 - Not done: `postal_idx` (needs GeoNames postal in v2, WP-07), `cell_area_m2` as a stored layer (computed per row),
   `min_cells`/`SMALL_N`, value tiles (WP-27), STAC.
+
+## Analysis core and tier-1 methods (WP-29)
+
+Design: [11](../docs/architecture-v2/11-analysis-engine.md), [ADR 0021](../docs/architecture-v2/adr/0021-analysis-engine.md),
+[ADR 0022](../docs/architecture-v2/adr/0022-analysis-guard-rails.md), [ui-contract-explore.md §6–7](../docs/architecture-v2/ui-contract-explore.md).
+Crates `lanka-stats`, `lanka-stats-wasm`, `lanka-analysis`; migration `0012_analysis.sql`; spec `spec/analysis/1/`;
+method pages `docs/methods/analysis-*.md`.
+
+```
+POST /v2/analyses (ldl-analysis/1) ─► schema ─► RESOLVE pin → release, ids → dsvs, "latest"/"auto"/defaults explicit
+   ─► PLAN support (coarsest native level; never down unless align: inherit), alignment per variable
+   ─► fingerprint = sha256(JCS(resolved request − pin) ‖ method@ver ‖ alignments ‖ sorted role|dataset|dsv|grid sha ‖ lanka-stats@ver)
+   ─► stored?  yes → 303 to the stored bytes          id = an_<16 hex>, seed = first 8 bytes
+   ─► ALIGN frames (identity) · rollup@1 · inherit · grid_zonal@1 · features_zonal@1 · exposure_overlay
+   ─► GUARD (plan + frame guards; block → no estimates) ─► COMPUTE (lanka-stats, blocking pool 2 + queue 8)
+   ─► PRESENT result doc + outputs ─► analysis/<id>/result.json (exact bytes) + analysis.results/result_inputs
+```
+
+- **`lanka-stats`** (no I/O, no async; native + `wasm32`): `classify` (quantile, equal, jenks, stddev, headtail,
+  pretty, bivariate), `describe` (summary, type-7 quantiles, ranks, histogram, hexbin), `correlate` (Pearson,
+  Spearman, Fisher-z intervals, adjusted p), `regress` (Householder QR OLS, HC3, leverage, Cook's D, VIF,
+  Koenker–Breusch–Pagan, Huber IRLS), `compare` (Welch, Mann–Whitney, Hodges–Lehmann, Cohen's d, bootstrap),
+  `effn` (Dutilleul effective n), `spatial` (kNN weights, Moran's I + seeded permutations), `rng` (SplitMix64
+  counter stream keyed by (seed, stream)), `special` (incomplete beta/gamma, t/F/χ²/normal), `transform`.
+  Transcendentals go through the pure-Rust `libm`, loops have a fixed order, no BLAS/SIMD dispatch — the same
+  bits on every target.
+- **`lanka-stats-wasm`**: a C-ABI module (no wasm-bindgen): `lsw_alloc/free`, `lsw_classify`, `lsw_bivariate`,
+  `lsw_describe`, `lsw_correlate`, `lsw_regress`, `lsw_preview_relate`, `lsw_hexbin`; `js/lanka-stats.mjs` wraps
+  it as the UI contract's `StatsKernel`. `build.sh` builds it, records the size and regenerates
+  `tests/fixtures/wasm_bits.json` under node; `tests/wasm_parity.rs` requires the native kernels to give the same
+  962 values bit for bit. The `extern "C"` exports are the second audited `unsafe` exception (after `mmap.rs`).
+- **`lanka-analysis`**: `request` (types + embedded schemas, JSON-pointer problems), `pipeline` (resolve, plan,
+  align over `lanka_core::frame` and `lanka-enrich` methods through an `Inputs` wrapper), `methods` (`describe`,
+  `relate`, `regress`, `group_compare`, `exposure`, `zonal`, `classify`), `guards` (the registry: 25 codes, 21
+  active in WP-29), `result` (guards, fingerprint, document), `engine` (sync executor, result store, plan),
+  `bundle` (reproducible zip). `engine::evaluate` is the pure GUARD → COMPUTE → PRESENT step.
+- **`lanka-grid::exposure`**: `exposure_overlay` — hazard ≥ threshold mask × exposed layer per unit, one pass
+  over `gnd_idx`, exact roll-up (shares of sums, never averages of shares).
+- **Migration 0012**: schema `analysis` (`results` — id checked against the fingerprint —, `result_inputs`,
+  `aligned`, `spatial_weights`), role `lanka_analysis` (30 s statements; SELECT on catalog/geo/data/serve, DML on
+  `analysis.*` only), `lanka_api` SELECT on `analysis.*`; `analysis.apply_grants()` runs after the other grant
+  functions in `lanka db migrate`.
+- **Server** (`lanka-server/src/analysis_api.rs`, own CORS with POST; the rest of `/v2` stays GET-only):
+
+| Route | |
+|---|---|
+| `GET /v2/analysis/methods`, `/{id}` | roles, supports, params/estimates schemas, min n, guards, citations, page; the guard registry |
+| `POST /v2/analyses` | `303` → `/v2/analyses/{id}` (`payload.computed` says whether it ran); 400 `{problems, hints}`; 422 over the sync budget (30 s estimate; async lane = WP-30); 503 busy or engine off |
+| `POST /v2/analyses/plan` | id, resolved request, support + n_expected, alignment, cost (`sync`/`async`, expected ms), guards known in advance |
+| `GET /v2/analyses/{id}` | the stored document inside the envelope, `immutable`, `ETag: "<id>"` (304) |
+| `GET /v2/analyses/{id}/outputs/{output}?format=json\|csv\|arrow` | frames (`{codes, columns}`) and charts |
+| `GET /v2/analyses/{id}/bundle` | zip: `result.json`, `outputs/*.json|csv`, `README.md`, `datapackage.json`, `prov.jsonld` |
+
+  The engine connects as `lanka_analysis` (`LANKA_ANALYSIS_DATABASE_URL`, else the server's options +
+  `SET ROLE`); outputs live in the store (`LANKA_STORE_DIR`, namespace `analysis/`). Either missing → the engine
+  is off and those routes answer 503 (the method catalogue still works).
+
+```bash
+lanka db migrate
+lanka serve --bind 127.0.0.1:8601            # "analysis engine on (/v2/analyses, role lanka_analysis)"
+curl -s -X POST -H 'content-type: application/json' --data-binary @crates/lanka-analysis/tests/golden/builtup-share-vs-density-adm3/request.json \
+     -o /dev/null -w '%{redirect_url}\n' localhost:8601/v2/analyses
+curl -s localhost:8601/v2/analyses/an_170052d9a2366a89 | jq '.payload | {guards: [.guards[].code], r: .estimates.pearson}'
+curl -s 'localhost:8601/v2/analyses/an_170052d9a2366a89/outputs/bivariate?format=arrow' -o biv.arrow
+crates/lanka-stats-wasm/build.sh             # WASM + size + parity fixture
+```
+
+### Acceptance evidence (2026-11-22, local `lanka_wp29`: COD-AB, census 2024, WorldPop, WorldCover, DEM)
+
+| Item | Result |
+|---|---|
+| Reference fixtures | **Python** reference (R is not installed): numpy 2.5.5, scipy 1.18.1, statsmodels 0.15.0; `lanka-stats/tests/fixtures/gen_reference.py` → `reference.json`. 1e-8 (relative + 1e-12 abs) for special functions, describe, Pearson/Spearman (Anscombe I–IV, a tied 339-row set), OLS/HC3/leverage/Cook/VIF/BP/Huber (Stack loss, Anscombe I, a 400-row t₃ set; Longley at 1e-5 — condition number ~5e9), Welch/Mann–Whitney/HL/Cohen's d, class breaks (independent Jenks DP), Dutilleul M̂ against the explicit n×n matrices; **bit-exact**: seeded bootstrap (2 intervals) and Moran's I + 499 permutations against the ported RNG stream |
+| Same id + bytes twice, after an unrelated release; new id after an input change | `tests/pg_analysis.rs` (throwaway DB, engine as `lanka_analysis`): twice → one id, identical bytes, second from the store; after a release of an unrelated dataset → same id, same bytes, and a store-bypassing recomputation gives the same id and numbers; a new version of x → new id, the old result still served |
+| Guards | `src/tests.rs`: a positive and a negative fixture for each of the 21 codes active in WP-29 (a meta-test fails when a code has none); vocabulary scan of the registry and of every rendered message, summary and reading |
+| Blocked → no estimates | MIN_N, PERIOD_MISMATCH > 5 y, LOW_COVERAGE < 30 %: `state: blocked`, `estimates`/`interpretation` null, no outputs, no `"p":` anywhere; override of PERIOD_MISMATCH recorded and cited; live: `relate` at ADM1 (9 provinces) blocked |
+| Golden (substitute pair) | ESA WorldCover built-up share (`lc.class_share{lc_class=50}`, 2021) vs census population density (`derived.per_km2`, 2024, log), ADM3, island: `an_170052d9a2366a89`, r = 0.637 [0.569, 0.696], n_eff 62.2, p_adj 2.0e-8; ρ = 0.825; OLS log(y) ~ x b = 0.0621 [0.0527, 0.0715] (6.4 % per percentage point), R² 0.41; residual Moran's I 0.63 (p 0.001); guards ECOLOGICAL, PERIOD_MISMATCH (3 y), RESIDUAL_AUTOCORR, NOT_CAUSAL, MAUP (r 0.67 at districts), NO_CONTROLS. `tests/golden.rs`: `_offline` always (committed frames), `_live` with `LANKA_GOLDEN_DATABASE_URL`; **flood pair** `flood_area_share_vs_density_adm3_live` is `#[ignore]` until WP-27 merges |
+| Native ≡ WASM | `classify`, `bivariate`, `correlate`, `regress`, `preview`, `hexbin`, `describe` on the fixtures: 962 values, identical bits (node 24 vs aarch64-apple-darwin) |
+| WASM size | `lanka_stats_wasm.wasm` 133,418 bytes, **51,026 bytes gzip -9** (target ≤ 500 KB compressed) |
+
+Timings (release build, laptop shared with other builds; `provenance.elapsed_ms` = align + compute; HTTP adds
+~0.3 s of resolve queries):
+
+| Request (11 §8) | n | Expected | Measured | Mode |
+|---|---|---|---|---|
+| `relate` at ADM3, island, 999 permutations | 339 | 30 ms | 97–235 ms (with the ADM2/ADM4 scale frames) | sync |
+| `relate` at ADM4, one province (LK1), 999 permutations | 2,496 | 0.5–1 s | 0.42 s | sync |
+| `relate` at ADM4, island, 999 permutations | 14,043 | 4–8 s | 7.5 s | sync (async lane WP-30) |
+| `group_compare` on 50,000 points with rings | 50,000 | 0.3 s | kernels 85 ms; + 999 bootstrap medians 0.75 s (point support WP-27/33) | — |
+| `exposure` for one district (LK21, slope ≥ 20° × WorldPop) | 20 | 50 ms | 0.62–0.70 s (two island layers read from the store per request) | sync |
+| stored result `GET /v2/analyses/{id}` | — | — | 8 ms | — |
+| `hotspots`, `interpolate`, `gwr` | | | WP-30/33/37 | |
+
+### Decision note: WP-29 choices and deviations
+
+- *Fingerprint without `pin`*: the resolved request records the release it ran against, but the fingerprint
+  uses the request minus `pin` plus the input dsvs, so an unrelated release keeps the id (11 §9's rule as
+  intended). `provenance.data_version` is the release of the first computation; identical requests are served the
+  stored bytes.
+- *Exact bytes in the store*: `analysis/<id>/result.json` is what `GET` returns (jsonb would renormalise numbers);
+  the row is the publication point.
+- *Sync only*: no async lane yet; requests estimated ≤ 30 s run inline on the 2 + 8 pool, above → 422. The
+  island ADM4 `relate` (7.5 s) is therefore sync here; WP-30 moves > 2 s to the `interactive` lane.
+- *Spatial pieces*: residual Moran's I and the effective-n adjustment use kNN weights / centroid distances (no
+  contiguity weights until WP-30), so `RESIDUAL_AUTOCORR` and `p_adjusted` are live now; Lee's L, local
+  statistics and `uncertainty: "mc"` are refused with a pointer to WP-30.
+- *Supports*: admin units only. Grid/points supports, `point_aggregate`, `sample`, distance rings, `dasymetric`,
+  `crosswalk_rebase` and `spatial_interp` answer 400 naming their package; `inherit` is explicit-only (quality D,
+  `PSEUDO_REPLICATION`).
+- *`group_compare` on areas*: the zone is a variable thresholded on the same support (e.g. steep-slope share ≥
+  10 %) until point layers exist.
+- *Classes*: Jenks above 2,000 values runs on an evenly spaced sample of the sorted data (the web client's rule
+  with a larger cap).
+- *Reference*: Python instead of R (no R on the machine); statsmodels/scipy implement the same estimators, and
+  the RNG-dependent checks are exact because the stream is ported.
+- *WASM without wasm-bindgen*: a raw C-ABI module keeps the bundle at 51 KB and avoids a generated JS glue
+  layer; the cost is the hand-written `js/lanka-stats.mjs`.
+- *Migration number*: `0012`; `0011` is WP-27's (a fresh database applies both in order).
+- *Shared-file edits*: `engine/Cargo.toml` (3 members, 2 path deps, `libm`/`crc32fast`), `lanka-core/src/db.rs`
+  (`analysis.apply_grants()` after migrate), `lanka-grid/src/lib.rs` (`pub mod exposure`), `lanka-store/src/lib.rs`
+  (`Ns::Analysis`), `lanka-server/{Cargo.toml, src/lib.rs, src/features_api.rs}` (engine field + mount + its CORS;
+  the test `AppState` literal), `lanka-cli/src/main.rs` (`LANKA_ANALYSIS_PASSWORD` for `set-passwords`).
+- Not here: async jobs/events, quotas, `/app/v1/ws/{ws}/analyses`, `/recipe`, parquet/geojson/grid outputs, the
+  aligned-column cache (`analysis.aligned` exists, unused), MCP/CLI (`lanka analyze`, WP-34), eviction job.
+
+```bash
+cargo test -p lanka-stats -p lanka-stats-wasm -p lanka-analysis           # kernels, fixtures, parity, guards, golden offline
+LANKA_TEST_DATABASE_URL=postgres://…/postgres cargo test -p lanka-analysis --test pg_analysis
+LANKA_GOLDEN_DATABASE_URL=postgres://…/lanka LANKA_STORE_DIR=$PWD/../data/v2 cargo test -p lanka-analysis --test golden
+cargo test --release -p lanka-stats --test bench -- --ignored --nocapture # kernel timings
+```
