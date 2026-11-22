@@ -1609,6 +1609,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "lanka-analysis"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "crc32fast",
+ "hex",
+ "jsonschema",
+ "lanka-core",
+ "lanka-enrich",
+ "lanka-grid",
+ "lanka-ingest",
+ "lanka-mapdoc",
+ "lanka-stats",
+ "lanka-store",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "lanka-app"
 version = "0.1.0"
 dependencies = [
@@ -1789,6 +1815,7 @@ dependencies = [
  "arrow-schema",
  "axum",
  "http-body-util",
+ "lanka-analysis",
  "lanka-app",
  "lanka-core",
  "lanka-enrich",
@@ -1803,6 +1830,22 @@ dependencies = [
  "tower-http 0.7.1",
  "tracing",
  "utoipa",
+]
+
+[[package]]
+name = "lanka-stats"
+version = "0.1.0"
+dependencies = [
+ "libm",
+ "serde_json",
+]
+
+[[package]]
+name = "lanka-stats-wasm"
+version = "0.1.0"
+dependencies = [
+ "lanka-stats",
+ "serde_json",
 ]
 
 [[package]]

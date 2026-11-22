@@ -11,6 +11,9 @@ members = [
   "crates/lanka-server",
   "crates/lanka-cli",
   "crates/lanka-export",
+  "crates/lanka-stats",
+  "crates/lanka-stats-wasm",
+  "crates/lanka-analysis",
 ]
 
 [workspace.package]
@@ -31,6 +34,8 @@ lanka-mapdoc = { path = "crates/lanka-mapdoc" }
 lanka-grid = { path = "crates/lanka-grid" }
 lanka-store = { path = "crates/lanka-store" }
 lanka-server = { path = "crates/lanka-server" }
+lanka-stats = { path = "crates/lanka-stats" }
+lanka-analysis = { path = "crates/lanka-analysis" }
 
 anyhow = "=1.0.104"
 thiserror = "=2.0.21"
@@ -68,6 +73,9 @@ tracing-subscriber = { version = "=0.3.23", features = ["env-filter", "json", "f
 # WP-04: OSM PBF reading (pure Rust, rust zlib backend) and gzip for PMTiles directories
 osmpbf = { version = "=0.3.8", default-features = false, features = ["rust-zlib"] }
 rayon = "=1.12.0"
+# WP-29: pure-Rust maths for bit-identical native/WASM statistics; zip CRCs for result bundles
+libm = "=0.2.16"
+crc32fast = "=1.5.5"
 
 [profile.release]
 lto = "thin"

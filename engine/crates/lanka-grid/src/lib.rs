@@ -16,9 +16,11 @@
 //! - [`zonal`]: one linear pass over `gnd_idx` + a layer into per-unit
 //!   accumulators, and their roll-up through ancestors.
 //! - [`cog`]: Cloud Optimized GeoTIFF writer; [`tile`]: web-mercator PNG tiles.
+//! - [`exposure`]: `exposure_overlay` — hazard mask × exposed layer per unit (WP-29).
 
 pub mod array;
 pub mod cog;
+pub mod exposure;
 pub mod geotiff;
 pub mod header;
 pub mod lookup;

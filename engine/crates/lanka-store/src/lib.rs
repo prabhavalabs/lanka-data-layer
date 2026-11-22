@@ -37,6 +37,9 @@ pub enum Ns {
     Dataset,
     Release,
     Evidence,
+    /// Analysis results and outputs, `analysis/<an_id>/…` (WP-29; served
+    /// through the application, never under `/dl`).
+    Analysis,
     Tmp,
 }
 
@@ -51,6 +54,7 @@ impl Ns {
             Self::Dataset => "datasets",
             Self::Release => "releases",
             Self::Evidence => "evidence",
+            Self::Analysis => "analysis",
             Self::Tmp => "tmp",
         }
     }
