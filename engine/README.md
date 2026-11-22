@@ -1131,7 +1131,8 @@ Timings (release build, laptop shared with other builds; `provenance.elapsed_ms`
   the RNG-dependent checks are exact because the stream is ported.
 - *WASM without wasm-bindgen*: a raw C-ABI module keeps the bundle at 51 KB and avoids a generated JS glue
   layer; the cost is the hand-written `js/lanka-stats.mjs`.
-- *Migration number*: `0012`; `0011` is WP-27's (a fresh database applies both in order).
+- *Migration number*: `0012`; `0011` was reserved for WP-27, which shipped without a migration, so the sequence
+  goes 0010 → 0012 (sqlx applies by version; verified on a fresh and on the main database).
 - *Shared-file edits*: `engine/Cargo.toml` (3 members, 2 path deps, `libm`/`crc32fast`), `lanka-core/src/db.rs`
   (`analysis.apply_grants()` after migrate), `lanka-grid/src/lib.rs` (`pub mod exposure`), `lanka-store/src/lib.rs`
   (`Ns::Analysis`), `lanka-server/{Cargo.toml, src/lib.rs, src/features_api.rs}` (engine field + mount + its CORS;
