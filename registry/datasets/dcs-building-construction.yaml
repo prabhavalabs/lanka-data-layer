@@ -26,10 +26,38 @@ indicators:
   - national
   - adm2
   period_type: year
+- id: constr.buildings_constructed
+  label: Constructed new buildings, additions and alterations
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: construction_type
+    codelist: construction_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: constr.floor_area_constructed
+  label: Floor space of constructed buildings, additions and alterations
+  unit: m2
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: construction_type
+    codelist: construction_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
 time_coverage:
   from: '2015'
   to: '2024'
-method: Abstract ch.6 table 6.7.
+method: >-
+  Statistical Abstract chapter 6 table 6.7 read from the PDF through a registry template; floor space is
+  printed in square feet and converted to m2 (x 0.09290304).
 limits:
 - Only local-authority-approved construction; informal building excluded.
 enrichment:

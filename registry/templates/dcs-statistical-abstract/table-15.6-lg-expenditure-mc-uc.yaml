@@ -1,0 +1,14 @@
+# Statistical Abstract, chapter 15, table 15.6: analysis of expenditure of Municipal
+# Councils and Urban Councils (Rs. thousands), provisional. Trilingual item labels; the
+# English label is the rightmost cluster. Several English labels wrap around their numbers.
+id: dcs-statistical-abstract/table-15.6-lg-expenditure-mc-uc
+title: Expenditure of Municipal Councils and Urban Councils (Rs. thousands)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 15.6", then_text: "Analysis of expenditure of Municipal Councils" }
+    label: { key: item, header: "Item", slack: 12 }
+    columns:
+      - { key: mc, header: "Municipal Council" }
+      - { key: uc, header: "Urban Council" }
+    rows: { stop_at: ["Provisional"], wrapped_labels: true }

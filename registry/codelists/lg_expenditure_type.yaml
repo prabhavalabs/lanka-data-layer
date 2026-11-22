@@ -1,0 +1,23 @@
+# Local authority expenditure item
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka - analysis of expenditure of local authorities (Statistical Abstract tables 15.6, 15.7).
+# Note: recurrent and capital are subtotals; their items are children of the subtotal.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-local-government-finance
+id: lg_expenditure_type
+title: Local authority expenditure item
+codes:
+  - { code: total, label: Total expenditure, total: true, sdmx: _T }
+  - { code: recurrent, label: Total recurrent expenditure, parent: total }
+  - { code: capital, label: Total capital expenditure, parent: total }
+  - { code: personal_emoluments, label: Personal emoluments, parent: recurrent }
+  - { code: travelling, label: Travelling expenses, parent: recurrent }
+  - { code: supplies, label: Supplies and requisites, parent: recurrent }
+  - { code: repairs_maintenance, label: Repairs and maintenance of capital assets, parent: recurrent }
+  - { code: transport_utilities, label: "Transportation, communication, utility and other services", parent: recurrent }
+  - { code: interest, label: "Interest payments, dividends and bonuses", parent: recurrent }
+  - { code: grants_subsidies, label: "Grants, contributions and subsidies", parent: recurrent }
+  - { code: pensions, label: "Pensions, retirement benefits and gratuities", parent: recurrent }
+  - { code: capital_outlay, label: "Equipment outlay, land, land improvement and structural outlay", parent: capital }
+  - { code: loan_repayments, label: Loan repayments, parent: capital }

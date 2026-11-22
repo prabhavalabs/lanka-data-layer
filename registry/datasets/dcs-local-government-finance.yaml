@@ -15,6 +15,7 @@ indicators:
   dims:
   - id: revenue_type
     codelist: lg_revenue_type
+  - council_type
   geo_levels:
   - national
   - polygon
@@ -27,7 +28,9 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - expenditure_type
+  - id: expenditure_type
+    codelist: lg_expenditure_type
+  - council_type
   geo_levels:
   - national
   - polygon
@@ -44,7 +47,10 @@ indicators:
 time_coverage:
   from: '2015'
   to: '2024'
-method: Abstract ch.15 tables 15.4-15.7.
+method: >-
+  Statistical Abstract chapter 15 tables 15.4 (revenue) and 15.6 (expenditure) of municipal and urban
+  councils, national by council type, read from the PDF through registry templates. Tables 15.5 and 15.7
+  (pradeshiya sabhas by province) print rotated column headers and are not read yet.
 limits:
 - LA boundaries not in COD-AB; requires LA polygon layer (from elections LG 2025 geography).
 enrichment:

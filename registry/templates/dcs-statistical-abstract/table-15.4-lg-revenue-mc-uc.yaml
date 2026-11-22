@@ -1,0 +1,16 @@
+# Statistical Abstract, chapter 15, table 15.4: classification of revenue of Municipal
+# Councils and Urban Councils (Rs. thousands), provisional. Trilingual item labels; the
+# English label is the rightmost cluster. Some English labels wrap around their numbers.
+id: dcs-statistical-abstract/table-15.4-lg-revenue-mc-uc
+title: Revenue of Municipal Councils and Urban Councils (Rs. thousands)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 15.4", then_text: "Classification of Revenue of Municipal Councils" }
+    label: { key: item, header: "Item", slack: 12 }
+    columns:
+      - { key: mc, header: "Municipal Council" }
+      - { key: uc, header: "Urban Council" }
+    rows: { stop_at: ["Provisional"], wrapped_labels: true }
+    checks:
+      - { row_count: { min: 14, max: 14 } }
