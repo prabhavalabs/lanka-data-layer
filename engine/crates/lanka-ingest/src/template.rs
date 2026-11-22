@@ -647,14 +647,21 @@ impl Template {
     }
 }
 
-/// `"2025"` matches `"2025"`, `"2024..2026"` matches leading years 2024–2026.
+/// `"2025"` matches `"2025"`, `"2024..2026"` matches leading years 2024–2026,
+/// and `"2025-Q1..2027-Q1"` matches leading years 2025–2027 whose text after
+/// the year is `-Q1` (both bounds must carry the same suffix): one edition
+/// entry per recurring layout, such as a quarter of a quarterly bulletin.
 fn edition_matches(pattern: Option<&str>, edition: Option<&str>) -> bool {
     let Some(p) = pattern else { return true };
     let Some(e) = edition else { return false };
     let year = |s: &str| s.trim().get(..4).and_then(|y| y.parse::<i32>().ok());
+    let suffix = |s: &str| s.trim().get(4..).unwrap_or("").to_owned();
     match p.split_once("..") {
         Some((a, b)) => match (year(a), year(b), year(e)) {
-            (Some(a), Some(b), Some(y)) => (a..=b).contains(&y),
+            (Some(ya), Some(yb), Some(y)) => {
+                let (sa, sb) = (suffix(a), suffix(b));
+                (ya..=yb).contains(&y) && (sa.is_empty() || (sa == sb && sa == suffix(e)))
+            }
             _ => false,
         },
         None => p.trim() == e.trim(),
@@ -1344,6 +1351,18 @@ editions:
       - { row_count: { min: 3, max: 3 } }
       - { rows_present: ["Nuwara Eliya"] }
 "#;
+
+    #[test]
+    fn edition_patterns() {
+        assert!(edition_matches(None, Some("2026-Q2")));
+        assert!(edition_matches(Some("2026-Q2"), Some("2026-Q2")));
+        assert!(edition_matches(Some("2025..2027"), Some("2026-Q2")));
+        assert!(edition_matches(Some("2025-Q2..2027-Q2"), Some("2026-Q2")));
+        assert!(!edition_matches(Some("2025-Q2..2027-Q2"), Some("2026-Q1")));
+        assert!(!edition_matches(Some("2025-Q2..2027-Q2"), Some("2028-Q2")));
+        assert!(!edition_matches(Some("2025-Q2..2027-Q3"), Some("2026-Q2")));
+        assert!(!edition_matches(Some("2025"), None));
+    }
 
     #[test]
     fn reads_a_two_level_header_table() {

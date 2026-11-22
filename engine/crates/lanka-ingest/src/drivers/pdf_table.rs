@@ -151,6 +151,8 @@ pub enum PeriodParse {
     Month,
     /// "2024Q2" / "2024 Q2" → `2024-Q2`.
     Quarter,
+    /// "2025 H2" or "second half of 2025" → `2025-H2`.
+    HalfYear,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -162,6 +164,10 @@ pub struct PeriodSel {
     pub from_label: Option<PeriodParse>,
     #[serde(default)]
     pub fixed: Option<String>,
+    /// The file's edition label is the period (`edition: "2026-Q2"` for a
+    /// quarterly bulletin whose table prints no date).
+    #[serde(default)]
+    pub from_edition: bool,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -273,8 +279,9 @@ impl PdfTable {
                 usize::from(p.from_header.is_some())
                     + usize::from(p.from_label.is_some())
                     + usize::from(p.fixed.is_some())
+                    + usize::from(p.from_edition)
                     == 1,
-                "output {}: period needs exactly one of from_header, from_label, fixed",
+                "output {}: period needs exactly one of from_header, from_label, fixed, from_edition",
                 o.indicator
             );
             ensure!(
@@ -561,6 +568,29 @@ pub fn parse_period(how: PeriodParse, text: &str) -> Result<String> {
                 .with_context(|| format!("no month in {text:?}"))?;
             Ok(format!("{year}-Q{}", m / 3 + 1))
         }
+        PeriodParse::HalfYear => {
+            let lower = text.to_ascii_lowercase();
+            let words: Vec<&str> = lower
+                .split(|c: char| !c.is_ascii_alphanumeric())
+                .filter(|w| !w.is_empty())
+                .collect();
+            let half = words
+                .iter()
+                .find_map(|w| match *w {
+                    "h1" => Some(1),
+                    "h2" => Some(2),
+                    _ => None,
+                })
+                .or_else(|| {
+                    words.windows(2).find_map(|p| match p {
+                        ["first", "half"] => Some(1),
+                        ["second", "half"] => Some(2),
+                        _ => None,
+                    })
+                })
+                .with_context(|| format!("no half-year in {text:?}"))?;
+            Ok(format!("{year}-H{half}"))
+        }
     }
 }
 
@@ -830,6 +860,14 @@ impl Connector for PdfTable {
                                 }
                                 (_, Some(p), _) => parse_period(*p, label)?,
                                 (_, _, Some(f)) => f.clone(),
+                                _ if o.period.from_edition => {
+                                    edition.clone().with_context(|| {
+                                        format!(
+                                            "{}: period.from_edition needs a file edition",
+                                            o.table
+                                        )
+                                    })?
+                                }
                                 _ => bail!("period"),
                             };
                         let mut status = o.status.default.unwrap_or(Status::Normal);
@@ -938,5 +976,14 @@ mod tests {
         );
         assert!(parse_period(PeriodParse::Quarter, "2025").is_err());
         assert!(parse_month("March", None).is_err());
+        assert_eq!(
+            parse_period(PeriodParse::HalfYear, "2025 H2").expect("h"),
+            "2025-H2"
+        );
+        assert_eq!(
+            parse_period(PeriodParse::HalfYear, "first half of 2026").expect("h"),
+            "2026-H1"
+        );
+        assert!(parse_period(PeriodParse::HalfYear, "2025 Total").is_err());
     }
 }
