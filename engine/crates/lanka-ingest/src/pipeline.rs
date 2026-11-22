@@ -526,6 +526,7 @@ pub(crate) async fn persist_extract(
         c.version().to_owned(),
         c.source_id().to_owned(),
     );
+    let reader = extract_reader(&out);
     let out = Arc::new(out);
     let enc = {
         let (o, e, v, s) = (out.clone(), extractor.clone(), ver.clone(), source.clone());
@@ -540,9 +541,9 @@ pub(crate) async fn persist_extract(
     let (blob, created) = env.store.put_cas(Ns::Extract, Bytes::from(enc)).await?;
     let id: i64 = sqlx::query_scalar(
         "INSERT INTO ops.extracts (sha256, source_id, shape, extractor, extractor_ver, template_sha256, rows,
-            bytes, store_key, run_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-         ON CONFLICT (sha256) DO UPDATE SET sha256 = EXCLUDED.sha256
+            bytes, store_key, run_id, reader)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (sha256) DO UPDATE SET reader = coalesce(ops.extracts.reader, EXCLUDED.reader)
          RETURNING id",
     )
     .bind(blob.sha256.as_slice())
@@ -555,6 +556,7 @@ pub(crate) async fn persist_extract(
     .bind(i64::try_from(blob.bytes)?)
     .bind(&blob.key)
     .bind(run.run_id)
+    .bind(reader)
     .fetch_one(env.pool)
     .await?;
     let idx: Vec<i32> = (0..artifacts.len())
@@ -1281,4 +1283,16 @@ pub fn default_store(registry_dir: &Path) -> FsStore {
 /// Convenience used by the CLI and tests: a shared, loaded registry.
 pub fn load_registry(dir: &Path) -> Result<Arc<Registry>> {
     Ok(Arc::new(Registry::load(dir)?))
+}
+
+/// The reader of a cells extract when every cell has the same one
+/// (`pdftotext`, `calamine`, `llm_dual`, …), recorded on `ops.extracts`.
+#[must_use]
+pub fn extract_reader(out: &ExtractOut) -> Option<String> {
+    let cells = out.cells();
+    let first = cells.first()?.reader.as_str();
+    cells
+        .iter()
+        .all(|c| c.reader == first)
+        .then(|| first.to_owned())
 }

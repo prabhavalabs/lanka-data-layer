@@ -289,6 +289,67 @@ impl PdfTable {
     fn file(&self, key: &str) -> Option<&FileSpec> {
         self.spec.discover.files.iter().find(|f| f.key == key)
     }
+
+    /// Edition label of a discovered file.
+    #[must_use]
+    pub fn file_edition(&self, key: &str) -> Option<&str> {
+        self.file(key).and_then(|f| f.edition.as_deref())
+    }
+}
+
+/// Rebuilds a [`template::Table`] from extract cells, so template checks can
+/// be re-run on a stored extract (evidence sheets) exactly as at extraction.
+#[must_use]
+pub fn table_from_cells(cells: &[Cell], table_id: &str, ed: &template::Edition) -> template::Table {
+    let mine: Vec<&Cell> = cells.iter().filter(|c| c.table_id == table_id).collect();
+    let mut headers: Vec<(u32, template::THeader)> = mine
+        .iter()
+        .filter(|c| c.r == 0)
+        .map(|c| {
+            (
+                c.c,
+                template::THeader {
+                    key: c.col_header.clone().unwrap_or_default(),
+                    text: c.text.clone(),
+                    page: c.page.and_then(|p| u32::try_from(p).ok()).unwrap_or(0),
+                    bbox: c.bbox.unwrap_or([0.0; 4]),
+                },
+            )
+        })
+        .collect();
+    headers.sort_by_key(|h| h.0);
+    let mut rows: BTreeMap<u32, template::TRow> = BTreeMap::new();
+    for c in mine.iter().filter(|c| c.r > 0) {
+        let page = c.page.and_then(|p| u32::try_from(p).ok()).unwrap_or(0);
+        let row = rows.entry(c.r).or_insert_with(|| template::TRow {
+            label: String::new(),
+            label_page: page,
+            label_bbox: [0.0; 4],
+            cells: BTreeMap::new(),
+        });
+        if c.c == 0 {
+            row.label.clone_from(&c.text);
+            row.label_page = page;
+            row.label_bbox = c.bbox.unwrap_or([0.0; 4]);
+        } else if let Some(k) = &c.col_header {
+            row.cells.insert(
+                k.clone(),
+                template::TCell {
+                    text: c.text.clone(),
+                    page,
+                    bbox: c.bbox.unwrap_or([0.0; 4]),
+                    value: ed.number.parse(&c.text),
+                },
+            );
+        }
+    }
+    template::Table {
+        template_id: String::new(),
+        edition_idx: 0,
+        first_page: headers.first().map_or(0, |h| h.1.page),
+        headers: headers.into_iter().map(|h| h.1).collect(),
+        rows: rows.into_values().collect(),
+    }
 }
 
 /// Template + table ids of every `pdf_table` table in a set of cells, for

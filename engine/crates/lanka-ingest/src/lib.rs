@@ -20,6 +20,7 @@ pub mod pipeline;
 pub mod publish;
 pub mod registry;
 pub mod registry_migrate;
+pub mod review;
 pub mod run;
 pub mod scheduler;
 pub mod template;
