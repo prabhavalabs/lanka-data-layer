@@ -1566,6 +1566,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "lanka-app"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono",
+ "hex",
+ "http-body-util",
+ "lanka-core",
+ "lanka-mapdoc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tower-http 0.7.1",
+ "tracing",
+ "utoipa",
+]
+
+[[package]]
 name = "lanka-cli"
 version = "0.1.0"
 dependencies = [
@@ -1658,6 +1680,7 @@ dependencies = [
  "arrow-schema",
  "axum",
  "http-body-util",
+ "lanka-app",
  "lanka-core",
  "serde",
  "serde_json",

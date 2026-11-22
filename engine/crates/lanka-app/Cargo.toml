@@ -1,0 +1,31 @@
+[package]
+name = "lanka-app"
+description = "Lanka Data Layer app plane (/app/v1): map snapshots, resolution, packages, embeds"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+lanka-core.workspace = true
+lanka-mapdoc.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+axum.workspace = true
+tower-http.workspace = true
+utoipa.workspace = true
+sha2.workspace = true
+hex.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tower = { version = "=0.5.3", features = ["util"] }
+http-body-util = "=0.1.5"
+
+[lints]
+workspace = true
