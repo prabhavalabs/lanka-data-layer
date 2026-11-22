@@ -262,3 +262,36 @@ fn knn_moran_and_permutations_match_the_port() {
     );
     assert_eq!(t.p_perm, f(&m["p_perm"]));
 }
+
+#[test]
+fn partial_correlation_matches_numpy_scipy() {
+    use lanka_stats::correlate::{p_adjusted_k, partial};
+    let fx: Value =
+        serde_json::from_str(include_str!("fixtures/partial.json")).expect("partial.json");
+    let (x, y) = (fv(&fx["x"]), fv(&fx["y"]));
+    let controls: Vec<Vec<f64>> = fx["controls"]
+        .as_array()
+        .expect("controls")
+        .iter()
+        .map(fv)
+        .collect();
+    for c in fx["cases"].as_array().expect("cases") {
+        let k = usize::try_from(c["k"].as_u64().expect("k")).expect("k");
+        let refs: Vec<&[f64]> = controls[..k].iter().map(Vec::as_slice).collect();
+        for (name, rank) in [("pearson", false), ("spearman", true)] {
+            let got = partial(&x, &y, &refs, 0.95, rank).expect("partial");
+            let want = &c[name];
+            near(&format!("k={k} {name} r"), got.c.r, f(&want["r"]));
+            near(&format!("k={k} {name} p"), got.c.p, f(&want["p"]));
+            near_all(&format!("k={k} {name} ci"), &got.c.ci, &fv(&want["ci"]));
+        }
+    }
+    for c in fx["p_adjusted_k"].as_array().expect("p_adjusted_k") {
+        let k = usize::try_from(c["k"].as_u64().expect("k")).expect("k");
+        near(
+            "p_adjusted_k",
+            p_adjusted_k(f(&c["r"]), f(&c["m"]), k),
+            f(&c["p"]),
+        );
+    }
+}
