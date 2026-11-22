@@ -18,7 +18,7 @@ use std::process::ExitCode;
 use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use lanka_core::db::{self, PoolRole};
-use lanka_core::{Catalog, Pcode, query};
+use lanka_core::{Catalog, Profile, query};
 use lanka_ingest::{AlertConfig, Archive, IMPLEMENTED, Registry, RunOptions, publish, run_source};
 use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
@@ -52,6 +52,9 @@ struct Global {
     /// Raw archive root (content-addressed by sha256).
     #[arg(long, env = "LANKA_DATA_DIR", global = true)]
     data_dir: Option<PathBuf>,
+    /// Country profile (defaults to the only `country/*/profile.yaml` beside the registry).
+    #[arg(long, env = "LANKA_COUNTRY_PROFILE", global = true)]
+    profile: Option<PathBuf>,
     /// Log as JSON lines (for journald / log shippers).
     #[arg(long, env = "LANKA_LOG_JSON", global = true)]
     log_json: bool,
@@ -96,8 +99,18 @@ enum DbCmd {
 
 #[derive(Subcommand)]
 enum RegistryCmd {
-    /// Validate every registry file against registry/schema/*.schema.json.
+    /// Validate every registry file and the country profile against registry/schema/*.schema.json.
     Validate,
+    /// Mechanical WP-01 migration of datasets/*.yaml to the standard model
+    /// (UCUM units, measure_type/aggregation/class, kind); prints a review list.
+    Migrate {
+        /// Rewrite the files (default: dry run).
+        #[arg(long)]
+        write: bool,
+        /// Write the review list (CSV) here.
+        #[arg(long)]
+        review_out: Option<PathBuf>,
+    },
     /// Mirror the registry into catalog.* (also done before every ingest run).
     Sync,
 }
@@ -173,6 +186,14 @@ fn find_registry(explicit: Option<&Path>) -> Result<PathBuf> {
     }
 }
 
+fn load_profile(g: &Global, registry: &Path) -> Result<Profile> {
+    let path = match &g.profile {
+        Some(p) => p.clone(),
+        None => Profile::discover(registry)?,
+    };
+    Profile::load(&path).with_context(|| format!("loading country profile {}", path.display()))
+}
+
 fn data_dir(g: &Global, registry: &Path) -> PathBuf {
     g.data_dir
         .clone()
@@ -213,20 +234,55 @@ async fn run(cli: Cli) -> Result<()> {
                 .fetch_one(&pool)
                 .await?;
             println!("migrations applied: {n}");
+            // Migrated versions need the registry + profile to get their hashes.
+            if let Ok(dir) = find_registry(g.registry.as_deref()) {
+                let reg = Registry::load(&dir)?;
+                let profile = load_profile(g, &dir)?;
+                let r = reg.sync(&pool, &profile).await?;
+                println!(
+                    "registry synced ({}); {} version hash(es) backfilled",
+                    reg.summary(),
+                    r.hashes_backfilled
+                );
+            }
+        }
+        Cmd::Registry(RegistryCmd::Migrate { write, review_out }) => {
+            let dir = find_registry(g.registry.as_deref())?;
+            let profile = load_profile(g, &dir)?;
+            let r = lanka_ingest::registry_migrate::migrate(&dir, &profile, write)?;
+            eprintln!(
+                "{} dataset file(s) {}, {} indicator(s) migrated, {} for review",
+                r.files_changed,
+                if write { "rewritten" } else { "would change" },
+                r.indicators,
+                r.review.len()
+            );
+            if let Some(out) = review_out {
+                std::fs::write(&out, r.review_csv())?;
+                eprintln!("review list: {}", out.display());
+            }
         }
         Cmd::Registry(cmd) => {
             let dir = find_registry(g.registry.as_deref())?;
             let reg = Registry::load(&dir)?;
+            let profile = load_profile(g, &dir)?;
             for w in &reg.warnings {
                 eprintln!("warning: {w}");
             }
             match cmd {
                 RegistryCmd::Validate => {
-                    println!("registry OK ({}): {}", dir.display(), reg.summary())
+                    Registry::validate_profile(&dir, &profile)?;
+                    println!(
+                        "registry OK ({}): {}; country profile {:?}",
+                        dir.display(),
+                        reg.summary(),
+                        profile.spec.id
+                    );
                 }
+                RegistryCmd::Migrate { .. } => unreachable!("handled above"),
                 RegistryCmd::Sync => {
                     let pool = pool(g, PoolRole::Ingest).await?;
-                    let r = reg.sync(&pool).await?;
+                    let r = reg.sync(&pool, &profile).await?;
                     sqlx::query("SELECT pg_notify('lanka_release', 'registry-sync')")
                         .execute(&pool)
                         .await?;
@@ -241,8 +297,11 @@ async fn run(cli: Cli) -> Result<()> {
         }) => {
             let dir = find_registry(g.registry.as_deref())?;
             let reg = Registry::load(&dir)?;
+            let profile = load_profile(g, &dir)?;
             let pool = pool(g, PoolRole::Ingest).await?;
-            reg.sync(&pool).await.context("syncing registry")?;
+            reg.sync(&pool, &profile)
+                .await
+                .context("syncing registry")?;
             let archive = Archive::new(data_dir(g, &dir));
             let opts = RunOptions {
                 from_dir: from,
@@ -251,6 +310,7 @@ async fn run(cli: Cli) -> Result<()> {
             let report = run_source(
                 &pool,
                 &reg,
+                &profile,
                 &archive,
                 &source,
                 &opts,
@@ -281,7 +341,8 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Cmd::Reverse { lat, lon, json } => {
             let pool = pool(g, PoolRole::Api).await?;
-            let r = query::reverse(&pool, lat, lon).await?;
+            let cat = Catalog::load(&pool).await?;
+            let r = query::reverse(&pool, &cat, lat, lon).await?;
             if json {
                 print_json(&r)?;
             } else {
@@ -301,10 +362,10 @@ async fn run(cli: Cli) -> Result<()> {
         Cmd::Area { pcode } => {
             let pool = pool(g, PoolRole::Api).await?;
             let cat = Catalog::load(&pool).await?;
-            let p = Pcode::parse(&pcode)?;
+            let p = query::parse_pcode(&cat, &pcode)?;
             let (profile, touched) = query::area_profile(&pool, &cat, &p).await?;
             let mut ds: Vec<&str> = touched.iter().map(String::as_str).collect();
-            ds.push(lanka_core::BOUNDARY_DATASET);
+            ds.extend(cat.boundary_dataset());
             print_json(&lanka_core::Envelope::ok(
                 profile,
                 cat.meta_for(ds, Vec::new()),

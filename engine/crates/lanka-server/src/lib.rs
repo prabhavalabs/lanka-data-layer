@@ -21,6 +21,7 @@ use axum::routing::get;
 use lanka_core::envelope::Link;
 use lanka_core::query::{self, CatalogQuery, MapQuery, SeriesQuery};
 use lanka_core::{Catalog, CoreError, Envelope, Meta, Pcode};
+
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use sqlx::postgres::PgListener;
@@ -198,8 +199,15 @@ fn respond<T: Serialize>(
     Ok(res)
 }
 
-fn parse_pcode(s: &str) -> Result<Pcode, ApiError> {
-    Pcode::parse(s).map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))
+fn parse_pcode(cat: &Catalog, s: &str) -> Result<Pcode, ApiError> {
+    query::parse_pcode(cat, s).map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))
+}
+
+/// Dataset ids touched by a response plus the boundary dataset (from the profile).
+fn with_boundaries<'a>(cat: &'a Catalog, ids: impl IntoIterator<Item = &'a str>) -> Vec<&'a str> {
+    let mut v: Vec<&str> = ids.into_iter().collect();
+    v.extend(cat.boundary_dataset());
+    v
 }
 
 // ───────────────────────────── handlers ────────────────────────────────────
@@ -288,11 +296,10 @@ async fn area(
     uri: Uri,
 ) -> ApiResult {
     let cat = st.catalog();
-    let pcode = parse_pcode(&pcode)?;
-    let (profile, mut touched) = query::area_profile(&st.pool, &cat, &pcode)
+    let pcode = parse_pcode(&cat, &pcode)?;
+    let (profile, touched) = query::area_profile(&st.pool, &cat, &pcode)
         .await
         .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
-    touched.push(lanka_core::BOUNDARY_DATASET.to_owned());
     let mut next: Vec<Link> = profile
         .indicators
         .iter()
@@ -310,7 +317,10 @@ async fn area(
     if let Some(p) = profile.ancestors.last() {
         next.push(Link::new("parent", format!("/v2/areas/{}", p.pcode)));
     }
-    let meta = cat.meta_for(touched.iter().map(String::as_str), next);
+    let meta = cat.meta_for(
+        with_boundaries(&cat, touched.iter().map(String::as_str)),
+        next,
+    );
     respond(&headers, &uri, profile, meta)
 }
 
@@ -417,7 +427,7 @@ async fn indicator_map(
         .get(&id)
         .map(|i| i.dataset_id.clone())
         .unwrap_or_default();
-    let meta = cat.meta_for([ds.as_str(), lanka_core::BOUNDARY_DATASET], Vec::new());
+    let meta = cat.meta_for(with_boundaries(&cat, [ds.as_str()]), Vec::new());
     respond(&headers, &uri, m, meta)
 }
 
@@ -435,7 +445,7 @@ async fn provenance(
     let id: i64 = id
         .parse()
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "observation id must be an integer"))?;
-    let p = query::provenance(&st.pool, id)
+    let p = query::provenance(&st.pool, &cat, id)
         .await
         .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
     let meta = cat.meta_for([p.dataset_id.as_str()], Vec::new());
@@ -470,11 +480,11 @@ async fn reverse(
             })
     };
     let (lat, lon) = (f(p.lat.as_ref(), "lat")?, f(p.lon.as_ref(), "lon")?);
-    let r = query::reverse(&st.pool, lat, lon)
+    let r = query::reverse(&st.pool, &cat, lat, lon)
         .await
         .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
     let next = vec![Link::new("area", format!("/v2/areas/{}", r.unit.pcode))];
-    let meta = cat.meta_for([lanka_core::BOUNDARY_DATASET], next);
+    let meta = cat.meta_for(with_boundaries(&cat, []), next);
     respond(&headers, &uri, r, meta)
 }
 
@@ -559,9 +569,17 @@ mod tests {
         let pool = sqlx::postgres::PgPoolOptions::new()
             .connect_lazy("postgres://nobody@127.0.0.1:1/none")
             .expect("lazy pool");
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../registry");
+        let profile = lanka_core::Profile::discover(&root)
+            .and_then(lanka_core::Profile::load)
+            .expect("repository profile");
+        let cat = Catalog {
+            profile: Some(Arc::new(profile)),
+            ..Catalog::default()
+        };
         let state = AppState {
             pool,
-            catalog: Arc::new(RwLock::new(Arc::new(Catalog::default()))),
+            catalog: Arc::new(RwLock::new(Arc::new(cat))),
         };
         router(state)
     }
