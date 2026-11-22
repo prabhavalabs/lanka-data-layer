@@ -935,16 +935,33 @@ pub async fn publish_observations(
         tx.rollback().await?;
         return Ok(r);
     }
-    let existing: Option<(i64, String)> =
-        sqlx::query_as("SELECT id, status FROM data.dataset_versions WHERE dsv = $1")
-            .bind(&dsv)
-            .fetch_optional(&mut *tx)
-            .await?;
-    // A rejected version is re-staged when the same content is delivered
-    // again (its rows were deleted at rejection); every other status means
-    // the content already exists.
-    let revive = match existing {
-        Some((vid, status)) if status == "rejected" => Some(vid),
+    // Earlier versions with this content (the dsv names content, migration
+    // 0008). An open one (staged / in review / approved) already carries it,
+    // and withdrawn content is not re-staged silently. A superseded one does
+    // not block: delivering A → B → A stages a new version that reinstates
+    // A's values as new rows against B (range versioning), with A's dsv.
+    // A rejected one is re-staged (its rows were deleted at rejection).
+    let existing: Vec<(i64, String)> = sqlx::query_as(
+        "SELECT id, status FROM data.dataset_versions WHERE dsv = $1 AND dataset_id = $2
+         ORDER BY status IN ('staged', 'in_review', 'approved') DESC, status = 'withdrawn' DESC, seq DESC",
+    )
+    .bind(&dsv)
+    .bind(dataset_id)
+    .fetch_all(&mut *tx)
+    .await?;
+    let rejected: Vec<i64> = existing
+        .iter()
+        .filter(|(_, s)| s == "rejected")
+        .map(|(id, _)| *id)
+        .collect();
+    let blocking = existing.into_iter().find(|(_, s)| {
+        matches!(
+            s.as_str(),
+            "staged" | "in_review" | "approved" | "withdrawn"
+        )
+    });
+    let revive = match blocking {
+        None => rejected,
         Some((vid, status)) => {
             tx.rollback().await?;
             let mut r = unchanged(
@@ -962,7 +979,6 @@ pub async fn publish_observations(
             }
             return Ok(r);
         }
-        None => None,
     };
     // One open version per dataset: a newer staging supersedes an older one.
     let open: Vec<(i64, i32)> = sqlx::query_as(
@@ -991,12 +1007,13 @@ pub async fn publish_observations(
     .bind(dataset_id)
     .fetch_one(&mut *tx)
     .await?;
-    if let Some(vid) = revive {
-        // Free the dsv for the new row; the old row keeps the decision record.
+    if !revive.is_empty() {
+        // Rename rejected rows so review commands by dsv address the new
+        // row; the old rows keep the decision record.
         sqlx::query(
-            "UPDATE data.dataset_versions SET dsv = dsv || '~rejected' || id::text WHERE id = $1",
+            "UPDATE data.dataset_versions SET dsv = dsv || '~rejected' || id::text WHERE id = ANY($1)",
         )
-        .bind(vid)
+        .bind(&revive)
         .execute(&mut *tx)
         .await?;
     }
@@ -1167,7 +1184,8 @@ pub async fn approve(
     ) = sqlx::query_as(
         "SELECT v.id, v.dataset_id, v.status, v.row_count, v.diff, v.seq, d.key
          FROM data.dataset_versions v JOIN catalog.datasets d ON d.id = v.dataset_id
-         WHERE v.dsv = $1 FOR UPDATE OF v",
+         WHERE v.dsv = $1
+         ORDER BY v.status = 'in_review' DESC, v.seq DESC LIMIT 1 FOR UPDATE OF v",
     )
     .bind(dsv)
     .fetch_optional(&mut *tx)

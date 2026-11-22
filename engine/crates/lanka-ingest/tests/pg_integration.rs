@@ -18,7 +18,8 @@
 //! checks the range-version invariants after every release: the current rows
 //! equal the delivered content, every released seq is reconstructible
 //! (`vfrom <= k <= vto`), the incremental dsv equals a full recomputation,
-//! and changed values are `revised`.
+//! changed values are `revised`, the same content always has the same dsv,
+//! and returning to earlier content (A → B → A) publishes a new version.
 //!
 //! `staging_scales_and_rehashes_only_the_delta` stages ~1 M synthetic rows
 //! (< 10 s in release builds), appends 1,000 and checks only those 1,000 are
@@ -1001,6 +1002,9 @@ async fn property_case(
     reset_dataset(pool).await;
     let mut released: Vec<(i32, Content)> = Vec::new();
     let mut prev: Option<Content> = None;
+    // dsv of every content seen so far: the same content must get the same
+    // dsv whatever the path (A → B → A included).
+    let mut seen: Vec<(Content, String)> = Vec::new();
     for v in versions {
         let (rows, content) = content_of(v);
         if rows.is_empty() {
@@ -1042,10 +1046,36 @@ async fn property_case(
             content,
             "current rows = delivered content"
         );
+        let earlier = seen
+            .iter()
+            .find(|(c, _)| *c == content)
+            .map(|(_, d)| d.clone());
+        if let Some(d) = &earlier {
+            assert_eq!(&r.dsv, d, "same content, same dsv (path-independent)");
+        } else {
+            seen.push((content.clone(), r.dsv.clone()));
+        }
         if let Some(p) = &prev {
             if *p == content {
                 assert_eq!(r.outcome, "unchanged", "same content is unchanged");
                 assert_eq!(r.rows_hashed, 0, "unchanged staging hashes nothing");
+            } else if earlier.is_some() {
+                // A → B → A: a new version reinstates A, it is not `unchanged`.
+                assert_eq!(
+                    r.outcome, "published",
+                    "returning to earlier content publishes"
+                );
+                let rows_with_dsv: i64 = sqlx::query_scalar(
+                    "SELECT count(*) FROM data.dataset_versions WHERE dsv = $1 AND status IN ('published', 'superseded')",
+                )
+                .bind(&r.dsv)
+                .fetch_one(pool)
+                .await
+                .expect("versions by dsv");
+                assert!(
+                    rows_with_dsv >= 2,
+                    "the reinstating version is a new version row"
+                );
             }
             let changed: Vec<(String, String, String, String)> = sqlx::query_as(
                 "SELECT geo_code, period, dims, status FROM data.current_observations_coded
@@ -1090,6 +1120,24 @@ async fn property_case(
     // Every released seq stays reconstructible (as_of).
     for (seq, content) in &released {
         assert_eq!(&rows_at(pool, *seq).await, content, "as_of seq {seq}");
+    }
+    // And so does every release: the version it pins holds that content.
+    let pinned: Vec<i32> = sqlx::query_scalar(
+        "SELECT v.seq FROM data.release_datasets rd JOIN data.releases r USING (data_version)
+         JOIN data.dataset_versions v ON v.id = rd.version_id
+         WHERE rd.dataset_id = 'it-a' ORDER BY r.seq",
+    )
+    .fetch_all(pool)
+    .await
+    .expect("release history");
+    for seq in pinned {
+        let want = released
+            .iter()
+            .rev()
+            .find(|(s, _)| *s <= seq)
+            .map(|(_, c)| c.clone())
+            .expect("released content");
+        assert_eq!(rows_at(pool, seq).await, want, "release pinning seq {seq}");
     }
 }
 
@@ -1142,10 +1190,24 @@ fn range_versions_property() {
         // Versions mutate a few keys at a time (so the class-A gate both
         // passes and trips), plus fully random versions.
         let version = prop::collection::vec((prop::bool::weighted(0.85), 0u8..3), n);
-        let strategy = prop::collection::vec(version, 1..7);
+        // Random histories, plus histories drawn from a pool of 2–3 contents
+        // so returning to earlier content (A → B → A, A → B → C → A) is
+        // common.
+        let random = prop::collection::vec(version.clone(), 1..7);
+        let revisits = (
+            prop::collection::vec(version, 2..4),
+            prop::collection::vec(0usize..3, 3..8),
+        )
+            .prop_map(|(pool, picks)| {
+                picks
+                    .into_iter()
+                    .map(|i| pool[i % pool.len()].clone())
+                    .collect::<Vec<_>>()
+            });
+        let strategy = prop_oneof![random, revisits];
         let handle = tokio::runtime::Handle::current();
         let mut runner = TestRunner::new(Config {
-            cases: 24,
+            cases: 32,
             failure_persistence: None,
             ..Config::default()
         });
@@ -1824,5 +1886,327 @@ async fn run_operations(url: String) {
     ] {
         assert!(all.iter().any(|e| e.kind == k), "event kind {k} missing");
     }
+    pool.close().await;
+}
+
+// ───────────────────────────── frames (WP-26) ──────────────────────────────
+
+#[tokio::test(flavor = "multi_thread")]
+async fn frames_against_postgis() {
+    with_database("frame", run_frames).await;
+}
+
+#[allow(clippy::too_many_lines)]
+async fn run_frames(url: String) {
+    use lanka_core::frame::{self, Coded, FramePin, FrameQuery};
+    let pool = lanka_core::db::connect(&url, lanka_core::db::PoolRole::Ingest)
+        .await
+        .expect("pool");
+    lanka_core::db::migrate(&pool).await.expect("migrate");
+    let (dir, profile) = fixture_registry();
+    let reg = Registry::load(&dir).expect("registry");
+    reg.sync(&pool, &profile).await.expect("sync");
+    let store = FsStore::new(tmp("frame-store"));
+    let run = RunTracker::start(&pool, "it-src", "test")
+        .await
+        .expect("run");
+    let (aid, _) = fetched(&pool, &store, run.run_id, b"frame fixture").await;
+    let units = vec![
+        unit("ZZ", 0, None, square(80.0, 7.0, 1.0)),
+        unit("ZZ1", 1, Some("ZZ"), square(80.0, 7.0, 0.5)),
+        unit("ZZ11", 2, Some("ZZ1"), square(80.0, 7.0, 0.25)),
+        unit("ZZ12", 2, Some("ZZ1"), square(80.25, 7.0, 0.25)),
+        unit("ZZ2", 1, Some("ZZ"), square(80.5, 7.0, 0.5)),
+        unit("ZZ21", 2, Some("ZZ2"), square(80.5, 7.0, 0.25)),
+    ];
+    let set = BoundarySet {
+        id: "it-set".into(),
+        title: "Fixture".into(),
+        vintage: None,
+        notes: None,
+    };
+    publish_admin_units(
+        &pool,
+        &profile,
+        run.run_id,
+        "it-geo",
+        &set,
+        &units,
+        &[aid],
+        &[],
+    )
+    .await
+    .expect("units");
+    // v1: ZZ11 and ZZ21 for 2020–2022 × female/male; ZZ12 has no data.
+    let mut rows = Vec::new();
+    for (g, base) in [("ZZ11", 100.0), ("ZZ21", 200.0), ("ZZ", 1000.0)] {
+        for (k, y) in ["2020", "2021", "2022"].into_iter().enumerate() {
+            for (j, s) in ["female", "male"].into_iter().enumerate() {
+                #[allow(clippy::cast_precision_loss)]
+                rows.push(obs(g, y, s, base + k as f64 * 10.0 + j as f64 + 0.25));
+            }
+        }
+    }
+    let v1 = stage(&pool, &reg, &profile, run.run_id, "it-a", None, &rows, aid)
+        .await
+        .expect("v1");
+    assert_eq!(v1.outcome, "published");
+    let dv1 = v1.data_version.clone().expect("release 1");
+    let cat = Catalog::load(&pool).await.expect("catalog");
+
+    let q = |periods: &[&str], dims: Option<&str>| FrameQuery {
+        indicators: vec!["it.count".into()],
+        level: 2,
+        periods: periods.iter().map(|p| (*p).to_owned()).collect(),
+        dims: dims.map(str::to_owned),
+        ..FrameQuery::default()
+    };
+
+    // 1. One column equals /v2/indicators/{id}/map; codes cover the support.
+    let f = frame::frame(&pool, &cat, &q(&["2021"], Some("sex=female")))
+        .await
+        .expect("frame");
+    assert_eq!(f.codes, ["ZZ11", "ZZ12", "ZZ21"]);
+    assert_eq!(
+        (f.support.n, f.support.level, f.support.unmatched),
+        (3, 2, 0)
+    );
+    assert_eq!(f.columns.len(), 1);
+    let m = query::map(
+        &pool,
+        &cat,
+        "it.count",
+        &MapQuery {
+            level: 2,
+            period: Some("2021".into()),
+            parent: None,
+            dims: Some("sex=female".into()),
+        },
+    )
+    .await
+    .expect("map");
+    let c = &f.columns[0];
+    assert_eq!(
+        (c.period.as_str(), c.dims.get("sex").map(String::as_str)),
+        ("2021", Some("female"))
+    );
+    for (code, v) in m.pcodes.iter().zip(&m.values) {
+        let i = f
+            .codes
+            .iter()
+            .position(|x| x == code)
+            .expect("code in frame");
+        assert_eq!(c.values[i].map(f64::to_bits), v.map(f64::to_bits), "{code}");
+    }
+    assert_eq!(c.values[1], None, "ZZ12 has no value");
+    assert_eq!(c.basis, Some(Coded::Uniform("reported".into())));
+    assert_eq!((c.lo.is_none(), c.flags.is_none()), (true, true));
+    assert_eq!(
+        (c.stats.n, c.stats.min, c.stats.max),
+        (2, Some(110.25), Some(210.25))
+    );
+
+    // 2. Periods × dims, ordered (indicator, dims, period); parent filter.
+    let f = frame::frame(
+        &pool,
+        &cat,
+        &FrameQuery {
+            from: Some("2020".into()),
+            to: Some("2022".into()),
+            parent: Some("ZZ1".into()),
+            ..q(&[], None)
+        },
+    )
+    .await
+    .expect("range frame");
+    assert_eq!(f.codes, ["ZZ11", "ZZ12"]);
+    let heads: Vec<(String, String)> = f
+        .columns
+        .iter()
+        .map(|c| {
+            (
+                c.dims.get("sex").cloned().unwrap_or_default(),
+                c.period.clone(),
+            )
+        })
+        .collect();
+    assert_eq!(heads.len(), 6);
+    assert_eq!(heads[0], ("female".into(), "2020".into()));
+    assert_eq!(heads[5], ("male".into(), "2022".into()));
+    assert_eq!(f.columns[5].values[0], Some(121.25));
+    assert!(
+        f.columns
+            .iter()
+            .enumerate()
+            .all(|(i, c)| c.id == format!("c{i}"))
+    );
+    // latest = the newest period at the level; national level has its own codes.
+    let f = frame::frame(
+        &pool,
+        &cat,
+        &FrameQuery {
+            level: 0,
+            ..q(&["latest"], Some("sex=male"))
+        },
+    )
+    .await
+    .expect("national");
+    assert_eq!(
+        (
+            f.codes.as_slice(),
+            f.columns[0].period.as_str(),
+            f.columns[0].values[0]
+        ),
+        (&["ZZ".to_owned()][..], "2022", Some(1021.25))
+    );
+
+    // 3. Pinning: v2 changes ZZ11; the current frame moves, release 1 and dsv v1 do not.
+    let mut rows2 = rows.clone();
+    rows2[0].value = Some(999.0);
+    rows2[0].verbatim = Some("999".into());
+    let mut v2 = stage(&pool, &reg, &profile, run.run_id, "it-a", None, &rows2, aid)
+        .await
+        .expect("v2");
+    if v2.outcome == "in_review" {
+        v2 = approve(&pool, &v2.dsv, "it", None)
+            .await
+            .expect("approve v2");
+    }
+    assert_eq!(v2.outcome, "published");
+    let cat = Catalog::load(&pool).await.expect("catalog 2");
+    let at = |pin: FramePin| FrameQuery {
+        pin,
+        ..q(&["2020"], Some("sex=female"))
+    };
+    let now = frame::frame(&pool, &cat, &at(FramePin::default()))
+        .await
+        .expect("current");
+    assert_eq!(now.columns[0].values[0], Some(999.0));
+    assert_eq!(
+        now.columns[0].status,
+        Some(Coded::Mixed(vec![Some(3), None, Some(1)])),
+        "revised vs normal"
+    );
+    let then = frame::frame(
+        &pool,
+        &cat,
+        &at(FramePin {
+            release: Some(dv1.clone()),
+            dsvs: vec![],
+        }),
+    )
+    .await
+    .expect("release 1");
+    assert_eq!(then.columns[0].values[0], Some(100.25));
+    assert_eq!(then.data_version.as_deref(), Some(dv1.as_str()));
+    assert_eq!(then.versions[0].dsv, v1.dsv);
+    let by_dsv = frame::frame(
+        &pool,
+        &cat,
+        &at(FramePin {
+            release: None,
+            dsvs: vec![v1.dsv.clone()],
+        }),
+    )
+    .await
+    .expect("dsv v1");
+    assert_eq!(by_dsv.columns[0].values[0], Some(100.25));
+    // 4. A → B → A: re-delivering v1's content publishes it again (same dsv).
+    let v3 = stage(&pool, &reg, &profile, run.run_id, "it-a", None, &rows, aid)
+        .await
+        .expect("v3");
+    let v3 = if v3.outcome == "in_review" {
+        approve(&pool, &v3.dsv, "it", None)
+            .await
+            .expect("approve v3")
+    } else {
+        v3
+    };
+    assert_eq!(
+        (v3.outcome, v3.dsv.as_str()),
+        ("published", v1.dsv.as_str())
+    );
+    let cat = Catalog::load(&pool).await.expect("catalog 3");
+    let back = frame::frame(&pool, &cat, &at(FramePin::default()))
+        .await
+        .expect("current v3");
+    assert_eq!(back.columns[0].values[0], Some(100.25));
+    let by_dsv = frame::frame(
+        &pool,
+        &cat,
+        &at(FramePin {
+            release: None,
+            dsvs: vec![v1.dsv.clone()],
+        }),
+    )
+    .await
+    .expect("dsv v1 after A→B→A");
+    assert_eq!(by_dsv.columns[0].values[0], Some(100.25));
+
+    // 5. Errors: unknown indicator / release / dsv → 404; bad parent, too many columns → 400.
+    let err = |r: Result<frame::Frame, lanka_core::CoreError>| match r {
+        Err(lanka_core::CoreError::NotFound(_)) => "404",
+        Err(lanka_core::CoreError::BadRequest(_)) => "400",
+        Err(_) => "other",
+        Ok(_) => "ok",
+    };
+    assert_eq!(
+        err(frame::frame(
+            &pool,
+            &cat,
+            &FrameQuery {
+                indicators: vec!["nope.x".into()],
+                ..q(&[], None)
+            }
+        )
+        .await),
+        "404"
+    );
+    assert_eq!(
+        err(frame::frame(
+            &pool,
+            &cat,
+            &at(FramePin {
+                release: Some("19990101.1".into()),
+                dsvs: vec![]
+            })
+        )
+        .await),
+        "404"
+    );
+    assert_eq!(
+        err(frame::frame(
+            &pool,
+            &cat,
+            &at(FramePin {
+                release: None,
+                dsvs: vec!["dsv_0000000000000000".into()]
+            })
+        )
+        .await),
+        "404"
+    );
+    assert_eq!(
+        err(frame::frame(
+            &pool,
+            &cat,
+            &FrameQuery {
+                parent: Some("ZZ11".into()),
+                ..q(&[], None)
+            }
+        )
+        .await),
+        "400"
+    );
+    assert_eq!(
+        err(frame::frame(&pool, &cat, &q(&["2021"], Some("sex=other"))).await),
+        "400"
+    );
+    let many: Vec<String> = (1900..1990).map(|y| y.to_string()).collect();
+    let many: Vec<&str> = many.iter().map(String::as_str).collect();
+    assert_eq!(err(frame::frame(&pool, &cat, &q(&many, None)).await), "400");
+    run.finish(RunStatus::Succeeded, "ok")
+        .await
+        .expect("finish");
     pool.close().await;
 }

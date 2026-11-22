@@ -299,11 +299,18 @@ pub async fn publish_admin_units(
     .bind(&dsv)
     .execute(&mut *tx)
     .await?;
-    let existing: Option<i64> =
-        sqlx::query_scalar("SELECT id FROM data.dataset_versions WHERE dsv = $1")
-            .bind(&dsv)
-            .fetch_optional(&mut *tx)
-            .await?;
+    // An open (or rejected) row with this content is reused; a superseded
+    // one is not — returning to earlier boundaries (A → B → A) is a new
+    // version with A's dsv (migration 0008).
+    let existing: Option<i64> = sqlx::query_scalar(
+        "SELECT id FROM data.dataset_versions
+         WHERE dsv = $1 AND dataset_id = $2 AND status IN ('staged', 'in_review', 'approved', 'rejected')
+         ORDER BY status = 'rejected', seq DESC LIMIT 1",
+    )
+    .bind(&dsv)
+    .bind(dataset_id)
+    .fetch_optional(&mut *tx)
+    .await?;
     let version_id: i64 = match existing {
         Some(id) => id,
         None => {
