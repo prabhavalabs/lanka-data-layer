@@ -12,8 +12,10 @@
 //!   symbols (10 §2: the frame/value join is by p-code, never by name).
 //! - one per `features` dataset that declares `tiles:` in the registry
 //!   (datasets sharing `tiles.tileset` become layers of one tileset):
-//!   properties `key`, `kind`, `name`, the declared `tiles.attrs`, `flags`
-//!   when set; per-kind minimum zooms from `tiles.minzoom_by_kind`.
+//!   the flat feature schema of `lanka_core::features::FeatureProps`:
+//!   `key`, `kind`, `name`, the declared `tiles.attrs` at the top level,
+//!   `flags` (comma-joined names, MVT has no arrays) when set; per-kind
+//!   minimum zooms from `tiles.minzoom_by_kind`.
 //!
 //! A build is skipped when its input hash (spec, every input dataset
 //! version, tippecanoe version, export format) equals the newest build's,
@@ -38,7 +40,8 @@ use crate::pmtiles::PmTiles;
 use crate::tippecanoe;
 
 /// Bumped when the exported properties or layout change.
-/// v2: per-layer `minzoom`/`maxzoom` in the layer index, source attribution.
+/// v2: per-layer `minzoom`/`maxzoom` in the layer index, source attribution,
+/// `flags` as names.
 const EXPORT_FORMAT: &str = "lanka-tiles-v2";
 pub const ADMIN: &str = "admin";
 const ADMIN_MAXZOOM: u8 = 12;
@@ -255,11 +258,13 @@ async fn export_layer(pool: &PgPool, profile: &Profile, l: &LayerPlan, path: &Pa
                 'tippecanoe', json_build_object('minzoom', coalesce(($3::jsonb ->> f.kind)::int, $4::int)),
                 'properties', jsonb_strip_nulls(
                     jsonb_build_object('key', f.feature_key, 'kind', f.kind, 'name', f.name_en,
-                                       'flags', nullif(f.flags, 0))
+                                       'flags', (SELECT string_agg(r.n, ',' ORDER BY r.b)
+                                                 FROM unnest($6::int[], $7::text[]) AS r(b, n)
+                                                 WHERE f.flags & (1 << r.b) <> 0))
                     || CASE WHEN 'name_si' = ANY($5) THEN jsonb_build_object('name_si', f.name_si) ELSE '{}' END
                     || CASE WHEN 'name_ta' = ANY($5) THEN jsonb_build_object('name_ta', f.name_ta) ELSE '{}' END
                     || coalesce((SELECT jsonb_object_agg(a.key, a.value) FROM jsonb_each(f.attrs) a
-                                 WHERE a.key = ANY($5)), '{}')),
+                                 WHERE a.key = ANY($5) AND NOT a.key = ANY($8)), '{}')),
                 'geometry', ST_AsGeoJSON(f.geom, 6)::json)::text
              FROM geo.features f
              WHERE f.dataset_key = $1 AND f.vto = 2147483647 AND f.vfrom <= $2
@@ -270,6 +275,24 @@ async fn export_layer(pool: &PgPool, profile: &Profile, l: &LayerPlan, path: &Pa
         .bind(serde_json::to_value(minzoom_by_kind)?)
         .bind(i32::from(*minzoom))
         .bind(attrs)
+        .bind(
+            lanka_core::flags::REGISTRY
+                .iter()
+                .map(|(b, _)| i32::from(*b))
+                .collect::<Vec<i32>>(),
+        )
+        .bind(
+            lanka_core::flags::REGISTRY
+                .iter()
+                .map(|(_, n)| (*n).to_owned())
+                .collect::<Vec<String>>(),
+        )
+        .bind(
+            lanka_core::features::CORE_PROPS
+                .iter()
+                .map(|s| (*s).to_owned())
+                .collect::<Vec<String>>(),
+        )
         .fetch(pool),
     };
     let f = tokio::fs::File::create(path)

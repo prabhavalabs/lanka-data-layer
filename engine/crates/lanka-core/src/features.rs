@@ -34,12 +34,18 @@ pub struct FeatureQuery {
     pub limit: Option<i64>,
 }
 
+/// Feature properties: **one flat schema** for GeoJSON, vector tiles and
+/// columnar points (10 §3.3) — `key`, `kind`, `name` (English), `name_si`,
+/// `name_ta`, `flags`, then the dataset's fields at the top level (never
+/// nested under `attrs`). GeoJSON adds `unit`, `unit_match`, `cell_id`,
+/// `rep`. A source field named like a core property is shadowed by it.
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct FeatureProps {
     /// Upstream key (`way/123456789`); the feature's id.
     pub key: String,
     pub kind: String,
-    pub name_en: Option<String>,
+    /// English name (`name_en` in the store).
+    pub name: Option<String>,
     pub name_si: Option<String>,
     pub name_ta: Option<String>,
     /// Deepest admin unit containing the representative point (or nearest).
@@ -53,9 +59,34 @@ pub struct FeatureProps {
     /// Flag names (`UNOFFICIAL_GEOM`, …).
     #[schema(value_type = Vec<String>)]
     pub flags: Flags,
-    /// Declared fields of the dataset.
+    /// The dataset's fields, flattened into the properties.
+    #[serde(flatten)]
     #[schema(value_type = Object)]
-    pub attrs: serde_json::Value,
+    pub attrs: serde_json::Map<String, serde_json::Value>,
+}
+
+/// Property names of [`FeatureProps`] a source field cannot take.
+pub const CORE_PROPS: &[&str] = &[
+    "key",
+    "kind",
+    "name",
+    "name_si",
+    "name_ta",
+    "unit",
+    "unit_match",
+    "cell_id",
+    "rep",
+    "flags",
+];
+
+fn flat_attrs(v: serde_json::Value) -> serde_json::Map<String, serde_json::Value> {
+    match v {
+        serde_json::Value::Object(mut m) => {
+            m.retain(|k, _| !CORE_PROPS.contains(&k.as_str()));
+            m
+        }
+        _ => serde_json::Map::new(),
+    }
 }
 
 #[derive(Debug, Clone, Serialize, ToSchema)]
@@ -116,7 +147,7 @@ impl Row {
                 properties: FeatureProps {
                     key: self.feature_key,
                     kind: self.kind,
-                    name_en: self.name_en,
+                    name: self.name_en,
                     name_si: self.name_si,
                     name_ta: self.name_ta,
                     unit: self.unit,
@@ -126,7 +157,7 @@ impl Row {
                     cell_id: self.cell_id,
                     rep: [self.lon, self.lat],
                     flags: Flags::from_db_lossy(self.flags),
-                    attrs: self.attrs,
+                    attrs: flat_attrs(self.attrs),
                 },
                 distance_m: self.distance_m.map(f64::round),
             },

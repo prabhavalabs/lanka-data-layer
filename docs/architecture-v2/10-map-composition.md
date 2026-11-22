@@ -236,6 +236,8 @@ Admin levels are zoom-gated to hold tile sizes (largest tile ≈ 230 KB gzip at 
 | more points, or any lines/polygons | PMTiles (exists) | viewport-bounded |
 | density of very large point sets | server-side count grid, delivered as value tiles | the browser never holds millions of points |
 
+**One flat property schema** for every feature shape: `key`, `kind`, `name` (English; `name_en` in the store), `name_si`, `name_ta`, `flags`, then the dataset's fields at the top level — never nested under `attrs`. GeoJSON (`/v2/features/{dataset}`, `/{key}`, `/v2/nearest`) carries every source field plus `unit`, `unit_match`, `cell_id`, `rep` and `flags` as an array of names; vector tiles carry the declared `tiles.attrs` and `flags` as comma-joined names (MVT has no arrays); columnar points carry `key`, `lon`, `lat` and the requested `fields` under the same names. A source field named like a core property is shadowed by it.
+
 `fields` are the dataset's declared **feature fields** (name, type, unit, measure type), a registry property of `features` datasets that WP-04 introduces with `tiles: {attrs[]}`; undeclared `attrs` keys are not served.
 
 ### 3.4 What is deliberately not built
