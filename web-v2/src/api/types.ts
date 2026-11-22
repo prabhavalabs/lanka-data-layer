@@ -4,9 +4,13 @@ import type { RampId } from '@/lib/palettes'
 export type Trilingual = { en: string; si: string; ta: string }
 export type LicenceStatus = 'open' | 'attribution' | 'unclear'
 
+/** Which parts of a payload are still bundled sample values rather than live API data: field keys, or '*' for the whole payload. */
+export type SampleKeys = string[]
+export const isSample = (keys: SampleKeys | undefined, key: string): boolean => !!keys && (keys.includes('*') || keys.includes(key))
+
 export type Area = {
   pcode: string
-  level: 0 | 1 | 2 | 3
+  level: 0 | 1 | 2 | 3 | 4
   name: Trilingual
   parent: string | null
   centroid: [number, number]
@@ -85,6 +89,9 @@ export type AreaProfile = {
   postal: { code: string; name: string }[]
   neighbours: { pcode: string; name: string }[]
   meta: Meta
+  /** true when the profile was built from the live API */
+  real?: boolean
+  sample?: SampleKeys
 }
 
 export type Provenance = {
@@ -123,6 +130,7 @@ export type Dataset = {
   formats: string[]
   sizeMb: number
   spark: number[]
+  sample?: SampleKeys
 }
 
 export type DatasetDetail = Dataset & {
@@ -137,11 +145,15 @@ export type DatasetDetail = Dataset & {
   versions: { dsv: string; date: string; note: string; added: number; changed: number; removed: number }[]
   usedIn: { label: string; href: string }[]
   citation: string
+  /** Column headers of `preview` when they differ from `columns` (live data) */
+  previewColumns?: string[]
+  previewNote?: string
+  dataVersion?: string
 }
 
 export type SearchHit = { kind: 'area' | 'dataset' | 'indicator' | 'place'; id: string; title: string; subtitle: string; href: string; code?: string }
 
-export type Stats = { datasets: number; areas: number; cells: number; sources: number; observations: number; dataVersion: string; lastRelease: string }
+export type Stats = { datasets: number; areas: number; cells: number; sources: number; observations: number; dataVersion: string; lastRelease: string; sample?: SampleKeys }
 
 export type Landmark = {
   id: string

@@ -1,15 +1,22 @@
 // Data access for the map workspace: TanStack Query option factories and mutation functions.
 //
-// Every function here stands for one call of the real API (named in its comment). Today they
-// resolve against ../mocks with a little latency; swapping the bodies for `fetch` changes nothing
-// above this file.
+// Layer data comes from the engine whenever it serves the source: the document's sources are resolved
+// (`POST /app/v1/maps/resolve`) and each one loads what it resolved to (./real/layers). A source the
+// engine does not serve — the synthetic property sample, the drive-time surface — and every source when
+// the engine cannot be reached, loads the bundled sample data instead, marked `origin: 'sample'`.
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
+import { apiAvailable, getJson } from './http'
+import { loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
+import { outputs as engineOutputs, planAnalysis, runAnalysisOnEngine, toEngine, type EngineRequest } from './real/analysis'
+import { adminShapes, SHAPE_GATE } from './real/adminShapes'
+import { realCatalogue } from './real/registry'
+import { absoluteApiUrl } from './http'
 import type { Theme } from '@/lib/hooks'
 import type { AnalysisRequest, GroupCompareRequest, MapDocument, RelateRequest, Source, TimeConfig, Variable } from '@/lib/map-spec'
 import { resolvePeriod } from '@/lib/map-spec'
 import type { AnalysisResult, CompareResult, RelateResult } from '@/mocks/analysis'
 import * as layers from '@/mocks/layers'
-import type { FeaturesPayload, FramePayload, LayerData } from '@/mocks/layers'
+import type { CatalogueItem, FeaturesPayload, FramePayload, LayerData } from '@/mocks/layers'
 import * as maps from '@/mocks/maps'
 import { units } from '@/mocks/synth'
 
@@ -23,8 +30,29 @@ async function served<T>(ms: number, work: () => T | Promise<T>): Promise<T> {
 }
 
 /* ---------------- catalogue ---------------- */
-/** `GET /v2/catalog?mappable=true` */
-export const catalogueQuery = (scheme: Theme) => queryOptions({ queryKey: ['map-catalogue', scheme], queryFn: () => served(160, () => layers.catalogue(scheme)), staleTime: HOUR })
+/**
+ * What "Add layer" lists: the engine's mappable datasets (dates from `GET /v2/status/datasets`), then the
+ * sample datasets it has no counterpart for. Without the engine, the whole sample catalogue.
+ */
+export const catalogueQuery = (scheme: Theme) =>
+  queryOptions({
+    queryKey: ['map-catalogue', scheme],
+    queryFn: async (): Promise<CatalogueItem[]> => {
+      const sample = layers.catalogue(scheme).map((c) => ({ ...c, sample: true }))
+      if (!(await apiAvailable())) return sample
+      const status = await getJson<{ dataset_id: string; state: string; published_at: string | null }[]>('/v2/status/datasets').catch(() => [])
+      const published = new Map(status.filter((d) => d.state === 'published').map((d) => [d.dataset_id, d.published_at?.slice(0, 10) ?? '']))
+      const real = realCatalogue(scheme)
+        .filter((c) => !status.length || published.has(c.dataset ?? c.id))
+        .map((c) => ({ ...c, updated: published.get(c.dataset ?? c.id) || c.updated }))
+      return [...real, ...sample.filter((c) => layers.SAMPLE_ONLY.has(c.id))]
+    },
+    staleTime: HOUR,
+  })
+/** `POST /app/v1/maps/resolve` for the document's sources; null = the engine is unreachable. */
+export const resolveQuery = (sources: Record<string, Source>, pin: MapDocument['pin']) =>
+  queryOptions({ queryKey: ['resolve', resolveKey(sources, pin)], queryFn: () => resolveSources(sources, pin), staleTime: 5 * 60 * 1000, retry: false, placeholderData: keepPreviousData })
+export type { Resolved, ResolvedSource }
 
 /* ---------------- analyses ---------------- */
 /** A request whose variables point at document sources, rewritten to name the indicators themselves. */
@@ -36,19 +64,60 @@ export function resolveRequest<T extends AnalysisRequest>(req: T, sources: Recor
   }
   return { ...req, variables: { x: fill(req.variables.x), y: fill(req.variables.y), controls: req.variables.controls?.map(fill) } }
 }
-/** `POST /v2/analyses` (or `/app/v1/ws/{ws}/analyses` when an input is workspace data) → 303 → the result. */
+/** The request as the engine runs it, or null when it names sample data (then the mock runs it). */
+export const engineRequest = (req: AnalysisRequest | null | undefined, sources: Record<string, Source>): EngineRequest | null => (req ? toEngine(req, sources) : null)
+/**
+ * `POST /v2/analyses` → 303 → the result, when the engine can run the request; otherwise the mock on the
+ * synthetic sample. The engine's refusals (400 with JSON-pointer problems, 422, 429, 503) surface as errors.
+ */
 export function analysisQuery<T extends AnalysisRequest>(req: T | null | undefined, sources: Record<string, Source>) {
+  const engine = engineRequest(req, sources)
   const resolved = req ? resolveRequest(req, sources) : null
+  type R = T extends RelateRequest ? RelateResult : T extends GroupCompareRequest ? CompareResult : AnalysisResult
   return queryOptions({
-    queryKey: ['analysis', resolved ? JSON.stringify({ ...resolved, result: undefined }) : null],
-    queryFn: () => served(380, () => runAnalysis(resolved as RelateRequest | GroupCompareRequest)) as Promise<T extends RelateRequest ? RelateResult : T extends GroupCompareRequest ? CompareResult : AnalysisResult>,
+    queryKey: ['analysis', engine ? ['engine', JSON.stringify(engine)] : resolved ? JSON.stringify({ ...resolved, result: undefined }) : null],
+    queryFn: () => (engine ? (runAnalysisOnEngine(engine) as Promise<R>) : (served(380, () => runAnalysis(resolved as RelateRequest | GroupCompareRequest)) as Promise<R>)),
     enabled: !!resolved,
     staleTime: Infinity,
+    retry: false,
     placeholderData: keepPreviousData,
   })
 }
+/** `POST /v2/analyses/plan`: support, n expected, cost and the guards known in advance; gates Run. Null = sample data (mock, no plan). */
+export function planQuery(req: AnalysisRequest | null | undefined, sources: Record<string, Source>) {
+  const engine = engineRequest(req, sources)
+  return queryOptions({ queryKey: ['analysis', 'plan', engine ? JSON.stringify(engine) : null], queryFn: () => planAnalysis(engine!), enabled: !!engine, staleTime: 10 * 60 * 1000, retry: false })
+}
 
 /* ---------------- layer data: frames, grids, features ---------------- */
+/** An engine output frame on the boundary tiles of its support (`…/analyses/{id}/outputs/{output}`). */
+async function engineOutput(req: EngineRequest, output: string): Promise<LayerData> {
+  const [result, shapes] = await Promise.all([runAnalysisOnEngine(req), adminShapes(req.support.level)])
+  const out = engineOutputs.get(result.id)
+  const frame = output === 'bivariate' ? out?.bivariate : output === 'residuals' ? out?.residuals : null
+  const level = req.support.level
+  const empty = { kind: 'features' as const, origin: 'api' as const, geometry: 'point' as const, collection: { type: 'FeatureCollection' as const, features: [] }, fields: [], class: 'estimated' as const }
+  if (!frame) return empty
+  const d = (result as RelateResult)['x-data']
+  const num = (k: string) => (frame.columns[k] ?? []).map((v) => (typeof v === 'number' ? v : null))
+  const col = (id: string, label: string, unit: string, breaks?: number[]) => ({ id, indicator: id, period: 'latest', unit, label, class: 'estimated' as const, values: num(id), ...(breaks ? { breaks } : {}) })
+  const columns =
+    output === 'bivariate'
+      ? [col('x', d?.x.label ?? 'x', d?.x.unit ?? '', d?.breaks.x), col('y', d?.y.label ?? 'y', d?.y.unit ?? '', d?.breaks.y)]
+      : [col('residual', `Residual (${d?.y.transform === 'log' ? 'log ' : ''}${d?.y.label.toLowerCase() ?? 'y'})`, ''), col('fitted', 'Fitted', ''), col('cooks', 'Cook’s distance', '')]
+  return {
+    kind: 'frame',
+    origin: 'api',
+    support: { scheme: 'admin', level, parent: req.support.within, n: frame.codes.length },
+    codes: frame.codes,
+    names: [],
+    columns,
+    geometry: shapes,
+    centroids: [],
+    fields: columns.map((c) => ({ id: c.id, label: c.label, kind: 'number' as const, unit: c.unit })),
+    tiles: { tiles: [absoluteApiUrl('/v2/tiles/admin/{z}/{x}/{y}.mvt')], minzoom: 0, maxzoom: 12, sourceLayer: `adm${level}`, centroidsLayer: 'centroids', level, parent: req.support.within, gate: SHAPE_GATE[level] },
+  } satisfies FramePayload
+}
 /** An analysis output, in the delivery shape the layer type expects (`…/analyses/{id}/outputs/{output}`). */
 async function analysisOutput(result: AnalysisResult, output: string): Promise<LayerData> {
   const empty = { kind: 'features' as const, geometry: 'point' as const, collection: { type: 'FeatureCollection' as const, features: [] }, fields: [], class: 'estimated' as const }
@@ -102,10 +171,20 @@ async function analysisOutput(result: AnalysisResult, output: string): Promise<L
 /**
  * What a source resolves to. The key carries only what changes the bytes: a frame holds every period,
  * so stepping time does not refetch it (10 §2.7); a grid is one period per fetch.
+ *
+ * `resolved` is the source's entry in the resolved document: undefined while resolution is pending (the
+ * query waits, so a layer never flashes sample data before its real data), null when the engine does not
+ * serve it (sample data).
  */
-export function layerDataQuery(source: Source | undefined, doc: Pick<MapDocument, 'sources' | 'analyses'>, time: TimeConfig | null) {
+export function layerDataQuery(source: Source | undefined, doc: Pick<MapDocument, 'sources' | 'analyses'>, time: TimeConfig | null, resolved: ResolvedSource | null | undefined = null) {
   const key: unknown[] = ['layer-data']
   let load: () => Promise<LayerData> = () => Promise.reject(new Error('No source'))
+  const waiting = resolved === undefined && source?.kind !== 'analysis'
+  if (source && source.kind !== 'analysis' && servable(resolved ?? undefined)) {
+    const r = resolved as ResolvedSource
+    key.push('api', ...resolvedKey(r))
+    return queryOptions({ queryKey: key, queryFn: () => loadResolved(source, r), enabled: true, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData, retry: 1 })
+  }
   if (source?.kind === 'indicator') {
     const ids = source.indicators?.length ? source.indicators : [source.indicator]
     key.push('frame', ids.join('|'), source.level, source.parent ?? null)
@@ -123,11 +202,17 @@ export function layerDataQuery(source: Source | undefined, doc: Pick<MapDocument
     load = () => layers.boundaries(source.level, source.parent)
   } else if (source?.kind === 'analysis') {
     const req = doc.analyses[source.ref]
+    const engine = engineRequest(req, doc.sources)
     const resolved = req ? resolveRequest(req, doc.sources) : null
+    if (engine) {
+      key.push('analysis', 'engine', JSON.stringify(engine), source.output)
+      return queryOptions({ queryKey: key, queryFn: () => engineOutput(engine, source.output), enabled: true, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData, retry: false })
+    }
     key.push('analysis', resolved ? JSON.stringify({ ...resolved, result: undefined }) : null, source.output)
-    load = async () => analysisOutput(await runAnalysis(resolved as RelateRequest | GroupCompareRequest), source.output)
+    load = async () => ({ ...(await analysisOutput(await runAnalysis(resolved as RelateRequest | GroupCompareRequest), source.output)), origin: 'sample' as const })
   }
-  return queryOptions({ queryKey: key, queryFn: () => served(source?.kind === 'analysis' ? 320 : 140, load), enabled: !!source, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData })
+  const sample = async () => ({ ...(await load()), origin: 'sample' as const })
+  return queryOptions({ queryKey: key, queryFn: () => served(source?.kind === 'analysis' ? 320 : 140, source?.kind === 'analysis' ? load : sample), enabled: !!source && !waiting, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData })
 }
 /** The terrain model's shading, shared by hillshade layers and relief-shaded rasters. */
 export const reliefQuery = (exaggeration: number, enabled = true) => queryOptions({ queryKey: ['relief', exaggeration], queryFn: () => layers.relief(exaggeration), staleTime: Infinity, enabled })
@@ -146,5 +231,5 @@ export const deleteMap = (id: string) => served(140, () => maps.deleteMap(id))
 export { DEFAULT_MAP, glance, isStarter } from '@/mocks/maps'
 export type { MapSummary } from '@/mocks/maps'
 export type { AnalysisResult, CompareResult, RelateData, RelateResult } from '@/mocks/analysis'
-export type { CatalogueItem, FeaturesPayload, FieldMeta, FrameColumn, FramePayload, GridPayload, BoundariesPayload, LayerData, Preset } from '@/mocks/layers'
+export type { CatalogueItem, DemPayload, FeaturesPayload, FieldMeta, FrameColumn, FramePayload, GridPayload, BoundariesPayload, LayerData, Preset, ValuesPayload } from '@/mocks/layers'
 export { featureMeta, gridMeta, indicatorMeta, INDICATOR_META, GRID_META, LEVELS } from '@/mocks/layers'
