@@ -11,7 +11,9 @@ The open analysis request and result contract of Lanka Data Layer
 
 Rules a client must follow (binding, UI contract §6.4): render `warn` and `block` guards above any number,
 chart or layer from a result; a `blocked` result has no numbers; a `p` that is absent is not computed
-client-side; use `interpretation.summary` and `reading` strings verbatim. Method parameter schemas, minimum
+client-side; use `interpretation.summary` and `reading` strings verbatim. `provenance.seed` is a
+u64 written as a decimal string (it exceeds the 2^53 a JSON number keeps exactly in JavaScript); parse it with
+`BigInt` if it is needed as a number. Method parameter schemas, minimum
 sample sizes and the guards each method can raise are served by `GET /v2/analysis/methods/{id}`.
 
 The reference implementation is `engine/crates/lanka-analysis` (copies of these schemas live in its

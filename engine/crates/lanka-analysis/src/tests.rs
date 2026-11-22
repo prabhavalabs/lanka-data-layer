@@ -682,6 +682,37 @@ fn results_validate_against_the_result_schema() {
 }
 
 #[test]
+fn seeds_are_exact_decimal_strings() {
+    // 0x868a0208aaadccac: far above 2^53, a JSON number would round it
+    let d = Case::relate(60).run();
+    let seed = d["provenance"]["seed"].as_str().expect("seed is a string");
+    let id = d["id"].as_str().expect("id");
+    let want = u64::from_str_radix(id.trim_start_matches("an_"), 16).expect("hex id");
+    assert_eq!(seed.parse::<u64>().expect("u64 digits"), want);
+    assert_eq!(
+        crate::result::seed_json(u64::MAX),
+        json!("18446744073709551615")
+    );
+
+    // a document stored with a numeric seed is served with the string
+    let id = "an_868a0208aaadccac";
+    let old = br#"{"id":"an_868a0208aaadccac","provenance":{"fingerprint":"868a","seed":9694563384114924716,"engine":"x"}}"#;
+    let new = crate::result::upgrade_seed(id, old.to_vec());
+    let v: Value = serde_json::from_slice(&new).expect("json");
+    assert_eq!(v["provenance"]["seed"], json!("9694563384114924716"));
+    assert_eq!(new.len(), old.len() + 2, "only the two quotes are added");
+    // already a string, another id's seed, or a longer number: untouched
+    assert_eq!(crate::result::upgrade_seed(id, new.clone()), new);
+    let other = br#"{"seed":9694563384114924716}"#.to_vec();
+    assert_eq!(
+        crate::result::upgrade_seed("an_0000000000000001", other.clone()),
+        other
+    );
+    let longer = br#"{"seed":96945633841149247160}"#.to_vec();
+    assert_eq!(crate::result::upgrade_seed(id, longer.clone()), longer);
+}
+
+#[test]
 fn controls_make_the_partial_correlation_the_headline() {
     // x and y both follow z: the zero-order r is strong, the partial one is not
     let mut s = Stream::new(31, 2);

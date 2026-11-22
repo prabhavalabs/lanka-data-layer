@@ -1158,6 +1158,10 @@ Timings (release build, laptop shared with other builds; `provenance.elapsed_ms`
   `an_868a0208aaadccac` (built-up), `an_61a6a1eac4e04ed3` (flood).
 - *Exact bytes in the store*: `analysis/<id>/result.json` is what `GET` returns (jsonb would renormalise numbers);
   the row is the publication point.
+- *Seed as a string*: `provenance.seed` (a u64, the first 8 bytes of the fingerprint) is a decimal string, since most
+  seeds exceed 2^53 and a JSON number would reach a browser rounded. The id, the fingerprint and the seed value are
+  unchanged, so no revision bump; results stored with a numeric seed are served with it rewritten to the string
+  (`result::upgrade_seed`, the id's own seed only). Golden `result.json` fixtures changed only in that field.
 - *Sync only*: no async lane yet; requests estimated ≤ 30 s run inline on the 2 + 8 pool, above → 422. The
   island ADM4 `relate` (7.5 s) is therefore sync here; WP-30 moves > 2 s to the `interactive` lane.
 - *Spatial pieces*: residual Moran's I and the effective-n adjustment use kNN weights / centroid distances (no

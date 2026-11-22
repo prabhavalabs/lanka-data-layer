@@ -275,7 +275,7 @@ impl Engine {
                 .fetch_optional(&self.pool)
                 .await?;
         let Some((state,)) = row else { return Ok(None) };
-        let bytes = self.read_blob(&format!("{id}/result.json")).await?;
+        let bytes = result::upgrade_seed(id, self.read_blob(&format!("{id}/result.json")).await?);
         let _ = sqlx::query("UPDATE analysis.results SET last_read_at = current_date WHERE id = $1 AND last_read_at < current_date")
             .bind(id)
             .execute(&self.pool)

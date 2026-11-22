@@ -143,7 +143,7 @@ Decisions inside the catalogue:
 - **Spatial 2SLS / GMM rather than maximum likelihood** for spatial regression: no log-determinant of a 14,043 × 14,043 matrix, robust to non-normal errors, sparse products only.
 - **GWR is tier 3 and capped.** It is exploratory, prone to local multicollinearity, and expensive. It runs only asynchronously, only when the global model shows significant non-stationarity (a Koenker–Bassett test on residuals by region is reported first), and its result is flagged `EXPLORATORY`.
 - **The headline significance for areal data is the spatially adjusted one** (effective sample size after Clifford–Richardson–Hémon / Dutilleul), because neighbouring units are not independent. The naive *p* is reported beside it, never instead of it. With controls, the effective n is estimated on the residuals of *x* and *y* on the controls and each control costs one more degree of freedom; `group_compare` tests the point-biserial correlation of *y* with the inside indicator the same way.
-- **Permutation tests are seeded** by the first 8 bytes of the fingerprint ([04 §2](04-enrichment.md#2-method-contract)), so a result is bit-reproducible.
+- **Permutation tests are seeded** by the first 8 bytes of the fingerprint ([04 §2](04-enrichment.md#2-method-contract)), so a result is bit-reproducible. The result carries the seed as `provenance.seed`, a decimal **string** (a u64 is beyond the 2^53 a JSON number keeps exactly in JavaScript); every other 64-bit identifier in a result document is a string too.
 
 Spatial weights: queen contiguity per boundary set and level, *k*-nearest (k = 4, 6, 8) and distance band, row-standardised. Contiguity is precomputed by a job when a boundary set changes and stored as a CSR blob (`analysis.spatial_weights`); islands (units with no neighbours, e.g. Delft) get their nearest neighbour and are listed in the result.
 
@@ -236,7 +236,7 @@ A variable is an `indicator`, a `grid`, a `features` field, or (inside a map doc
   "basis": "estimated",
   "licence": { "id": "cc-by-4.0", "redistribution": "bulk" },
   "attribution": [ … ],
-  "provenance": { "fingerprint": "5e1f0c22ab904d71…", "seed": 6782119904115, "engine": "lanka 2.3.0",
+  "provenance": { "fingerprint": "5e1f0c22ab904d71…", "seed": "6782119904115", "engine": "lanka 2.3.0",
                   "git_rev": "3b1c9e0", "data_version": "20270315.1", "computed_at": "2027-03-16T04:11:52Z", "elapsed_ms": 840 },
   "citation": { "text": "Lanka Data Layer (2027). Analysis an_5e1f0c22ab904d71: relate(exp.flood_pop_share, @demo/re.asking_price_per_perch_median), Western Province, GN level. Data release 20270315.1.",
                 "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_5e1f0c22ab904d71" }

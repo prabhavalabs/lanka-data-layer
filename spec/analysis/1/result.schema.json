@@ -304,8 +304,9 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "seed": {
-          "type": "integer",
-          "minimum": 0
+          "description": "The permutation/bootstrap seed (the first 8 bytes of the fingerprint, big-endian) as the decimal digits of an unsigned 64-bit integer; a string because most seeds exceed 2^53, the largest integer a JSON number keeps exactly in JavaScript.",
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
         },
         "engine": {
           "type": "string"

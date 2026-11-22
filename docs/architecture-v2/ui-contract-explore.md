@@ -403,7 +403,7 @@ export type AnalysisResult<E = unknown> = {
   basis: Basis
   licence: { id: string; redistribution: 'bulk' | 'api' | 'link' | 'internal' }
   attribution: Attribution[]
-  provenance: { fingerprint: string; seed: number; engine: string; git_rev: string; data_version: string
+  provenance: { fingerprint: string; seed: string /* u64, decimal digits */; engine: string; git_rev: string; data_version: string
                 computed_at: string; elapsed_ms: number }
   citation: { text: string; url: string }
 }

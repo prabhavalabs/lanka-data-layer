@@ -74,6 +74,41 @@ pub fn id_of(fp: &[u8; 32]) -> String {
     format!("an_{}", &hex::encode(fp)[..16])
 }
 
+/// `provenance.seed` in a result: the decimal digits of the u64 as a JSON
+/// string. A seed is a 64-bit integer (the first 8 bytes of the
+/// fingerprint) and most exceed 2^53, which a JSON number cannot carry
+/// through JavaScript (or any IEEE-double parser) without rounding (RFC 8259 §6).
+#[must_use]
+pub fn seed_json(seed: u64) -> Value {
+    Value::String(seed.to_string())
+}
+
+/// Stored bytes of a result written before seeds were strings: the one
+/// `"seed":<digits>` of the id's own seed becomes `"seed":"<digits>"`; any
+/// other bytes are returned unchanged. The seed is the id's 16 hex digits, so
+/// the rewrite cannot touch anything else.
+#[must_use]
+pub fn upgrade_seed(id: &str, bytes: Vec<u8>) -> Vec<u8> {
+    let Some(seed) = id
+        .strip_prefix("an_")
+        .and_then(|h| u64::from_str_radix(h, 16).ok())
+    else {
+        return bytes;
+    };
+    let old = format!("\"seed\":{seed}");
+    let Some(at) = bytes.windows(old.len()).position(|w| w == old.as_bytes()) else {
+        return bytes;
+    };
+    if bytes.get(at + old.len()).is_some_and(u8::is_ascii_digit) {
+        return bytes;
+    }
+    let mut out = Vec::with_capacity(bytes.len() + 2);
+    out.extend_from_slice(&bytes[..at]);
+    out.extend_from_slice(format!("\"seed\":\"{seed}\"").as_bytes());
+    out.extend_from_slice(&bytes[at + old.len()..]);
+    out
+}
+
 fn year_of(period: &str) -> Option<i32> {
     period.get(..4).and_then(|y| y.parse().ok())
 }
@@ -503,7 +538,7 @@ pub fn document(p: &Present<'_>, out: Option<&MethodOutput>, raised: &[Raised]) 
         "licence": licence,
         "attribution": attribution,
         "provenance": {
-            "fingerprint": hex::encode(p.fingerprint), "seed": p.seed, "engine": p.engine, "git_rev": p.git_rev,
+            "fingerprint": hex::encode(p.fingerprint), "seed": seed_json(p.seed), "engine": p.engine, "git_rev": p.git_rev,
             "data_version": r.data_version, "computed_at": p.computed_at, "elapsed_ms": p.elapsed_ms,
             "stats": format!("lanka-stats {}", lanka_stats::VERSION),
             "engine_revision": crate::ENGINE_REVISION,
