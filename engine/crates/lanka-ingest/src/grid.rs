@@ -551,8 +551,7 @@ pub async fn build_and_publish(
     if !rows.is_empty() {
         // The dataset's expectations (03 §5.2), as for any other observations.
         let lookup = crate::pipeline::load_lookup(env.pool, env.profile).await?;
-        let opts =
-            crate::pipeline::expectations(env, run, &lookup, &r.spec.dataset, &rows).await?;
+        let opts = crate::pipeline::expectations(env, run, &lookup, &r.spec.dataset, &rows).await?;
         let p = publish_observations_with(
             env.pool,
             env.registry,

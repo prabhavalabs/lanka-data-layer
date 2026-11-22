@@ -29,7 +29,10 @@ method: OSMnx's `walk` network filter applied to the Geofabrik extract — every
   the ways at shared vertices gives the routable edges.
 limits:
 - 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
-- Ways, not edges. A way runs through several intersections; split it at shared vertices to route on it.
+- Ways, not edges. A way runs through several intersections; split it at shared vertices to route on it. Size on the
+  2026-11-21 extract - 338,443 ways, 3.84 M vertices of which 416,258 are shared, which gives 705,186 undirected edges
+  island-wide (Colombo district - 34,713 ways, 68,921 edges); 210 MB as geo.features rows. Stored as features (queryable
+  by bbox and unit, versioned like every OSM layer); no vector tileset of its own (the road and trail tilesets draw it).
 - Sidewalks mapped as separate footways and the road they follow are both present (OSMnx keeps both as well).
 enrichment:
   joins:
