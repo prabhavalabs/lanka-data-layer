@@ -343,6 +343,11 @@ pub struct IndicatorSpec {
     pub denominator: Option<String>,
     #[serde(default)]
     pub weight: Option<String>,
+    /// A roll-up that completes another indicator at levels its source does
+    /// not print (04 §8.1): readers serve these rows under that indicator's
+    /// id where it has none, keeping `basis` (computed) and provenance.
+    #[serde(default)]
+    pub completes: Option<String>,
     #[serde(default)]
     pub ci_level: Option<f32>,
     #[serde(default)]
@@ -880,6 +885,28 @@ impl Registry {
                         errors.push(format!("{at}: {name} {r:?} is not a declared indicator"));
                     }
                 }
+                if let Some(t) = &i.completes {
+                    match self.indicator(t) {
+                        None => errors
+                            .push(format!("{at}: completes {t:?} is not a declared indicator")),
+                        Some(target) => {
+                            let dims_a: Vec<&str> = i.dim_ids().collect();
+                            let dims_b: Vec<&str> = target.dim_ids().collect();
+                            if t == &i.id
+                                || target.unit != i.unit
+                                || target.measure_type != i.measure_type
+                                || target.period_type != i.period_type
+                                || dims_a != dims_b
+                                || target.completes.is_some()
+                                || i.class != IndicatorClass::Derived
+                            {
+                                errors.push(format!(
+                                    "{at}: completes {t:?} needs a derived indicator with the same unit, measure type, period type and dims as a target that completes nothing"
+                                ));
+                            }
+                        }
+                    }
+                }
                 let (needs, _) = i.aggregation.needs();
                 for n in needs {
                     let present = match *n {
@@ -948,6 +975,14 @@ impl Registry {
 
     pub fn dataset(&self, id: &str) -> Option<&DatasetSpec> {
         self.datasets.get(id).map(|l| &l.spec)
+    }
+
+    /// An indicator's spec, by id.
+    pub fn indicator(&self, indicator_id: &str) -> Option<&IndicatorSpec> {
+        self.datasets
+            .values()
+            .flat_map(|d| d.spec.indicators.iter())
+            .find(|i| i.id == indicator_id)
     }
 
     /// Which dataset owns an indicator id.
@@ -1244,10 +1279,10 @@ impl Registry {
                 // UPDATE first, INSERT only when missing: an ON CONFLICT upsert would
                 // burn an identity value (the surrogate key) on every sync.
                 sqlx::query(
-                    "WITH upd AS (UPDATE catalog.indicators SET dataset_id = $2, label = $3, label_si = $4, label_ta = $5, definition = $6, unit_code = $7, unit_mult = $8, decimals = $9, measure_type = $10, aggregation = $11, numerator_id = $12, denominator_id = $13, weight_id = $14, class = $15, ci_level = $16, direction = $17, sdg = $18, base_period = $19, dims = $20, dim_defs = $21, geo_levels = $22, period_type = $23, freq = $24::text::\"char\", sort = $25
+                    "WITH upd AS (UPDATE catalog.indicators SET dataset_id = $2, label = $3, label_si = $4, label_ta = $5, definition = $6, unit_code = $7, unit_mult = $8, decimals = $9, measure_type = $10, aggregation = $11, numerator_id = $12, denominator_id = $13, weight_id = $14, class = $15, ci_level = $16, direction = $17, sdg = $18, base_period = $19, dims = $20, dim_defs = $21, geo_levels = $22, period_type = $23, freq = $24::text::\"char\", sort = $25, completes = $26
                               WHERE id = $1 RETURNING 1)
-                 INSERT INTO catalog.indicators (id, dataset_id, label, label_si, label_ta, definition, unit_code, unit_mult, decimals, measure_type, aggregation, numerator_id, denominator_id, weight_id, class, ci_level, direction, sdg, base_period, dims, dim_defs, geo_levels, period_type, freq, sort)
-                 SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::text::\"char\", $25 WHERE NOT EXISTS (SELECT 1 FROM upd)",
+                 INSERT INTO catalog.indicators (id, dataset_id, label, label_si, label_ta, definition, unit_code, unit_mult, decimals, measure_type, aggregation, numerator_id, denominator_id, weight_id, class, ci_level, direction, sdg, base_period, dims, dim_defs, geo_levels, period_type, freq, sort, completes)
+                 SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::text::\"char\", $25, $26 WHERE NOT EXISTS (SELECT 1 FROM upd)",
                 )
                 .bind(&i.id)
                 .bind(&d.id)
@@ -1274,6 +1309,7 @@ impl Registry {
                 .bind(&i.period_type)
                 .bind(freq.as_char().to_string())
                 .bind(i32::try_from(sort).unwrap_or(i32::MAX))
+                .bind(&i.completes)
                 .execute(&mut *tx)
                 .await?;
                 report.indicators += 1;

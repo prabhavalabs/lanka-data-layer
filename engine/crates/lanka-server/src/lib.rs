@@ -824,11 +824,7 @@ async fn indicator_map(
     let m = query::map(&st.pool, &cat, &id, &q)
         .await
         .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
-    let ds = cat
-        .indicators
-        .get(&id)
-        .map(|i| i.dataset_id.clone())
-        .unwrap_or_default();
+    let ds = m.dataset_id.clone();
     let meta = cat.meta_for(with_boundaries(&cat, [ds.as_str()]), Vec::new());
     respond(&headers, &uri, m, meta)
 }

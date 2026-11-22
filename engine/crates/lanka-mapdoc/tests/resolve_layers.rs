@@ -68,6 +68,7 @@ fn catalog() -> Catalog {
             measure_type: "mean".into(),
             aggregation: "none".into(),
             class: "third_party".into(),
+            completes: None,
         },
     );
     c

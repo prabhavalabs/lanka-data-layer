@@ -118,6 +118,11 @@ pub struct FrameColumn {
     pub unit_mult: i16,
     /// official | third_party | derived | estimated
     pub class: String,
+    /// Set when the indicator has no rows at this level and the column holds
+    /// the roll-up that completes it (04 §8.1): its id. `dataset` is then the
+    /// roll-up's dataset and `basis` says `computed`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completed_from: Option<String>,
     pub values: Vec<Option<f64>>,
     /// Lower interval bounds; `null` when the column has none.
     pub lo: Option<Vec<Option<f64>>>,
@@ -342,6 +347,10 @@ type ObsCell = (
 );
 
 struct Plan<'c> {
+    /// The requested indicator (column `indicator`, `unit`, `class`).
+    shown: &'c IndicatorInfo,
+    /// The indicator whose rows are read: `shown`, or the roll-up that
+    /// completes it at this level.
     ind: &'c IndicatorInfo,
     dataset_key: i32,
     freq: Freq,
@@ -350,6 +359,51 @@ struct Plan<'c> {
     /// (dims key, canonical dims text)
     dims: Vec<(i32, String)>,
     periods: Vec<NaiveDate>,
+}
+
+/// The indicator whose rows serve `ind` at `level`: `ind` itself when it has
+/// rows there under the pin, else the first roll-up that completes it
+/// (`catalog.indicators.completes`, 04 §8.1) and has rows there, else `ind`.
+/// `version_of(dataset)` gives `(seq, current?)` under the pin.
+pub async fn source_at_level<'c>(
+    pool: &PgPool,
+    cat: &'c Catalog,
+    ind: &'c IndicatorInfo,
+    level: i16,
+    version_of: impl Fn(&str) -> Option<(i32, bool)>,
+) -> CoreResult<&'c IndicatorInfo> {
+    let Some(fillers) = cat.completed_by.get(&ind.id) else {
+        return Ok(ind);
+    };
+    let has = |i: &'c IndicatorInfo| {
+        let v = version_of(&i.dataset_id);
+        let ds = cat.datasets.get(&i.dataset_id).map(|d| d.key);
+        async move {
+            let (Some((seq, current)), Some(dk), Ok(freq)) = (v, ds, i.frequency()) else {
+                return Ok::<bool, CoreError>(false);
+            };
+            let latest: Option<NaiveDate> = sqlx::query_scalar(latest_sql(current))
+                .bind(dk)
+                .bind(i.key)
+                .bind(level)
+                .bind(freq.as_db())
+                .bind(seq)
+                .fetch_one(pool)
+                .await?;
+            Ok(latest.is_some())
+        }
+    };
+    if has(ind).await? {
+        return Ok(ind);
+    }
+    for f in fillers {
+        if let Some(fi) = cat.indicators.get(f)
+            && has(fi).await?
+        {
+            return Ok(fi);
+        }
+    }
+    Ok(ind)
 }
 
 fn latest_sql(current: bool) -> &'static str {
@@ -477,10 +531,14 @@ pub async fn frame(pool: &PgPool, cat: &Catalog, q: &FrameQuery) -> CoreResult<F
                 "indicator \"{id}\" is listed twice"
             )));
         }
-        let ind = cat
+        let shown = cat
             .indicators
             .get(id)
             .ok_or_else(|| CoreError::not_found(format!("no indicator \"{id}\"")))?;
+        let ind = source_at_level(pool, cat, shown, q.level, |d| {
+            versions.get(d).map(|v| (v.0, v.3))
+        })
+        .await?;
         let ds = cat
             .datasets
             .get(&ind.dataset_id)
@@ -599,6 +657,7 @@ pub async fn frame(pool: &PgPool, cat: &Catalog, q: &FrameQuery) -> CoreResult<F
             picked
         };
         plans.push(Plan {
+            shown,
             ind,
             dataset_key: ds.key,
             freq,
@@ -653,7 +712,7 @@ pub async fn frame(pool: &PgPool, cat: &Catalog, q: &FrameQuery) -> CoreResult<F
                 col_of.insert((*dk, *t), columns.len());
                 columns.push(FrameColumn {
                     id: format!("c{}", columns.len()),
-                    indicator: plan.ind.id.clone(),
+                    indicator: plan.shown.id.clone(),
                     dataset: plan.ind.dataset_id.clone(),
                     dims: dims_map(text),
                     period: Period {
@@ -661,9 +720,10 @@ pub async fn frame(pool: &PgPool, cat: &Catalog, q: &FrameQuery) -> CoreResult<F
                         start: *t,
                     }
                     .render(cal),
-                    unit: plan.ind.unit.clone(),
-                    unit_mult: plan.ind.unit_mult,
-                    class: plan.ind.class.clone(),
+                    unit: plan.shown.unit.clone(),
+                    unit_mult: plan.shown.unit_mult,
+                    class: plan.shown.class.clone(),
+                    completed_from: (plan.ind.id != plan.shown.id).then(|| plan.ind.id.clone()),
                     values: vec![None; n],
                     lo: Some(vec![None; n]),
                     hi: Some(vec![None; n]),

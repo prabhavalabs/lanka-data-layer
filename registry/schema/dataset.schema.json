@@ -393,6 +393,10 @@
         "weight": {
           "$ref": "#/$defs/indicatorId"
         },
+        "completes": {
+          "$ref": "#/$defs/indicatorId",
+          "description": "A roll-up that completes this indicator at levels its source does not print (04 §8.1); readers serve its rows under that id where the indicator has none, basis and provenance unchanged."
+        },
         "ci_level": {
           "type": "number",
           "exclusiveMinimum": 0,

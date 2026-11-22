@@ -314,6 +314,7 @@ fn example_catalog() -> Catalog {
         measure_type: "share".into(),
         aggregation: "mean".into(),
         class: class.into(),
+        completes: None,
     };
     c.indicators.insert(
         "exp.flood_pop_share".into(),

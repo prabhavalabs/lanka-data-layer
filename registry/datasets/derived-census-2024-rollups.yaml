@@ -11,6 +11,7 @@ indicators:
   measure_type: count
   aggregation: sum
   class: derived
+  completes: census24.pop_total
   dims:
   - sex
   geo_levels:
@@ -22,6 +23,7 @@ indicators:
   measure_type: count
   aggregation: sum
   class: derived
+  completes: census24.pop_age_sex
   dims:
   - sex
   - age_group
@@ -34,6 +36,7 @@ indicators:
   measure_type: count
   aggregation: sum
   class: derived
+  completes: census24.pop_by_ethnicity
   dims:
   - ethnicity
   geo_levels:
@@ -45,6 +48,7 @@ indicators:
   measure_type: count
   aggregation: sum
   class: derived
+  completes: census24.pop_by_religion
   dims:
   - religion
   geo_levels:
@@ -56,6 +60,7 @@ indicators:
   measure_type: ratio
   aggregation: none
   class: derived
+  completes: census24.sex_ratio
   geo_levels:
   - adm1
   period_type: snapshot

@@ -108,6 +108,12 @@ pub struct AreaIndicator {
     pub dataset_id: String,
     /// Latest period held for this unit.
     pub period: String,
+    /// Set on an entry that serves a roll-up under the indicator it
+    /// completes (04 §8.1, e.g. `census24.pop_total` at a province from
+    /// `rollup.census24.pop_total`): the roll-up's id. `dataset_id` is the
+    /// roll-up's, values keep their `basis` (computed) and `obs_id`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completed_from: Option<String>,
     pub values: Vec<AreaValue>,
 }
 
@@ -255,9 +261,42 @@ pub async fn area_profile(
             class: info.class.clone(),
             dataset_id: info.dataset_id.clone(),
             period,
+            completed_from: None,
             values,
         });
     }
+    // Roll-ups complete the indicator they declare where it has no row here.
+    let mut completed: Vec<AreaIndicator> = Vec::new();
+    for a in &indicators {
+        let Some(target) = cat
+            .indicators
+            .get(&a.indicator_id)
+            .and_then(|i| i.completes.as_deref())
+        else {
+            continue;
+        };
+        if indicators.iter().any(|b| b.indicator_id == target)
+            || completed.iter().any(|b| b.indicator_id == target)
+        {
+            continue;
+        }
+        let Some(t) = cat.indicators.get(target) else {
+            continue;
+        };
+        completed.push(AreaIndicator {
+            indicator_id: t.id.clone(),
+            label: t.label.clone(),
+            unit: t.unit.clone(),
+            unit_mult: t.unit_mult,
+            class: t.class.clone(),
+            dataset_id: a.dataset_id.clone(),
+            period: a.period.clone(),
+            completed_from: Some(a.indicator_id.clone()),
+            values: a.values.clone(),
+        });
+    }
+    indicators.extend(completed);
+    indicators.sort_by(|a, b| a.indicator_id.cmp(&b.indicator_id));
 
     // Coordinates leave the API with at most 6 decimals (docs/architecture.md).
     let centroid = row.lat.zip(row.lon).map(|(a, b)| [round6(a), round6(b)]);
@@ -615,6 +654,12 @@ pub struct MapQuery {
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct MapData {
     pub indicator_id: String,
+    /// The roll-up whose rows complete the indicator at this level (04 §8.1);
+    /// absent when the indicator's own rows are served.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completed_from: Option<String>,
+    /// Dataset the values come from (the roll-up's when `completed_from`).
+    pub dataset_id: String,
     pub unit: Option<String>,
     pub unit_mult: i16,
     pub level: i16,
@@ -640,7 +685,7 @@ pub async fn map(
     indicator_id: &str,
     q: &MapQuery,
 ) -> CoreResult<MapData> {
-    let r = resolve_indicator(cat, indicator_id)?;
+    let shown = resolve_indicator(cat, indicator_id)?.ind;
     let profile = cat.profile()?;
     let max_level = i16::from(profile.admin.max_level());
     if !(0..=max_level).contains(&q.level) {
@@ -648,6 +693,14 @@ pub async fn map(
             "level must be 0..{max_level}"
         )));
     }
+    let src = crate::frame::source_at_level(pool, cat, shown, q.level, |d| {
+        cat.datasets
+            .get(d)
+            .and_then(|x| x.current.as_ref())
+            .map(|c| (c.seq, true))
+    })
+    .await?;
+    let r = resolve_indicator(cat, &src.id)?;
     let freq = r.ind.frequency()?;
     let parent_key: Option<i32> = match q.parent.as_deref() {
         None => None,
@@ -684,7 +737,7 @@ pub async fn map(
         .fetch_optional(pool)
         .await?
         .ok_or_else(|| {
-            CoreError::not_found(format!("\"{}\" has no data at level {}", r.ind.id, q.level))
+            CoreError::not_found(format!("\"{}\" has no data at level {}", shown.id, q.level))
         })?,
     };
     let period = Period { freq, start }.render(&profile.calendars);
@@ -750,9 +803,11 @@ pub async fn map(
 
     let n = rows.len();
     let mut m = MapData {
-        indicator_id: r.ind.id.clone(),
-        unit: r.ind.unit.clone(),
-        unit_mult: r.ind.unit_mult,
+        indicator_id: shown.id.clone(),
+        completed_from: (r.ind.id != shown.id).then(|| r.ind.id.clone()),
+        dataset_id: r.ind.dataset_id.clone(),
+        unit: shown.unit.clone(),
+        unit_mult: shown.unit_mult,
         level: q.level,
         period,
         dims,

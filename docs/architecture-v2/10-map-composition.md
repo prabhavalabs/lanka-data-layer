@@ -206,6 +206,7 @@ GET /v2/frame?indicators=exp.flood_pop_share,est.pop_density
 }
 ```
 
+- A column whose indicator has no rows at the level but is completed by a roll-up ([04 §8](04-enrichment.md#8-labelling), e.g. `census24.pop_total` at ADM1) carries `completed_from: "rollup.census24.pop_total"`, the roll-up's `dataset` and `basis: "computed"`.
 - One code array, one value array per (indicator, dims, period). `format=arrow` returns the same table as an Arrow IPC stream (`Float32` values, dictionary-encoded small-int columns) for frames above ~20,000 cells.
 - Limits: 64 columns; `codes × columns` ≤ 500,000 cells anonymous, 5 M with a key. The whole island at ADM4 × 13 annual periods is 182,559 cells ≈ 0.7 MB as Arrow before compression.
 - Backed by the `_map` index of [05 §2.3](05-storage-and-performance.md#23-indexes-per-partition-created-by-ensure_obs_partition): one index-only range scan per column. New `Backend::frame(&FramePlan)` in `lanka-query`; the offline pack backend implements it, so the CLI and `lanka-stats` work offline.

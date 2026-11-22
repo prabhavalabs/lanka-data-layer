@@ -67,6 +67,10 @@ pub struct IndicatorInfo {
     pub aggregation: String,
     /// official | third_party | derived | estimated
     pub class: String,
+    /// The indicator this roll-up completes at levels its source does not
+    /// print (04 §8.1, migration 0013).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub completes: Option<String>,
 }
 
 impl IndicatorInfo {
@@ -168,6 +172,8 @@ pub struct Catalog {
     pub dataset_order: Vec<String>,
     pub dataset_by_key: HashMap<i32, String>,
     pub indicator_by_key: HashMap<i32, String>,
+    /// Indicator id → the roll-ups that complete it (`completes`), sorted.
+    pub completed_by: HashMap<String, Vec<String>>,
     pub dims: DimSets,
     /// The synced country profile (`catalog.profile`); `None` before the first sync.
     pub profile: Option<Arc<Profile>>,
@@ -245,7 +251,7 @@ impl Catalog {
         let indicators: Vec<IndicatorInfo> = sqlx::query_as(
             "SELECT i.id, i.key, i.dataset_id, i.label, i.unit_code AS unit, u.label_en AS unit_label,
                     i.unit_mult, i.dims, i.geo_levels, i.period_type, i.freq::text AS freq,
-                    i.measure_type, i.aggregation, i.class
+                    i.measure_type, i.aggregation, i.class, i.completes
              FROM catalog.indicators i LEFT JOIN catalog.units_of_measure u ON u.code = i.unit_code
              ORDER BY i.dataset_id, i.sort, i.id",
         )
@@ -315,6 +321,18 @@ impl Catalog {
             .collect();
 
         let indicator_by_key = indicators.iter().map(|i| (i.key, i.id.clone())).collect();
+        let mut completed_by: HashMap<String, Vec<String>> = HashMap::new();
+        for i in &indicators {
+            if let Some(t) = &i.completes {
+                completed_by
+                    .entry(t.clone())
+                    .or_default()
+                    .push(i.id.clone());
+            }
+        }
+        for v in completed_by.values_mut() {
+            v.sort();
+        }
         let dims = DimSets {
             by_text: dims.iter().map(|(k, d)| (d.clone(), *k)).collect(),
             by_key: dims.into_iter().collect(),
@@ -328,6 +346,7 @@ impl Catalog {
             dataset_order,
             dataset_by_key,
             indicator_by_key,
+            completed_by,
             dims,
             profile,
             reference_set,

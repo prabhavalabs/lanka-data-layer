@@ -239,7 +239,8 @@ fn fixture_registry() -> (PathBuf, Profile) {
                 "derived",
                 "sex",
                 "adm1",
-            )],
+            )
+            .replace("class: derived,", "class: derived, completes: it.pop,")],
         ),
     );
     write(
@@ -752,6 +753,71 @@ async fn run_cycle(url: String) {
     );
     let (zz2t, _, st, fl) = v(ctx.value("rollup.it.pop", "ZZ2", "sex=total").await);
     assert_eq!((zz2t, st, fl), (Some(110.0), Status::Normal.code(), 0));
+
+    // ── the roll-up completes it.pop at ADM1 (04 §8.1, migration 0013) ──
+    let cat = lanka_core::Catalog::load(&pool).await.expect("catalog");
+    assert_eq!(
+        cat.completed_by.get("it.pop").map(Vec::as_slice),
+        Some(&["rollup.it.pop".to_owned()][..])
+    );
+    let fq = |level: i16| lanka_core::frame::FrameQuery {
+        indicators: vec!["it.pop".into()],
+        level,
+        dims: Some("sex=total".into()),
+        ..Default::default()
+    };
+    let f1 = lanka_core::frame::frame(&pool, &cat, &fq(1))
+        .await
+        .expect("frame at ADM1");
+    let c = &f1.columns[0];
+    assert_eq!(c.indicator, "it.pop");
+    assert_eq!(c.completed_from.as_deref(), Some("rollup.it.pop"));
+    assert_eq!(c.dataset, "derived-it-rollup");
+    assert_eq!(c.class, "official");
+    assert_eq!(
+        c.basis,
+        Some(lanka_core::frame::Coded::Uniform("computed".into()))
+    );
+    let i1 = f1.codes.iter().position(|x| x == "ZZ1").expect("ZZ1");
+    assert_eq!(c.values[i1], Some(600.0));
+    assert!(f1.versions.iter().any(|v| v.dataset == "derived-it-rollup"));
+    // where the indicator has its own rows, they are served unchanged
+    let f2 = lanka_core::frame::frame(&pool, &cat, &fq(2))
+        .await
+        .expect("frame at ADM2");
+    assert_eq!(f2.columns[0].completed_from, None);
+    assert_eq!(f2.columns[0].dataset, "it-census");
+    let m1 = lanka_core::query::map(
+        &pool,
+        &cat,
+        "it.pop",
+        &lanka_core::query::MapQuery {
+            level: 1,
+            dims: Some("sex=total".into()),
+            ..Default::default()
+        },
+    )
+    .await
+    .expect("map at ADM1");
+    assert_eq!(m1.completed_from.as_deref(), Some("rollup.it.pop"));
+    assert_eq!(m1.dataset_id, "derived-it-rollup");
+    let zz1_code = lanka_core::query::parse_pcode(&cat, "ZZ1").expect("pcode");
+    let (area1, _) = lanka_core::query::area_profile(&pool, &cat, &zz1_code)
+        .await
+        .expect("area ZZ1");
+    let a = area1
+        .indicators
+        .iter()
+        .find(|i| i.indicator_id == "it.pop")
+        .expect("it.pop completed at ZZ1");
+    assert_eq!(a.completed_from.as_deref(), Some("rollup.it.pop"));
+    assert!(
+        area1
+            .indicators
+            .iter()
+            .any(|i| i.indicator_id == "rollup.it.pop"),
+        "the roll-up stays listed under its own id"
+    );
     let (area, ..) = v(ctx.value("admin.area_km2", "ZZ1", "").await);
     let area = area.expect("area");
     assert!(area > 1000.0, "geodesic km2 of a 0.5° square: {area}");
