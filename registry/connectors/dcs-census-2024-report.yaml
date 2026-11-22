@@ -1,6 +1,7 @@
 # Census of Population and Housing 2024 (DCS), final report tables without an Excel release:
 # literacy (7.10, 7.13), functional difficulty and disability (6.2.2, 6.2.6), tenure and housing
-# status (11.4, 11.7) and solid waste disposal (11.17). Read from the PDF text layer through
+# status (11.4, 11.7), solid waste disposal (11.17) and household equipment use (11.19).
+# Read from the PDF text layer through
 # registry/templates/dcs-census-2024-report/. Class B: every version is reviewed against its
 # evidence sheet. Licence permission_unclear: published with attribution and the takedown
 # contact (08 §2).
@@ -26,6 +27,7 @@ extract:
     - { id: t11_4, file: cph2024-final, template: dcs-census-2024-report/table-11.4-housing-tenure }
     - { id: t11_7, file: cph2024-final, template: dcs-census-2024-report/table-11.7-housing-status }
     - { id: t11_17, file: cph2024-final, template: dcs-census-2024-report/table-11.17-solid-waste-disposal }
+    - { id: t11_19, file: cph2024-final, template: dcs-census-2024-report/table-11.19-household-equipment }
 standardise:
   dataset: dcs-census-2024-education-literacy
   vintage: "Census of Population and Housing {edition}, final report"
@@ -156,6 +158,32 @@ standardise:
         estate_urban: { sector: estate_urban }
         rural: { sector: rural }
         estate_rural: { sector: estate_rural }
+    # ── 11.19 households using equipment and vehicles (%), by sector ─────────────────
+    - table: t11_19
+      dataset: dcs-census-2024-household-assets
+      indicator: census24.hh_assets_share
+      geo: { fixed: root }
+      period: *y2024
+      rows:
+        "Sri Lanka": { sector: total }
+        "Urban": { sector: urban }
+        "Estate- Urban": { sector: estate_urban }
+        "Rural": { sector: rural }
+        "Estate- Rural": { sector: estate_rural }
+      columns:
+        radio: { item: radio }
+        television: { item: television }
+        fixed_phone: { item: fixed_telephone }
+        smart_phone: { item: smart_phone }
+        normal_phone: { item: basic_mobile_phone }
+        desktop: { item: desktop_computer }
+        laptop: { item: laptop_computer }
+        tablet: { item: tablet_computer }
+        internet: { item: internet }
+        bicycle: { item: bicycle }
+        motorcycle: { item: motorcycle }
+        three_wheeler: { item: three_wheeler }
+        other: { item: other_equipment }
 expect:
   - { dataset: dcs-census-2024-education-literacy, check: range, indicator: census24.language_literacy_rate, min: 0, max: 100 }
   - { dataset: dcs-census-2024-education-literacy, check: range, indicator: census24.computer_literacy, min: 0, max: 100 }
@@ -176,3 +204,5 @@ expect:
   - { dataset: dcs-census-2024-waste, check: sum_dims, indicator: census24.waste_disposal_share, dim: method, tol: 0.3,
       note: "printed shares are rounded to one decimal" }
   - { dataset: dcs-census-2024-waste, check: row_count, min: 170, max: 175, note: "35 rows x 5 sector columns" }
+  - { dataset: dcs-census-2024-household-assets, check: row_count, min: 65, max: 65, note: "13 items x 5 sectors" }
+  - { dataset: dcs-census-2024-household-assets, check: range, min: 0, max: 100 }

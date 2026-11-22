@@ -25,6 +25,7 @@ datasets:
 - dcs-census-2024-disability
 - dcs-census-2024-housing-tenure
 - dcs-census-2024-waste
+- dcs-census-2024-household-assets
 priority: P1
 effort: M
 status: active
@@ -34,11 +35,12 @@ notes: >-
   literacy (7.10, 7.13), functional difficulty and disability (6.2.2, 6.2.6), tenure and housing
   status (11.4, 11.7) and solid waste disposal (11.17). Same publication and licence as dcs-census-2024
   (whose code connector reads the population workbooks); kept as its own source so these tables
-  have a pdf_table connector. Table 11.19 (household equipment) prints its column headers rotated,
-  which the template reader cannot resolve. Class B. Request written reuse permission (decision D4).
+  have a pdf_table connector, plus household equipment use (11.19, rotated column headers resolved
+  from their single horizontal words). Class B. Request written reuse permission (decision D4).
 dc_refs:
 - computer-digital-literacy
 - language-literacy
 - functional-difficulties-disability
 - housing-occupancy-tenure
 - household-waste-disposal
+- household-equipment-use
