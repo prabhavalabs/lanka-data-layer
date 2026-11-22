@@ -3,6 +3,7 @@
 //! reader the server uses for `/v2/tiles/{tileset}/{z}/{x}/{y}.mvt`; dataset
 //! and release distributions (Parquet, CSV, GeoParquet) come with WP-09.
 
+pub mod dem;
 pub mod pmtiles;
 pub mod tiles;
 pub mod tippecanoe;

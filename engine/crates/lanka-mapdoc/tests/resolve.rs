@@ -179,7 +179,10 @@ fn latest_document() {
         codes.contains(&("/sources/c/level", "LEVEL_UNAVAILABLE")),
         "{codes:?}"
     );
-    assert!(codes.contains(&("/sources/f", "NOT_SERVED")), "{codes:?}");
+    assert!(
+        codes.contains(&("/sources/f/grid", "NOT_FOUND")),
+        "{codes:?}"
+    );
     let notices: Vec<&str> = r.notices.iter().map(|n| n.code).collect();
     for n in ["ESTIMATE", "EXTERNAL", "LICENCE_UNCLEAR", "PRIVATE_DATA"] {
         assert!(notices.contains(&n), "{n} in {notices:?}");
@@ -198,6 +201,7 @@ fn release_pinned_document() {
         )),
         dsvs: vec![pinned("dsv_00000000000000e1", 1, "est")],
         release_missing: false,
+        ..ResolveContext::default()
     };
     let r = resolve(&doc(json!({"release": "20261101.1"})), &cat, &ctx);
     assert_eq!(r.data_version.as_deref(), Some("20261101.1"));

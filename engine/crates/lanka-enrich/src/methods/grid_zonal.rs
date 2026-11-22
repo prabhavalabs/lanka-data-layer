@@ -12,7 +12,8 @@
 //!   layer_period: "2025"      # required when the layer has several periods
 //!   indicator: derived.pop_zonal
 //!   period: "2025"
-//!   stat: sum                 # sum | mean (area-weighted) | area_sum | max
+//!   stat: sum                 # sum | mean (area-weighted) | area_sum | max | share
+//!   of: [worldcover.c10, …]   # share: this layer's area_sum over Σ area_sum of these layers
 //!   cells: all                # all | inside (centre inside a unit, land_mask 1/2)
 //!   factor: 1                 # multiplies every value (m² → km²: 1e-6)
 //!   levels: [1, 2, 3, 4]
@@ -42,7 +43,7 @@ pub struct GridZonal;
 static INFO: MethodInfo = MethodInfo {
     id: "grid_zonal",
     version: Version::new(1, 0, 0),
-    summary: "Zonal statistic (sum, area-weighted mean, area sum, max) of a grid layer per admin unit and ancestors",
+    summary: "Zonal statistic (sum, area-weighted mean, area sum, max, share of a layer set) of a grid layer per admin unit and ancestors",
     citation: "05 §8: one pass over gnd_idx (cell centre → deepest unit, v1 cell-lookup semantics) and the layer",
     inputs: &[PortSpec {
         name: "grid",
@@ -59,7 +60,8 @@ static INFO: MethodInfo = MethodInfo {
         "layer_period": {"type": "string"},
         "indicator": {"type": "string"},
         "period": {"type": "string"},
-        "stat": {"enum": ["sum", "mean", "area_sum", "max"]},
+        "stat": {"enum": ["sum", "mean", "area_sum", "max", "share"]},
+        "of": {"type": "array", "items": {"type": "string"}, "minItems": 1},
         "cells": {"enum": ["all", "inside"]},
         "factor": {"type": "number"},
         "levels": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},
@@ -74,14 +76,63 @@ static INFO: MethodInfo = MethodInfo {
     partial_recompute: false,
 };
 
-fn stat_of(params: &Value) -> Result<Stat> {
-    Ok(match params.get("stat").and_then(Value::as_str) {
+/// `None` = `share` (area sum over the `of` layers' area sums).
+fn stat_of(params: &Value) -> Result<Option<Stat>> {
+    Ok(Some(match params.get("stat").and_then(Value::as_str) {
         None | Some("sum") => Stat::Sum,
         Some("mean") => Stat::Mean,
         Some("area_sum") => Stat::AreaSum,
         Some("max") => Stat::Max,
+        Some("share") => return Ok(None),
         Some(s) => bail!("grid_zonal: stat {s:?}"),
-    })
+    }))
+}
+
+/// One zonal pass of a layer: per-slot accumulators (slot 0 = no unit).
+fn pass(g: &crate::method::GridInput, inside: bool) -> Result<Vec<lanka_grid::zonal::Acc>> {
+    let idx: &[u32] = if inside {
+        g.unit_idx_inside.as_deref().with_context(|| {
+            format!("grid_zonal: {} has no land mask for cells: inside", g.layer)
+        })?
+    } else {
+        &g.unit_idx
+    };
+    ensure!(
+        g.values.len() == idx.len(),
+        "grid {}: {} values but {} index cells",
+        g.layer,
+        g.values.len(),
+        idx.len()
+    );
+    let n_units = g.units.len();
+    ensure!(
+        n_units < usize::from(u16::MAX),
+        "grid_zonal: {n_units} units exceed the u16 slot space"
+    );
+    let slots: Vec<u16> = idx
+        .iter()
+        .map(|&u| {
+            if u == u32::MAX {
+                Ok(0)
+            } else {
+                ensure!((u as usize) < n_units, "unit index {u} out of range");
+                Ok(u16::try_from(u + 1)?)
+            }
+        })
+        .collect::<Result<_>>()?;
+    let (cols, areas): (u32, Vec<f64>) = if g.cols == 0 || g.row_area.is_empty() {
+        (u32::try_from(g.values.len().max(1))?, vec![1.0])
+    } else {
+        (g.cols, g.row_area.to_vec())
+    };
+    ensure!(
+        areas.len() * cols as usize == g.values.len(),
+        "grid {}: {} rows × {cols} cols ≠ {} cells",
+        g.layer,
+        areas.len(),
+        g.values.len()
+    );
+    Ok(zonal(&slots, &*g.values, cols, &areas, n_units))
 }
 
 fn inside_of(params: &Value) -> Result<bool> {
@@ -145,50 +196,8 @@ impl Method for GridZonal {
         let dims = params.get("dims").and_then(Value::as_str).unwrap_or("");
 
         let g = ctx.inputs.grid_layer(port, layer, layer_period).await?;
-        let idx: &[u32] = if inside {
-            g.unit_idx_inside.as_deref().with_context(|| {
-                format!("grid_zonal: {layer} has no land mask for cells: inside")
-            })?
-        } else {
-            &g.unit_idx
-        };
-        ensure!(
-            g.values.len() == idx.len(),
-            "grid {}: {} values but {} index cells",
-            g.layer,
-            g.values.len(),
-            idx.len()
-        );
-        // lanka_grid slots: 0 = no unit, s = units[s - 1].
         let n_units = g.units.len();
-        ensure!(
-            n_units < usize::from(u16::MAX),
-            "grid_zonal: {n_units} units exceed the u16 slot space"
-        );
-        let slots: Vec<u16> = idx
-            .iter()
-            .map(|&u| {
-                if u == u32::MAX {
-                    Ok(0)
-                } else {
-                    ensure!((u as usize) < n_units, "unit index {u} out of range");
-                    Ok(u16::try_from(u + 1)?)
-                }
-            })
-            .collect::<Result<_>>()?;
-        let (cols, areas): (u32, Vec<f64>) = if g.cols == 0 || g.row_area.is_empty() {
-            (u32::try_from(g.values.len().max(1))?, vec![1.0])
-        } else {
-            (g.cols, g.row_area.to_vec())
-        };
-        ensure!(
-            areas.len() * cols as usize == g.values.len(),
-            "grid {}: {} rows × {cols} cols ≠ {} cells",
-            g.layer,
-            areas.len(),
-            g.values.len()
-        );
-        let accs = zonal(&slots, &*g.values, cols, &areas, n_units);
+        let accs = pass(&g, inside)?;
         let grid_total: f64 = g
             .values
             .iter()
@@ -216,6 +225,26 @@ impl Method for GridZonal {
             parents.push(chain);
         }
         let up = rollup(&accs, &parents);
+        // share: Σ area_sum of the `of` layers per unit (same lookup, same units).
+        let mut den: HashMap<String, f64> = HashMap::new();
+        if stat.is_none() {
+            let of: Vec<&str> = params
+                .get("of")
+                .and_then(Value::as_array)
+                .map(|a| a.iter().filter_map(Value::as_str).collect())
+                .unwrap_or_default();
+            ensure!(!of.is_empty(), "grid_zonal: stat share needs `of`");
+            for o in of {
+                let og = ctx.inputs.grid_layer(port, o, layer_period).await?;
+                ensure!(
+                    og.units == g.units && og.values.len() == g.values.len(),
+                    "grid_zonal: {o} is not on the same grid and units as {layer}"
+                );
+                for (code, a) in rollup(&pass(&og, inside)?, &parents) {
+                    *den.entry(code).or_default() += a.wsum;
+                }
+            }
+        }
         let pname: Arc<str> = Arc::from(port);
         let mut n = 0u64;
         let mut empty = 0usize;
@@ -225,7 +254,14 @@ impl Method for GridZonal {
             if !levels.contains(&u.level) {
                 continue;
             }
-            let Some(v) = a.stat(stat) else {
+            let v = match stat {
+                Some(st) => a.stat(st),
+                None => {
+                    let d = den.get(code).copied().unwrap_or(0.0);
+                    (a.n > 0 && d > 0.0).then(|| a.wsum / d)
+                }
+            };
+            let Some(v) = v else {
                 empty += 1;
                 continue;
             };
@@ -368,5 +404,58 @@ mod tests {
         )
         .await;
         assert_eq!(v, vec![("ZZ11".into(), Some(20.0), 2)]);
+    }
+
+    #[tokio::test]
+    async fn share_is_area_over_the_layer_set() {
+        // Two class layers: a = [1, 0 | 1, 1], b = [0, 1 | 0, 0] (fractions of
+        // the cell); units ZZ11 = cells 0, 2; ZZ12 = cells 1, 3; row areas 1, 3.
+        let a = grid(vec![1.0, 0.0, 1.0, 1.0], vec![0, 1, 0, 1], None);
+        let mut b = grid(vec![0.0, 1.0, 0.0, 0.0], vec![0, 1, 0, 1], None);
+        b.layer = "b".into();
+        let (a, b) = (Arc::new(a), Arc::new(b));
+        let inp = MemInputs {
+            grids: HashMap::from([
+                ("g".to_owned(), a.clone()),
+                ("g/pop".to_owned(), a),
+                ("g/b".to_owned(), b),
+            ]),
+            units: Arc::new(tree(&[2, 2])),
+            indicators: HashMap::from([("p".to_owned(), meta("p", "sum"))]),
+            calendars: Calendars::default(),
+            ..MemInputs::default()
+        };
+        let ctx = MethodCtx {
+            inputs: &inp,
+            rng_seed: 0,
+            as_of: NaiveDate::from_ymd_opt(2025, 1, 1).expect("d"),
+            changed_keys: None,
+        };
+        let params = json!({"grid": "g", "layer": "pop", "indicator": "p", "period": "2025",
+                            "stat": "share", "of": ["pop", "b"], "factor": 100, "levels": [1, 2]});
+        let mut sink = CollectSink::default();
+        GridZonal.run(&ctx, &params, &mut sink).await.expect("run");
+        let v: Vec<_> = sink
+            .rows
+            .iter()
+            .map(|r| (r.row.geo.clone(), r.row.value))
+            .collect();
+        // ZZ11: a = 1·1 + 1·3 = 4, b = 0 → 100 %; ZZ12: a = 0·1 + 1·3 = 3,
+        // b = 1·1 → 75 %; ZZ1: 7 / 8 = 87.5 %.
+        assert_eq!(
+            v,
+            vec![
+                ("ZZ1".into(), Some(87.5)),
+                ("ZZ11".into(), Some(100.0)),
+                ("ZZ12".into(), Some(75.0)),
+            ]
+        );
+        let bad = json!({"grid": "g", "layer": "pop", "indicator": "p", "period": "2025", "stat": "share"});
+        assert!(
+            GridZonal
+                .run(&ctx, &bad, &mut CollectSink::default())
+                .await
+                .is_err()
+        );
     }
 }

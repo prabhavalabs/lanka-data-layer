@@ -907,3 +907,108 @@ round-trips), `crates/lanka-grid/tests/v1_parity.rs` (set `LANKA_V1_PARITY_DIR` 
   driver's `zonal:` entries can move into recipes (follow-up; `share` is not in the method yet).
 - Not done: `postal_idx` (needs GeoNames postal in v2, WP-07), `cell_area_m2` as a stored layer (computed per row),
   `min_cells`/`SMALL_N`, value tiles (WP-27), STAC.
+
+## Layer data delivery (WP-27)
+
+Design: [10 §3](../docs/architecture-v2/10-map-composition.md#3-serving-layer-data),
+[ADR 0019](../docs/architecture-v2/adr/0019-frames-value-tiles-columnar-features.md),
+[ui-contract-explore.md §4–§5](../docs/architecture-v2/ui-contract-explore.md). No migration.
+
+- **Value tiles** (`lanka-grid/src/values.rs`, `GET /v2/grids/{id}/values/{z}/{x}/{y}.png?period=&v=<sha16>`):
+  `ldl-v16` RGBA PNG, `q = R·256+G`, value = `q·scale+offset`, `q = 65535` no data, `B` = valid-cell share,
+  `A` = 255; 204 outside the grid. Quantisation (`Quant::for_layer`): u8/u16 raw pass-through, i16 raw + 32768
+  (`offset = offset − 32768·scale`) — **exact**; u32/f32 linear over the layer's `[min, max]`
+  (`scale = (max−min)/65534`, `max_error = scale/2`; WorldPop 0.0076 persons). Pixels sample the cell under
+  their centre at level `k = ⌊log₂(pixel width / cell width)⌋`: level 0 (native) at z ≥ 10, so z10/z11 read the
+  cells themselves; z5–z9 read the **overview pyramid** (levels 1–7, 2ᵏ×2ᵏ cells, the layer's `overview`
+  reducer over the native cells: mean/sum via exact `(Σ, n)` merges — `sum` is served as the mean per valid
+  cell so one ramp holds at every zoom — max by merge, mode counted from native cells, ties → smaller). The
+  pyramid is quantised (3 bytes/cell, 11.3 MB per canonical layer) and built on the first overview request
+  (100–370 ms) then kept per layer sha256. `/v2/grids/{id}` gains `values` per mapped period
+  (`values` URL template, `encoding, scale, offset, nodata, minzoom 5, maxzoom 11, max_error, exact, reducer,
+  unit, sha16, categories` (q → class code for `mode` layers)); `/v2/grids` gains a `values` template.
+  `v=<sha16>` matching the layer → `immutable`, else 300 s + SWR.
+- **Columnar points** (`lanka-server/src/points.rs`, `GET /v2/features/{ds}/points?fields=&kind=&within=&bbox=&format=arrow|json`):
+  one row per current feature at its representative point; Arrow IPC `lon, lat` Float32, `key` Utf8, then the
+  requested fields (declared `fields:` plus `kind`, `name`; numbers Float32, others `Dictionary<Int32, Utf8>`),
+  field metadata `ldl:field`, schema metadata `ldl:points` + `ldl:meta` (attribution travels). JSON form
+  (`{lon[], lat[], key[], fields{}, field_info[]}` enveloped) ≤ 2,000 rows; > 250,000 → 413 pointing at the
+  tileset. ETag `"<dsv>-<hash(query)>"`, 304 before any query, encoded bodies cached in process (96 MB).
+- **Tilesets** (`lanka-export`): the `admin` tileset already carries `centroids` (one point per unit, `pcode`,
+  `level`, names) and `promoteId`-able `pcode` on every level (WP-04). New **`dem`** raster-dem tileset
+  (`dem.rs`, `lanka tiles build [--tileset dem]`): Terrarium PNG, z5–11 from the `terrain.elevation` layer
+  (z11 = the cells, below = its mean pyramid; sea = 0 m; all-sea tiles omitted), written by a new PMTiles v3
+  writer (`pmtiles::write`: single root directory, deduplicated contents, run-length entries; read back by our
+  reader and `pmtiles verify`). `/v2/tiles/{id}/{z}/{x}/{y}.png|.mvt` sets the content type from the archive's
+  tile type; TileJSON of raster sets carry `encoding`, `tileSize`, `format`.
+- **The admin 204 of the merge smoke test**: every tile of the archive is served byte-for-byte as go-pmtiles
+  reads it (1,794 z0–12 tiles over the island compared: 1,151 present, 643 genuinely absent = sea). The empty
+  204s were **z13+ requests** against the z0–12 tileset from a client that did not read the TileJSON
+  `maxzoom`. Requests outside the archive's zoom range now get **404** naming the range (+ `x-tileset-maxzoom`)
+  instead of a silent 204, and resolved `frame`/`boundaries` shapes carry `tilejson` and `maxzoom`, so the
+  renderer over-zooms. In-range empty tiles stay 204.
+- **JRC flood hazard** (`registry/connectors/jrc-flood-hazard.yaml`, source now `active`): CEMS/JRC global river
+  flood hazard v2.1.2 (3″ ≈ 90 m, depth in m), tiles ID186 `N10_E70` + ID194 `N10_E80` per RP10/20/50/100/200/500
+  (12 files, 21 MB, archived once from `jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/`;
+  GDAL sparse files — absent chunks now read as nodata in `lanka-grid::geotiff`). New resamplers
+  `centre_max` (deepest 90 m pixel per cell) and `centre_share` (wet share of the cell's pixels, nodata = dry),
+  read chunk by chunk (`class_*`, `centre_mean`, `centre_max`, `centre_share` groups no longer read whole
+  images). Published: grid layers `haz.flood_depth.rp{10,20,50,100,200,500}` (u16, 1 cm, `overview: max`,
+  served) and `haz.flood_frac.rp*` (u8, not served); `haz.flood_area_share` (% of the unit's area in the
+  modelled extent = area-weighted mean wet share over cells inside the unit × 100) at ADM1–ADM4 for all six
+  return periods: 86,496 observations (54 + 150 + 2,034 + 84,258). Provinces RP10 → RP500: Eastern 15.9 → 23.3 %,
+  Western 10.2 → 15.1 %, Central 1.8 → 2.1 %. Run: 9 s, 1.1 GB peak RSS.
+- **Resolver** (`lanka_mapdoc::resolve`, still a pure function; `load_context` reads served grid layers,
+  current tilesets, per-source feature counts (with `featureKind`/`within`) and declared fields): `grid`
+  sources → `shape: "values"` (by layer id, or indicator + dims, dims values case-insensitive; `period` latest
+  or a code) or `shape: "dem"` for `grid: "dem"`; `features` sources by the 10 §3.3 rules
+  (`feature_shape`): ≤ 2,000 → `geojson` (`/v2/features/{ds}?…&format=geojson`), points ≤ 250,000 → `points`
+  (Arrow URL with `kind,name` + requested fields), else `tiles` (tileset, `source_layers`, zooms) or
+  `NOT_SERVED` when there is no tileset. Unknown grids/dims → `NOT_FOUND` with the available layers.
+- **`grid_zonal@1`** gains `stat: share` with `of: [layers]` (area sum over the layer set's area sums, the
+  driver's semantics); `MemInputs` binds `"<port>/<layer>"` for multi-layer tests.
+
+```bash
+lanka ingest run jrc-flood-hazard --from data/v2/inputs/jrc-flood-hazard   # or without --from: 12 downloads
+lanka tiles build --tileset dem
+curl -s localhost:8601/v2/grids/haz.flood_depth.rp100 | jq '.payload[0].values'
+curl -s 'localhost:8601/v2/grids/haz.flood_depth.rp100/values/11/1478/984.png?period=2024&v=e3bd9c4226b91bc4' -o v.png
+curl -s 'localhost:8601/v2/features/osm-pois-amenities/points?kind=school&fields=kind,name' -o schools.arrow
+curl -s 'localhost:8601/v2/frame?indicators=haz.flood_area_share&level=3&dims=return_period=rp100'
+lanka map resolve engine/crates/lanka-server/tests/browser/ref12.json | jq '.resolved.sources'
+API=http://127.0.0.1:8601 LANKA=lanka engine/crates/lanka-server/tests/browser/run.sh   # 12-layer browser smoke
+```
+
+### Measured (release build, laptop, local stack `lanka_wp27`, 2026-11-22)
+
+| Check | Result |
+|---|---|
+| Value tile decode, native zoom (`values::tests`, proptest 48 random grids × u8/u16/i16/f32) | integer layers: every pixel's `q` = the cell's raw value (i16 + 32768); f32 within `scale/2` |
+| Overview = reducer (proptest, levels 1–4, mean/sum/max/mode, random nodata) | max/mode `q` exact; mean/sum within `scale/2`; `B` = valid share exactly |
+| Value tiles (curl, 100 req) | z11 flood 1.3 / 2.6 ms (p50/p99), z8 WorldPop 1.1 / 2.6 ms; 3–100 KB per tile; first overview request per layer + pyramid build 100–370 ms |
+| 250,000 points, Arrow (`points::tests`, kind + one numeric field, 11-char keys) | **6 ms** to serialise; 7.9 MB raw, **2.2 MB gzip** (the HTTP response is gzip-compressed) |
+| `osm-road-network` 237,699 points, `/points` | cold 200–250 ms (Postgres read dominates), cached 75–85 ms incl. gzip; 7.6 MB raw / 2.84 MB gzip |
+| `osm-pois-amenities` schools (5,051), Arrow | 289 KB, 2.3 / 4.4 ms |
+| `dem` tileset | 507 tiles (335 distinct), 24.9 MB, built in 0.3 s; `pmtiles verify` OK; z11 tile 0.6 ms |
+| Admin tiles vs go-pmtiles | 1,794 / 1,794 identical (1,151 tiles, 643 absent) |
+| Browser smoke (`tests/browser/run.sh`, MapLibre 4.7.1, headless Chromium) | 12 / 12 layers draw data, 0 errors, idle in 0.7–0.9 s |
+
+### Decision note: WP-27 deviations
+
+- *Quantisation of f32 layers* is linear over the layer's range, not the `scale`/`offset` of `geo.grid_layers`
+  (which is 1/0 for f32 and would round WorldPop to whole persons); the metadata states scale, offset and
+  `max_error`. A log transform for count layers is a possible `/1` minor addition.
+- *Pyramid in memory, not beside the array*: built from the mapped `.bin` on first use and cached per content
+  hash (no store or migration change); writing it as a sidecar at ingest is a follow-up if start-up cost matters.
+- *Native zoom*: level 0 is used from z10 (pixel ≈ 1.4 cells, nearest) — the declared `maxzoom` is 11.
+- *250,000 points under 5 MB* holds on the wire (gzip 2.2–2.8 MB), not raw: Utf8 keys alone are ~4 MB at that
+  count. *< 150 ms* holds for serialisation (6 ms) and for cached responses; a cold request is bound by the
+  Postgres read (~200 ms for 238 k rows).
+- *Grid layers are not release-pinned* (WP-05): `values` URLs carry the layer sha16 instead; a pinned document
+  reads the current layer.
+- *Value tiles carry one period*: a grid source bound to time resolves to the newest period.
+- *Licence*: the JRC README says ODbL 1.0, the JRC copyright notice CC BY 4.0; the registry keeps CC BY 4.0
+  (the notice is the legal text) — flag for the doc owner.
+- *Not moved*: the raster specs' `zonal:` entries stay in the driver (moving them changes four datasets'
+  publication path and needs recipe datasets); `grid_zonal@1` now has every statistic they use, including
+  `share`.

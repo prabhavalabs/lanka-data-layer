@@ -5,6 +5,8 @@
 //! | [`split_sum`] | counts on a coarser raster (WorldPop ~1 km) | each valid pixel's value is split evenly over the cells whose **centre** lies in the pixel (half-open `[west, east) × [south, north)`); the v1 `cells` step, operation for operation |
 //! | [`CentreMean`] | intensive values on a finer raster (DEM 30 m) | mean of the valid pixels whose centre lies in the cell |
 //! | [`CentreClasses`] | categories on a finer raster (WorldCover 10 m) | per-class count of pixels whose centre lies in the cell |
+//! | [`CentreMax`] | depths on a finer raster (JRC flood 90 m) | maximum of the valid pixels whose centre lies in the cell |
+//! | [`CentreShare`] | extents on a finer raster (JRC flood 90 m) | share of the pixels whose centre lies in the cell that are valid and above a threshold |
 //! | [`centre_sample`] | intensive values on a coarser raster (WorldClim 30″) | the pixel containing the cell centre |
 //!
 //! All rules are deterministic and exact in IEEE-754 double arithmetic; no
@@ -153,6 +155,120 @@ fn for_each_cell(g: &Grid, r: CellRange, mut f: impl FnMut(usize)) {
 /// The cell whose area contains the centre of a source pixel.
 fn cell_of(g: &Grid, lon: f64, lat: f64) -> Option<usize> {
     g.cell_id(lat, lon).map(|c| c as usize)
+}
+
+/// Maximum of the valid fine pixels whose centre lies in the cell (flood
+/// depth: the deepest water anywhere in the cell).
+#[derive(Debug, Clone)]
+pub struct CentreMax {
+    grid: Grid,
+    max: Vec<f32>,
+}
+
+impl CentreMax {
+    #[must_use]
+    pub fn new(grid: Grid) -> Self {
+        Self {
+            grid,
+            max: vec![f32::NAN; crate::cells(&grid)],
+        }
+    }
+
+    /// Adds every valid sample of band `b` of a block.
+    pub fn add_block(
+        &mut self,
+        geo: &GeoRef,
+        block: &Block,
+        b: u16,
+        is_nodata: impl Fn(f32) -> bool,
+    ) {
+        for row in 0..block.height {
+            for col in 0..block.width {
+                let v = block.get(col, row, b);
+                if is_nodata(v) || v.is_nan() {
+                    continue;
+                }
+                let (lon, lat) = geo.centre(block.x + col, block.y + row);
+                if let Some(i) = cell_of(&self.grid, lon, lat) {
+                    let m = &mut self.max[i];
+                    if m.is_nan() || v > *m {
+                        *m = v;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Maxima (NaN where no valid pixel fell).
+    #[must_use]
+    pub fn finish(self) -> Vec<f32> {
+        self.max
+    }
+}
+
+/// Share of the fine pixels whose centre lies in the cell that are valid
+/// and above a threshold; nodata pixels count as "not above" (rasters that
+/// store only the wet area, like flood depth maps). NaN where no pixel of
+/// the raster fell in the cell (outside its footprint).
+#[derive(Debug, Clone)]
+pub struct CentreShare {
+    grid: Grid,
+    threshold: f64,
+    hit: Vec<u32>,
+    n: Vec<u32>,
+}
+
+impl CentreShare {
+    #[must_use]
+    pub fn new(grid: Grid, threshold: f64) -> Self {
+        let n = crate::cells(&grid);
+        Self {
+            grid,
+            threshold,
+            hit: vec![0; n],
+            n: vec![0; n],
+        }
+    }
+
+    /// Adds every pixel of band `b` of a block.
+    pub fn add_block(
+        &mut self,
+        geo: &GeoRef,
+        block: &Block,
+        b: u16,
+        is_nodata: impl Fn(f32) -> bool,
+    ) {
+        for row in 0..block.height {
+            for col in 0..block.width {
+                let (lon, lat) = geo.centre(block.x + col, block.y + row);
+                let Some(i) = cell_of(&self.grid, lon, lat) else {
+                    continue;
+                };
+                self.n[i] += 1;
+                let v = block.get(col, row, b);
+                if !is_nodata(v) && !v.is_nan() && f64::from(v) > self.threshold {
+                    self.hit[i] += 1;
+                }
+            }
+        }
+    }
+
+    /// Shares 0–1 (NaN where no pixel fell).
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
+    pub fn finish(&self) -> Vec<f32> {
+        self.hit
+            .iter()
+            .zip(&self.n)
+            .map(|(&h, &n)| {
+                if n == 0 {
+                    f32::NAN
+                } else {
+                    (f64::from(h) / f64::from(n)) as f32
+                }
+            })
+            .collect()
+    }
 }
 
 /// Accumulates means of fine pixels per cell, block by block.

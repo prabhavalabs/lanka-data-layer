@@ -1,0 +1,35 @@
+{
+  "spec": "ldl-map/1",
+  "title": "WP-27 reference: twelve layers over Colombo",
+  "pin": "latest",
+  "view": {"center": [79.93, 6.93], "zoom": 10.3},
+  "basemap": {"style": "ldl-light", "labels": "top"},
+  "sources": {
+    "relief": {"kind": "grid", "grid": "dem", "period": "latest"},
+    "flood": {"kind": "grid", "grid": "haz.flood_depth", "dims": {"return_period": "RP100"}, "period": "latest"},
+    "pop": {"kind": "grid", "grid": "worldpop.population", "period": "latest"},
+    "census": {"kind": "indicator", "indicator": "census24.pop_total", "level": 2, "period": "latest", "dims": {"sex": "total"}},
+    "flood_share": {"kind": "indicator", "indicator": "haz.flood_area_share", "level": 3, "period": "latest", "dims": {"return_period": "rp100"}},
+    "elev": {"kind": "indicator", "indicator": "terrain.elevation_mean", "level": 4, "parent": "LK1", "period": "latest"},
+    "roads": {"kind": "features", "dataset": "osm-road-network"},
+    "hospitals": {"kind": "features", "dataset": "osm-pois-amenities", "featureKind": "hospital"},
+    "schools": {"kind": "features", "dataset": "osm-pois-amenities", "featureKind": "school"},
+    "worship": {"kind": "features", "dataset": "osm-pois-amenities", "featureKind": "place_of_worship"},
+    "provinces": {"kind": "boundaries", "scheme": "admin", "level": 1},
+    "districts": {"kind": "boundaries", "scheme": "admin", "level": 2}
+  },
+  "layers": [
+    {"id": "l_relief", "type": "hillshade", "name": "Relief", "source": "relief", "visible": true, "opacity": 0.6, "style": {"exaggeration": 0.6}},
+    {"id": "l_census", "type": "choropleth", "name": "Population 2024 (district)", "source": "census", "visible": true, "opacity": 0.35, "style": {"fill": {"field": "value", "scale": {"type": "quantile", "classes": 5, "ramp": "ldl.seq.violet"}}}},
+    {"id": "l_flood_share", "type": "choropleth", "name": "Area in 1-in-100-year flood zone (DSD, %)", "source": "flood_share", "visible": true, "opacity": 0.45, "style": {"fill": {"field": "value", "scale": {"type": "quantile", "classes": 5, "ramp": "ldl.seq.blue"}}}},
+    {"id": "l_elev", "type": "choropleth", "name": "Mean elevation (GN)", "source": "elev", "visible": true, "opacity": 0.35, "style": {"fill": {"field": "value", "scale": {"type": "quantile", "classes": 5, "ramp": "ldl.seq.green"}}}},
+    {"id": "l_pop", "type": "raster", "name": "Population per cell", "source": "pop", "visible": true, "opacity": 0.5, "style": {"fill": {"field": "value", "scale": {"type": "continuous", "ramp": "ldl.seq.orange", "transform": "sqrt"}}, "range": [1, null], "resample": "nearest"}},
+    {"id": "l_flood", "type": "raster", "name": "Flood depth, 1-in-100-year (m)", "source": "flood", "visible": true, "opacity": 0.8, "blend": "multiply", "style": {"fill": {"field": "value", "scale": {"type": "manual", "breaks": [0.15, 0.5, 1, 2], "ramp": "ldl.seq.blue"}}, "range": [0.15, null], "resample": "nearest"}},
+    {"id": "l_roads", "type": "line", "name": "Roads", "source": "roads", "visible": true, "opacity": 0.6, "style": {"stroke": {"color": "#555555", "width": 0.6}}},
+    {"id": "l_worship", "type": "heatmap", "name": "Places of worship (density)", "source": "worship", "visible": true, "opacity": 0.5, "style": {"radius": 18, "intensity": 0.8, "ramp": "ldl.seq.orange"}},
+    {"id": "l_schools", "type": "point", "name": "Schools", "source": "schools", "visible": true, "opacity": 0.9, "style": {"size": 2.5, "fill": "#2b8cbe"}},
+    {"id": "l_hospitals", "type": "point", "name": "Hospitals", "source": "hospitals", "visible": true, "opacity": 1, "style": {"size": 4.5, "fill": "#d7301f"}},
+    {"id": "l_provinces", "type": "line", "name": "Provinces", "source": "provinces", "visible": true, "opacity": 0.8, "style": {"stroke": {"color": "#222222", "width": 1.6}}},
+    {"id": "l_labels", "type": "label", "name": "District names", "source": "districts", "visible": true, "style": {"label": {"text": "{name}", "size": 13, "halo": "#ffffff"}}}
+  ]
+}

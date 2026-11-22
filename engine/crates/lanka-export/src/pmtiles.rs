@@ -326,6 +326,171 @@ fn read_at(f: &File, offset: u64, len: u64) -> Result<Vec<u8>> {
     Ok(b)
 }
 
+// ───────────────────────────── writer (WP-27) ──────────────────────────────
+
+fn put_varint(v: &mut Vec<u8>, mut x: u64) {
+    loop {
+        #[allow(clippy::cast_possible_truncation)]
+        let b = (x & 0x7f) as u8;
+        x >>= 7;
+        if x == 0 {
+            v.push(b);
+            return;
+        }
+        v.push(b | 0x80);
+    }
+}
+
+/// Encodes a directory (uncompressed), the inverse of [`decode_directory`].
+#[must_use]
+pub fn encode_directory(es: &[Entry]) -> Vec<u8> {
+    let mut b = Vec::new();
+    put_varint(&mut b, es.len() as u64);
+    let mut last = 0;
+    for e in es {
+        put_varint(&mut b, e.tile_id - last);
+        last = e.tile_id;
+    }
+    for e in es {
+        put_varint(&mut b, u64::from(e.run_length));
+    }
+    for e in es {
+        put_varint(&mut b, u64::from(e.length));
+    }
+    for (i, e) in es.iter().enumerate() {
+        if i > 0 && e.offset == es[i - 1].offset + u64::from(es[i - 1].length) {
+            put_varint(&mut b, 0);
+        } else {
+            put_varint(&mut b, e.offset + 1);
+        }
+    }
+    b
+}
+
+fn gzip(b: &[u8]) -> Result<Vec<u8>> {
+    use std::io::Write;
+    let mut e = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+    e.write_all(b)?;
+    Ok(e.finish()?)
+}
+
+/// What [`write`] needs besides the tiles.
+#[derive(Debug, Clone)]
+pub struct WriteSpec {
+    /// 2 = PNG, 1 = MVT.
+    pub tile_type: u8,
+    pub tile_compression: Compression,
+    pub min_zoom: u8,
+    pub max_zoom: u8,
+    /// `[west, south, east, north]`.
+    pub bounds: [f64; 4],
+    pub center: [f64; 2],
+    pub center_zoom: u8,
+    pub metadata: serde_json::Value,
+}
+
+/// Writes a clustered PMTiles v3 archive with a single (root) directory;
+/// identical tile contents are stored once and consecutive equal tiles are
+/// run-length encoded. `tiles` is `(z, x, y, bytes)` in any order.
+pub fn write(path: &Path, spec: &WriteSpec, mut tiles: Vec<(u8, u32, u32, Vec<u8>)>) -> Result<()> {
+    use sha2::{Digest, Sha256};
+    use std::io::Write;
+    let mut ids: Vec<(u64, Vec<u8>)> = tiles
+        .drain(..)
+        .map(|(z, x, y, b)| (tile_id(z, u64::from(x), u64::from(y)), b))
+        .collect();
+    ids.sort_by_key(|t| t.0);
+    ensure!(
+        ids.windows(2).all(|w| w[0].0 != w[1].0),
+        "duplicate tile in PMTiles input"
+    );
+    let mut data: Vec<u8> = Vec::new();
+    let mut seen: HashMap<[u8; 32], (u64, u32)> = HashMap::new();
+    let mut entries: Vec<Entry> = Vec::new();
+    for (id, b) in &ids {
+        let h: [u8; 32] = Sha256::digest(b).into();
+        let (offset, length) = match seen.get(&h) {
+            Some(&v) => v,
+            None => {
+                let v = (data.len() as u64, u32::try_from(b.len())?);
+                data.extend_from_slice(b);
+                seen.insert(h, v);
+                v
+            }
+        };
+        if let Some(last) = entries.last_mut()
+            && last.offset == offset
+            && last.tile_id + u64::from(last.run_length) == *id
+        {
+            last.run_length += 1;
+            continue;
+        }
+        entries.push(Entry {
+            tile_id: *id,
+            offset,
+            length,
+            run_length: 1,
+        });
+    }
+    let root = gzip(&encode_directory(&entries))?;
+    ensure!(
+        HEADER_LEN + root.len() <= 16_384,
+        "root directory of {} bytes needs leaf directories (not implemented)",
+        root.len()
+    );
+    let meta = gzip(&serde_json::to_vec(&spec.metadata)?)?;
+    let root_offset = HEADER_LEN as u64;
+    let meta_offset = root_offset + root.len() as u64;
+    let leaf_offset = meta_offset + meta.len() as u64;
+    let data_offset = leaf_offset;
+    let mut h = vec![0u8; HEADER_LEN];
+    h[0..7].copy_from_slice(b"PMTiles");
+    h[7] = 3;
+    let put = |h: &mut [u8], at: usize, v: u64| h[at..at + 8].copy_from_slice(&v.to_le_bytes());
+    put(&mut h, 8, root_offset);
+    put(&mut h, 16, root.len() as u64);
+    put(&mut h, 24, meta_offset);
+    put(&mut h, 32, meta.len() as u64);
+    put(&mut h, 40, leaf_offset);
+    put(&mut h, 48, 0);
+    put(&mut h, 56, data_offset);
+    put(&mut h, 64, data.len() as u64);
+    put(&mut h, 72, ids.len() as u64);
+    put(&mut h, 80, entries.len() as u64);
+    put(&mut h, 88, seen.len() as u64);
+    h[96] = 1;
+    h[97] = 2; // internal compression: gzip
+    h[98] = match spec.tile_compression {
+        Compression::Gzip => 2,
+        Compression::Brotli => 3,
+        Compression::Zstd => 4,
+        Compression::None | Compression::Unknown => 1,
+    };
+    h[99] = spec.tile_type;
+    h[100] = spec.min_zoom;
+    h[101] = spec.max_zoom;
+    #[allow(clippy::cast_possible_truncation)]
+    let e7 = |v: f64| ((v * 1e7).round() as i32).to_le_bytes();
+    h[102..106].copy_from_slice(&e7(spec.bounds[0]));
+    h[106..110].copy_from_slice(&e7(spec.bounds[1]));
+    h[110..114].copy_from_slice(&e7(spec.bounds[2]));
+    h[114..118].copy_from_slice(&e7(spec.bounds[3]));
+    h[118] = spec.center_zoom;
+    h[119..123].copy_from_slice(&e7(spec.center[0]));
+    h[123..127].copy_from_slice(&e7(spec.center[1]));
+    let mut f = std::io::BufWriter::new(
+        File::create(path).with_context(|| format!("creating {}", path.display()))?,
+    );
+    f.write_all(&h)?;
+    f.write_all(&root)?;
+    f.write_all(&meta)?;
+    f.write_all(&data)?;
+    f.into_inner()
+        .map_err(|e| anyhow::anyhow!("flushing {}: {e}", path.display()))?
+        .sync_all()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -406,5 +571,51 @@ mod tests {
         assert_eq!(find(&es, 8), None);
         assert_eq!(find(&es, 4), None);
         assert_eq!(find(&es, 1234).map(|e| e.run_length), Some(0), "leaf");
+    }
+
+    #[test]
+    fn written_archives_read_back() {
+        let dir = std::env::temp_dir().join(format!("lanka-pmw-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("dir");
+        let p = dir.join("t.pmtiles");
+        let mut tiles = Vec::new();
+        for z in 0..=6u8 {
+            for x in 0..(1u32 << z).min(5) {
+                for y in 0..(1u32 << z).min(4) {
+                    // many identical tiles (dedup + runs) and some unique
+                    let b = if (x + y) % 3 == 0 {
+                        vec![7u8; 10]
+                    } else {
+                        format!("{z}/{x}/{y}").into_bytes()
+                    };
+                    tiles.push((z, x, y, b));
+                }
+            }
+        }
+        let want: Vec<_> = tiles.clone();
+        let spec = WriteSpec {
+            tile_type: 2,
+            tile_compression: Compression::None,
+            min_zoom: 0,
+            max_zoom: 6,
+            bounds: [79.5, 5.9, 81.9, 9.9],
+            center: [80.6, 7.8],
+            center_zoom: 7,
+            metadata: serde_json::json!({"encoding": "terrarium"}),
+        };
+        write(&p, &spec, tiles).expect("write");
+        let pm = PmTiles::open(&p).expect("open");
+        assert_eq!(pm.header.tile_type, 2);
+        assert_eq!(pm.header.max_zoom, 6);
+        assert_eq!(pm.metadata().expect("meta")["encoding"], "terrarium");
+        for (z, x, y, b) in want {
+            assert_eq!(
+                pm.tile(z, u64::from(x), u64::from(y)).expect("read"),
+                Some(b),
+                "{z}/{x}/{y}"
+            );
+        }
+        assert_eq!(pm.tile(6, 40, 40).expect("read"), None);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

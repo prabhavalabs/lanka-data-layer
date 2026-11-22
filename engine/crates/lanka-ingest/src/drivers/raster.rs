@@ -13,7 +13,7 @@
 //!   - id: worldpop.population
 //!     period: "2025"
 //!     indicator: pop.grid_total       # optional; dims: "k=v"
-//!     resample: split_sum             # split_sum | centre_mean | centre_sample | class_count | class_mode | slope_mean | slope_share
+//!     resample: split_sum             # split_sum | centre_mean | centre_sample | class_count | class_mode | slope_mean | slope_share | centre_max | centre_share
 //!     band: 1                         # 1-based (default 1); files: [keys] (default all)
 //!     encoding: { dtype: f32 }        # + scale, offset, nodata
 //!     unit: "{person}"
@@ -28,7 +28,12 @@
 //!
 //! `class_count` takes `class: <value>` (pixels of that class per cell, u8),
 //! `class_mode` takes `classes: [...]`, `slope_share` takes `threshold_deg`
-//! (share of fine pixels steeper than it). Zonal `stat`: `sum`, `mean`
+//! (share of fine pixels steeper than it), `centre_max` keeps the deepest
+//! fine pixel per cell and `centre_share` takes `threshold` (share of the
+//! fine pixels in the cell that are valid and above it; nodata counts as
+//! not above — flood maps store only the wet area). `class_*`,
+//! `centre_mean`, `centre_max` and `centre_share` groups are read chunk by
+//! chunk, only the chunks over the grid. Zonal `stat`: `sum`, `mean`
 //! (area-weighted), `area_sum` (Σ value · cell area, m², × `factor`) and
 //! `share` (this layer's `area_sum` over the sum of every layer listed in
 //! `of`, × `factor`). A zonal entry with `layers: {"<dims>": <layer>, …}`
@@ -46,7 +51,9 @@ use lanka_core::grid::Grid;
 use lanka_grid::array::{Dtype, LayerEncoding};
 use lanka_grid::cog::Overview;
 use lanka_grid::geotiff::GeoTiff;
-use lanka_grid::resample::{CentreClasses, CentreMean, centre_sample, split_sum};
+use lanka_grid::resample::{
+    CentreClasses, CentreMax, CentreMean, CentreShare, centre_sample, split_sum,
+};
 use lanka_grid::tile::Style;
 use lanka_grid::zonal::Stat;
 use serde::Deserialize;
@@ -97,6 +104,11 @@ pub enum Resample {
     ClassMode,
     SlopeMean,
     SlopeShare,
+    /// Maximum of the fine pixels whose centre is in the cell.
+    CentreMax,
+    /// Share of the fine pixels whose centre is in the cell that are valid
+    /// and above `threshold` (nodata = not above).
+    CentreShare,
 }
 
 impl Resample {
@@ -110,7 +122,22 @@ impl Resample {
             Self::ClassMode => "class_mode",
             Self::SlopeMean => "slope_mean",
             Self::SlopeShare => "slope_share",
+            Self::CentreMax => "centre_max",
+            Self::CentreShare => "centre_share",
         }
+    }
+
+    /// Accumulated chunk by chunk (no whole-image read).
+    #[must_use]
+    pub const fn chunkable(self) -> bool {
+        matches!(
+            self,
+            Self::ClassCount
+                | Self::ClassMode
+                | Self::CentreMax
+                | Self::CentreShare
+                | Self::CentreMean
+        )
     }
 }
 
@@ -146,6 +173,9 @@ pub struct LayerSpec {
     pub classes: Option<Vec<u8>>,
     #[serde(default)]
     pub threshold_deg: Option<f64>,
+    /// `centre_share`: pixels with a value above it count (default 0).
+    #[serde(default)]
+    pub threshold: Option<f64>,
     pub encoding: EncodingSpec,
     pub unit: String,
     pub zonal: String,
@@ -503,11 +533,11 @@ pub fn build_layers(
             s.into_iter().collect()
         };
         let needs_classes = !classes.is_empty();
-        let only_classes = layers
-            .iter()
-            .all(|l| matches!(l.resample, Resample::ClassCount | Resample::ClassMode));
+        let only_classes = layers.iter().all(|l| l.resample.chunkable());
         let mut cc = needs_classes.then(|| CentreClasses::new(*g, &classes));
         let mut means: BTreeMap<usize, CentreMean> = BTreeMap::new();
+        let mut maxes: BTreeMap<usize, CentreMax> = BTreeMap::new();
+        let mut shares: BTreeMap<usize, CentreShare> = BTreeMap::new();
         let mut arrays: BTreeMap<usize, Option<Vec<f32>>> = BTreeMap::new();
         let mut pixels = 0u64;
         let mut used = 0usize;
@@ -540,6 +570,36 @@ pub fn build_layers(
                     pixels += u64::from(w) * u64::from(h);
                     if let Some(c) = cc.as_mut() {
                         c.add_block(&geo, &block);
+                    }
+                    let is_nd = |v: f32| t.is_nodata(v);
+                    for (&li, l) in members.iter().zip(&layers) {
+                        let band = l
+                            .band
+                            .unwrap_or(1)
+                            .checked_sub(1)
+                            .context("bands are 1-based")?;
+                        ensure!(
+                            band < block.bands,
+                            "layer {}: band {} of {}",
+                            l.id,
+                            band + 1,
+                            block.bands
+                        );
+                        match l.resample {
+                            Resample::CentreMean => means
+                                .entry(li)
+                                .or_insert_with(|| CentreMean::new(*g))
+                                .add_block(&geo, &block, band, is_nd),
+                            Resample::CentreMax => maxes
+                                .entry(li)
+                                .or_insert_with(|| CentreMax::new(*g))
+                                .add_block(&geo, &block, band, is_nd),
+                            Resample::CentreShare => shares
+                                .entry(li)
+                                .or_insert_with(|| CentreShare::new(*g, l.threshold.unwrap_or(0.0)))
+                                .add_block(&geo, &block, band, is_nd),
+                            _ => {}
+                        }
                     }
                 }
                 continue;
@@ -604,7 +664,10 @@ pub fn build_layers(
                             }
                         }
                     }
-                    Resample::ClassCount | Resample::ClassMode => {}
+                    Resample::ClassCount
+                    | Resample::ClassMode
+                    | Resample::CentreMax
+                    | Resample::CentreShare => {}
                 }
             }
         }
@@ -621,6 +684,13 @@ pub fn build_layers(
                     .context("layer produced nothing")?,
                 Resample::CentreMean | Resample::SlopeMean | Resample::SlopeShare => {
                     means.get(&li).context("layer produced nothing")?.finish()
+                }
+                Resample::CentreMax => maxes
+                    .remove(&li)
+                    .context("layer produced nothing")?
+                    .finish(),
+                Resample::CentreShare => {
+                    shares.get(&li).context("layer produced nothing")?.finish()
                 }
                 Resample::ClassCount => {
                     let c = cc.as_ref().context("classes")?;

@@ -34,6 +34,7 @@ use utoipa::OpenApi;
         super::grids::list,
         super::grids::detail,
         super::grids::tile,
+        super::grids::values_tile,
     ),
     tags(
         (name = "ops", description = "Health and status: emitted for external monitoring (no alert delivery)"),
