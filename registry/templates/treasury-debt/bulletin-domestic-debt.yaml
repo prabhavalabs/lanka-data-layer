@@ -9,7 +9,7 @@ editions:
   - match: { edition: "2025..2027" }
     locate:
       page: { find_text: "Summary of Outstanding Domestic Debt" }
-    label: { key: source, whole: true }
+    label: { key: source, all_clusters: true }
     columns:
       - { key: usd, header: "(USD million)" }
       - { key: lkr, header: "(LKR billion)" }

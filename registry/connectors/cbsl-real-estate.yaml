@@ -74,12 +74,12 @@ standardise:
       period: { from_header: half_year }
       columns: { v5: {}, v6: {} }
       rows: *uses
-    # ── asking-price indices (months from the row order: period.from_label: month) ──
+    # ── asking-price indices (months from the row order: period.from_label: rolling_month) ──
     - table: ap_2024_q1
       dataset: &ap cbsl-condominium-prices
       indicator: re.asking_price_index
       geo: { fixed: LK11 }
-      period: { from_label: month }
+      period: { from_label: rolling_month }
       columns: &ap_cols
         lands: { property_type: lands }
         houses: { property_type: houses }
@@ -94,10 +94,10 @@ standardise:
         "April#1": {}
         "May#1": {}
         "June#1": {}
-    - { table: ap_2024_q4, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: month }, columns: *ap_cols }
-    - { table: ap_2025_q2, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: month }, columns: *ap_cols }
-    - { table: ap_2025_q4, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: month }, columns: *ap_cols }
-    - { table: ap_2026_q2, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: month }, columns: *ap_cols }
+    - { table: ap_2024_q4, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
+    - { table: ap_2025_q2, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
+    - { table: ap_2025_q4, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
+    - { table: ap_2026_q2, dataset: *ap, indicator: re.asking_price_index, geo: { fixed: LK11 }, period: { from_label: rolling_month }, columns: *ap_cols }
 expect:
   - { dataset: cbsl-land-valuation-indicator, check: row_count, min: 56, max: 56 }
   - { check: range, min: 80, max: 400 }

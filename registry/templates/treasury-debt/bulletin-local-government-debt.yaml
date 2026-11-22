@@ -11,7 +11,7 @@ editions:
   - match: { edition: "2026..2027" }
     locate:
       page: { find_text: "Summary of Debt - Provincial Councils" }
-    label: { key: province, whole: true }
+    label: { key: province, all_clusters: true }
     columns:
       - { key: count, header: "with Liabilities" }
       - { key: lkr, header: "Outstanding", nth: 1 }
