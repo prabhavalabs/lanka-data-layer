@@ -1,0 +1,20 @@
+# Pocket Book 2026, table 6.8: livestock ('000 head), milk ('000 litres), eggs (million).
+id: dcs-pocketbook-economy/table-6.8-livestock
+title: "Livestock population and production of milk and eggs"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "6.8 Livestock and Production", then_text: "Poultry" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: cattle, header: "Neat Cattle" }
+      - { key: buffaloes, header: "Buffaloes" }
+      - { key: goats, header: "Goats / Sheep" }
+      - { key: pigs, header: "Pigs" }
+      - { key: poultry, header: "Poultry" }
+      - { key: milk, header: "Milk" }
+      - { key: eggs, header: "Eggs" }
+    rows: { stop_at: ["Source"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 6, max: 6 } }

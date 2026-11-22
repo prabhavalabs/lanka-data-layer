@@ -1,0 +1,20 @@
+# Pocket Book 2026, table 3.6, left list (Sri Lanka and the first 14 districts). The right
+# list is read as a dummy column here and by the -right template. The label column is
+# delimited by its longest name, "Nuwara Eliya" (the "District" header is narrower
+# than the names, so "Eliya" would fall into the % column).
+id: dcs-pocketbook-economy/table-3.6-informal-employment-district-left
+title: "Informal sector share of non-agricultural employment by district (left list)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "Household population aged 15", then_text: "Moneragala" }
+    label: { key: district, header: "Nuwara Eliya" }
+    columns:
+      - { key: pct, header: "%", nth: 1 }
+      - { key: right_district, header: "District", nth: 2 }
+      - { key: right_pct, header: "%", nth: 2 }
+    rows: { stop_at: ["Provisional"] }
+    number: { thousands: ",", strip: ["*"] }
+    checks:
+      - { row_count: { min: 15, max: 15 } }
+      - { rows_present: ["Srilanka", "Colombo", "Nuwara Eliya", "Killinochchi"] }

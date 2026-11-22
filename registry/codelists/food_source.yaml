@@ -1,0 +1,12 @@
+# Food source (vegetable / animal)
+# Source/authority: DCS food balance sheet (Pocket Book table 6.7).
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-agriculture
+id: food_source
+title: "Food source (vegetable / animal)"
+codes:
+  - { code: total, label: "All sources", total: true, sdmx: _T }
+  - { code: vegetable, label: "Vegetable products", parent: total }
+  - { code: animal, label: "Animal products", parent: total }

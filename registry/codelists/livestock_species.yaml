@@ -1,0 +1,14 @@
+# Livestock species
+# Source/authority: DCS livestock statistics (Pocket Book table 6.8).
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-agriculture
+id: livestock_species
+title: "Livestock species"
+codes:
+  - { code: cattle, label: "Neat cattle" }
+  - { code: buffalo, label: "Buffaloes" }
+  - { code: goat_sheep, label: "Goats and sheep" }
+  - { code: pig, label: "Pigs" }
+  - { code: poultry, label: "Poultry" }

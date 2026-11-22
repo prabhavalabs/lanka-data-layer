@@ -1,0 +1,21 @@
+# Pocket Book 2026, table 3.9: minimum wage rate index numbers (base 1978=100), Department of Labour.
+id: dcs-pocketbook-economy/table-3.9-minimum-wage-index
+title: "Index numbers of minimum wages by class of workers (1978=100)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "3.9 Index Numbers of Minimum Wages", then_text: "Class of Workers" }
+    label: { key: class, header: "Class of Workers" }
+    columns:
+      - { key: y2018, header: "2018" }
+      - { key: y2019, header: "2019" }
+      - { key: y2020, header: "2020" }
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Source"], label_above: true }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 4, max: 4 } }

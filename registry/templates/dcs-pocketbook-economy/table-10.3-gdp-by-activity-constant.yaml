@@ -1,0 +1,19 @@
+# Pocket Book 2026, table 10.3: gross value added by economic activity (SLSIC), constant 2015 prices, Rs. million.
+id: dcs-pocketbook-economy/table-10.3-gdp-by-activity-constant
+title: "GDP at constant (2015) market prices by major economic activity (Rs. mn)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "10.3 Gross Domestic Product at Constant", then_text: "Gross Value Added" }
+    label: { key: activity, header: "Gross Value Added (GVA) by economic activity (SLSIC)" }
+    columns:
+      - { key: y2020, header: "2020" }
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Provisional"], label_above: true }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 15, max: 15 } }

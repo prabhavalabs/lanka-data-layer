@@ -1,0 +1,18 @@
+# Pocket Book 2026, table 6.2: irrigable (asweddumized) and irrigated (both seasons) paddy extent,
+# major and minor irrigation schemes, hectares.
+id: dcs-pocketbook-economy/table-6.2-paddy-irrigation
+title: "Irrigable and irrigated extent of paddy land (ha)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "6.2 Irrigable and Irrigated", then_text: "Minor Schemes" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: major_irrigable, header: "Irrigable", under: "Major Schemes" }
+      - { key: major_irrigated, header: "Irrigated", under: "Major Schemes" }
+      - { key: minor_irrigable, header: "Irrigable", under: "Minor Schemes" }
+      - { key: minor_irrigated, header: "Irrigated", under: "Minor Schemes" }
+    rows: { stop_at: ["Note:"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 9, max: 9 } }

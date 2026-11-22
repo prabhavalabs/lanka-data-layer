@@ -1,0 +1,27 @@
+# Pocket Book 2026, table 6.7: per capita availability per day from vegetable and animal sources
+# (food balance sheet). Anchored on the totals' second header line ("Killo Protein") so the
+# total columns resolve below the group banner; the totals are checked against the sums.
+id: dcs-pocketbook-economy/table-6.7-nutrition-availability
+title: "Per capita availability of calories, protein and fat per day"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "Killo Protein", then_text: "Vegetable" }
+    label: { key: year }
+    columns:
+      - { key: kcal_veg, header: "Vegetable", nth: 1 }
+      - { key: kcal_animal, header: "Animal", nth: 1 }
+      - { key: protein_veg, header: "Vegetable", nth: 2 }
+      - { key: protein_animal, header: "Animal", nth: 2 }
+      - { key: fat_veg, header: "Vegetable", nth: 3 }
+      - { key: fat_animal, header: "Animal", nth: 3 }
+      - { key: x_kcal_total, header: "Calories" }
+      - { key: x_protein_total, header: "Grams Per" }
+      - { key: x_fat_total, header: "day" }
+    rows: { stop_at: ["Note:"] }
+    number: { thousands: "," }
+    checks:
+      - { sum: [kcal_veg, kcal_animal], equals: x_kcal_total, tol: 1 }
+      - { sum: [protein_veg, protein_animal], equals: x_protein_total, tol: 1 }
+      - { sum: [fat_veg, fat_animal], equals: x_fat_total, tol: 1 }
+      - { row_count: { min: 7, max: 7 } }

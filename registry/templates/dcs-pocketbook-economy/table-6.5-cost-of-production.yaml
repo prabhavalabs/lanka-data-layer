@@ -1,0 +1,17 @@
+# Pocket Book 2026, table 6.5: cost of production by financial year (Rs.): tea and rubber per kg,
+# coconut per 1,000 nuts.
+id: dcs-pocketbook-economy/table-6.5-cost-of-production
+title: "Cost of production of tea, rubber and coconut"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "6.5 Cost of Production", then_text: "Coconut" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: tea, header: "Tea (per kg)" }
+      - { key: rubber, header: "Rubber (per kg)" }
+      - { key: coconut, header: "Coconut (per" }
+    rows: { stop_at: ["Source"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 10, max: 10 } }

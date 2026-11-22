@@ -1,0 +1,24 @@
+# GDP by major economic activity (DCS SLSIC summary groups)
+# Source/authority: DCS national accounts (base 2015): GVA by the 10 summary activity groups of the GDP release, plus the GDP reconciliation items.
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-gdp-by-industry
+id: gdp_activity
+title: "GDP by major economic activity (DCS SLSIC summary groups)"
+codes:
+  - { code: gdp, label: "Gross domestic product at market prices", total: true, sdmx: _T }
+  - { code: gva, label: "Gross value added at basic prices", parent: gdp }
+  - { code: agriculture, label: "Agriculture, forestry and fishing", parent: gva }
+  - { code: industry_other, label: "Manufacturing, mining and quarrying and other industries", parent: gva }
+  - { code: manufacturing, label: "of which: manufacturing activities" }
+  - { code: construction, label: "Construction", parent: gva }
+  - { code: trade_transport_accommodation, label: "Wholesale and retail trade, transportation and storage, accommodation and food service", parent: gva }
+  - { code: information_communication, label: "Information and communication", parent: gva }
+  - { code: finance_insurance, label: "Financial and insurance activities", parent: gva }
+  - { code: real_estate, label: "Real estate activities (including ownership of dwelling)", parent: gva }
+  - { code: professional_admin, label: "Professional, scientific, technical, administration and support service activities", parent: gva }
+  - { code: public_admin_education_health, label: "Public administration, defence, education, human health and social work", parent: gva }
+  - { code: other_services, label: "Other services (excluding own services)", parent: gva }
+  - { code: taxes_on_products, label: "Taxes on products", parent: gdp }
+  - { code: subsidies_on_products, label: "Subsidies on products (subtracted)" }

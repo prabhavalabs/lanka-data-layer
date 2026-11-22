@@ -1,0 +1,14 @@
+# Passenger and freight transport operator
+# Source/authority: DCS Pocket Book table 8.1 (SLTB, NTC, Department of Railways, CAASL).
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-sector-services
+id: transport_operator
+title: "Passenger and freight transport operator"
+codes:
+  - { code: railway, label: "Sri Lanka Railways" }
+  - { code: omnibus, label: "Omnibus services (private, NTC)" }
+  - { code: sltb, label: "Sri Lanka Transport Board" }
+  - { code: national_airline, label: "National carrier (SriLankan Airlines)" }
+  - { code: foreign_airlines, label: "Foreign airlines" }

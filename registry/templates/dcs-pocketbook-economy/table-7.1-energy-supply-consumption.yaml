@@ -1,0 +1,21 @@
+# Pocket Book 2026, table 7.1: electricity generated and sold (GWh), petroleum ('000 t), LP gas (t).
+id: dcs-pocketbook-economy/table-7.1-energy-supply-consumption
+title: "Energy supply and consumption"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "7.1 Energy Supply and Consumption", then_text: "Units Generated" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: unit, header: "Unit" }
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["# Revised", "Note:"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: ["CEB", "Private"], equals_row: "Units Generated", columns: [y2021, y2022, y2023, y2024, y2025], tol: 2 }
+      - { sum_rows: ["Hydro", "Thermal - oil", "Thermal - Coal", "Wind", "Small Island"], equals_row: "CEB", columns: [y2021, y2022, y2023, y2024, y2025], tol: 2 }
+      - { row_count: { min: 20, max: 20 } }

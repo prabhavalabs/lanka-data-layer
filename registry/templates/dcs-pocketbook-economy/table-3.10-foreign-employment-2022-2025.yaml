@@ -1,0 +1,19 @@
+# Pocket Book 2026, table 3.10, second block (2022-2025): skilled and low-skilled departures by sex.
+id: dcs-pocketbook-economy/table-3.10-foreign-employment-2022-2025
+title: "Departures for foreign employment by skill and sex, 2022-2025"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "2021", then_text: "Low- Skilled" }
+    label: { key: year }
+    columns:
+      - { key: skilled_m, header: "Male", nth: 1 }
+      - { key: skilled_f, header: "Female", nth: 1 }
+      - { key: low_m, header: "Male", nth: 2 }
+      - { key: low_f, header: "Female", nth: 2 }
+      - { key: total, header: "Total" }
+    rows: { stop_at: ["Revised"] }
+    number: { thousands: ",", strip: ["#"] }
+    checks:
+      - { sum: [skilled_m, skilled_f, low_m, low_f], equals: total, tol: 1 }
+      - { row_count: { min: 4, max: 4 } }

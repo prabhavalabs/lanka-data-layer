@@ -18,3 +18,6 @@ codes:
   - { code: P52, label: Changes in inventories, parent: P5, sdmx: P52 }
   - { code: P6, label: Exports of goods and services, sdmx: P6 }
   - { code: P7, label: Imports of goods and services (subtracted), sdmx: P7 }
+  - { code: P31_S13, label: Government individual consumption, parent: P3_S13 }
+  - { code: P32_S13, label: Government collective consumption, parent: P3_S13 }
+  - { code: P53, label: Acquisitions less disposals of valuables, parent: P5, sdmx: P53 }

@@ -1,0 +1,66 @@
+id: dcs-pocketbook-economy
+publisher: Department of Census and Statistics, Sri Lanka
+title: Statistical Pocket Book, economy tables (labour, prices, agriculture, energy, transport, national accounts, tourism)
+homepage: https://www.statistics.gov.lk/Publication/PocketBook2026
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Publication/PocketBook2026
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Statistical Pocket Book (tables compiled from DCS, Department of Labour, SLBFE, DMT, CEB, CPC, TRCSL, SLTDA, Ministry of Fisheries)
+cadence:
+  frequency: annual
+  expected_lag_days: 150
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- ECON
+- AGRI
+- TRAN
+- SOCI
+datasets:
+- dcs-lfs-annual-subnational
+- dcs-gdp-by-industry
+- dcs-gdp-expenditure
+- dcs-pocketbook-agriculture
+- dcs-pocketbook-prices-wages
+- dcs-pocketbook-sector-services
+- dmt-vehicle-registrations
+- slbfe-labour-migration
+priority: P1
+effort: M
+status: active
+verified_at: '2026-11-22'
+notes: >-
+  The economy tables of the Statistical Pocket Book 2026 (one 104-page PDF served directly at the
+  publication URL). A separate source id from dcs-pocketbook (social tables) so each has its own
+  pdf_table connector. Text-layer PDF; tables read through registry templates
+  (registry/templates/dcs-pocketbook-economy/). Many tables are compiled from other agencies; the
+  original agency is named in each dataset's method. Licence unstated: published with attribution
+  and the takedown contact; it does not block ingestion.
+dc_refs:
+- employment-by-occupation
+- informal-sector-employment-district
+- unemployment-by-province
+- foreign-employment-departures
+- gdp-by-industry
+- registered-motor-vehicles-annual
+- gdp-expenditure
+- crop-area-production
+- crop-production-costs
+- fisheries-production-capacity
+- livestock-production
+- food-nutrient-availability
+- paddy-irrigation
+- minimum-wage-indices
+- building-material-prices
+- energy-supply-consumption
+- telecom-services
+- tourism-activity
+- transport-passengers-freight

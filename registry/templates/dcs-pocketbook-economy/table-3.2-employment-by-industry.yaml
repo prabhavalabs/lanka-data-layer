@@ -1,0 +1,20 @@
+# Pocket Book 2026, table 3.2: employed persons aged 15+ by industry group (ISIC rev. 4), thousands.
+# Groups 4 and 16 wrap their label over two lines around the numbers (label_above).
+id: dcs-pocketbook-economy/table-3.2-employment-by-industry
+title: "Employed persons by industry group ('000)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "3.2 Employed Persons", then_text: "Industry Group" }
+    label: { key: group, header: "Industry Group" }
+    columns:
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Note:"], label_above: true }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: all_but_first, equals_row: "Total Employed", tol: 9 }
+      - { row_count: { min: 18, max: 18 } }

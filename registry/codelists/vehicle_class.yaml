@@ -20,3 +20,5 @@ codes:
   - { code: land_vehicle_tractor, label: Land vehicles - tractors, parent: total }
   - { code: land_vehicle_trailer, label: Land vehicles - trailers, parent: total }
   - { code: other, label: Other, parent: total }
+  - { code: ambulance_hearse, label: Ambulances and hearses, parent: total }
+  - { code: land_vehicle, label: Land vehicles - tractors and trailers (overlaps the two) }

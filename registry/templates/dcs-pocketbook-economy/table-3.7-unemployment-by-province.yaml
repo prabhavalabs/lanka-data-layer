@@ -1,0 +1,26 @@
+# Pocket Book 2026, table 3.7: unemployment rate, household population aged 15+, by province and sex.
+id: dcs-pocketbook-economy/table-3.7-unemployment-by-province
+title: "Unemployment rate by province and sex (%)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "3.7 Unemployment Rate by Province", then_text: "Province" }
+    label: { key: province, header: "Province" }
+    columns:
+      - { key: total_2022, header: "Total", under: "2022" }
+      - { key: male_2022, header: "Male", under: "2022" }
+      - { key: female_2022, header: "Female", under: "2022" }
+      - { key: total_2023, header: "Total", under: "2023" }
+      - { key: male_2023, header: "Male", under: "2023" }
+      - { key: female_2023, header: "Female", under: "2023" }
+      - { key: total_2024, header: "Total", under: "2024" }
+      - { key: male_2024, header: "Male", under: "2024" }
+      - { key: female_2024, header: "Female", under: "2024" }
+      - { key: total_2025, header: "Total", under: "2025" }
+      - { key: male_2025, header: "Male", under: "2025" }
+      - { key: female_2025, header: "Female", under: "2025" }
+    rows: { stop_at: ["These figures", "Source"] }
+    number: { thousands: ",", squeeze_spaces: true }
+    checks:
+      - { row_count: { min: 10, max: 10 } }
+      - { rows_present: ["Sri Lanka", "Western", "Northern"] }

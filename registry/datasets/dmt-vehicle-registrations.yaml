@@ -3,7 +3,7 @@ title: Vehicle registrations and fleet
 description: New registrations by vehicle class (monthly) and cumulative registered fleet.
 source_ids:
 - dmt
-- dcs-pocketbook
+- dcs-pocketbook-economy
 indicators:
 - id: tran.new_registrations
   label: New vehicle registrations
@@ -17,7 +17,7 @@ indicators:
   - national
   period_type: month
 - id: tran.registered_fleet
-  label: Cumulative registered vehicles
+  label: Registered motor vehicles (cumulative, end of year)
   unit: '{count}'
   measure_type: count
   aggregation: sum
@@ -27,16 +27,27 @@ indicators:
   geo_levels:
   - national
   period_type: year
+- id: tran.passenger_cars_per_100
+  label: Passenger cars per 100 population
+  unit: '%'
+  measure_type: ratio
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
-  from: '2000'
-  to: '2026'
-method: HTML tables.
+  from: '2021'
+  to: '2025'
+method: 'Statistical Pocket Book 2026 table 8.2 (Department of Motor Traffic), 2021-2025: registered vehicles by type at year
+  end. Monthly new registrations await a DMT machine-readable source.'
 limits:
-- Cumulative fleet includes scrapped vehicles; no district of owner published.
+- Cumulative registrations, not vehicles in use (no de-registration of scrapped vehicles).
+- Lorries include prime movers, trailers and fork lifts; tractors include land vehicle trailers.
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'
   aggregations:
   - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
   - vehicles per 1,000 people
-publication_class: A
+publication_class: B

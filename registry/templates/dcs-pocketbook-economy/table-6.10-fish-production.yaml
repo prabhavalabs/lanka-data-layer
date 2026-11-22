@@ -1,0 +1,24 @@
+# Pocket Book 2026, table 6.10 (left half of the page): fish production, metric tons. Table 6.11
+# sits on the same lines to the right and is read here as dummy columns.
+id: dcs-pocketbook-economy/table-6.10-fish-production
+title: "Annual fish production by fishing sub-sector (t)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "6.10 Annual Fish Production", then_text: "Coastal" }
+    label: { key: year, header: "Year", slack: 20 }
+    columns:
+      - { key: coastal, header: "Coastal" }
+      - { key: offshore, header: "Off Shore" }
+      - { key: inland, header: "Aquaculture" }
+      - { key: total, header: "Production" }
+      - { key: x_item, header: "Item" }
+      - { key: x_2022, header: "2022" }
+      - { key: x_2023, header: "2023" }
+      - { key: x_2024, header: "2024" }
+      - { key: x_2025, header: "2025*" }
+    rows: { stop_at: ["Provisional"] }
+    number: { thousands: ",", strip: ["*"] }
+    checks:
+      - { sum: [coastal, offshore, inland], equals: total, tol: 2 }
+      - { row_count: { min: 8, max: 8 } }

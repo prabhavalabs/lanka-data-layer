@@ -1,0 +1,22 @@
+# Pocket Book 2026, table 3.1: labour force status, household population aged 15+, thousands.
+id: dcs-pocketbook-economy/table-3.1-labour-force-status
+title: "Labour force status of the household population ('000)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "3.1 Labor Force Status", then_text: "Unemployment" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: hh_pop, header: "Household" }
+      - { key: lf, header: "Total Labour" }
+      - { key: lfpr, header: "Participation" }
+      - { key: emp, header: "Employed" }
+      - { key: unemp, header: "Unemployed" }
+      - { key: nilf, header: "Not in" }
+      - { key: ur, header: "Unemployment" }
+    rows: { stop_at: ["Source"] }
+    number: { thousands: "," }
+    checks:
+      - { sum: [emp, unemp], equals: lf, tol: 1 }
+      - { sum: [lf, nilf], equals: hh_pop, tol: 2 }
+      - { row_count: { min: 5, max: 5 } }

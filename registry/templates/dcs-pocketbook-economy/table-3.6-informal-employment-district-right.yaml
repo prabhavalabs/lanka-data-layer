@@ -1,0 +1,16 @@
+# Pocket Book 2026, table 3.6, right list (11 districts, Batticaloa to Kegalle): the label is
+# the rightmost word cluster left of the second % column.
+id: dcs-pocketbook-economy/table-3.6-informal-employment-district-right
+title: "Informal sector share of non-agricultural employment by district (right list)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "Household population aged 15", then_text: "Moneragala" }
+    label: { key: district, header: "District" }
+    columns:
+      - { key: pct, header: "%", nth: 2 }
+    rows: { stop_at: ["Provisional"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 11, max: 11 } }
+      - { rows_present: ["Batticaloa", "Kegalle"] }

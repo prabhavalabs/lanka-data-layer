@@ -1,0 +1,19 @@
+# Pocket Book 2026, table 3.3: employed persons aged 15+ by ISCO-08 major group, thousands.
+id: dcs-pocketbook-economy/table-3.3-employment-by-occupation
+title: "Employed persons by major occupational group ('000)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "3.3 Employed Persons", then_text: "Occupational Group" }
+    label: { key: group, header: "Occupational Group" }
+    columns:
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Source"], min_cells: 2, label_above: true }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: all_but_first, equals_row: "Total Employed", tol: 6 }
+      - { row_count: { min: 11, max: 11 } }

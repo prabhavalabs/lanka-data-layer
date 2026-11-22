@@ -1,0 +1,14 @@
+# Operating fishing fleet by class (Ministry of Fisheries summary)
+# Source/authority: Ministry of Fisheries as printed in the DCS Statistical Pocket Book, table 6.11.
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-agriculture
+id: fishing_fleet_class
+title: "Operating fishing fleet by class"
+codes:
+  - { code: total, label: "Total fishing fleet", total: true, sdmx: _T }
+  - { code: marine_inboard, label: "Marine - inboard engine", parent: total }
+  - { code: marine_outboard, label: "Marine - outboard engine", parent: total }
+  - { code: marine_non_motorised, label: "Marine - non-motorised", parent: total }
+  - { code: inland_canoe, label: "Inland - oru (canoes)", parent: total }

@@ -1,0 +1,17 @@
+# Pocket Book 2026, table 8.4: fixed and mobile subscriptions and telephone density (TRCSL).
+id: dcs-pocketbook-economy/table-8.4-telecommunication-services
+title: "Telecommunication services"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "8.4 Telecommunication Services", then_text: "Fixed Access Voice" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Subscriptions rebased", "Source"], label_above: true }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 7, max: 7 } }

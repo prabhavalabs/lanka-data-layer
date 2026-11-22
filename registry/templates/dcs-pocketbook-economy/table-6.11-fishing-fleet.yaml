@@ -1,0 +1,21 @@
+# Pocket Book 2026, table 6.11 (right half of the page): fishing fleet and active fishers.
+# 2023: marine + inland fishers = 318,474 but the total prints 318,754 (upstream); 2023 is
+# left out of that check and the printed values are kept.
+id: dcs-pocketbook-economy/table-6.11-fishing-fleet
+title: "Operating fishing boats and active fishers"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "(Number)", then_text: "Marine Fishing Fleet" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025*" }
+    rows: { stop_at: ["Provisional"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: ["Inboard Engine", "Outboard Engine", "Non-Motorized", "Oru (Canoes)"], equals_row: "Total Fishing Fleet", tol: 1 }
+      - { sum_rows: ["Marine Fishers", "Inland Fishers"], equals_row: "Total", columns: [y2022, y2024, y2025], tol: 1 }
+      - { row_count: { min: 8, max: 8 } }

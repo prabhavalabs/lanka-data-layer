@@ -1,6 +1,6 @@
 source: dcs-lfs
 driver: pdf_table
-version: 1.0.0
+version: 1.1.0
 description: >-
   Labour Force Survey annual report tables. Class B: every version is
   reviewed against its evidence sheet before release.
@@ -9,14 +9,27 @@ discover:
     - key: lfs-annual-2025
       url: https://www.statistics.gov.lk/Resource/en/LabourForce/Annual_Reports/LFS2025.pdf
       edition: "2025"
+    # The labour tables of the Statistical Abstract (chapter 4) and Pocket Book (chapter 3)
+    # feed the same dataset, so they are read here (one connector per dataset).
+    - { key: abstract-2025-4.1a, url: "https://www.statistics.gov.lk/abstract2025/CHAP4/4.1a.pdf", edition: "2025" }
+    - { key: abstract-2025-4.2a, url: "https://www.statistics.gov.lk/abstract2025/CHAP4/4.2a.pdf", edition: "2025" }
+    - { key: pocketbook-2026, url: "https://www.statistics.gov.lk/Publication/PocketBook2026", edition: "2026" }
 extract:
   tables:
     - id: t4_1
       file: lfs-annual-2025
       template: dcs-lfs/annual-table-4.1-employment-by-industry
+    - { id: t4_1a, file: abstract-2025-4.1a, template: dcs-statistical-abstract/table-4.1a-labour-force-participation }
+    - { id: t4_2a, file: abstract-2025-4.2a, template: dcs-statistical-abstract/table-4.2a-employment-by-industry }
+    - { id: t3_1, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.1-labour-force-status }
+    - { id: t3_2, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.2-employment-by-industry }
+    - { id: t3_3, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.3-employment-by-occupation }
+    - { id: t3_6l, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.6-informal-employment-district-left }
+    - { id: t3_6r, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.6-informal-employment-district-right }
+    - { id: t3_7, file: pocketbook-2026, template: dcs-pocketbook-economy/table-3.7-unemployment-by-province }
 standardise:
   dataset: dcs-lfs-annual-subnational
-  vintage: "Labour Force Survey annual report {edition}, table 4.1"
+  vintage: "LFS annual report 2025 (table 4.1), Statistical Abstract 2025 (4.1a, 4.2a), Statistical Pocket Book 2026 (3.1-3.7)"
   outputs:
     - table: t4_1
       indicator: lab.employment_by_industry
@@ -28,3 +41,171 @@ standardise:
         industry_no: { industry: industry }
         services_no: { industry: services }
       status: { label_markers: { "*": provisional } }
+    # ── 4.1a labour force, 2016-2024 (persons) ──
+    - { table: t4_1a, indicator: lab.household_pop_15plus, geo: { fixed: root }, period: { from_label: year },
+        columns: { hh_pop: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.labour_force_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { lf_total: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.lfpr_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { lfpr: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.employed_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { emp_no: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.unemployed_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { unemp_no: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.unemployment_rate_sub, geo: { fixed: root }, period: { from_label: year },
+        columns: { unemp_rate: { sex: total } }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.not_in_labour_force, geo: { fixed: root }, period: { from_label: year },
+        columns: { not_lf: {} }, status: { label_markers: { "*": provisional } } }
+    # ── 4.2a employment by the 17 LFS industry groups, 2018-2024 (persons); the total
+    # only for 2018 (2019-2025 totals: LFS table 4.1) ──
+    - table: t4_2a
+      indicator: lab.employment_by_industry
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns:
+        g01: { industry: A }
+        g02: { industry: B }
+        g03: { industry: C }
+        g04: { industry: DEF }
+        g05: { industry: G }
+        g06: { industry: H }
+        g07: { industry: I }
+        g08: { industry: J }
+        g09: { industry: K }
+        g10: { industry: M }
+        g11: { industry: "N" }
+        g12: { industry: O }
+        g13: { industry: P }
+        g14: { industry: Q }
+        g15: { industry: S }
+        g16: { industry: T }
+        g17: { industry: LRU }
+      status: { label_markers: { "*": provisional } }
+    - { table: t4_2a, indicator: lab.employment_by_industry, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2018": {} }, columns: { total: { industry: total } } }
+    # ── Pocket Book 2026, chapter 3 ──
+    # 3.1: 2025 only ('000 → persons); 2016-2024 come from the Abstract.
+    - { table: t3_1, indicator: lab.household_pop_15plus, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2025": {} }, columns: { hh_pop: {} }, scale: 1000, status: { default: provisional } }
+    - { table: t3_1, indicator: lab.labour_force_annual, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2025": {} }, columns: { lf: {} }, scale: 1000, status: { default: provisional } }
+    - { table: t3_1, indicator: lab.lfpr_annual, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2025": {} }, columns: { lfpr: {} }, status: { default: provisional } }
+    - { table: t3_1, indicator: lab.employed_annual, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2025": {} }, columns: { emp: {} }, scale: 1000, status: { default: provisional } }
+    - { table: t3_1, indicator: lab.unemployed_annual, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2025": {} }, columns: { unemp: {} }, scale: 1000, status: { default: provisional } }
+    - { table: t3_1, indicator: lab.not_in_labour_force, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2025": {} }, columns: { nilf: {} }, scale: 1000, status: { default: provisional } }
+    - { table: t3_1, indicator: lab.unemployment_rate_sub, geo: { fixed: root }, period: { from_label: year },
+        rows: { "2025": { sex: total } }, columns: { ur: {} }, status: { default: provisional } }
+    # 3.2: 2025 only ('000 → persons), the same 17 LFS groups as Abstract 4.2a (the 2025
+    # total comes from LFS table 4.1).
+    - table: t3_2
+      indicator: lab.employment_by_industry
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y2025: {} }
+      scale: 1000
+      status: { default: provisional }
+      rows:
+        "Agriculture, Forestry and Fishing": { industry: A }
+        "Mining and Quarrying": { industry: B }
+        "Manufacturing": { industry: C }
+        "Construction, Electricity, Gas, Steam and Air Conditioning Supply, Water": { industry: DEF }
+        "Wholesale and Retail Trade, Repair of Motor Vehicles and Motor Cycles": { industry: G }
+        "Transportation and Storage": { industry: H }
+        "Accommodation and Food Services Activities": { industry: I }
+        "Information and Communication": { industry: J }
+        "Financial and Insurance Activities": { industry: K }
+        "Professional, Scientific and Technical Activities": { industry: M }
+        "Administrative and Support Service Activities": { industry: "N" }
+        "Public Administration and Defence Compulsory Social Security": { industry: O }
+        "Education": { industry: P }
+        "Human Health and Social Work Activities": { industry: Q }
+        "Other Service Activities": { industry: S }
+        "Activities of Households as Employers; Undiffrentiated Goods and Services": { industry: T }
+        "Other": { industry: LRU }
+    # 3.3: occupation 2021-2025 ('000 → persons).
+    - table: t3_3
+      indicator: lab.employment_by_occupation
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y2021: {}, y2022: {}, y2023: {}, y2024: {}, y2025: {} }
+      scale: 1000
+      rows:
+        "Total Employed": { occupation: total }
+        "Managers, Senior Officials and Legislators": { occupation: "1" }
+        "Professionals": { occupation: "2" }
+        "Technicians and Associate Professionals": { occupation: "3" }
+        "Clerks and Clerical Support Workers": { occupation: "4" }
+        "Service and Sales Workers": { occupation: "5" }
+        "Skilled Agriculture, Forestry and Fishery Workers": { occupation: "6" }
+        "Craft and Related Trade Workers": { occupation: "7" }
+        "Plant and Machine Operators and Assemblers": { occupation: "8" }
+        "Elementary Occupations": { occupation: "9" }
+        "Armed Forces Occupations and Unidentified": { occupation: "0" }
+    # 3.6: informal share of non-agricultural employment by district, 2025.
+    - { table: t3_6l, indicator: lab.informal_share, geo: { from_label: { level: 2, root: ["Srilanka"] } },
+        period: { fixed: "2025" }, columns: { pct: {} }, status: { default: provisional } }
+    - { table: t3_6r, indicator: lab.informal_share, geo: { from_label: { level: 2 } },
+        period: { fixed: "2025" }, columns: { pct: {} }, status: { default: provisional } }
+    # 3.7: unemployment rate by province and sex 2022-2025 (DCS: high CV, low reliability);
+    # the national row only for 2025 (2022-2024 national come from Abstract 4.1a, total sex).
+    - table: t3_7
+      indicator: lab.unemployment_rate_sub
+      geo: { from_label: { level: 1, skip: ["Sri Lanka"] } }
+      period: { from_header: year }
+      status: { default: low_reliability }
+      columns:
+        total_2022: { sex: total }
+        male_2022: { sex: male }
+        female_2022: { sex: female }
+        total_2023: { sex: total }
+        male_2023: { sex: male }
+        female_2023: { sex: female }
+        total_2024: { sex: total }
+        male_2024: { sex: male }
+        female_2024: { sex: female }
+        total_2025: { sex: total }
+        male_2025: { sex: male }
+        female_2025: { sex: female }
+    - table: t3_7
+      indicator: lab.unemployment_rate_sub
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows: { "Sri Lanka": {} }
+      columns: { male_2022: { sex: male }, female_2022: { sex: female }, male_2023: { sex: male }, female_2023: { sex: female },
+                 male_2024: { sex: male }, female_2024: { sex: female }, male_2025: { sex: male }, female_2025: { sex: female } }
+expect:
+  - { check: range, indicator: lab.lfpr_annual, min: 30, max: 80 }
+  - { check: range, indicator: lab.unemployment_rate_sub, min: 0, max: 30 }
+  - check: sql
+    note: The 17 LFS industry groups sum to the total employed (Abstract persons ±3; Pocket Book thousands ±12 000).
+    query: >-
+      SELECT g.period_start, sum(g.value) AS groups, t.value AS total
+      FROM stage_obs g JOIN stage_obs t ON t.period_start = g.period_start AND t.indicator_id = g.indicator_id
+      AND t.geo_code = g.geo_code AND t.dims = 'industry=total'
+      WHERE g.indicator_id = 'lab.employment_by_industry'
+      AND g.dims NOT IN ('industry=total', 'industry=agriculture', 'industry=industry', 'industry=services')
+      GROUP BY g.period_start, t.value HAVING abs(sum(g.value) - t.value) > 12000
+  - check: sql
+    note: Employed + unemployed = labour force (±2 persons).
+    query: >-
+      SELECT e.period_start, e.value + u.value AS sum, l.value AS lf
+      FROM stage_obs e JOIN stage_obs u ON u.period_start = e.period_start AND u.indicator_id = 'lab.unemployed_annual'
+      JOIN stage_obs l ON l.period_start = e.period_start AND l.indicator_id = 'lab.labour_force_annual'
+      WHERE e.indicator_id = 'lab.employed_annual' AND e.geo_code = 'LK' AND u.geo_code = 'LK' AND l.geo_code = 'LK'
+      AND abs(e.value + u.value - l.value) > 2
+  - { check: range, indicator: lab.informal_share, min: 10, max: 90 }
+  - { check: completeness, indicator: lab.informal_share, level: 2, min_units: 25 }
+  - { check: completeness, indicator: lab.unemployment_rate_sub, level: 1, min_units: 9 }
+  - check: sql
+    note: The ten occupation groups sum to the total employed (thousands, ±20 000 persons).
+    query: >-
+      SELECT g.period_start, sum(g.value) AS groups, t.value AS total
+      FROM stage_obs g JOIN stage_obs t ON t.period_start = g.period_start AND t.indicator_id = g.indicator_id
+      AND t.dims = 'occupation=total'
+      WHERE g.indicator_id = 'lab.employment_by_occupation' AND g.dims <> 'occupation=total'
+      GROUP BY g.period_start, t.value HAVING abs(sum(g.value) - t.value) > 20000
+  - { check: no_future }

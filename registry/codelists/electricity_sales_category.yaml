@@ -1,0 +1,15 @@
+# Electricity sales by consumer category (CEB)
+# Source/authority: Ceylon Electricity Board sales as printed in the DCS Pocket Book, table 7.1.
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-sector-services
+id: electricity_sales_category
+title: "Electricity sales by consumer category (CEB)"
+codes:
+  - { code: total, label: "Total sales", total: true, sdmx: _T }
+  - { code: domestic_religious, label: "Domestic and religious", parent: total }
+  - { code: industrial, label: "Industrial", parent: total }
+  - { code: commercial, label: "Commercial", parent: total }
+  - { code: leco, label: "Bulk sales to LECO", parent: total }
+  - { code: street_lighting, label: "Street lighting", parent: total }

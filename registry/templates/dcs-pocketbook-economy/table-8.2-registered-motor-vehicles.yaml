@@ -1,0 +1,19 @@
+# Pocket Book 2026, table 8.2: registered motor vehicles by type, Department of Motor Traffic.
+id: dcs-pocketbook-economy/table-8.2-registered-motor-vehicles
+title: "Registered motor vehicles (stock at year end)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "8.2 Registered Motor Vehicles", then_text: "Type of Vehicle" }
+    label: { key: type, header: "Type of Vehicle" }
+    columns:
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["(a) Include", "Source"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: ["Passenger Cars", "Three Wheelers", "Buses (SLTB+ Private)", "Motor Cycles", "Lorries", "Ambulances and Hearses", "Dual Purpose Vehicles", "Tractors & Engines", "Quadricycle", "Motor Home", "Special Purpose vehicles"], equals_row: "Total", columns: [y2021, y2023, y2025], tol: 1 }
+      - { row_count: { min: 13, max: 13 } }
