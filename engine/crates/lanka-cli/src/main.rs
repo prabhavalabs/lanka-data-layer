@@ -3,7 +3,8 @@
 //! ```text
 //! lanka db migrate
 //! lanka registry validate | sync
-//! lanka ingest run <source> [--from DIR]
+//! lanka ingest run <source> [--from DIR] [--force]
+//! lanka ingest restandardise <source>
 //! lanka ingest status
 //! lanka review list | approve <dsv> --by NAME | reject <dsv> --by NAME --note TEXT
 //! lanka serve [--bind 127.0.0.1:8601]
@@ -19,7 +20,10 @@ use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use lanka_core::db::{self, PoolRole};
 use lanka_core::{Catalog, Profile, query};
-use lanka_ingest::{AlertConfig, Archive, IMPLEMENTED, Registry, RunOptions, publish, run_source};
+use lanka_ingest::{
+    AlertConfig, Env, Registry, RunOptions, implemented, publish, restandardise, run_source,
+};
+use lanka_store::FsStore;
 use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
 
@@ -49,9 +53,10 @@ struct Global {
     /// Registry directory (defaults to the nearest `registry/` above the working directory).
     #[arg(long, env = "LANKA_REGISTRY_DIR", global = true)]
     registry: Option<PathBuf>,
-    /// Raw archive root (content-addressed by sha256).
-    #[arg(long, env = "LANKA_DATA_DIR", global = true)]
-    data_dir: Option<PathBuf>,
+    /// Blob store root (raw artifacts, extracts, distributions). Falls back
+    /// to the deprecated `LANKA_DATA_DIR`, then `<repo>/data/v2`.
+    #[arg(long, env = "LANKA_STORE_DIR", global = true)]
+    store_dir: Option<PathBuf>,
     /// Country profile (defaults to the only `country/*/profile.yaml` beside the registry).
     #[arg(long, env = "LANKA_COUNTRY_PROFILE", global = true)]
     profile: Option<PathBuf>,
@@ -117,15 +122,22 @@ enum RegistryCmd {
 
 #[derive(Subcommand)]
 enum IngestCmd {
-    /// Run one source end to end (discover → fetch → archive → parse → validate → stage → publish).
+    /// Run one source end to end (discover → fetch → archive → extract → standardise →
+    /// validate → stage → publish).
     Run {
         source: String,
         /// Read inputs from a local directory instead of the network (where supported).
         #[arg(long)]
         from: Option<PathBuf>,
-        #[arg(long, default_value = "manual", value_parser = ["manual", "schedule", "retry", "test"])]
+        #[arg(long, default_value = "manual", value_parser = ["manual", "schedule", "retry", "test", "backfill"])]
         trigger: String,
+        /// Ignore the fingerprint and artifact-set short-circuits.
+        #[arg(long)]
+        force: bool,
     },
+    /// Re-run standardise → publish over the source's stored extracts (offline:
+    /// no network, no re-parsing). Accepts a source id or a dataset id.
+    Restandardise { source: String },
     /// Freshness and last-run state of every source.
     Status {
         #[arg(long)]
@@ -194,10 +206,11 @@ fn load_profile(g: &Global, registry: &Path) -> Result<Profile> {
     Profile::load(&path).with_context(|| format!("loading country profile {}", path.display()))
 }
 
-fn data_dir(g: &Global, registry: &Path) -> PathBuf {
-    g.data_dir
-        .clone()
-        .unwrap_or_else(|| registry.parent().unwrap_or(Path::new(".")).join("data/v2"))
+fn store(g: &Global, registry: &Path) -> FsStore {
+    match &g.store_dir {
+        Some(d) => FsStore::new(d),
+        None => lanka_ingest::default_store(registry),
+    }
 }
 
 async fn pool(g: &Global, role: PoolRole) -> Result<PgPool> {
@@ -290,11 +303,7 @@ async fn run(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Ingest(IngestCmd::Run {
-            source,
-            from,
-            trigger,
-        }) => {
+        Cmd::Ingest(cmd @ (IngestCmd::Run { .. } | IngestCmd::Restandardise { .. })) => {
             let dir = find_registry(g.registry.as_deref())?;
             let reg = Registry::load(&dir)?;
             let profile = load_profile(g, &dir)?;
@@ -302,25 +311,53 @@ async fn run(cli: Cli) -> Result<()> {
             reg.sync(&pool, &profile)
                 .await
                 .context("syncing registry")?;
-            let archive = Archive::new(data_dir(g, &dir));
-            let opts = RunOptions {
-                from_dir: from,
-                trigger,
+            let store = store(g, &dir);
+            let alerts = AlertConfig::from_env();
+            let env = Env {
+                pool: &pool,
+                registry: &reg,
+                profile: &profile,
+                store: &store,
+                alerts: &alerts,
             };
-            let report = run_source(
-                &pool,
-                &reg,
-                &profile,
-                &archive,
-                &source,
-                &opts,
-                &AlertConfig::from_env(),
-            )
-            .await?;
+            let report = match cmd {
+                IngestCmd::Run {
+                    source,
+                    from,
+                    trigger,
+                    force,
+                } => {
+                    let opts = RunOptions {
+                        from_dir: from,
+                        trigger,
+                        force,
+                    };
+                    run_source(&env, &source, &opts).await?
+                }
+                IngestCmd::Restandardise { source } => {
+                    // A dataset id resolves to its (first) source.
+                    let source = if reg.source(&source).is_some() {
+                        source
+                    } else {
+                        reg.dataset(&source)
+                            .and_then(|d| d.source_ids.first().cloned())
+                            .with_context(|| {
+                                format!("{source:?} is neither a source nor a dataset")
+                            })?
+                    };
+                    restandardise(&env, &source).await?
+                }
+                IngestCmd::Status { .. } => unreachable!("matched above"),
+            };
             print_json(&report)?;
         }
         Cmd::Ingest(IngestCmd::Status { json }) => {
-            ingest_status(&pool(g, PoolRole::Api).await?, json).await?
+            let implemented = find_registry(g.registry.as_deref())
+                .ok()
+                .and_then(|d| Registry::load(&d).ok())
+                .map(|r| implemented(&r))
+                .unwrap_or_default();
+            ingest_status(&pool(g, PoolRole::Api).await?, json, &implemented).await?
         }
         Cmd::Review(cmd) => {
             let pool = pool(g, PoolRole::Ingest).await?;
@@ -384,7 +421,7 @@ type AlertRow = (
     chrono::DateTime<chrono::Utc>,
 );
 
-async fn ingest_status(pool: &PgPool, json: bool) -> Result<()> {
+async fn ingest_status(pool: &PgPool, json: bool, implemented: &[String]) -> Result<()> {
     let ids: Vec<String> = sqlx::query_scalar("SELECT id FROM catalog.sources ORDER BY id")
         .fetch_all(pool)
         .await?;
@@ -420,7 +457,7 @@ async fn ingest_status(pool: &PgPool, json: bool) -> Result<()> {
                 || "-".to_owned(),
                 |t| t.format("%Y-%m-%d %H:%M").to_string()
             ),
-            if IMPLEMENTED.contains(&f.source_id.as_str()) {
+            if implemented.contains(&f.source_id) {
                 "yes"
             } else {
                 "-"

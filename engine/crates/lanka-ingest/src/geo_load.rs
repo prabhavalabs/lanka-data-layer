@@ -10,7 +10,6 @@
 //! Units that leave the reference set are retired (`valid_to`), never deleted.
 
 use std::collections::HashMap;
-use std::fmt::Write as _;
 
 use anyhow::{Result, bail, ensure};
 use lanka_core::Profile;
@@ -18,23 +17,11 @@ use lanka_core::dsv::{MultisetHash, dsv};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
-use crate::connector::{AdminUnitIn, BoundarySet, CrosswalkRow, Fetched};
+use crate::connector::{AdminUnitIn, BoundarySet, CrosswalkRow};
+use crate::copy_bin::BinCopy;
 use crate::publish::{
     Diff, PublishResult, boundary_schema, create_release, current_version, unit_row_bytes,
 };
-
-fn csv(out: &mut String, s: Option<&str>) {
-    if let Some(v) = s {
-        out.push('"');
-        for c in v.chars() {
-            if c == '"' {
-                out.push('"');
-            }
-            out.push(c);
-        }
-        out.push('"');
-    }
-}
 
 /// Ancestor codes (root → parent) for every unit, by walking parents.
 fn ancestors(units: &[AdminUnitIn], max_depth: usize) -> Result<HashMap<&str, Vec<&str>>> {
@@ -90,7 +77,7 @@ fn units_multiset(units: &[AdminUnitIn]) -> (MultisetHash, HashMap<&str, String>
     (m, geom_hash)
 }
 
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines, clippy::too_many_arguments)]
 pub async fn publish_admin_units(
     pool: &PgPool,
     profile: &Profile,
@@ -98,7 +85,8 @@ pub async fn publish_admin_units(
     dataset_id: &str,
     set: &BoundarySet,
     units: &[AdminUnitIn],
-    fetched: &[Fetched],
+    artifact_ids: &[i64],
+    extract_ids: &[i64],
 ) -> Result<PublishResult> {
     ensure!(!units.is_empty(), "no admin units parsed");
     let roots: Vec<&AdminUnitIn> = units.iter().filter(|u| u.level == 0).collect();
@@ -144,6 +132,7 @@ pub async fn publish_admin_units(
             data_version: None,
             rows: n,
             rows_written: 0,
+            rows_hashed: u64::try_from(units.len())?,
             diff: None,
             note: "boundaries identical to the published version".to_owned(),
         });
@@ -157,7 +146,7 @@ pub async fn publish_admin_units(
     )
     .bind(&set.id)
     .bind(&set.title)
-    .bind(fetched.first().map(|f| f.artifact_id))
+    .bind(artifact_ids.first().copied())
     .bind(&set.vintage)
     .bind(&set.notes)
     .bind(scheme)
@@ -177,52 +166,38 @@ pub async fn publish_admin_units(
     sqlx::query(
         "CREATE TEMP TABLE admin_stage (
             code text, level smallint, name_en text, name_si text, name_ta text, parent text,
-            anc text[], geom_sha256 text, artifact_id bigint, geojson text
+            anc text, geom_sha256 text, artifact_id bigint, geojson text
          ) ON COMMIT DROP",
     )
     .execute(&mut *tx)
     .await?;
     {
         let mut copy = tx
-            .copy_in_raw("COPY admin_stage FROM STDIN (FORMAT csv)")
+            .copy_in_raw("COPY admin_stage FROM STDIN (FORMAT binary)")
             .await?;
-        let mut buf = String::with_capacity(8 << 20);
+        let mut b = BinCopy::new();
         for u in units {
-            csv(&mut buf, Some(&u.pcode));
-            let _ = write!(buf, ",{},", u.level);
-            csv(&mut buf, Some(&u.name_en));
-            buf.push(',');
-            csv(&mut buf, u.name_si.as_deref());
-            buf.push(',');
-            csv(&mut buf, u.name_ta.as_deref());
-            buf.push(',');
-            csv(&mut buf, u.parent_pcode.as_deref());
-            buf.push(',');
             let a = anc
                 .get(u.pcode.as_str())
                 .map(Vec::as_slice)
                 .unwrap_or_default();
-            csv(&mut buf, Some(&format!("{{{}}}", a.join(","))));
-            buf.push(',');
-            csv(
-                &mut buf,
-                geom_hash.get(u.pcode.as_str()).map(String::as_str),
-            );
-            buf.push(',');
-            if let Some(f) = fetched.get(u.artifact) {
-                let _ = write!(buf, "{}", f.artifact_id);
-            }
-            buf.push(',');
-            csv(&mut buf, Some(u.geometry.get()));
-            buf.push('\n');
-            if buf.len() > (8 << 20) - (1 << 16) {
-                copy.send(buf.as_bytes()).await?;
-                buf.clear();
+            b.row(10);
+            b.text(Some(&u.pcode));
+            b.i16(u.level);
+            b.text(Some(&u.name_en));
+            b.text(u.name_si.as_deref());
+            b.text(u.name_ta.as_deref());
+            b.text(u.parent_pcode.as_deref());
+            b.text(Some(&a.join(",")));
+            b.text(geom_hash.get(u.pcode.as_str()).map(String::as_str));
+            b.opt_i64(artifact_ids.get(u.artifact).copied());
+            b.text(Some(u.geometry.get()));
+            if b.len() > 8 << 20 {
+                copy.send(b.take()).await?;
             }
         }
-        if !buf.is_empty() {
-            copy.send(buf.as_bytes()).await?;
-        }
+        b.finish();
+        copy.send(b.take()).await?;
         copy.finish().await?;
     }
 
@@ -262,7 +237,7 @@ pub async fn publish_admin_units(
     sqlx::query(
         "UPDATE geo.units u SET parent_key = x.parent_key, anc_keys = x.anc_keys, updated_at = now()
          FROM (SELECT s.code, p.key AS parent_key,
-                      ARRAY(SELECT a.key FROM unnest(s.anc) WITH ORDINALITY AS t(c, i)
+                      ARRAY(SELECT a.key FROM unnest(string_to_array(nullif(s.anc, ''), ',')) WITH ORDINALITY AS t(c, i)
                             JOIN geo.units a ON a.code = t.c ORDER BY t.i) AS anc_keys
                FROM admin_stage s LEFT JOIN geo.units p ON p.code = s.parent) x
          WHERE u.code = x.code
@@ -347,13 +322,20 @@ pub async fn publish_admin_units(
             .await?
         }
     };
-    let ids: Vec<i64> = fetched.iter().map(|f| f.artifact_id).collect();
     sqlx::query(
         "INSERT INTO data.dataset_version_artifacts (version_id, artifact_id) SELECT $1, unnest($2::bigint[])
          ON CONFLICT DO NOTHING",
     )
     .bind(version_id)
-    .bind(&ids)
+    .bind(artifact_ids)
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query(
+        "INSERT INTO data.dataset_version_extracts (version_id, extract_id) SELECT $1, unnest($2::bigint[])
+         ON CONFLICT DO NOTHING",
+    )
+    .bind(version_id)
+    .bind(extract_ids)
     .execute(&mut *tx)
     .await?;
     let diff = current.as_ref().map(|_| Diff {
@@ -384,6 +366,7 @@ pub async fn publish_admin_units(
         data_version: Some(dv),
         rows: n,
         rows_written: added + changed,
+        rows_hashed: u64::try_from(units.len())?,
         diff,
         note: format!("{n} units in boundary set {}", set.id),
     })

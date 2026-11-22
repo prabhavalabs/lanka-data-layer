@@ -9,6 +9,11 @@ publish.workspace = true
 
 [dependencies]
 lanka-core.workspace = true
+lanka-store.workspace = true
+async-trait.workspace = true
+arrow-array.workspace = true
+arrow-schema.workspace = true
+parquet.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
@@ -30,3 +35,4 @@ tracing.workspace = true
 workspace = true
 
 [dev-dependencies]
+proptest.workspace = true

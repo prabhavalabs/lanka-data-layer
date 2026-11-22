@@ -3,28 +3,35 @@
 //!
 //! Row-level provenance: every value carries its workbook table, sheet and
 //! A1 cell address plus the verbatim cell value, and points at the archived
-//! XLSX (sha256). Parsing rules are ported from `foundry/src/lib/census.ts`
+//! XLSX (sha256). `extract` reads every string/number cell of each workbook's
+//! first sheet into a `cells` extract (table = A5/A6/A7, A1 address,
+//! verbatim text); `standardise` rebuilds the data rows from those cells.
+//! Parsing rules are ported from `foundry/src/lib/census.ts`
 //! and `foundry/src/steps/census.ts` (v1): column B holds a trilingual name
 //! ("si\nta\nen"), values start at column C; rows run in document order —
 //! country, then each "<Name> District" followed by its DS divisions. The
 //! tables' own additivity is enforced, so silent layout drift fails loudly.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::io::Cursor;
 
 use anyhow::{Context, Result, bail, ensure};
+use async_trait::async_trait;
 use calamine::{Data, Reader, Xlsx};
-use futures::FutureExt;
-use futures::future::BoxFuture;
 use serde_json::json;
 
 use lanka_core::{Basis, Flags, Method, Status};
 
 use crate::connector::{
-    Candidate, Connector, CrosswalkRow, Ctx, Fetched, ObsRow, Output, dims_key,
+    Candidate, CellProv, Connector, CrosswalkRow, DiscoverCtx, Discovery, ExtractCtx, Fetched,
+    ObsRow, OutputHeader, OutputKind, OutputSink, StdCtx, UnitRef, dims_key,
 };
+use crate::extract::{Cell, CellType, ExtractOut, ExtractRef};
 
 pub struct DcsCensus2024;
+
+/// Connector version (part of every extract and run record).
+pub const VERSION: &str = "2.0.0";
 
 const SOURCE: &str = "dcs-census-2024";
 const DS_POPULATION: &str = "dcs-census-2024-population";
@@ -109,6 +116,8 @@ pub struct SheetRow {
     pub row: u32,
     pub values: Vec<f64>,
     pub verbatim: Vec<String>,
+    /// Extract row of each value cell.
+    pub cells: Vec<u32>,
 }
 
 /// Excel column letters for a 0-based column index.
@@ -126,27 +135,37 @@ pub fn col_letters(mut c: u32) -> String {
     String::from_utf8(s).unwrap_or_default()
 }
 
-fn num(d: &Data) -> Option<(f64, String)> {
+/// Verbatim text and type of a workbook cell (`None` for empty, boolean,
+/// date and error cells — none of which can be a value or a name).
+fn cell_text(d: &Data) -> Option<(String, CellType)> {
     match d {
-        Data::Int(i) => Some((*i as f64, i.to_string())),
+        Data::Int(i) => Some((i.to_string(), CellType::Number)),
         Data::Float(f) => {
             let v = if f.fract() == 0.0 && f.abs() < 1e15 {
                 format!("{f:.0}")
             } else {
                 f.to_string()
             };
-            Some((*f, v))
+            Some((v, CellType::Number))
         }
-        Data::String(s) => {
-            let t = s.trim().replace(',', "");
-            t.parse::<f64>().ok().map(|v| (v, s.trim().to_owned()))
-        }
+        Data::String(s) => Some((s.clone(), CellType::String)),
         _ => None,
     }
 }
 
-/// Extracts the data rows of one sheet (port of `parseCensusSheet`).
-pub fn parse_sheet(bytes: &[u8], value_count: usize) -> Result<(String, Vec<SheetRow>)> {
+/// Value and verbatim token of a cell ("1,234" strings count as numbers).
+fn num(c: &Cell) -> Option<(f64, String)> {
+    match c.vtype {
+        CellType::Number => c.text.parse::<f64>().ok().map(|v| (v, c.text.clone())),
+        CellType::String => {
+            let t = c.text.trim().replace(',', "");
+            t.parse::<f64>().ok().map(|v| (v, c.text.trim().to_owned()))
+        }
+    }
+}
+
+/// Extracts every string/number cell of the workbook's first sheet.
+pub fn extract_cells(bytes: &[u8], table: &str, artifact_idx: u32) -> Result<Vec<Cell>> {
     let mut wb: Xlsx<_> =
         calamine::open_workbook_from_rs(Cursor::new(bytes)).context("opening XLSX")?;
     let (sheet, range) = wb
@@ -155,24 +174,63 @@ pub fn parse_sheet(bytes: &[u8], value_count: usize) -> Result<(String, Vec<Shee
         .next()
         .context("workbook has no sheets")?;
     let (r0, c0) = range.start().context("empty sheet")?;
-    fn cell(row: &[Data], c0: u32, abs_col: u32) -> &Data {
-        static EMPTY: Data = Data::Empty;
-        abs_col
-            .checked_sub(c0)
-            .and_then(|i| row.get(i as usize))
-            .unwrap_or(&EMPTY)
-    }
-    let (col_b, col_c) = (1u32, 2u32);
     let mut out = Vec::new();
     for (i, row) in range.rows().enumerate() {
-        let abs_row = r0 + u32::try_from(i)?;
-        let Data::String(name) = cell(row, c0, col_b) else {
+        let r = r0 + u32::try_from(i)?;
+        for (j, d) in row.iter().enumerate() {
+            let c = c0 + u32::try_from(j)?;
+            let Some((text, vtype)) = cell_text(d) else {
+                continue;
+            };
+            out.push(Cell {
+                table_id: table.to_owned(),
+                r,
+                c,
+                text,
+                vtype,
+                page: None,
+                bbox: None,
+                sheet: Some(sheet.clone()),
+                a1: Some(format!("{}{}", col_letters(c), r + 1)),
+                row_header: None,
+                col_header: None,
+                artifact_idx,
+                conf: None,
+                reader: "calamine".to_owned(),
+            });
+        }
+    }
+    Ok(out)
+}
+
+/// Rebuilds the data rows of one table from its cells (port of
+/// `parseCensusSheet`): column B holds the name, values start at column C.
+/// `cells` yields (extract row, cell) pairs of one table.
+pub fn sheet_rows<'a>(
+    cells: impl Iterator<Item = (u32, &'a Cell)>,
+    value_count: usize,
+) -> Result<(String, Vec<SheetRow>)> {
+    let mut by_row: BTreeMap<u32, BTreeMap<u32, (u32, &Cell)>> = BTreeMap::new();
+    let mut sheet = None;
+    for (idx, c) in cells {
+        sheet = sheet.or_else(|| c.sheet.clone());
+        by_row.entry(c.r).or_default().insert(c.c, (idx, c));
+    }
+    let sheet = sheet.context("table has no cells")?;
+    let (col_b, col_c) = (1u32, 2u32);
+    let mut out = Vec::new();
+    for (abs_row, cols) in &by_row {
+        let Some((_, name)) = cols
+            .get(&col_b)
+            .filter(|(_, c)| c.vtype == CellType::String)
+        else {
             continue;
         };
-        if name.trim().is_empty() || num(cell(row, c0, col_c)).is_none() {
+        if name.text.trim().is_empty() || cols.get(&col_c).and_then(|(_, c)| num(c)).is_none() {
             continue; // titles, headers, spacers
         }
         let name_en = name
+            .text
             .split('\n')
             .map(str::trim)
             .rfind(|l| !l.is_empty())
@@ -180,9 +238,11 @@ pub fn parse_sheet(bytes: &[u8], value_count: usize) -> Result<(String, Vec<Shee
             .to_owned();
         let mut values = Vec::with_capacity(value_count);
         let mut verbatim = Vec::with_capacity(value_count);
+        let mut cell_idx = Vec::with_capacity(value_count);
         for k in 0..value_count {
             let col = col_c + u32::try_from(k)?;
-            let Some((v, raw)) = num(cell(row, c0, col)) else {
+            let Some(((v, raw), idx)) = cols.get(&col).and_then(|(i, c)| num(c).map(|n| (n, *i)))
+            else {
                 bail!(
                     "row {:?} has a non-numeric value at {}{} (layout change?)",
                     name_en,
@@ -192,6 +252,7 @@ pub fn parse_sheet(bytes: &[u8], value_count: usize) -> Result<(String, Vec<Shee
             };
             values.push(v);
             verbatim.push(raw);
+            cell_idx.push(idx);
         }
         let kind = if name_en.contains("Sri Lanka") {
             Kind::Country
@@ -208,12 +269,25 @@ pub fn parse_sheet(bytes: &[u8], value_count: usize) -> Result<(String, Vec<Shee
         out.push(SheetRow {
             kind,
             name_en,
-            row: abs_row,
+            row: *abs_row,
             values,
             verbatim,
+            cells: cell_idx,
         });
     }
     Ok((sheet, out))
+}
+
+/// Extract + rebuild in one step (tests, `connector test`).
+pub fn parse_sheet(bytes: &[u8], value_count: usize) -> Result<(String, Vec<SheetRow>)> {
+    let cells = extract_cells(bytes, "t", 0)?;
+    sheet_rows(
+        cells
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (u32::try_from(i).unwrap_or(u32::MAX), c)),
+        value_count,
+    )
 }
 
 /// Lowercase, keep only ASCII letters/digits ("Ja-Ela" == "Ja Ela").
@@ -254,10 +328,16 @@ impl Match {
 }
 
 impl NameIndex {
-    pub fn new(units: &[(String, i16, String, Option<String>)], aliases_csv: &str) -> Result<Self> {
+    pub fn new(units: &[UnitRef], aliases_csv: &str) -> Result<Self> {
         let mut districts = HashMap::new();
         let mut ds: HashMap<String, HashMap<String, String>> = HashMap::new();
-        for (pcode, level, name, parent) in units {
+        for UnitRef {
+            code: pcode,
+            level,
+            name_en: name,
+            parent,
+        } in units
+        {
             match level {
                 2 => {
                     districts.insert(normalize(name.trim_end_matches(" District")), pcode.clone());
@@ -422,14 +502,19 @@ fn resolve(
     Ok((resolved, unmatched))
 }
 
+#[async_trait]
 impl Connector for DcsCensus2024 {
-    fn source_id(&self) -> &'static str {
+    fn source_id(&self) -> &str {
         SOURCE
     }
 
-    fn discover<'a>(&'a self, ctx: &'a Ctx<'a>) -> BoxFuture<'a, Result<Vec<Candidate>>> {
-        async move {
-            Ok(TABLES
+    fn version(&self) -> &str {
+        VERSION
+    }
+
+    async fn discover(&self, ctx: &DiscoverCtx<'_>) -> Result<Discovery> {
+        Ok(Discovery {
+            candidates: TABLES
                 .iter()
                 .map(|(t, _, _)| {
                     let local = ctx.opts.from_dir.as_ref().map(|d| {
@@ -448,135 +533,186 @@ impl Connector for DcsCensus2024 {
                                 .to_owned(),
                         ),
                         edition: Some("CPH 2024 final report".to_owned()),
+                        ..Candidate::default()
                     }
                 })
-                .collect())
-        }
-        .boxed()
+                .collect(),
+            // One-off final report: local files are fingerprinted by the
+            // pipeline; remote ones are always fetched (sha256 then decides).
+            fingerprint: None,
+        })
     }
 
-    fn parse<'a>(
-        &'a self,
-        ctx: &'a Ctx<'a>,
-        fetched: &'a [Fetched],
-    ) -> BoxFuture<'a, Result<Vec<Output>>> {
-        async move {
-            let units: Vec<(String, i16, String, Option<String>)> = sqlx::query_as(
-                "SELECT pcode, level, name_en, parent_pcode FROM geo.admin_units WHERE level IN (2, 3)",
-            )
-            .fetch_all(ctx.pool)
-            .await?;
-            ensure!(!units.is_empty(), "no ADM2/ADM3 units in geo.admin_units — run `lanka ingest run cod-ab-lka` first");
-            let alias_path = ctx.registry.root.join("crosswalks/ds-name-aliases.csv");
-            let aliases = std::fs::read_to_string(&alias_path)
-                .with_context(|| format!("reading {}", alias_path.display()))?;
-            let idx = NameIndex::new(&units, &aliases)?;
-
-            let mut rows: HashMap<&str, Vec<ObsRow>> = HashMap::new();
-            let mut xw: Vec<CrosswalkRow> = Vec::new();
-            let mut totals: HashMap<&str, HashMap<String, f64>> = HashMap::new();
-            for (t, dataset, cols) in TABLES {
-                let out = rows.entry(*dataset).or_default();
-                let (ai, f) = fetched
-                    .iter()
-                    .enumerate()
-                    .find(|(_, f)| f.key == *t)
-                    .with_context(|| format!("table {t} was not fetched"))?;
-                let (sheet, sheet_rows) = parse_sheet(&f.bytes, cols.len()).with_context(|| format!("table {t}"))?;
-                let (resolved, unmatched) =
-                    resolve(t, ctx.profile.admin.root(), sheet_rows, &idx, &mut xw)?;
-                ensure!(
-                    unmatched.len() <= MAX_UNMATCHED_DS,
-                    "{t}: {} unmatched DS divisions (max {MAX_UNMATCHED_DS}): {:?}",
-                    unmatched.len(),
-                    unmatched
-                );
-                for (d, name, total) in &unmatched {
-                    ctx.run
-                        .warn(
-                            crate::run::Stage::Parse,
-                            &format!("{t}: DS row {name:?} in {d} has no COD-AB ADM3 (population {total}) — not keyed"),
-                            None,
-                        )
-                        .await;
-                }
-                let tot = totals.entry(t).or_default();
-                for r in resolved {
-                    tot.insert(r.pcode.clone(), r.row.values[0]);
-                    for (k, (indicator, dims, label)) in cols.iter().enumerate() {
-                        if indicator.is_empty() {
-                            continue; // grand total column of A6/A7: checked, not stored twice
-                        }
-                        let col = 2 + u32::try_from(k)?;
-                        out.push(ObsRow {
-                            indicator_id: (*indicator).to_owned(),
-                            geo_code: r.pcode.clone(),
-                            period: PERIOD.to_owned(),
-                            dims: dims_key(dims),
-                            value: Some(r.row.values[k]),
-                            lo: None,
-                            hi: None,
-                            basis: Basis::Reported,
-                            status: Status::Normal,
-                            flags: Flags::EMPTY,
-                            artifact: ai,
-                            locator: json!({
-                                "table": t, "sheet": sheet,
-                                "cell": format!("{}{}", col_letters(col), r.row.row + 1),
-                                "row": r.row.name_en, "column": label,
-                            }),
-                            verbatim: Some(r.row.verbatim[k].clone()),
-                            method: Method::SheetCell,
-                            confidence: Some(1.0),
-                        });
-                    }
-                    if *t == "A5" && r.row.values[2] > 0.0 {
-                        // Declared derived indicator: males per 100 females.
-                        let (m, f) = (r.row.values[1], r.row.values[2]);
-                        out.push(ObsRow {
-                            indicator_id: SEX_RATIO.to_owned(),
-                            geo_code: r.pcode.clone(),
-                            period: PERIOD.to_owned(),
-                            dims: String::new(),
-                            value: Some((100.0 * m / f * 1e4).round() / 1e4),
-                            lo: None,
-                            hi: None,
-                            basis: Basis::Computed,
-                            status: Status::Normal,
-                            flags: Flags::EMPTY,
-                            artifact: ai,
-                            locator: json!({
-                                "table": t, "sheet": sheet, "formula": "100 * male / female",
-                                "inputs": [format!("D{}", r.row.row + 1), format!("E{}", r.row.row + 1)],
-                                "row": r.row.name_en,
-                            }),
-                            verbatim: None,
-                            method: Method::Derived,
-                            confidence: Some(1.0),
-                        });
-                    }
-                }
-            }
-            // The three tables publish one enumeration: totals must agree.
-            let a5 = totals.get("A5").context("A5 missing")?;
-            for t in ["A6", "A7"] {
-                for (p, v) in totals.get(t).with_context(|| format!("{t} missing"))? {
-                    ensure!(a5.get(p) == Some(v), "{t} total for {p} ({v}) disagrees with A5 ({:?})", a5.get(p));
-                }
-            }
-            xw.sort_by(|a, b| (&a.from_code, &a.to_code).cmp(&(&b.from_code, &b.to_code)));
-            xw.dedup_by(|a, b| a.from_code == b.from_code && a.to_code == b.to_code);
-            let mut outputs = vec![Output::Crosswalks { source_id: SOURCE.to_owned(), rows: xw }];
-            for dataset in [DS_POPULATION, DS_ETH_REL] {
-                outputs.push(Output::Observations {
-                    dataset_id: dataset.to_owned(),
-                    vintage: Some("CPH 2024 final report".to_owned()),
-                    rows: rows.remove(dataset).unwrap_or_default(),
-                });
-            }
-            Ok(outputs)
+    async fn extract(&self, _ctx: &ExtractCtx<'_>, fetched: &[Fetched]) -> Result<Vec<ExtractOut>> {
+        let mut cells = Vec::new();
+        for (t, _, _) in TABLES {
+            let (ai, f) = fetched
+                .iter()
+                .enumerate()
+                .find(|(_, f)| f.key == *t)
+                .with_context(|| format!("table {t} was not fetched"))?;
+            cells.extend(
+                extract_cells(&f.read()?, t, u32::try_from(ai)?)
+                    .with_context(|| format!("table {t}"))?,
+            );
         }
-        .boxed()
+        Ok(vec![ExtractOut::Cells(cells)])
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn standardise(
+        &self,
+        ctx: &StdCtx<'_>,
+        extracts: &[ExtractRef],
+        sink: &mut dyn OutputSink,
+    ) -> Result<()> {
+        let x = extracts.first().context("no extract")?;
+        let units: Vec<UnitRef> = ctx
+            .lookup
+            .units
+            .iter()
+            .filter(|u| matches!(u.level, 2 | 3))
+            .cloned()
+            .collect();
+        ensure!(
+            !units.is_empty(),
+            "no ADM2/ADM3 units in geo.units — run `lanka ingest run hdx-cod-ab-lka` first"
+        );
+        let alias_path = ctx.registry.root.join("crosswalks/ds-name-aliases.csv");
+        let aliases = std::fs::read_to_string(&alias_path)
+            .with_context(|| format!("reading {}", alias_path.display()))?;
+        let idx = NameIndex::new(&units, &aliases)?;
+        let cells = x.data.cells();
+
+        let mut rows: HashMap<&str, Vec<ObsRow>> = HashMap::new();
+        let mut xw: Vec<CrosswalkRow> = Vec::new();
+        let mut totals: HashMap<&str, HashMap<String, f64>> = HashMap::new();
+        for (t, dataset, cols) in TABLES {
+            let out = rows.entry(*dataset).or_default();
+            let table_cells = cells
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.table_id == *t)
+                .map(|(i, c)| (u32::try_from(i).unwrap_or(u32::MAX), c));
+            let ai = cells
+                .iter()
+                .find(|c| c.table_id == *t)
+                .map(|c| c.artifact_idx as usize)
+                .with_context(|| format!("table {t} is not in the extract"))?;
+            let (sheet, sheet_rows) =
+                sheet_rows(table_cells, cols.len()).with_context(|| format!("table {t}"))?;
+            let (resolved, unmatched) =
+                resolve(t, ctx.profile.admin.root(), sheet_rows, &idx, &mut xw)?;
+            ensure!(
+                unmatched.len() <= MAX_UNMATCHED_DS,
+                "{t}: {} unmatched DS divisions (max {MAX_UNMATCHED_DS}): {:?}",
+                unmatched.len(),
+                unmatched
+            );
+            for (d, name, total) in &unmatched {
+                ctx.warn(format!(
+                    "{t}: DS row {name:?} in {d} has no COD-AB ADM3 (population {total}) — not keyed"
+                ));
+            }
+            let tot = totals.entry(t).or_default();
+            for r in resolved {
+                tot.insert(r.pcode.clone(), r.row.values[0]);
+                for (k, (indicator, dims, label)) in cols.iter().enumerate() {
+                    if indicator.is_empty() {
+                        continue; // grand total column of A6/A7: checked, not stored twice
+                    }
+                    let col = 2 + u32::try_from(k)?;
+                    out.push(ObsRow {
+                        indicator_id: (*indicator).to_owned(),
+                        geo_code: r.pcode.clone(),
+                        period: PERIOD.to_owned(),
+                        dims: dims_key(dims),
+                        value: Some(r.row.values[k]),
+                        lo: None,
+                        hi: None,
+                        basis: Basis::Reported,
+                        status: Status::Normal,
+                        flags: Flags::EMPTY,
+                        artifact: ai,
+                        prov: Some(CellProv {
+                            extract: 0,
+                            row: r.row.cells[k],
+                        }),
+                        locator: json!({
+                            "table": t, "sheet": sheet,
+                            "cell": format!("{}{}", col_letters(col), r.row.row + 1),
+                            "row": r.row.name_en, "column": label,
+                        }),
+                        verbatim: Some(r.row.verbatim[k].clone()),
+                        method: Method::SheetCell,
+                        confidence: Some(1.0),
+                    });
+                }
+                if *t == "A5" && r.row.values[2] > 0.0 {
+                    // Declared derived indicator: males per 100 females.
+                    let (m, f) = (r.row.values[1], r.row.values[2]);
+                    out.push(ObsRow {
+                        indicator_id: SEX_RATIO.to_owned(),
+                        geo_code: r.pcode.clone(),
+                        period: PERIOD.to_owned(),
+                        dims: String::new(),
+                        value: Some((100.0 * m / f * 1e4).round() / 1e4),
+                        lo: None,
+                        hi: None,
+                        basis: Basis::Computed,
+                        status: Status::Normal,
+                        flags: Flags::EMPTY,
+                        artifact: ai,
+                        prov: Some(CellProv {
+                            extract: 0,
+                            row: r.row.cells[1],
+                        }),
+                        locator: json!({
+                            "table": t, "sheet": sheet, "formula": "100 * male / female",
+                            "inputs": [format!("D{}", r.row.row + 1), format!("E{}", r.row.row + 1)],
+                            "row": r.row.name_en,
+                        }),
+                        verbatim: None,
+                        method: Method::Derived,
+                        confidence: Some(1.0),
+                    });
+                }
+            }
+        }
+        // The three tables publish one enumeration: totals must agree.
+        let a5 = totals.get("A5").context("A5 missing")?;
+        for t in ["A6", "A7"] {
+            for (p, v) in totals.get(t).with_context(|| format!("{t} missing"))? {
+                ensure!(
+                    a5.get(p) == Some(v),
+                    "{t} total for {p} ({v}) disagrees with A5 ({:?})",
+                    a5.get(p)
+                );
+            }
+        }
+        xw.sort_by(|a, b| (&a.from_code, &a.to_code).cmp(&(&b.from_code, &b.to_code)));
+        xw.dedup_by(|a, b| a.from_code == b.from_code && a.to_code == b.to_code);
+        sink.begin(OutputHeader {
+            dataset_id: SOURCE.to_owned(),
+            kind: OutputKind::Crosswalks,
+            vintage: None,
+        })?;
+        for r in xw {
+            sink.crosswalk(r)?;
+        }
+        sink.end()?;
+        for dataset in [DS_POPULATION, DS_ETH_REL] {
+            sink.begin(OutputHeader {
+                dataset_id: dataset.to_owned(),
+                kind: OutputKind::Observations,
+                vintage: Some("CPH 2024 final report".to_owned()),
+            })?;
+            for r in rows.remove(dataset).unwrap_or_default() {
+                sink.obs(r)?;
+            }
+            sink.end()?;
+        }
+        Ok(())
     }
 }
 
@@ -595,31 +731,17 @@ mod tests {
 
     #[test]
     fn names_normalise_and_alias() {
+        let u = |code: &str, level, name: &str, parent: &str| UnitRef {
+            code: code.into(),
+            level,
+            name_en: name.into(),
+            parent: Some(parent.into()),
+        };
         let units = vec![
-            (
-                "LK11".to_owned(),
-                2,
-                "Colombo District".to_owned(),
-                Some("LK1".to_owned()),
-            ),
-            (
-                "LK13".to_owned(),
-                2,
-                "Kalutara District".to_owned(),
-                Some("LK1".to_owned()),
-            ),
-            (
-                "LK1103".to_owned(),
-                3,
-                "Colombo".to_owned(),
-                Some("LK11".to_owned()),
-            ),
-            (
-                "LK1336".to_owned(),
-                3,
-                "Matugama".to_owned(),
-                Some("LK13".to_owned()),
-            ),
+            u("LK11", 2, "Colombo District", "LK1"),
+            u("LK13", 2, "Kalutara District", "LK1"),
+            u("LK1103", 3, "Colombo", "LK11"),
+            u("LK1336", 3, "Matugama", "LK13"),
         ];
         let idx = NameIndex::new(
             &units,

@@ -21,6 +21,8 @@ pub enum Stage {
     Discover,
     Fetch,
     Archive,
+    Extract,
+    Standardise,
     Parse,
     Validate,
     Stage,
@@ -36,6 +38,8 @@ impl Stage {
             Self::Discover => "discover",
             Self::Fetch => "fetch",
             Self::Archive => "archive",
+            Self::Extract => "extract",
+            Self::Standardise => "standardise",
             Self::Parse => "parse",
             Self::Validate => "validate",
             Self::Stage => "stage",
@@ -234,6 +238,27 @@ impl RunTracker {
         .bind(artifacts)
         .bind(rows_parsed)
         .bind(rows_written)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Records the change-detection keys of the run (compared against the
+    /// last successful run of the source by the next one).
+    pub async fn set_change_keys(
+        &self,
+        connector_version: &str,
+        fingerprint: Option<[u8; 32]>,
+        input_hash: Option<[u8; 32]>,
+    ) -> Result<()> {
+        sqlx::query(
+            "UPDATE ops.ingestion_runs SET connector_version = $2, fingerprint = $3, input_hash = $4
+             WHERE id = $1",
+        )
+        .bind(self.run_id)
+        .bind(connector_version)
+        .bind(fingerprint.as_ref().map(<[u8; 32]>::as_slice))
+        .bind(input_hash.as_ref().map(<[u8; 32]>::as_slice))
         .execute(&self.pool)
         .await?;
         Ok(())

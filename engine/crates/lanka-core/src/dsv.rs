@@ -7,6 +7,11 @@
 //!                 ␟ basis ␟ status ␟ flags ␟ verbatim ␟ canonical_json(locator)
 //! ```
 //!
+//! `status` enters the hash as the *source* stated it: `revised` is assigned
+//! by the pipeline from history (a changed value for a key), so it hashes as
+//! `normal` ([`hashed_status`]) — otherwise the same content reached through
+//! different histories would get different dsvs.
+//!
 //! The sum is order-independent, incremental (add new rows, subtract
 //! removed ones) and path-independent, and uses codes, never surrogate
 //! keys, so a re-imported database yields identical dsvs. It detects change
@@ -36,6 +41,16 @@ pub struct CanonicalRow<'a> {
     pub flags: Flags,
     pub verbatim: Option<&'a str>,
     pub locator: Option<&'a serde_json::Value>,
+}
+
+/// The status as it enters the canonical row: `revised` is derived from
+/// version history by the pipeline and hashes as `normal`.
+#[must_use]
+pub const fn hashed_status(s: Status) -> Status {
+    match s {
+        Status::Revised => Status::Normal,
+        other => other,
+    }
 }
 
 /// Shortest round-trip float text (ryu); empty for NULL. `-0.0` → `0.0` so
@@ -101,7 +116,7 @@ impl CanonicalRow<'_> {
             &fmt_float(self.lo),
             &fmt_float(self.hi),
             self.basis.as_str(),
-            self.status.as_str(),
+            hashed_status(self.status).as_str(),
             &self.flags.bits().to_string(),
             self.verbatim.unwrap_or_default(),
             &self.locator.map(canonical_json).unwrap_or_default(),
@@ -273,6 +288,15 @@ mod tests {
         assert_eq!(m, MultisetHash([0xff; 32]));
 
         assert_ne!(row("G1", 1.0).hash(), row("G1", 1.5).hash());
+        let revised = CanonicalRow {
+            status: Status::Revised,
+            ..row("G1", 1.0)
+        };
+        assert_eq!(
+            revised.hash(),
+            row("G1", 1.0).hash(),
+            "revised hashes as normal"
+        );
         let s = schema_hash(vec!["b".into(), "a".into()]);
         assert_eq!(s, schema_hash(vec!["a".into(), "b".into()]));
         let d = dsv(&s, &fwd, 500);

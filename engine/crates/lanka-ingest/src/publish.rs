@@ -10,11 +10,17 @@
 //! UPDATE the table ever sees. Rejecting *n* deletes its rows and closes.
 //!
 //! The dsv is `dsv(schema_hash, multiset_hash, rows)` over canonical rows
-//! (lanka-core `dsv`), so it is order- and path-independent and a re-run
-//! with identical content is `unchanged` without writing anything.
+//! (lanka-core `dsv`), so it is order- and path-independent. It is computed
+//! incrementally: the released version's multiset plus the hashes of new or
+//! rewritten rows minus those of the rows they close, so only the delta is
+//! hashed and an identical re-run hashes and writes nothing.
+//!
+//! Revisions: a row whose value differs from the released row of the same
+//! key is stored with `status = revised` unless the source states another
+//! status (02 §5). `revised` is derived from history, so it hashes as
+//! `normal` and the dsv stays a function of the delivered content only.
 
 use std::collections::{BTreeSet, HashMap};
-use std::fmt::Write as _;
 
 use anyhow::{Context, Result, bail, ensure};
 use lanka_core::dims::Dims;
@@ -27,7 +33,8 @@ use serde::Serialize;
 use serde_json::json;
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
 
-use crate::connector::{Fetched, ObsRow};
+use crate::connector::ObsRow;
+use crate::copy_bin::BinCopy;
 use crate::registry::Registry;
 
 /// Class-A auto-publish gates (design doc §4.4). Exceeding one demotes the
@@ -61,6 +68,8 @@ pub struct PublishResult {
     pub rows: i64,
     /// Rows physically written for this version (new or changed only).
     pub rows_written: i64,
+    /// Canonical rows hashed to compute the dsv (the delta, not the dataset).
+    pub rows_hashed: u64,
     pub diff: Option<Diff>,
     pub note: String,
 }
@@ -247,6 +256,13 @@ pub async fn validate(
                 at()
             ));
         }
+        if r.status == Status::Revised {
+            problems.push(format!(
+                "{}: status revised is assigned by the pipeline from version history; \
+                 deliver the source status",
+                at()
+            ));
+        }
         if r.status.requires_null() && r.value.is_some() {
             problems.push(format!(
                 "{}: status {} requires a null value",
@@ -390,90 +406,68 @@ fn canonical(r: &ObsRow) -> CanonicalRow<'_> {
 
 // ───────────────────────────── staging ─────────────────────────────────────
 
-fn csv_field(out: &mut String, s: Option<&str>) {
-    match s {
-        None => {}
-        Some(v) => {
-            out.push('"');
-            for c in v.chars() {
-                if c == '"' {
-                    out.push('"');
-                }
-                out.push(c);
-            }
-            out.push('"');
-        }
-    }
-}
+/// Bytes per binary-COPY chunk sent to the server.
+const COPY_CHUNK: usize = 4 << 20;
 
-fn csv_num<T: std::fmt::Display>(out: &mut String, v: Option<T>) {
-    if let Some(v) = v {
-        let _ = write!(out, "{v}");
-    }
-}
-
-/// COPYs the prepared rows into a session temp table (`obs_stage`).
+/// Binary-COPYs the prepared rows into a session temp table (`obs_stage`).
+/// Temp tables are never WAL-logged and vanish at commit (05 §2.1's
+/// `stage.*` unlogged tables, per session).
+#[allow(clippy::too_many_arguments)]
 async fn copy_stage(
     conn: &mut PgConnection,
     rows: &[ObsRow],
     prep: &[Prepared],
     dims_keys: &HashMap<String, i32>,
-    fetched: &[Fetched],
+    artifact_ids: &[i64],
+    extract_ids: &[i64],
     review: Review,
 ) -> Result<u64> {
     sqlx::query(
         "CREATE TEMP TABLE obs_stage (
             rn int8, indicator_key int4, geo_key int4, dims_key int4, freq \"char\", time_start date,
             geo_level int2, value float8, lo float8, hi float8, basis int2, status int2, flags int4,
-            artifact_id int8, locator jsonb, verbatim text, method int2, confidence real, review int2
+            artifact_id int8, extract_id int8, extract_row int4, locator jsonb, verbatim text,
+            method int2, confidence real, review int2
          ) ON COMMIT DROP",
     )
     .execute(&mut *conn)
     .await?;
     let mut copy = conn
-        .copy_in_raw("COPY obs_stage FROM STDIN (FORMAT csv)")
+        .copy_in_raw("COPY obs_stage FROM STDIN (FORMAT binary)")
         .await?;
-    let mut buf = String::with_capacity(1 << 20);
+    let mut b = BinCopy::new();
     for (n, (r, p)) in rows.iter().zip(prep).enumerate() {
-        let dims_key = dims_keys[&p.dims.canonical()];
-        let _ = write!(
-            buf,
-            "{n},{},{},{dims_key},{},{},{},",
-            p.indicator_key,
-            p.geo_key,
-            p.period.freq.as_char(),
-            p.period.start,
-            p.geo_level
-        );
-        csv_num(&mut buf, r.value);
-        buf.push(',');
-        csv_num(&mut buf, r.lo);
-        buf.push(',');
-        csv_num(&mut buf, r.hi);
-        let _ = write!(
-            buf,
-            ",{},{},{},",
-            r.basis.code(),
-            r.status.code(),
-            r.flags.to_db()
-        );
-        csv_num(&mut buf, fetched.get(r.artifact).map(|f| f.artifact_id));
-        buf.push(',');
-        csv_field(&mut buf, Some(&r.locator.to_string()));
-        buf.push(',');
-        csv_field(&mut buf, r.verbatim.as_deref());
-        let _ = write!(buf, ",{},", r.method.code());
-        csv_num(&mut buf, r.confidence);
-        let _ = writeln!(buf, ",{}", review.code());
-        if buf.len() > (1 << 20) - 4096 {
-            copy.send(buf.as_bytes()).await?;
-            buf.clear();
+        b.row(21);
+        b.i64(i64::try_from(n)?);
+        b.i32(p.indicator_key);
+        b.i32(p.geo_key);
+        b.i32(dims_keys[&p.dims.canonical()]);
+        b.char1(p.period.freq.as_char() as u8);
+        b.date(p.period.start);
+        b.i16(p.geo_level);
+        b.f64(r.value);
+        b.f64(r.lo);
+        b.f64(r.hi);
+        b.i16(r.basis.code());
+        b.i16(r.status.code());
+        b.i32(r.flags.to_db());
+        b.opt_i64(artifact_ids.get(r.artifact).copied());
+        b.opt_i64(r.prov.and_then(|p| extract_ids.get(p.extract).copied()));
+        b.opt_i32(r.prov.map(|p| i32::try_from(p.row).unwrap_or(i32::MAX)));
+        b.jsonb(&r.locator.to_string());
+        b.text(r.verbatim.as_deref());
+        b.i16(r.method.code());
+        b.f32(r.confidence);
+        b.i16(review.code());
+        if b.len() >= COPY_CHUNK {
+            copy.send(b.take()).await?;
         }
     }
-    if !buf.is_empty() {
-        copy.send(buf.as_bytes()).await?;
-    }
-    Ok(copy.finish().await?)
+    b.finish();
+    copy.send(b.take()).await?;
+    let n = copy.finish().await?;
+    sqlx::query("ANALYZE obs_stage").execute(&mut *conn).await?;
+    Ok(n)
 }
 
 /// Interns dims combinations; returns canonical text → key.
@@ -499,50 +493,134 @@ async fn intern_dims(conn: &mut PgConnection, prep: &[Prepared]) -> Result<HashM
     Ok(rows.into_iter().collect())
 }
 
-/// Set-based diff of `obs_stage` against the rows open at `cur_seq`, insert
-/// of new/changed rows as version `seq`, provenance, and the close list.
-async fn stage_diff(
+/// Classifies every staged row against the rows open at `cur_seq` (the
+/// released version) — `a`dded, `c`hanged (value/interval/basis/status/
+/// flags), `r`estated (same values, new locator or verbatim), `s`ame — and
+/// lists the open rows that are no longer delivered (`obs_removed`) and the
+/// rows this version would close (`obs_closing`). Nothing is written to
+/// `data.*` here. Stored `revised` compares as `normal` (it is derived).
+async fn classify(conn: &mut PgConnection, dataset_key: i32, cur_seq: i32) -> Result<Diff> {
+    sqlx::query(
+        "CREATE TEMP TABLE obs_diff ON COMMIT DROP AS
+         SELECT s.*, c.obs_id AS cur_obs_id, c.status AS cur_status,
+           CASE WHEN c.obs_id IS NULL THEN 'a'
+                WHEN (s.value, s.lo, s.hi, s.basis, s.status, s.flags)
+                     IS DISTINCT FROM (c.value, c.lo, c.hi, c.basis,
+                                       CASE WHEN c.status = 3 THEN 1::int2 ELSE c.status END, c.flags)
+                  THEN 'c'
+                WHEN (s.locator::text, s.verbatim) IS DISTINCT FROM (p.locator::text, p.verbatim) THEN 'r'
+                ELSE 's' END AS change,
+           c.obs_id IS NOT NULL AND (s.value, s.lo, s.hi) IS DISTINCT FROM (c.value, c.lo, c.hi) AS value_changed
+         FROM obs_stage s
+         LEFT JOIN data.observations c
+           ON c.dataset_key = $1 AND c.vto = 2147483647 AND c.vfrom <= $2
+          AND c.indicator_key = s.indicator_key AND c.geo_key = s.geo_key
+          AND c.time_start = s.time_start AND c.freq = s.freq AND c.dims_key = s.dims_key
+         LEFT JOIN data.obs_provenance p ON p.dataset_key = $1 AND p.obs_id = c.obs_id",
+    )
+    .bind(dataset_key)
+    .bind(cur_seq)
+    .execute(&mut *conn)
+    .await?;
+    sqlx::query(
+        "CREATE TEMP TABLE obs_removed ON COMMIT DROP AS
+         SELECT o.obs_id FROM data.observations o
+         WHERE o.dataset_key = $1 AND o.vto = 2147483647 AND o.vfrom <= $2
+           AND NOT EXISTS (SELECT 1 FROM obs_stage s
+                           WHERE s.indicator_key = o.indicator_key AND s.geo_key = o.geo_key
+                             AND s.time_start = o.time_start AND s.freq = o.freq AND s.dims_key = o.dims_key)",
+    )
+    .bind(dataset_key)
+    .bind(cur_seq)
+    .execute(&mut *conn)
+    .await?;
+    sqlx::query(
+        "CREATE TEMP TABLE obs_closing ON COMMIT DROP AS
+         SELECT cur_obs_id AS obs_id FROM obs_diff WHERE change IN ('c', 'r')
+         UNION ALL SELECT obs_id FROM obs_removed",
+    )
+    .execute(&mut *conn)
+    .await?;
+    let (added, changed, restated, removed, prev): (i64, i64, i64, i64, i64) = sqlx::query_as(
+        "SELECT count(*) FILTER (WHERE change = 'a'), count(*) FILTER (WHERE change = 'c'),
+                count(*) FILTER (WHERE change = 'r'), (SELECT count(*) FROM obs_removed),
+                (SELECT count(*) FROM data.observations
+                  WHERE dataset_key = $1 AND vto = 2147483647 AND vfrom <= $2)
+         FROM obs_diff",
+    )
+    .bind(dataset_key)
+    .bind(cur_seq)
+    .fetch_one(&mut *conn)
+    .await?;
+    Ok(Diff {
+        rows_added: added,
+        rows_removed: removed,
+        rows_changed: changed,
+        rows_restated: restated,
+        prev_rows: prev,
+    })
+}
+
+/// Incremental multiset: `prev + Σ h(new or rewritten rows) − Σ h(closed
+/// rows)`. Only the delta is hashed — staging an unchanged dataset hashes
+/// nothing, appending 1,000 rows to 1 M hashes 1,000 (05 §3).
+async fn delta_multiset(
+    conn: &mut PgConnection,
+    profile: &Profile,
+    dataset_key: i32,
+    prev: MultisetHash,
+    rows: &[ObsRow],
+) -> Result<(MultisetHash, u64)> {
+    let mut m = prev;
+    let rns: Vec<i64> = sqlx::query_scalar("SELECT rn FROM obs_diff WHERE change <> 's'")
+        .fetch_all(&mut *conn)
+        .await?;
+    for rn in &rns {
+        let r = rows
+            .get(usize::try_from(*rn)?)
+            .context("staged row number out of range")?;
+        m.add(&canonical(r).hash());
+    }
+    // CANON_SELECT is a constant; nothing user-supplied is formatted in.
+    let closed: Vec<CanonRow> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "{CANON_SELECT} JOIN obs_closing x ON x.obs_id = o.obs_id WHERE o.dataset_key = $1"
+    )))
+    .bind(dataset_key)
+    .fetch_all(&mut *conn)
+    .await?;
+    for r in &closed {
+        m.remove(&r.hash(profile)?);
+    }
+    Ok((m, u64::try_from(rns.len() + closed.len())?))
+}
+
+/// Writes version `seq`: new and rewritten rows (`vfrom = seq`), their
+/// provenance and the close list. `status` becomes `revised` when the
+/// source says `normal` and the value differs from the released one (or the
+/// released row was already `revised` — a restatement keeps the mark).
+async fn write_version_rows(
     conn: &mut PgConnection,
     dataset_key: i32,
     version_id: i64,
     seq: i32,
-    cur_seq: Option<i32>,
-) -> Result<(Diff, i64)> {
-    sqlx::query(
-        "CREATE TEMP TABLE obs_diff ON COMMIT DROP AS
-         WITH cur AS (
-           SELECT o.*, p.locator AS p_locator, p.verbatim AS p_verbatim
-           FROM data.observations o
-           LEFT JOIN data.obs_provenance p ON p.dataset_key = o.dataset_key AND p.obs_id = o.obs_id
-           WHERE o.dataset_key = $1 AND o.vto = 2147483647 AND o.vfrom <= $2
-         )
-         SELECT s.*, c.obs_id AS cur_obs_id,
-           CASE WHEN c.obs_id IS NULL THEN 'added'
-                WHEN (s.value, s.lo, s.hi, s.basis, s.status, s.flags)
-                     IS DISTINCT FROM (c.value, c.lo, c.hi, c.basis, c.status, c.flags) THEN 'changed'
-                WHEN (s.locator, s.verbatim) IS DISTINCT FROM (c.p_locator, c.p_verbatim) THEN 'restated'
-                ELSE 'same' END AS change
-         FROM obs_stage s
-         LEFT JOIN cur c ON c.indicator_key = s.indicator_key AND c.geo_key = s.geo_key
-                        AND c.time_start = s.time_start AND c.freq = s.freq AND c.dims_key = s.dims_key",
-    )
-    .bind(dataset_key)
-    .bind(cur_seq.unwrap_or(0))
-    .execute(&mut *conn)
-    .await?;
-
+) -> Result<i64> {
+    let n_new: i64 = sqlx::query_scalar("SELECT count(*) FROM obs_diff WHERE change <> 's'")
+        .fetch_one(&mut *conn)
+        .await?;
     let next: i64 = sqlx::query_scalar(
-        "UPDATE catalog.datasets SET obs_seq = obs_seq + (SELECT count(*) FROM obs_diff WHERE change <> 'same')
-         WHERE key = $1 RETURNING obs_seq - (SELECT count(*) FROM obs_diff WHERE change <> 'same')",
+        "UPDATE catalog.datasets SET obs_seq = obs_seq + $2 WHERE key = $1 RETURNING obs_seq - $2",
     )
     .bind(dataset_key)
+    .bind(n_new)
     .fetch_one(&mut *conn)
     .await?;
     let base = i64::from(dataset_key) << OBS_KEY_SHIFT;
     sqlx::query(
         "CREATE TEMP TABLE obs_new ON COMMIT DROP AS
-         SELECT d.*, $1::int8 + $2::int8 + row_number() OVER (ORDER BY d.rn) AS obs_id_new
-         FROM obs_diff d WHERE d.change <> 'same'",
+         SELECT d.*, $1::int8 + $2::int8 + row_number() OVER (ORDER BY d.rn) AS obs_id_new,
+                CASE WHEN d.status = 1 AND (d.value_changed OR d.cur_status = 3) THEN 3::int2
+                     ELSE d.status END AS status_out
+         FROM obs_diff d WHERE d.change <> 's'",
     )
     .bind(base)
     .bind(next)
@@ -552,7 +630,7 @@ async fn stage_diff(
         "INSERT INTO data.observations (obs_id, value, lo, hi, dataset_key, indicator_key, geo_key, dims_key,
             vfrom, vto, flags, time_start, geo_level, basis, status, freq)
          SELECT obs_id_new, value, lo, hi, $1, indicator_key, geo_key, dims_key, $2, 2147483647, flags,
-                time_start, geo_level, basis, status, freq
+                time_start, geo_level, basis, status_out, freq
          FROM obs_new ORDER BY obs_id_new",
     )
     .bind(dataset_key)
@@ -561,52 +639,21 @@ async fn stage_diff(
     .await?
     .rows_affected();
     sqlx::query(
-        "INSERT INTO data.obs_provenance (obs_id, dataset_key, artifact_id, locator, verbatim, method,
-            confidence, review)
-         SELECT obs_id_new, $1, artifact_id, locator, verbatim, method, confidence, review
+        "INSERT INTO data.obs_provenance (obs_id, dataset_key, artifact_id, extract_id, extract_row, locator,
+            verbatim, method, confidence, review)
+         SELECT obs_id_new, $1, artifact_id, extract_id, extract_row, locator, verbatim, method, confidence, review
          FROM obs_new WHERE artifact_id IS NOT NULL",
     )
     .bind(dataset_key)
     .execute(&mut *conn)
     .await?;
-    // Close list: superseded (changed/restated) and removed rows.
     sqlx::query(
-        "INSERT INTO data.version_closes (version_id, obs_id)
-         SELECT $1, cur_obs_id FROM obs_diff WHERE change IN ('changed', 'restated')
-         UNION
-         SELECT $1, o.obs_id FROM data.observations o
-         WHERE o.dataset_key = $2 AND o.vto = 2147483647 AND o.vfrom <= $3
-           AND NOT EXISTS (SELECT 1 FROM obs_stage s
-                           WHERE s.indicator_key = o.indicator_key AND s.geo_key = o.geo_key
-                             AND s.time_start = o.time_start AND s.freq = o.freq AND s.dims_key = o.dims_key)",
+        "INSERT INTO data.version_closes (version_id, obs_id) SELECT $1, obs_id FROM obs_closing",
     )
     .bind(version_id)
-    .bind(dataset_key)
-    .bind(cur_seq.unwrap_or(0))
     .execute(&mut *conn)
     .await?;
-
-    let (added, changed, restated, closes, prev): (i64, i64, i64, i64, i64) = sqlx::query_as(
-        "SELECT (SELECT count(*) FROM obs_diff WHERE change = 'added'),
-                (SELECT count(*) FROM obs_diff WHERE change = 'changed'),
-                (SELECT count(*) FROM obs_diff WHERE change = 'restated'),
-                (SELECT count(*) FROM data.version_closes WHERE version_id = $1),
-                (SELECT count(*) FROM data.observations
-                  WHERE dataset_key = $2 AND vto = 2147483647 AND vfrom <= $3)",
-    )
-    .bind(version_id)
-    .bind(dataset_key)
-    .bind(cur_seq.unwrap_or(0))
-    .fetch_one(&mut *conn)
-    .await?;
-    let diff = Diff {
-        rows_added: added,
-        rows_removed: closes - changed - restated,
-        rows_changed: changed,
-        rows_restated: restated,
-        prev_rows: prev,
-    };
-    Ok((diff, i64::try_from(written)?))
+    Ok(i64::try_from(written)?)
 }
 
 // ───────────────────────────── versions & releases ─────────────────────────
@@ -803,27 +850,77 @@ pub async fn create_release(
     Ok(data_version)
 }
 
-/// Validate → stage → gate → publish one observation dataset.
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+/// One observation dataset to stage, as produced by `standardise`.
+#[derive(Debug, Clone, Copy)]
+pub struct StageInput<'a> {
+    pub run_id: i64,
+    pub dataset_id: &'a str,
+    pub vintage: Option<&'a str>,
+    pub rows: &'a [ObsRow],
+    /// `ops.artifacts.id` by `ObsRow::artifact`.
+    pub artifact_ids: &'a [i64],
+    /// `ops.extracts.id` by `CellProv::extract`.
+    pub extract_ids: &'a [i64],
+}
+
+/// The published version a staging is diffed against.
+struct Current {
+    version_id: i64,
+    dsv: String,
+    seq: i32,
+    multiset: Option<MultisetHash>,
+    schema: Option<Vec<u8>>,
+}
+
+/// (version id, dsv, seq, multiset hash, schema hash)
+type CurrentRow = (i64, String, i32, Option<Vec<u8>>, Option<Vec<u8>>);
+
+async fn current_full(conn: &mut PgConnection, dataset_id: &str) -> Result<Option<Current>> {
+    let r: Option<CurrentRow> = sqlx::query_as(
+        "SELECT c.version_id, c.dsv, c.seq, v.multiset_hash, v.schema_hash
+         FROM data.current_versions c JOIN data.dataset_versions v ON v.id = c.version_id
+         WHERE c.dataset_id = $1",
+    )
+    .bind(dataset_id)
+    .fetch_optional(&mut *conn)
+    .await?;
+    Ok(r.map(|(version_id, dsv, seq, m, schema)| Current {
+        version_id,
+        dsv,
+        seq,
+        multiset: m.as_deref().and_then(MultisetHash::from_slice),
+        schema,
+    }))
+}
+
+/// Validate → stage → diff → gate → publish one observation dataset.
+///
+/// Staging COPYs the rows into a temp table and classifies them against the
+/// released version without writing anything; an unchanged dataset (no
+/// added/changed/restated/removed row, same schema) ends here with nothing
+/// hashed or written. Otherwise the dsv is computed incrementally from the
+/// released version's multiset hash, and only new or rewritten rows are
+/// inserted (range versioning, 05 §2.1).
+#[allow(clippy::too_many_lines)]
 pub async fn publish_observations(
     pool: &PgPool,
     registry: &Registry,
     profile: &Profile,
-    run_id: i64,
-    dataset_id: &str,
-    vintage: Option<&str>,
-    rows: &[ObsRow],
-    fetched: &[Fetched],
+    input: StageInput<'_>,
 ) -> Result<PublishResult> {
+    let StageInput {
+        run_id,
+        dataset_id,
+        vintage,
+        rows,
+        artifact_ids,
+        extract_ids,
+    } = input;
     let class = registry
         .dataset(dataset_id)
         .map(|d| d.publication_class.clone())
         .with_context(|| format!("dataset {dataset_id:?} not in registry"))?;
     let prep = validate(pool, registry, profile, dataset_id, rows).await?;
-    let mut multiset = MultisetHash::empty();
-    for r in rows {
-        multiset.add(&canonical(r).hash());
-    }
     let n_rows = i64::try_from(rows.len())?;
     let n = u64::try_from(rows.len())?;
 
@@ -839,24 +936,75 @@ pub async fn publish_observations(
         .execute(&mut *tx)
         .await?;
     let schema = schema_hash(schema_lines(&mut tx, dataset_id).await?);
-    let dsv = dsv(&schema, &multiset, n);
-    let current = current_version(&mut tx, dataset_id).await?;
-    let unchanged = |version_id, note: String| PublishResult {
+    let current = current_full(&mut tx, dataset_id).await?;
+    let review = if class == "A" {
+        Review::AutoAccepted
+    } else {
+        Review::Pending
+    };
+
+    let dims_keys = intern_dims(&mut tx, &prep).await?;
+    let staged = copy_stage(
+        &mut tx,
+        rows,
+        &prep,
+        &dims_keys,
+        artifact_ids,
+        extract_ids,
+        review,
+    )
+    .await?;
+    ensure!(staged == n, "COPY staged {staged} of {n} rows");
+    let cur_seq = current.as_ref().map_or(0, |c| c.seq);
+    let diff = classify(&mut tx, dataset_key, cur_seq).await?;
+    let untouched = diff.rows_added == 0
+        && diff.rows_changed == 0
+        && diff.rows_restated == 0
+        && diff.rows_removed == 0;
+
+    let unchanged = |version_id, dsv: String, note: String| PublishResult {
         dataset_id: dataset_id.to_owned(),
-        dsv: dsv.clone(),
+        dsv,
         version_id,
         outcome: "unchanged",
         data_version: None,
         rows: n_rows,
         rows_written: 0,
+        rows_hashed: 0,
         diff: None,
         note,
     };
-    if let Some((vid, cur, _)) = &current
-        && *cur == dsv
+    if let Some(c) = &current
+        && untouched
+        && c.schema.as_deref() == Some(schema.as_slice())
     {
         let r = unchanged(
-            *vid,
+            c.version_id,
+            c.dsv.clone(),
+            "content identical to the published version".to_owned(),
+        );
+        tx.rollback().await?;
+        return Ok(r);
+    }
+    // Incremental from the released version when its hash is known, else a
+    // full sum over the delivered rows (first version).
+    let (multiset, hashed) = match current.as_ref().and_then(|c| c.multiset) {
+        Some(prev) => delta_multiset(&mut tx, profile, dataset_key, prev, rows).await?,
+        None => {
+            let mut m = MultisetHash::empty();
+            for r in rows {
+                m.add(&canonical(r).hash());
+            }
+            (m, n)
+        }
+    };
+    let dsv = dsv(&schema, &multiset, n);
+    if let Some(c) = &current
+        && c.dsv == dsv
+    {
+        let r = unchanged(
+            c.version_id,
+            dsv,
             "content identical to the published version".to_owned(),
         );
         tx.rollback().await?;
@@ -871,8 +1019,10 @@ pub async fn publish_observations(
         tx.rollback().await?;
         let mut r = unchanged(
             vid,
+            dsv,
             format!("identical content already exists as a {status} version"),
         );
+        r.rows_hashed = hashed;
         if status == "in_review" {
             r.outcome = "in_review";
         }
@@ -899,11 +1049,6 @@ pub async fn publish_observations(
         .await?;
     }
 
-    let review = if class == "A" {
-        Review::AutoAccepted
-    } else {
-        Review::Pending
-    };
     let seq: i32 = sqlx::query_scalar(
         "SELECT coalesce(max(seq), 0) + 1 FROM data.dataset_versions WHERE dataset_id = $1",
     )
@@ -924,34 +1069,35 @@ pub async fn publish_observations(
     .bind(&class)
     .bind(vintage)
     .bind(run_id)
-    .bind(current.as_ref().map(|c| c.0))
+    .bind(current.as_ref().map(|c| c.version_id))
     .bind(seq)
     .bind(schema.as_slice())
     .bind(&boundary_set)
     .bind(lanka_core::git_rev())
     .fetch_one(&mut *tx)
     .await?;
+    let written = write_version_rows(&mut tx, dataset_key, version_id, seq).await?;
 
-    let dims_keys = intern_dims(&mut tx, &prep).await?;
-    let staged = copy_stage(&mut tx, rows, &prep, &dims_keys, fetched, review).await?;
-    ensure!(staged == n, "COPY staged {staged} of {n} rows");
-    let (diff, written) = stage_diff(
-        &mut tx,
-        dataset_key,
-        version_id,
-        seq,
-        current.as_ref().map(|c| c.2),
-    )
-    .await?;
     let used: BTreeSet<i64> = rows
         .iter()
-        .filter_map(|r| fetched.get(r.artifact).map(|f| f.artifact_id))
+        .filter_map(|r| artifact_ids.get(r.artifact).copied())
         .collect();
     sqlx::query(
         "INSERT INTO data.dataset_version_artifacts (version_id, artifact_id) SELECT $1, unnest($2::bigint[])",
     )
     .bind(version_id)
     .bind(used.into_iter().collect::<Vec<_>>())
+    .execute(&mut *tx)
+    .await?;
+    let used_extracts: BTreeSet<i64> = rows
+        .iter()
+        .filter_map(|r| r.prov.and_then(|p| extract_ids.get(p.extract).copied()))
+        .collect();
+    sqlx::query(
+        "INSERT INTO data.dataset_version_extracts (version_id, extract_id) SELECT $1, unnest($2::bigint[])",
+    )
+    .bind(version_id)
+    .bind(used_extracts.into_iter().collect::<Vec<_>>())
     .execute(&mut *tx)
     .await?;
 
@@ -979,7 +1125,7 @@ pub async fn publish_observations(
         })
         .flatten();
     let validation = json!({
-        "rows": n_rows, "rows_written": written,
+        "rows": n_rows, "rows_written": written, "rows_hashed": hashed,
         "geo_codes": prep.iter().map(|p| p.geo_key).collect::<BTreeSet<_>>().len(),
         "gate_failure": gate_failure,
     });
@@ -996,7 +1142,7 @@ pub async fn publish_observations(
             &mut tx,
             dataset_id,
             version_id,
-            current.as_ref().map(|c| c.0),
+            current.as_ref().map(|c| c.version_id),
             diff_out.as_ref(),
             &format!("{dataset_id} → {dsv} (auto, class A)"),
             Some(run_id),
@@ -1030,6 +1176,7 @@ pub async fn publish_observations(
         data_version,
         rows: n_rows,
         rows_written: written,
+        rows_hashed: hashed,
         diff: diff_out,
         note,
     })
@@ -1129,6 +1276,7 @@ pub async fn approve(
         data_version: Some(dv),
         rows,
         rows_written: i64::try_from(reviewed)?,
+        rows_hashed: 0,
         diff,
         note: format!("{reviewed} rows approved by {reviewer}"),
     })
@@ -1184,6 +1332,17 @@ struct VersionRow {
     boundary_set: Option<String>,
 }
 
+/// Canonical columns of stored observations (codes, not keys), for hashing.
+/// Callers append `JOIN …`/`WHERE …` on alias `o`.
+const CANON_SELECT: &str =
+    "SELECT i.id AS indicator_id, u.code AS geo_code, o.freq::text AS freq, o.time_start,
+        ds.dims, o.value, o.lo, o.hi, o.basis, o.status, o.flags, p.verbatim, p.locator
+ FROM data.observations o
+ JOIN catalog.indicators i ON i.key = o.indicator_key
+ JOIN geo.units u ON u.key = o.geo_key
+ JOIN catalog.dim_sets ds ON ds.key = o.dims_key
+ LEFT JOIN data.obs_provenance p ON p.dataset_key = o.dataset_key AND p.obs_id = o.obs_id";
+
 #[derive(Debug, sqlx::FromRow)]
 struct CanonRow {
     indicator_id: String,
@@ -1199,6 +1358,62 @@ struct CanonRow {
     flags: i32,
     verbatim: Option<String>,
     locator: Option<serde_json::Value>,
+}
+
+impl CanonRow {
+    /// The row's canonical hash — identical to the hash of the `ObsRow` the
+    /// connector produced (stored `revised` hashes as `normal`).
+    fn hash(&self, profile: &Profile) -> Result<[u8; 32]> {
+        let freq = self
+            .freq
+            .chars()
+            .next()
+            .and_then(Freq::from_char)
+            .context("frequency")?;
+        let period = Period {
+            freq,
+            start: self.time_start,
+        }
+        .render(&profile.calendars);
+        let null = serde_json::Value::Null;
+        Ok(CanonicalRow {
+            indicator_id: &self.indicator_id,
+            geo_code: &self.geo_code,
+            period: &period,
+            dims: &self.dims,
+            value: self.value,
+            lo: self.lo,
+            hi: self.hi,
+            basis: Basis::from_code(self.basis).context("basis")?,
+            status: Status::from_code(self.status).context("status")?,
+            flags: Flags::from_db(self.flags)?,
+            verbatim: self.verbatim.as_deref(),
+            locator: Some(self.locator.as_ref().unwrap_or(&null)),
+        }
+        .hash())
+    }
+}
+
+/// Multiset hash of the rows of a dataset visible at version `seq`,
+/// recomputed from the database (backfill and verification).
+pub async fn multiset_at(
+    conn: &mut PgConnection,
+    profile: &Profile,
+    dataset_key: i32,
+    seq: i32,
+) -> Result<(MultisetHash, u64)> {
+    let rows: Vec<CanonRow> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "{CANON_SELECT} WHERE o.dataset_key = $1 AND o.vfrom <= $2 AND o.vto >= $2"
+    )))
+    .bind(dataset_key)
+    .bind(seq)
+    .fetch_all(&mut *conn)
+    .await?;
+    let mut m = MultisetHash::empty();
+    for r in &rows {
+        m.add(&r.hash(profile)?);
+    }
+    Ok((m, u64::try_from(rows.len())?))
 }
 
 /// Gives every version migrated from 0001 (no multiset hash yet) its
@@ -1257,54 +1472,11 @@ pub async fn backfill_hashes(pool: &PgPool, profile: &Profile) -> Result<usize> 
                 units.len(),
             )
         } else {
-            let rows: Vec<CanonRow> = sqlx::query_as(
-                "SELECT i.id AS indicator_id, u.code AS geo_code, o.freq::text, o.time_start, ds.dims,
-                        o.value, o.lo, o.hi, o.basis, o.status, o.flags, p.verbatim, p.locator
-                 FROM data.observations o
-                 JOIN catalog.indicators i ON i.key = o.indicator_key
-                 JOIN geo.units u ON u.key = o.geo_key
-                 JOIN catalog.dim_sets ds ON ds.key = o.dims_key
-                 LEFT JOIN data.obs_provenance p ON p.dataset_key = o.dataset_key AND p.obs_id = o.obs_id
-                 WHERE o.dataset_key = $1 AND o.vfrom <= $2 AND o.vto >= $2",
-            )
-            .bind(v.key)
-            .bind(v.seq)
-            .fetch_all(&mut *tx)
-            .await?;
-            let mut m = MultisetHash::empty();
-            for r in &rows {
-                let freq = r
-                    .freq
-                    .chars()
-                    .next()
-                    .and_then(Freq::from_char)
-                    .context("frequency")?;
-                let period = Period {
-                    freq,
-                    start: r.time_start,
-                }
-                .render(&profile.calendars);
-                let null = serde_json::Value::Null;
-                let row = CanonicalRow {
-                    indicator_id: &r.indicator_id,
-                    geo_code: &r.geo_code,
-                    period: &period,
-                    dims: &r.dims,
-                    value: r.value,
-                    lo: r.lo,
-                    hi: r.hi,
-                    basis: Basis::from_code(r.basis).context("basis")?,
-                    status: Status::from_code(r.status).context("status")?,
-                    flags: Flags::from_db(r.flags)?,
-                    verbatim: r.verbatim.as_deref(),
-                    locator: Some(r.locator.as_ref().unwrap_or(&null)),
-                };
-                m.add(&row.hash());
-            }
+            let (m, n) = multiset_at(&mut tx, profile, v.key, v.seq).await?;
             (
                 schema_hash(schema_lines(&mut tx, &v.dataset_id).await?),
                 m,
-                rows.len(),
+                usize::try_from(n)?,
             )
         };
         let new_dsv = dsv(&schema, &multiset, u64::try_from(n)?);
@@ -1356,6 +1528,7 @@ mod tests {
             status: Status::Normal,
             flags: Flags::EMPTY,
             artifact: 0,
+            prov: None,
             locator: json!({"path": "$[1][0]"}),
             verbatim: Some(v.to_string()),
             method: Method::Api,
@@ -1385,19 +1558,6 @@ mod tests {
         let mut all = a.clone();
         all.push(row("x", "LK", "2022", 3.0));
         assert_eq!(inc, multiset(&all));
-    }
-
-    #[test]
-    fn csv_quoting() {
-        let mut s = String::new();
-        csv_field(&mut s, Some(r#"a "b", c"#));
-        assert_eq!(s, r#""a ""b"", c""#);
-        s.clear();
-        csv_field(&mut s, Some(""));
-        assert_eq!(s, r#""""#);
-        s.clear();
-        csv_field(&mut s, None);
-        assert_eq!(s, "");
     }
 
     #[test]

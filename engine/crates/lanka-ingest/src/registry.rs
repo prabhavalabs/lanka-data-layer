@@ -355,9 +355,21 @@ pub struct Loaded<T> {
     pub sha256: [u8; 32],
 }
 
+/// `registry/connectors/<source>.yaml`: a declarative driver configuration
+/// (03 §2.2). Only the envelope is typed here; each driver deserialises
+/// `Loaded::json` into its own spec.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConnectorSpec {
+    pub source: String,
+    pub driver: String,
+    pub version: String,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Registry {
     pub root: PathBuf,
+    /// Driver specs by source id.
+    pub connectors: BTreeMap<String, Loaded<ConnectorSpec>>,
     pub sources: BTreeMap<String, Loaded<SourceSpec>>,
     pub datasets: BTreeMap<String, Loaded<DatasetSpec>>,
     pub codelists: BTreeMap<String, Loaded<CodelistSpec>>,
@@ -525,6 +537,31 @@ impl Registry {
                         units_path.display(),
                         prev.code
                     ));
+                }
+            }
+        }
+
+        let connector_schema = root.join("schema/connector.schema.json");
+        let connector_files = yaml_files(&root.join("connectors"))?;
+        if !connector_files.is_empty() {
+            let v = compile_schema(&connector_schema)?;
+            for path in connector_files {
+                if let Some(l) = load_one::<ConnectorSpec>(&path, &v, &mut errors) {
+                    if l.spec.source != file_stem(&path) {
+                        errors.push(format!(
+                            "{}: source {:?} does not match file name",
+                            path.display(),
+                            l.spec.source
+                        ));
+                    }
+                    if !reg.sources.contains_key(&l.spec.source) {
+                        errors.push(format!(
+                            "{}: unknown source {:?}",
+                            path.display(),
+                            l.spec.source
+                        ));
+                    }
+                    reg.connectors.insert(l.spec.source.clone(), l);
                 }
             }
         }
