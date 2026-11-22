@@ -1573,6 +1573,7 @@ dependencies = [
  "chrono",
  "clap",
  "lanka-core",
+ "lanka-enrich",
  "lanka-ingest",
  "lanka-mapdoc",
  "lanka-server",
@@ -1604,6 +1605,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "lanka-enrich"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "hex",
+ "jsonschema",
+ "lanka-core",
+ "proptest",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "sha2",
+ "sqlx",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "lanka-ingest"
 version = "0.1.0"
 dependencies = [
@@ -1618,6 +1639,7 @@ dependencies = [
  "hex",
  "jsonschema",
  "lanka-core",
+ "lanka-enrich",
  "lanka-store",
  "nix",
  "parquet",
@@ -1659,6 +1681,7 @@ dependencies = [
  "axum",
  "http-body-util",
  "lanka-core",
+ "lanka-enrich",
  "serde",
  "serde_json",
  "sqlx",

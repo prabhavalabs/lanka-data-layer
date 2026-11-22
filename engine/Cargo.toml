@@ -4,6 +4,7 @@ members = [
   "crates/lanka-core",
   "crates/lanka-store",
   "crates/lanka-ingest",
+  "crates/lanka-enrich",
   "crates/lanka-mapdoc",
   "crates/lanka-server",
   "crates/lanka-cli",
@@ -20,6 +21,7 @@ publish = false
 [workspace.dependencies]
 lanka-core = { path = "crates/lanka-core" }
 lanka-ingest = { path = "crates/lanka-ingest" }
+lanka-enrich = { path = "crates/lanka-enrich" }
 lanka-mapdoc = { path = "crates/lanka-mapdoc" }
 lanka-store = { path = "crates/lanka-store" }
 lanka-server = { path = "crates/lanka-server" }
