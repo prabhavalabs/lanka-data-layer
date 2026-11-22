@@ -18,6 +18,7 @@ lanka-ingest.workspace = true
 lanka-mapdoc.workspace = true
 lanka-store.workspace = true
 lanka-server.workspace = true
+lanka-export.workspace = true
 anyhow.workspace = true
 tokio.workspace = true
 serde.workspace = true

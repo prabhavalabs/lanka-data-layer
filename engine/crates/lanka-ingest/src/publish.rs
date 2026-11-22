@@ -682,7 +682,7 @@ pub async fn current_version(
 }
 
 /// Serialises publishing per dataset for the rest of the transaction.
-async fn lock_dataset(conn: &mut PgConnection, dataset_key: i32) -> Result<()> {
+pub(crate) async fn lock_dataset(conn: &mut PgConnection, dataset_key: i32) -> Result<()> {
     sqlx::query("SELECT pg_advisory_xact_lock(hashtext('lanka-dataset'), $1)")
         .bind(dataset_key)
         .execute(&mut *conn)
@@ -691,7 +691,7 @@ async fn lock_dataset(conn: &mut PgConnection, dataset_key: i32) -> Result<()> {
 }
 
 /// Deletes a staged/in-review version's rows and closes; marks it `status`.
-async fn discard_open(
+pub(crate) async fn discard_open(
     conn: &mut PgConnection,
     dataset_key: i32,
     version_id: i64,
@@ -709,6 +709,12 @@ async fn discard_open(
     .execute(&mut *conn)
     .await?;
     sqlx::query("DELETE FROM data.observations WHERE dataset_key = $1 AND vfrom = $2")
+        .bind(dataset_key)
+        .bind(seq)
+        .execute(&mut *conn)
+        .await?;
+    // Features datasets (WP-04) version their rows the same way.
+    sqlx::query("DELETE FROM geo.features WHERE dataset_key = $1 AND vfrom = $2")
         .bind(dataset_key)
         .bind(seq)
         .execute(&mut *conn)
@@ -795,18 +801,21 @@ pub struct StageInput<'a> {
 }
 
 /// The published version a staging is diffed against.
-struct Current {
-    version_id: i64,
-    dsv: String,
-    seq: i32,
-    multiset: Option<MultisetHash>,
-    schema: Option<Vec<u8>>,
+pub(crate) struct Current {
+    pub(crate) version_id: i64,
+    pub(crate) dsv: String,
+    pub(crate) seq: i32,
+    pub(crate) multiset: Option<MultisetHash>,
+    pub(crate) schema: Option<Vec<u8>>,
 }
 
 /// (version id, dsv, seq, multiset hash, schema hash)
 type CurrentRow = (i64, String, i32, Option<Vec<u8>>, Option<Vec<u8>>);
 
-async fn current_full(conn: &mut PgConnection, dataset_id: &str) -> Result<Option<Current>> {
+pub(crate) async fn current_full(
+    conn: &mut PgConnection,
+    dataset_id: &str,
+) -> Result<Option<Current>> {
     let r: Option<CurrentRow> = sqlx::query_as(
         "SELECT c.version_id, c.dsv, c.seq, v.multiset_hash, v.schema_hash
          FROM data.current_versions c JOIN data.dataset_versions v ON v.id = c.version_id

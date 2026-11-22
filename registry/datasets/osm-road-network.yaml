@@ -49,3 +49,18 @@ enrichment:
   - density per km2 using ADM area from cod-ab-lka-boundaries
   - 'derive: routing graph for travel-time products'
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: status, type: string, label: Status, enum: [open, under_construction, proposed]}
+- {name: ref, type: string, label: Road number}
+- {name: surface, type: string, label: Surface}
+- {name: lanes, type: integer, label: Lanes, unit: '{count}', measure_type: count}
+- {name: oneway, type: string, label: One way}
+tiles:
+  minzoom: 5
+  maxzoom: 14
+  attrs: [status, ref]
+  drop_densest: true
+  minzoom_by_kind: {motorway: 5, trunk: 6, primary: 7, secondary: 8, motorway_link: 9, trunk_link: 10, primary_link: 10,
+    tertiary: 10, secondary_link: 11, unclassified: 11, tertiary_link: 12, residential: 12, road: 12, living_street: 13}

@@ -31,3 +31,13 @@ enrichment:
   - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
     average rates)'
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: tourism, type: string, label: OSM tourism tag}
+- {name: historic, type: string, label: OSM historic tag}
+- {name: natural, type: string, label: OSM natural tag}
+- {name: religion, type: string, label: Religion}
+- {name: height, type: number, label: Height, unit: m, measure_type: mean}
+- {name: wikidata, type: string, label: Wikidata item}
+tiles: {minzoom: 6, maxzoom: 14, attrs: [wikidata], minzoom_by_kind: {other: 9, heritage: 8, viewpoint: 9}}

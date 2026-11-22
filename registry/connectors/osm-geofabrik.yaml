@@ -1,0 +1,142 @@
+# OpenStreetMap Sri Lanka, Geofabrik daily extract — one download, every osm-* features dataset
+# (03 §2.2 `osm_pbf`). Each output's rules are tried in order; the first match wins. Rules that
+# port a v1 layer (ceylon-hub/scripts/data/fetch-osm-features.mjs, fetch-roads.mjs) keep v1's
+# tag filter exactly and come first, so the v1-equivalent subset of each dataset is
+# `kind ∈ {…} AND key type ∈ {node, way}` (the parity test, engine/README.md §WP-04).
+# Licence: ODbL 1.0 — these datasets hold OSM data only (02 §8 ODbL isolation).
+source: osm-geofabrik
+driver: osm_pbf
+version: 1.0.0
+description: Geofabrik Sri Lanka PBF → POIs, roads/expressways, rail, water, protected areas, parks,
+  attractions, trails/cycling and BOI zones.
+discover:
+  url: https://download.geofabrik.de/asia/sri-lanka/sri-lanka-latest.osm.pbf
+  file: sri-lanka-latest.osm.pbf
+extract:
+  relation_types: [multipolygon, boundary, route]
+standardise:
+  outputs:
+    # ── facilities (v1 pois: hospitals/clinics, schools/colleges/universities, aerodromes) ──
+    - dataset: osm-pois-amenities
+      rules:
+        - { match: { amenity: [hospital, clinic] }, geometry: point, kind: "{amenity}",
+            attrs: { category: "=health", operator: operator, beds: beds, healthcare: healthcare } }
+        - { match: { amenity: [school, college, university] }, geometry: point, kind: "{amenity}",
+            attrs: { category: "=education", operator: operator } }
+        - { match: { aeroway: [aerodrome, airport] }, geometry: point, kind: aerodrome,
+            attrs: { category: "=transport", iata: iata, icao: icao, operator: operator } }
+        - { match: { amenity: [doctors, dentist, pharmacy] }, geometry: point, kind: "{amenity}",
+            attrs: { category: "=health", operator: operator, healthcare: healthcare } }
+        - { match: { amenity: [kindergarten, library] }, geometry: point, kind: "{amenity}",
+            attrs: { category: "=education", operator: operator } }
+        - { match: { amenity: [bank, atm, bureau_de_change] }, geometry: point, kind: "{amenity}",
+            attrs: { category: "=finance", operator: operator } }
+        - { match: { amenity: [police, fire_station, post_office, townhall, courthouse] }, geometry: point,
+            kind: "{amenity}", attrs: { category: "=public_service", operator: operator } }
+        - { match: { office: [government] }, geometry: point, kind: government_office,
+            attrs: { category: "=public_service", operator: operator } }
+        - { match: { amenity: [fuel, bus_station] }, geometry: point, kind: "{amenity}",
+            attrs: { category: "=transport", operator: operator } }
+        - { match: { amenity: [marketplace, place_of_worship] }, geometry: point, kind: "{amenity}",
+            attrs: { category: "=community", religion: religion, operator: operator } }
+
+    # ── road network (v1 roads: motorway/trunk/primary/secondary ways) + expressway status ──
+    - dataset: osm-road-network
+      rules:
+        - { match: { highway: [motorway, trunk, primary, secondary] }, types: [way], geometry: line,
+            kind: "{highway}", attrs: { status: "=open", ref: ref, surface: surface, lanes: lanes, oneway: oneway } }
+        - { match: { highway: [construction], construction: [motorway, motorway_link] }, types: [way],
+            geometry: line, kind: "{construction}",
+            attrs: { status: "=under_construction", ref: ref, lanes: lanes, oneway: oneway } }
+        - { match: { highway: [proposed], proposed: [motorway, motorway_link] }, types: [way], geometry: line,
+            kind: "{proposed}", attrs: { status: "=proposed", ref: ref } }
+        - { match: { highway: [construction], construction: [trunk, primary, secondary, tertiary] }, types: [way],
+            geometry: line, kind: "{construction}", attrs: { status: "=under_construction", ref: ref } }
+        - { match: { highway: [motorway_link, trunk_link, primary_link, secondary_link, tertiary, tertiary_link,
+                               unclassified, residential, living_street, road] },
+            types: [way], geometry: line, kind: "{highway}",
+            attrs: { status: "=open", ref: ref, surface: surface, lanes: lanes, oneway: oneway } }
+
+    # ── railways (v1: rail/narrow_gauge ways + station/halt/tram_stop nodes) ──
+    - dataset: osm-rail-network
+      rules:
+        - { match: { railway: [rail, narrow_gauge] }, types: [way], geometry: line, kind: rail,
+            attrs: { gauge: gauge, electrified: electrified, usage: usage, service: service } }
+        - { match: { railway: [station, halt, tram_stop] }, types: [node], geometry: point, kind: "{railway}" }
+
+    # ── water (v1: river ways; reservoir/lake/river water-body ways, unnamed ones below a rough size dropped) ──
+    - dataset: osm-waterways-waterbodies
+      rules:
+        - { match: { waterway: [river] }, types: [way], geometry: line, kind: river }
+        - { match: { natural: [water], water: [reservoir] }, types: [way, relation], geometry: area,
+            kind: reservoir, drop_unnamed_below: 0.04 }
+        - { match: { natural: [water], water: [lake] }, types: [way, relation], geometry: area,
+            kind: lake, drop_unnamed_below: 0.04 }
+        - { match: { natural: [water], water: [river] }, types: [way, relation], geometry: area,
+            kind: river_area, drop_unnamed_below: 0.04 }
+        - { match: { natural: [water], water: [lagoon] }, types: [way, relation], geometry: area, kind: lagoon }
+        - { match: { waterway: [canal] }, types: [way], geometry: line, kind: canal }
+        - { match: { waterway: [stream] }, types: [way], geometry: line, kind: stream }
+
+    # ── protected areas (v1: national_park / nature_reserve / protected_area, ways only) ──
+    - dataset: osm-protected-areas
+      rules:
+        - { match: { boundary: [national_park] }, types: [way, relation], geometry: area, kind: national_park,
+            attrs: { protect_class: protect_class, protection_title: protection_title, operator: operator } }
+        - { match: { leisure: [nature_reserve] }, types: [way, relation], geometry: area, kind: nature_reserve,
+            attrs: { protect_class: protect_class, protection_title: protection_title, operator: operator } }
+        - { match: { boundary: [protected_area] }, types: [way, relation], geometry: area, kind: protected_area,
+            attrs: { protect_class: protect_class, protection_title: protection_title, operator: operator } }
+
+    # ── parks and green space ──
+    - dataset: osm-parks-greenspace
+      rules:
+        - { match: { leisure: [park, garden, playground, recreation_ground] }, types: [way, relation],
+            geometry: area, kind: "{leisure}", attrs: { operator: operator, access: access } }
+
+    # ── attractions and waterfalls (kinds = codelist attraction_type) ──
+    - dataset: osm-tourism-attractions
+      rules:
+        - { match: { natural: [waterfall] }, geometry: point, kind: waterfall, attrs: { height: height, wikidata: wikidata } }
+        - { match: { waterway: [waterfall] }, geometry: point, kind: waterfall, attrs: { height: height, wikidata: wikidata } }
+        - { match: { tourism: [museum, gallery] }, geometry: point, kind: museum,
+            attrs: { tourism: tourism, historic: historic, wikidata: wikidata } }
+        - { match: { tourism: [viewpoint] }, geometry: point, kind: viewpoint, attrs: { tourism: tourism, wikidata: wikidata } }
+        - { match: { tourism: [zoo, theme_park, aquarium] }, geometry: point, kind: theme_park,
+            attrs: { tourism: tourism, wikidata: wikidata } }
+        - { match: { natural: [beach] }, geometry: point, kind: beach, attrs: { natural: natural, wikidata: wikidata } }
+        - { match: { historic: [archaeological_site, ruins, castle, fort, monument, heritage, city_gate, tomb] },
+            geometry: point, kind: heritage, attrs: { tourism: tourism, historic: historic, wikidata: wikidata } }
+        - { match: { tourism: [attraction], amenity: [place_of_worship] }, geometry: point, kind: religious,
+            attrs: { tourism: tourism, religion: religion, wikidata: wikidata } }
+        - { match: { tourism: [attraction], historic: "*" }, geometry: point, kind: heritage,
+            attrs: { tourism: tourism, historic: historic, wikidata: wikidata } }
+        - { match: { tourism: [attraction], leisure: [nature_reserve, park, garden] }, geometry: point, kind: park,
+            attrs: { tourism: tourism, wikidata: wikidata } }
+        - { match: { tourism: [attraction], natural: "*" }, geometry: point, kind: nature,
+            attrs: { tourism: tourism, natural: natural, wikidata: wikidata } }
+        - { match: { tourism: [attraction] }, geometry: point, kind: other, attrs: { tourism: tourism, wikidata: wikidata } }
+
+    # ── trails and cycling (kinds = codelist trail_type) ──
+    - dataset: osm-trails-cycling
+      rules:
+        - { match: { route: [bicycle, mtb] }, types: [relation], geometry: line, kind: bicycle_route,
+            attrs: { network: network, ref: ref, distance: distance } }
+        - { match: { route: [hiking, foot] }, types: [relation], geometry: line, kind: hiking_route,
+            attrs: { network: network, ref: ref, distance: distance } }
+        - { match: { highway: [cycleway] }, types: [way], geometry: line, kind: cycleway, attrs: { surface: surface } }
+        - { match: { highway: [path, bridleway] }, types: [way], geometry: line, kind: "{highway}",
+            attrs: { surface: surface, sac_scale: sac_scale, trail_visibility: trail_visibility } }
+        - { match: { highway: [footway] }, not: { footway: [sidewalk, crossing] }, types: [way], geometry: line,
+            kind: footway, require_name: true, attrs: { surface: surface } }
+
+    # ── BOI export processing zones / industrial parks: OSM industrial landuse, digitised ──
+    - dataset: boi-zones
+      rules:
+        - { match: { landuse: [industrial] }, types: [way, relation], geometry: area, kind: export_processing_zone,
+            name_contains: ["export processing", "epz", "free trade", "free zone"], flags: [UNOFFICIAL_GEOM],
+            attrs: { operator: operator } }
+        - { match: { landuse: [industrial] }, types: [way, relation], geometry: area, kind: industrial_park,
+            name_contains: ["industrial park", "industrial zone", "industrial estate", "investment zone", "boi ",
+                            "apparel park", "technology park"],
+            flags: [UNOFFICIAL_GEOM], attrs: { operator: operator } }

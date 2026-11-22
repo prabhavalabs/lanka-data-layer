@@ -32,6 +32,7 @@ use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 use utoipa::{IntoParams, OpenApi};
 
+pub mod features_api;
 pub mod frame_codec;
 pub mod openapi;
 
@@ -1103,7 +1104,9 @@ async fn oembed(State(st): State<AppState>, Query(p): Query<OEmbedParams>) -> Ap
 }
 
 async fn openapi_json() -> Response {
-    let mut res = axum::Json(openapi::ApiDoc::openapi()).into_response();
+    let mut doc = openapi::ApiDoc::openapi();
+    doc.merge(features_api::FeaturesDoc::openapi());
+    let mut res = axum::Json(doc).into_response();
     res.headers_mut().insert(
         header::CACHE_CONTROL,
         HeaderValue::from_static("public, max-age=300"),
@@ -1139,6 +1142,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v2/reverse", get(reverse))
         .route("/v2/oembed", get(oembed))
         .route("/v2/openapi.json", get(openapi_json))
+        .merge(features_api::routes())
         .fallback(fallback)
         .with_state(state)
         .layer(

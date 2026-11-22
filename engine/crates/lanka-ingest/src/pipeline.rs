@@ -578,8 +578,10 @@ async fn persist_extract(
     })
 }
 
-/// Admin units of the profile's scheme for `standardise` (read once per run).
-async fn load_lookup(pool: &PgPool) -> Result<Lookup> {
+/// Admin units of the profile's scheme for `standardise` (read once per run),
+/// and the country's land area buffered by the snap distance (features).
+async fn load_lookup(pool: &PgPool, profile: &Profile) -> Result<Lookup> {
+    let coverage = crate::features::load_coverage(pool, profile).await?;
     let units: Vec<(String, i16, String, Option<String>)> =
         sqlx::query_as("SELECT pcode, level, name_en, parent_pcode FROM geo.admin_units")
             .fetch_all(pool)
@@ -594,6 +596,7 @@ async fn load_lookup(pool: &PgPool) -> Result<Lookup> {
                 parent,
             })
             .collect(),
+        coverage,
     })
 }
 
@@ -604,7 +607,7 @@ async fn standardise_and_publish(
     extracts: &[ExtractRef],
     artifact_ids: &[i64],
 ) -> Result<RunReport> {
-    let lookup = load_lookup(env.pool).await?;
+    let lookup = load_lookup(env.pool, env.profile).await?;
     let sctx = StdCtx::new(env.registry, env.profile, &lookup);
     let mut sink = CollectSink::default();
     c.standardise(&sctx, extracts, &mut sink)
@@ -619,6 +622,7 @@ async fn standardise_and_publish(
             Output::Observations { rows, .. } => rows.len(),
             Output::AdminUnits { units, .. } => units.len(),
             Output::Crosswalks { rows, .. } => rows.len(),
+            Output::Features { rows, .. } => rows.len(),
         })
         .sum();
     run.info(
@@ -683,6 +687,42 @@ async fn standardise_and_publish(
                     &units,
                     artifact_ids,
                     &extract_ids,
+                )
+                .await
+                .with_context(|| format!("publishing {dataset_id}"))?;
+                run.info(
+                    Stage::Publish,
+                    &format!("{dataset_id}: {} — {}", r.outcome, r.note),
+                    Some(json!(r)),
+                )
+                .await;
+                written += r.rows_written;
+                published.push(r);
+            }
+            Output::Features {
+                dataset_id,
+                vintage,
+                rows,
+            } => {
+                run.info(
+                    Stage::Validate,
+                    &format!("validating {} features for {dataset_id}", rows.len()),
+                    None,
+                )
+                .await;
+                let r = crate::features::publish_features(
+                    env.pool,
+                    env.registry,
+                    env.profile,
+                    crate::features::FeatureStageInput {
+                        run_id: run.run_id,
+                        dataset_id: &dataset_id,
+                        vintage: vintage.as_deref(),
+                        rows: &rows,
+                        artifact_ids,
+                        extract_ids: &extract_ids,
+                        coverage: lookup.coverage.as_deref(),
+                    },
                 )
                 .await
                 .with_context(|| format!("publishing {dataset_id}"))?;

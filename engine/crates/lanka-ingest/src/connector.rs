@@ -175,6 +175,32 @@ pub struct BoundarySet {
     pub notes: Option<String>,
 }
 
+/// One feature (point, line or polygon) as a connector delivers it: codes
+/// and text, never keys. The pipeline derives `cell_id` (from `rep`) and
+/// `unit_key` (deepest admin unit containing `rep`) at staging.
+#[derive(Debug, Clone)]
+pub struct FeatureIn {
+    /// Upstream key, stable while upstream keeps it (`way/123456789`).
+    pub key: String,
+    pub kind: String,
+    pub name_en: Option<String>,
+    pub name_si: Option<String>,
+    pub name_ta: Option<String>,
+    /// GeoJSON geometry, coordinates with at most 6 decimals
+    /// ([`crate::geom::Geometry::to_geojson6`]).
+    pub geometry: String,
+    /// Representative point `[lon, lat]` (on the geometry).
+    pub rep: crate::geom::Coord,
+    /// Typed attributes (declared `fields` of the dataset).
+    pub attrs: serde_json::Map<String, serde_json::Value>,
+    pub flags: Flags,
+    /// Conflated entity (`lke_…`), when known.
+    pub entity_id: Option<String>,
+    /// Index into the run's artifact list.
+    pub artifact: usize,
+    pub prov: Option<CellProv>,
+}
+
 #[derive(Debug, Clone)]
 pub struct CrosswalkRow {
     pub from_set: String,
@@ -202,6 +228,11 @@ pub enum Output {
         source_id: String,
         rows: Vec<CrosswalkRow>,
     },
+    Features {
+        dataset_id: String,
+        vintage: Option<String>,
+        rows: Vec<FeatureIn>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -209,6 +240,7 @@ pub enum OutputKind {
     Observations,
     AdminUnits(BoundarySet),
     Crosswalks,
+    Features,
 }
 
 /// Opens one output in the sink.
@@ -226,6 +258,9 @@ pub trait OutputSink {
     fn obs(&mut self, row: ObsRow) -> Result<()>;
     fn unit(&mut self, row: AdminUnitIn) -> Result<()>;
     fn crosswalk(&mut self, row: CrosswalkRow) -> Result<()>;
+    fn feature(&mut self, row: FeatureIn) -> Result<()> {
+        bail!("this sink takes no features ({})", row.key)
+    }
     fn end(&mut self) -> Result<()>;
 }
 
@@ -269,6 +304,11 @@ impl OutputSink for CollectSink {
                 source_id: h.dataset_id,
                 rows: Vec::new(),
             },
+            OutputKind::Features => Output::Features {
+                dataset_id: h.dataset_id,
+                vintage: h.vintage,
+                rows: Vec::new(),
+            },
         });
         Ok(())
     }
@@ -300,6 +340,16 @@ impl OutputSink for CollectSink {
                 Ok(())
             }
             _ => bail!("crosswalk() outside a crosswalk output"),
+        }
+    }
+
+    fn feature(&mut self, row: FeatureIn) -> Result<()> {
+        match &mut self.open {
+            Some(Output::Features { rows, .. }) => {
+                rows.push(row);
+                Ok(())
+            }
+            _ => bail!("feature() outside a features output"),
         }
     }
 
@@ -352,6 +402,9 @@ pub struct UnitRef {
 pub struct Lookup {
     /// Current (not retired) units of the profile's admin scheme.
     pub units: Vec<UnitRef>,
+    /// Land area of the country, buffered by the snap distance (features
+    /// whose representative point falls outside are not the country's).
+    pub coverage: Option<Arc<crate::geom::Coverage>>,
 }
 
 /// `standardise` is pure: extract + registry + lookup.

@@ -390,7 +390,8 @@ async fn release_one(
     .bind(seq)
     .execute(&mut *conn)
     .await?
-    .rows_affected();
+    .rows_affected()
+        + crate::features::close_released(conn, version_id, dataset_key, seq).await?;
     sqlx::query("DELETE FROM data.version_closes WHERE version_id = $1")
         .bind(version_id)
         .execute(&mut *conn)

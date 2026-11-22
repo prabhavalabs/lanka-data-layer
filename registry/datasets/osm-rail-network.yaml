@@ -42,3 +42,11 @@ enrichment:
   - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
     average rates)'
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: gauge, type: string, label: Gauge (mm)}
+- {name: electrified, type: string, label: Electrified}
+- {name: usage, type: string, label: Usage}
+- {name: service, type: string, label: Service}
+tiles: {minzoom: 6, maxzoom: 14, attrs: [usage], minzoom_by_kind: {halt: 10, tram_stop: 12, station: 8}}

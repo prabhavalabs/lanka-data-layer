@@ -11,6 +11,7 @@ publish.workspace = true
 lanka-core.workspace = true
 lanka-app.workspace = true
 lanka-enrich.workspace = true
+lanka-export.workspace = true
 arrow-array.workspace = true
 arrow-schema.workspace = true
 arrow-ipc.workspace = true

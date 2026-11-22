@@ -12,6 +12,7 @@ pub mod dims;
 pub mod dsv;
 pub mod envelope;
 pub mod error;
+pub mod features;
 pub mod flags;
 pub mod frame;
 pub mod geo_code;

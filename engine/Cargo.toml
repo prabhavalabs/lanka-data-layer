@@ -9,6 +9,7 @@ members = [
   "crates/lanka-app",
   "crates/lanka-server",
   "crates/lanka-cli",
+  "crates/lanka-export",
 ]
 
 [workspace.package]
@@ -22,6 +23,7 @@ publish = false
 [workspace.dependencies]
 lanka-app = { path = "crates/lanka-app" }
 lanka-core = { path = "crates/lanka-core" }
+lanka-export = { path = "crates/lanka-export" }
 lanka-ingest = { path = "crates/lanka-ingest" }
 lanka-enrich = { path = "crates/lanka-enrich" }
 lanka-mapdoc = { path = "crates/lanka-mapdoc" }
@@ -57,6 +59,10 @@ clap = { version = "=4.6.9", features = ["derive", "env"] }
 nix = { version = "=0.32.0", default-features = false, features = ["fs"] }
 tracing = "=0.1.44"
 tracing-subscriber = { version = "=0.3.23", features = ["env-filter", "json", "fmt"] }
+# WP-04: OSM PBF reading (pure Rust, rust zlib backend) and gzip for PMTiles directories
+osmpbf = { version = "=0.3.8", default-features = false, features = ["rust-zlib"] }
+flate2 = "=1.1.11"
+rayon = "=1.12.0"
 
 [profile.release]
 lto = "thin"

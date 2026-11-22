@@ -633,3 +633,175 @@ pub trait ZonalKernel: Send + Sync {                       // lanka-enrich/src/z
 LANKA_TEST_DATABASE_URL=postgres://lanka:<password>@127.0.0.1:55432/postgres cargo test -p lanka-ingest --test pg_enrich
 cargo test -p lanka-enrich      # methods, propagation (proptest), expr, DAG/check, runner, fingerprint, zonal
 ```
+
+## Features, OSM and vector tiles (WP-04)
+
+Design: [05 §4, §9](../docs/architecture-v2/05-storage-and-performance.md#4-features-and-boundaries),
+[06 §2](../docs/architecture-v2/06-serving.md), [ADR 0014](../docs/architecture-v2/adr/0014-pmtiles-and-http-caching.md),
+[10 §3.3](../docs/architecture-v2/10-map-composition.md). Migration `0007_features.sql`; new crate `lanka-export`.
+
+```
+Geofabrik ─HEAD -latest─► 307 → sri-lanka-YYMMDD.osm.pbf (edition + fingerprint) ─GET─► raw/ (L0)
+  osm_pbf extract: 3 parallel passes (relations → ways → nodes) ─► features extract (L1, 7 dp, all tags)
+  standardise: registry/connectors/osm-geofabrik.yaml rules → 9 datasets (6 dp GeoJSON, typed attrs, flags)
+  stage: hash rows → dsv; COPY (key, hash) → diff → COPY full rows of new/changed only
+         → geo.features (vfrom = seq; rep point, cell_id, unit_key) + data.version_closes
+  train: closes replaced rows (vto = seq − 1) ─► lanka tiles build ─► tippecanoe ─► tiles/<id>/<sha16>.pmtiles
+```
+
+```bash
+lanka ingest run osm-geofabrik                      # HEAD → (new day?) GET → extract → 9 datasets
+lanka ingest run osm-geofabrik --from DIR           # offline: the *.osm.pbf in DIR (archived like a download)
+lanka review approve <boi-zones dsv> --by NAME      # boi-zones is class B
+lanka release cut && lanka tiles build              # rebuilds only tilesets whose inputs changed
+lanka tiles list
+curl -s 'localhost:8601/v2/features/osm-pois-amenities?kind=hospital&within=LK11&limit=100'
+curl -s 'localhost:8601/v2/features/osm-road-network?kind=motorway&format=geojson'    # bare FeatureCollection
+curl -s 'localhost:8601/v2/features/osm-rail-network/node/1234567'
+curl -s 'localhost:8601/v2/nearest?lat=6.9344&lon=79.8428&dataset=osm-pois-amenities,osm-rail-network&limit=5'
+curl -s localhost:8601/v2/tiles | jq '.payload[] | {id, bytes, pmtiles}'
+curl -s localhost:8601/v2/tiles/admin.json                                            # TileJSON 3.0.0
+curl -s localhost:8601/v2/tiles/admin/10/739/492.mvt -o t.mvt                          # gzip MVT (204 = empty)
+curl -s -H 'Range: bytes=0-126' localhost:8601/dl/tiles/admin/<sha16>.pmtiles          # the file, range requests
+```
+
+- **`geo.features`** (0007) is the observation model for geometry: `LIST (dataset_key)` partitions created at registry
+  sync for `kind: features` datasets (`geo.ensure_feature_partition`, SECURITY DEFINER like `ensure_obs_partition`),
+  immutable rows except the `vto` close (trigger `features_guard`), `feature_id = dataset_key << 40 | seq` from
+  `catalog.datasets.obs_seq`, closes in the shared `data.version_closes`. Partial indexes `WHERE vto = open`: GiST
+  `geom`, GiST `rep`, `(kind, unit_key)`, `(feature_key, vfrom)`, trigram `name_en` for `searchable: true`.
+  `content_sha256` is the canonical row hash (key, kind, three names, 6-dp GeoJSON, canonical attrs, flags, entity).
+  `geo.tilesets` + view `geo.current_tilesets` index builds. The 0001 table never held rows and is replaced.
+- **Derived at insert, outside the hash**: `rep` (the point itself; midpoint along a line; GEOS-style interior point
+  of a polygon — always on the geometry), `cell_id` = canonical grid cell of `rep` (Rust `lanka-core::grid`; the
+  formula is not repeated in SQL), `unit_key` = deepest admin unit of the reference set containing `rep`, else the
+  nearest (`unit_match` 0 contains / 1 ≤ 2 km / 2 beyond). Every published feature has both (310,629 / 310,629).
+  Features whose `rep` is outside the grid or the country (ADM0 buffered by 2 km, a banded point-in-polygon index
+  in Rust, `features::load_coverage`) are dropped with a counted warning (16 in the 2026-11-20 extract).
+- **Change detection** for a daily refresh: (1) one HEAD of `-latest` — same dated file → `no_change`, nothing
+  fetched; (2) same artifact sha → `no_change`; (3) same dsv → `unchanged` before anything is copied; (4) otherwise
+  only `(key, hash)` pairs are COPY'd and diffed, and only new/changed features are sent and written. Gate as for
+  observations (> 1 % changed or removed, or any feature without a unit → review).
+- **Registry**: `fields: [{name, type: string|integer|number|boolean, unit, measure_type, enum}]` (only declared
+  attributes are stored and served), `tiles: {tileset?, layer?, minzoom, maxzoom, attrs[], minzoom_by_kind, drop_densest}`
+  and `searchable` on `features` datasets (schema `registry/schema/dataset.schema.json`, checks in `registry.rs`).
+- **Drivers**: `osm_pbf` (`drivers/osm_pbf.rs`; pure Rust `osmpbf`, `LANKA_EXTRACT_THREADS` default ≤ 4;
+  multipolygon/boundary relations assembled by node id into rings, inner rings to the smallest containing outer;
+  route relations as multi-lines) and `geo_file` (`drivers/geo_file.rs`: GeoJSON FeatureCollections and text
+  sequences, verbatim geometry in L1; shapefile/GPKG/KML need GDAL in the WP-08 sandbox). Both use one rule engine
+  (`drivers/feature_rules.rs`: `match`/`not`/`types`, `geometry: point|line|area`, `kind` templates, `attrs` from
+  tags or constants, `flags`, `require_name`, `name_contains`, `drop_unnamed_below`).
+- **Tilesets** (`lanka-export::tiles`, `lanka tiles build`): `admin` (layers `adm0`…`adm4` zoom-gated like v1 with
+  `pcode`, `level` and names on every level, plus `centroids` for labels/symbols; z0–12) and one per `features`
+  dataset with `tiles:` (`key`, `kind`, `name`, declared `tiles.attrs`, `flags`; per-kind minzoom). GeoJSON text
+  sequences streamed from Postgres → `tippecanoe` (`lanka-export::tippecanoe`: one typed op, fixed flags, runs in
+  the work directory so no path enters the file) → `tiles/<id>/<sha16>.pmtiles` (named, immutable). A build is
+  skipped when the input hash (spec + every input dsv + tippecanoe version + export format) is the newest build's.
+- **Serving** (`lanka-server/src/features_api.rs`): `/v2/features/{dataset}` (bbox, within, kind, q, cursor, ≤ 2,000),
+  `/v2/features/{dataset}/{key}`, `/v2/nearest` (GiST KNN then geodesic distance, ≤ 50, ≤ 50 km, ≤ 8 datasets),
+  `/v2/tiles`, `/v2/tiles/{id}.json`, `/v2/tiles/{id}/{z}/{x}/{y}.mvt` (PMTiles read in process by
+  `lanka-export::pmtiles`, directories cached, tiles returned gzip as stored; `ETag = sha16-z-x-y`) and
+  `/dl/tiles/{id}/{sha16}.pmtiles` (single-range requests, `immutable`; nginx serves `/dl/` in production).
+
+### Datasets (Geofabrik 2026-11-20, release 20261122.2)
+
+| Dataset | Features | Kinds (count) |
+|---|---|---|
+| `osm-pois-amenities` | 24,888 | hospital 891, clinic 342, school 5,051, college 282, university 151, aerodrome 30, place_of_worship 9,344, bank 2,254, government_office 1,479, … (24 kinds) |
+| `osm-road-network` | 237,699 | motorway 628 (`status` open 618 / under_construction 9 / proposed 1; 642 km of open carriageway), trunk 3,524, primary 6,501, secondary 1,626, tertiary 7,416, unclassified 32,210, residential 165,745, … |
+| `osm-rail-network` | 1,601 | rail 1,308, station 261, halt 32 |
+| `osm-waterways-waterbodies` | 15,581 | river 1,850, stream 5,372, canal 6,435, reservoir 734, lake 886, lagoon 177, river_area 127 |
+| `osm-protected-areas` | 91 | national_park 21, nature_reserve 30, protected_area 40 (ways and relations) |
+| `osm-parks-greenspace` | 2,378 | park 450, garden 921, playground 953, recreation_ground 54 |
+| `osm-tourism-attractions` | 2,537 | waterfall 141, heritage 1,142, beach 396, viewpoint 390, museum 102, theme_park 40, nature 15, religious 11, park 3, other 297 |
+| `osm-trails-cycling` | 25,831 | path 25,372 (6,422 km), hiking_route 26 (332 km), bicycle_route 2, cycleway 164 (44 km), footway (named) 256, bridleway 11 |
+| `boi-zones` (class B, reviewed) | 23 | export_processing_zone 11, industrial_park 12 — every feature `UNOFFICIAL_GEOM` |
+
+Kinds follow the codelists the count indicators will roll up on (`amenity_type`, `highway_class`, `waterway_type`,
+`attraction_type`, `trail_type`); the roll-ups themselves are WP-06 recipes.
+
+### Parity with v1 (`tests/osm_parity.rs`)
+
+v1's layers are the 2026-04-19 Overpass pulls of ceylon-hub (`foundry/data/raw/geo`), with a bounding box that also
+covers the southern tip of India and simplified geometry. The test counts both sides inside Sri Lanka's outline by
+representative point, measures lines/areas after applying v1's simplification to v2, and re-implements v1's filters
+independently over the raw extract (same snapshot):
+
+| Layer | v1 | v2 | Δ | v1 length/area | Δ | v1 ids in v2 | same snapshot (v1 filter vs v2) |
+|---|---|---|---|---|---|---|---|
+| hospitals + clinics | 1,218 | 1,230 | +1.0 % | — | — | 97.5 % | 1,230 = 1,230 |
+| schools / colleges / universities | 5,389 | 5,434 | +0.8 % | — | — | 98.9 % | 5,434 = 5,434 |
+| aerodromes | 30 | 30 | 0 | — | — | 100 % | 30 = 30 |
+| railway lines | 1,303 | 1,305 | +0.2 % | 15.95° | −0.0 % | 100 % | 1,308 = 1,308 |
+| stations + halts | 293 | 293 | 0 | — | — | 99.3 % | 293 = 293 |
+| water bodies | 1,556 | 1,586 | +1.9 % | 0.048°² | +1.8 % | 99.0 % | 1,586 = 1,586 |
+| protected areas (ways) | 63 | 53 | −15.9 % | 0.022°² | −0.4 % | 84.1 % | 56 = 56 |
+| roads motorway–secondary | 11,189 | 12,214 | +9.2 % | 121.5° | +7.0 % | 97.4 % | 12,266 = 12,266 |
+| rivers | 2,359 | 1,846 | −21.7 % | 60.7° | −6.7 % | 77.3 % | 1,850 = 1,850 |
+
+Asserted: the measure (count for points, length/area for lines/polygons) within 2 % for seven layers, and zero
+missing/extra features on the same snapshot for all nine. Roads and rivers are **reported, not asserted** against
+April: the test's breakdown attributes the difference to seven months of upstream edits (roads: 1,331 new way ids —
+splits and tertiary→secondary/primary reclassification, only 194 v1 ids gone; rivers: 185 ways retagged `stream`,
+28 `canal`, 323 merged away). Protected areas lost ways to relations upstream (area −0.4 %); v2 also reads the
+relations (91 in total).
+
+### Measured (release build, laptop shared with three other builds; 2026-11-22)
+
+| Step | Time |
+|---|---|
+| First `lanka ingest run osm-geofabrik --from` (145 MB PBF → 310,629 features in 9 datasets) | 65 s (archive 0.3 s, extract 3.9 s, standardise 1.4 s, roads stage 42 s incl. unit assignment) |
+| Re-run, same file | 1.4 s (`no_change` at the fingerprint) |
+| `--force` re-run | 6.9 s, 9 × `unchanged`, 0 rows written |
+| `lanka ingest restandardise osm-geofabrik` (offline from the extract) | 3.6 s, 0 rows written |
+| Daily refresh at road scale (`pg_features::daily_refresh_writes_only_the_churn`, 240,000 features, +240 ~960 −240) | 1.24 s, 1,200 rows written (first load 5.7 s; identical delivery 0.19 s) |
+| `lanka tiles build` (10 tilesets) | 43 s wall |
+
+| Tileset | Layers / features | Bytes | Build (export + tippecanoe) |
+|---|---|---|---|
+| `admin` | adm0 1, adm1 9, adm2 25, adm3 339, adm4 14,043, centroids 14,416 | 14,636,424 | 1.6 + 19.3 s |
+| `osm-road-network` | 237,699 | 35,561,312 | 1.7 + 9.5 s |
+| `osm-waterways-waterbodies` | 15,581 | 9,459,701 | 0.2 + 2.2 s |
+| `osm-pois-amenities` | 24,888 | 7,147,064 | 0.1 + 1.1 s |
+| `osm-trails-cycling` | 25,831 | 4,155,376 | 0.1 + 1.2 s |
+| `osm-protected-areas` | 91 | 1,119,225 | 0.5 s |
+| `osm-parks-greenspace` | 2,378 | 771,529 | 0.3 s |
+| `osm-tourism-attractions` | 2,537 | 754,634 | 0.3 s |
+| `osm-rail-network` | 1,601 | 651,653 | 0.2 s |
+| `boi-zones` | 23 | 37,340 | 0.1 s |
+
+Endpoints (curl, 200 requests, p50 / p99): features hospitals in LK11 (100) 8.7 / 20.3 ms; roads in a Colombo bbox
+(500) 13.1 / 21.9 ms; attractions `q=falls` 3.6 / 5.4 ms; nearest hospital 3.7 / 8.8 ms; MVT `admin/10/739/492`
+(169 KB) 0.74 / 4.0 ms; MVT roads z12 0.55 / 0.95 ms; TileJSON 0.70 / 2.5 ms. Every tile read equals go-pmtiles'
+bytes (`tests/pmtiles_reader.rs`).
+
+### Decision note: WP-04 deviations
+
+- *Unit assignment uses the polygon path* (`ST_Intersects` on the reference set's deepest level, KNN fallback),
+  not 05 §4's grid (`cell_id → gnd_idx`): the grid store is WP-05. Swapping in `lanka-grid::assign` changes only
+  `features::write_rows`; boundary-straddling cells keep the polygon path there anyway.
+- *Coverage drop instead of `UNIT_NULL`*: a feature whose representative point is not in the country (Geofabrik's
+  polygon includes sea and the Palk Strait) is not the country's, so it is not published (counted in the run log
+  and `validation.outside_coverage`); everything published has a unit.
+- *Points for facilities*: POIs mapped as areas are published as their interior point (v1 used Overpass `center`);
+  attractions too. Polygon footprints, when needed, come from a separate dataset rule set.
+- *Expressways* are kind `motorway`/`motorway_link` of `osm-road-network` with `status` open / under_construction
+  (`highway=construction` + `construction=motorway`) / proposed, not a separate dataset; `rda-expressway-programme`
+  adds the official status later.
+- *BOI zones*: OSM `landuse=industrial` polygons whose name says export processing zone / industrial zone or park
+  (23 of the BOI's zones); class B (reviewed), `UNOFFICIAL_GEOM` on every feature, licence ODbL (geometry is OSM).
+- *Tiles are built by the CLI* (`lanka tiles build` after a train), not yet by a `tiles` job the train enqueues
+  (WP-09 adds export/tiles jobs). tippecanoe runs as a subprocess with a fixed argument list; WP-08 moves the same op
+  into the sandbox. `--read-parallel` is off: it made builds non-deterministic.
+- *`/v2/tiles/{id}/{z}/{x}/{y}` serves the current build* (floating, 300 s + SWR); the immutable form is the
+  `/dl/tiles/{id}/{sha16}.pmtiles` file. TileJSON carries both.
+- *Not in this package*: OGC API Features/Tiles (WP-13), columnar points `/v2/features/{ds}/points` (WP-27), the
+  `geo_file` sources themselves (RDA A/B roads), feature-level `entity_id` conflation (WP-11), weighting `osm_pbf`
+  ingest jobs as heavy in the job queue.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `LANKA_EXTRACT_THREADS` | min(4, cores) | PBF decoding threads |
+| `LANKA_TIPPECANOE` | `tippecanoe` on PATH | tippecanoe binary for `lanka tiles build` |
+| `LANKA_TEST_OSM_PBF`, `LANKA_TEST_V1_DIR` | — | the parity test (`--release -p lanka-ingest --test osm_parity`) and the extract smoke test |
+| `LANKA_TEST_PMTILES` | — | also compare a real archive with go-pmtiles in `tests/pmtiles_reader.rs` |
