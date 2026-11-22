@@ -8,7 +8,8 @@ description: >-
   2025 Q3 (2025 Q2 and Q3), 2026 Q1 (2025 Q4 and 2026 Q1; the 2025 Q4 bulletin itself
   is a scan) and 2026 Q2 (current quarter only: its previous quarter is the 2026 Q1
   bulletin's current quarter). Class B: every version is reviewed against its evidence
-  sheet before release.
+  sheet before release. Section 5 (local government debt by province) is read from the
+  2026 bulletins into treasury-provincial-debt.
 discover:
   files:
     # "Quarterly Statistical Debt Bulletin – 2026 Second Quarter" (issued 2026-08-28).
@@ -31,6 +32,8 @@ extract:
     - { id: domestic_2026q2, file: debt-bulletin-2026-q2, template: treasury-debt/bulletin-domestic-debt }
     - { id: domestic_2026q1, file: debt-bulletin-2026-q1, template: treasury-debt/bulletin-domestic-debt }
     - { id: domestic_2025q3, file: debt-bulletin-2025-q3, template: treasury-debt/bulletin-domestic-debt }
+    - { id: local_2026q2, file: debt-bulletin-2026-q2, template: treasury-debt/bulletin-local-government-debt }
+    - { id: local_2026q1, file: debt-bulletin-2026-q1, template: treasury-debt/bulletin-local-government-debt }
 standardise:
   dataset: treasury-public-debt
   vintage: "Quarterly Statistical Debt Bulletin {edition}"
@@ -151,12 +154,43 @@ standardise:
       status: { default: provisional }
     - { table: domestic_2025q3, indicator: debt.domestic_by_instrument_usd, geo: { fixed: root }, period: { from_edition: true },
         columns: { usd: {} }, rows: *domestic_rows_2025, status: { default: provisional } }
+    # ── section 5: local government debt by province (2026 bulletins) ──
+    - table: local_2026q2
+      dataset: &pcd treasury-provincial-debt
+      indicator: debt.local_gov
+      geo: { from_label: { level: 1 } }
+      period: { from_edition: true }
+      columns: { lkr: {} }
+      rows: &lg_rows
+        "Western Province Local Government Authorities": {}
+        "Central Province Local Government Authorities": {}
+        "Southern Province Local Government Authorities": {}
+        "North-Western province Local Government Authorities": {}
+        "Sabaragamuva province Local Government Authorities": {}
+        "Northern province Local Government Authorities": {}
+        "Eastern province Local Government Authorities": {}
+        "Uva province Local Government Authorities": {}
+        "North-Central province Local Government Authorities": {}
+      status: { default: provisional }
+    - { table: local_2026q2, dataset: *pcd, indicator: debt.local_gov_usd, geo: { from_label: { level: 1 } }, period: { from_edition: true },
+        columns: { usd: {} }, rows: *lg_rows, status: { default: provisional } }
+    - { table: local_2026q2, dataset: *pcd, indicator: debt.local_gov_with_liabilities, geo: { from_label: { level: 1 } }, period: { from_edition: true },
+        columns: { count: {} }, rows: *lg_rows, status: { default: provisional } }
+    - { table: local_2026q1, dataset: *pcd, indicator: debt.local_gov, geo: { from_label: { level: 1 } }, period: { from_edition: true },
+        columns: { lkr: {} }, rows: *lg_rows, status: { default: provisional } }
+    - { table: local_2026q1, dataset: *pcd, indicator: debt.local_gov_usd, geo: { from_label: { level: 1 } }, period: { from_edition: true },
+        columns: { usd: {} }, rows: *lg_rows, status: { default: provisional } }
+    - { table: local_2026q1, dataset: *pcd, indicator: debt.local_gov_with_liabilities, geo: { from_label: { level: 1 } }, period: { from_edition: true },
+        columns: { count: {} }, rows: *lg_rows, status: { default: provisional } }
 expect:
   - { check: no_future }
-  - { check: row_count, min: 150 }
+  - { dataset: treasury-public-debt, check: row_count, min: 150 }
+  - { dataset: treasury-provincial-debt, check: row_count, min: 54, max: 54 }
+  - { dataset: treasury-provincial-debt, check: completeness, level: 1, min_units: 9 }
   - { check: range, min: 0, max: 100000000 }
-  - { check: period_continuity, indicator: debt.public_gross }
-  - check: sql
+  - { dataset: treasury-public-debt, check: period_continuity, indicator: debt.public_gross }
+  - dataset: treasury-public-debt
+    check: sql
     note: "Domestic debt by source (section 3) totals the domestic debt of section 2 (LKR, within 0.5 %)."
     query: >-
       SELECT d.period_start FROM stage_obs d
