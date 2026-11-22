@@ -1,0 +1,221 @@
+/* Map workspace — route-local chrome. Only transform and opacity move. */
+.ws-map .maplibregl-canvas {
+  outline: none;
+}
+.ws-map .maplibregl-ctrl-bottom-right {
+  transform: translate(calc(-1 * var(--inset-r, 0px)), calc(-1 * var(--inset-b, 0px)));
+  transition: transform 380ms var(--ease-drawer);
+  z-index: 1;
+}
+.ws-map .maplibregl-ctrl-attrib.maplibregl-compact {
+  margin: 0 12px 12px 0;
+  min-height: 24px;
+  border-radius: 12px;
+  color: var(--ink2);
+}
+.ws-map .maplibregl-ctrl-attrib.maplibregl-compact-show {
+  background: var(--glass) !important;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 0 0 1px var(--glass-line);
+  padding: 3px 28px 3px 10px;
+}
+.ws-map .maplibregl-ctrl-attrib-button {
+  background-color: transparent;
+  opacity: 0.55;
+}
+.dark .ws-map .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
+}
+.ws-map .maplibregl-ctrl-attrib a {
+  color: var(--ink2);
+}
+
+/* docks: the same path in and out */
+.ws-dock {
+  transition:
+    transform 340ms var(--ease-drawer),
+    opacity 220ms var(--ease-out);
+}
+.ws-dock[data-open='false'] {
+  pointer-events: none;
+  opacity: 0;
+}
+.ws-dock[data-side='left'][data-open='false'] {
+  transform: translateX(calc(-100% - 24px));
+}
+.ws-dock[data-side='right'][data-open='false'] {
+  transform: translateX(calc(100% + 24px));
+}
+.ws-float {
+  transition:
+    transform 340ms var(--ease-drawer),
+    opacity 200ms var(--ease-out);
+}
+/* the edge a dock is resized by: a hairline that appears under the pointer */
+.ws-grip {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+}
+.ws-grip::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--ink3);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .ws-grip:hover::after {
+    opacity: 0.55;
+  }
+}
+.ws-grip[data-active]::after {
+  opacity: 0.9;
+  background: var(--brand);
+}
+
+/* layer rows */
+.ws-row {
+  transition:
+    background-color 120ms ease,
+    opacity 160ms ease;
+}
+.ws-row[data-selected='true'] {
+  background: color-mix(in oklab, var(--ink) 8%, transparent);
+  box-shadow: inset 0 0 0 1px var(--glass-line);
+}
+.ws-row[data-selected='true']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--brand);
+}
+.ws-row[data-dragging='true'] {
+  opacity: 0.32;
+}
+.ws-row[data-into='true'] {
+  box-shadow: inset 0 0 0 1.5px var(--brand);
+  background: var(--brand-soft);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ws-row:not([data-selected='true']):hover {
+    background: color-mix(in oklab, var(--ink) 4.5%, transparent);
+  }
+  .ws-row .ws-row-act {
+    opacity: 0;
+  }
+  .ws-row:hover .ws-row-act,
+  .ws-row:focus-within .ws-row-act,
+  .ws-row[data-selected='true'] .ws-row-act,
+  .ws-row .ws-row-act[data-on='true'] {
+    opacity: 1;
+  }
+}
+.ws-row-act {
+  transition: opacity 120ms ease;
+}
+/* while a row is being dragged the others are drop targets, not things to act on */
+[data-reordering] .ws-row {
+  background: none !important;
+}
+[data-reordering] .ws-row .ws-row-act:not([data-on='true']) {
+  opacity: 0 !important;
+}
+.ws-ghost {
+  position: fixed;
+  z-index: 90;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  border-radius: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  box-shadow: var(--shadow-lg);
+  will-change: transform;
+}
+.ws-drop {
+  position: absolute;
+  left: 0;
+  right: 6px;
+  top: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--brand);
+  pointer-events: none;
+  will-change: transform;
+}
+.ws-drop::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--brand);
+  background: var(--bg2);
+}
+
+/* no-data and estimate hatch for legend swatches */
+.ws-hatch {
+  background-image: repeating-linear-gradient(135deg, var(--ink3) 0 1px, transparent 1px 4px);
+  background-color: var(--bg3);
+}
+.ws-solid {
+  background: var(--bg);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@keyframes ws-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.ws-fade {
+  animation: ws-fade-in 220ms var(--ease-out);
+}
+@keyframes ws-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+/* scatter marks: the hovered one is drawn by a separate overlay, so nothing here animates */
+.ws-chart text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--ink3);
+}
+.ws-chart .ws-axis-title {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--ink2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-map .maplibregl-ctrl-bottom-right,
+  .ws-dock,
+  .ws-float {
+    transition: opacity 160ms ease;
+  }
+  .ws-dock[data-open='false'] {
+    transform: none !important;
+  }
+}
+/* a light map under dark chrome (or the reverse): glass would turn to mud, so the panels go nearly solid */
+.ws-mixed .glass {
+  background: color-mix(in oklab, var(--bg2) 93%, transparent);
+}

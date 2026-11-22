@@ -1,384 +1,215 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ListOrdered, LocateFixed, Minus, PanelLeftClose, PanelLeftOpen, Plus, SlidersHorizontal } from 'lucide-react'
-import type { StyleSpecification } from 'maplibre-gl'
+// /explore: opens a map document and hands it to the workspace.
+//
+// Which document: `#d=…` (a whole map in the link), `?map=<id>` (a starter or one of the visitor's own),
+// the old `?indicator=&level=&area=` links from area pages (the single-indicator map), or the default
+// showcase. What is not part of the document rides in the query string: the camera (`v`), the time
+// cursor (`t`) and the selected area (`area`), so a link can point into a map without forking it.
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
-import { areasQuery, datasetsQuery, indicatorMapQuery, indicatorsQuery, themesQuery } from '@/api/queries'
-import type { Indicator, LicenceStatus } from '@/api/types'
-import { PcodePlate } from '@/components/common/bits'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { AreaDrawer } from '@/features/explore/AreaDrawer'
-import { Controls, SearchField, type ControlsProps } from '@/features/explore/Controls'
-import '@/features/explore/explore.css'
-import { ExploreMap, type MapHandle } from '@/features/explore/ExploreMap'
-import { Legend } from '@/features/explore/Legend'
-import { MobileSheet, SHEET_PEEK } from '@/features/explore/MobileSheet'
-import {
-  buildModel,
-  DEFAULT_INDICATOR,
-  fmtBare,
-  levelOfPcode,
-  ordinal,
-  rangeBounds,
-  unitSuffix,
-  type LayerKey,
-  type LayerState,
-  type Level,
-  type LicenceFilter,
-} from '@/features/explore/model'
-import { RankedList } from '@/features/explore/RankedList'
-import { geo } from '@/lib/geo'
-import { useMediaQuery, useReducedMotion, useTheme, type Theme } from '@/lib/hooks'
-import { cn } from '@/lib/utils'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { DEFAULT_MAP, glance, isStarter, mapQuery, saveMap } from '@/api/workspace'
+import type { DocActions } from '@/features/workspace/DocBar'
+import { exportJson, shareLink } from '@/features/workspace/exporting'
+import { actions, getWs, useDoc, useWs } from '@/features/workspace/store'
+import { Workspace } from '@/features/workspace/Workspace'
+import { useTheme } from '@/lib/hooks'
+import { blankDocument, decodeDocument, type MapDocument } from '@/lib/map-spec'
 
-const BASEMAP: Record<Theme, string> = {
-  dark: 'https://tiles.openfreemap.org/styles/dark',
-  light: 'https://tiles.openfreemap.org/styles/positron',
+type Origin = DocActions['origin']
+type Opened = { doc: MapDocument; origin: Origin }
+// the draft the contract names: the document being edited, so a reload does not lose work in progress
+const DRAFT = 'ldl:draft'
+const readDraft = (key: string): MapDocument | null => {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT) ?? 'null') as { key: string; doc: MapDocument } | null
+    return d?.key === key ? d.doc : null
+  } catch {
+    return null
+  }
 }
-/** Basemap style as data: resolves to null when unreachable so the map can fall back to a blank canvas. */
-const basemapQuery = (theme: Theme) => ({
-  queryKey: ['basemap', theme],
-  queryFn: async (): Promise<StyleSpecification | null> => {
-    try {
-      const res = await fetch(BASEMAP[theme], { signal: AbortSignal.timeout(8000) })
-      if (!res.ok) return null
-      return (await res.json()) as StyleSpecification
-    } catch {
-      return null
-    }
-  },
-  staleTime: Infinity,
-  gcTime: Infinity,
-  retry: false,
-})
-const geoQuery = <T,>(key: string, load: () => Promise<T>, enabled = true) => ({ queryKey: ['geo', key], queryFn: load, staleTime: Infinity, enabled })
-
-type Patch = Partial<Record<'indicator' | 'level' | 'year' | 'area', string | number | null>>
 
 export default function Explore() {
   const [theme] = useTheme()
-  const desktop = useMediaQuery('(min-width: 768px)')
-  const reducedMotion = useReducedMotion()
-  const queryClient = useQueryClient()
-  const [params, setParams] = useSearchParams()
+  const [params] = useSearchParams()
+  const { hash } = useLocation()
+  const navigate = useNavigate()
+  const client = useQueryClient()
+  const [imported, setImported] = useState<{ doc: MapDocument; n: number } | null>(null)
 
-  /* ---------------- data ---------------- */
-  const { data: indicators } = useQuery(indicatorsQuery())
-  const { data: themes } = useQuery(themesQuery())
-  const { data: datasets } = useQuery(datasetsQuery())
-  const { data: areaList } = useQuery(areasQuery())
-  const areas = useMemo(() => areaList && new Map(areaList.map((a) => [a.pcode, a])), [areaList])
-  const { data: adm1 } = useQuery(geoQuery('adm1', geo.adm1))
-  const { data: adm2 } = useQuery(geoQuery('adm2', geo.adm2))
-  const { data: basemap } = useQuery(basemapQuery(theme))
-  useEffect(() => {
-    void queryClient.prefetchQuery(basemapQuery(theme === 'dark' ? 'light' : 'dark'))
-  }, [queryClient, theme])
+  /* ---- which document ---- */
+  const inline = hash.startsWith('#d=') ? hash.slice(3) : null
+  const mapParam = params.get('map')
+  const legacy = params.get('indicator')
+  const area = params.get('area')?.toUpperCase() ?? null
+  const level = params.get('level') === '1' || area?.length === 3 ? 1 : 2
+  const id = mapParam ?? (legacy || area ? 'm_glance' : DEFAULT_MAP)
+  // what identifies the document, whatever theme it is shown in
+  const key = imported ? `import:${imported.n}` : inline ? `link:${inline.slice(0, 48)}` : mapParam === 'new' ? 'new' : `${id}:${legacy ?? ''}:${id === 'm_glance' ? level : ''}`
+  const stored = useQuery({ ...mapQuery(id, theme), enabled: !imported && !inline && mapParam !== 'new' && !(id === 'm_glance' && !!legacy) })
+  const linked = useQuery({ queryKey: ['map-link', inline], queryFn: () => decodeDocument(inline!), enabled: !!inline && !imported, staleTime: Infinity, retry: false })
+  const opened = useMemo<Opened | null>(() => {
+    if (imported) return { doc: imported.doc, origin: 'new' }
+    if (inline) return linked.data ? { doc: linked.data, origin: 'link' } : null
+    if (mapParam === 'new') return { doc: blankDocument(), origin: 'new' }
+    if (id === 'm_glance' && legacy) return { doc: glance(legacy, level, theme), origin: 'starter' }
+    return stored.data ? { doc: stored.data, origin: isStarter(id) ? 'starter' : 'own' } : null
+  }, [imported, inline, linked.data, mapParam, id, legacy, level, stored.data, theme])
 
-  /* ---------------- URL state: ?indicator=&level=&year=&area= ---------------- */
-  const areaParam = params.get('area')?.toUpperCase() ?? null
-  const levelParam = params.get('level')
-  const level: Level = levelParam === '1' ? 1 : levelParam === '2' ? 2 : ((areaParam ? levelOfPcode(areaParam) : null) ?? 2)
-  const selected = areaParam && levelOfPcode(areaParam) === level ? areaParam : null
-  const indicator = indicators?.find((i) => i.id === params.get('indicator')) ?? indicators?.find((i) => i.id === DEFAULT_INDICATOR) ?? indicators?.[0]
-  const yearParam = Number(params.get('year'))
-  const year = indicator ? (indicator.years.includes(yearParam) ? yearParam : indicator.years[indicator.years.length - 1]) : yearParam || 2024
-
-  const patch = useCallback(
-    (p: Patch) =>
-      setParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          for (const [k, v] of Object.entries(p)) {
-            if (v === null || v === undefined) next.delete(k)
-            else next.set(k, String(v))
-          }
-          return next
-        },
-        { replace: true },
-      ),
-    [setParams],
+  /* ---- into the store ---- */
+  const loaded = useRef('')
+  const skip = useRef('')
+  const [docKey, setDocKey] = useState('')
+  const [origin, setOrigin] = useState<Origin>('starter')
+  const open = useCallback(
+    (o: Opened, k: string, fresh: boolean) => {
+      const t = params.get('t')
+      const base = o.doc.time && t && t >= o.doc.time.range[0] && t <= o.doc.time.range[1] ? { ...o.doc, time: { ...o.doc.time, cursor: t } } : o.doc
+      const draft = fresh ? readDraft(k) : null
+      actions.load(draft ?? base, o.origin === 'link' || o.origin === 'new' ? null : base)
+      loaded.current = k
+      setOrigin(o.origin)
+      if (fresh) setDocKey(k)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
-  const patchRef = useRef(patch)
-  patchRef.current = patch
-
-  /* ---------------- choropleth ---------------- */
-  const mapQuery = useQuery({ ...indicatorMapQuery(indicator?.id ?? '', level, year), enabled: !!indicator })
-  const mapData = mapQuery.data
-  // Draw what the payload describes (it may be the previous one while the next loads).
-  const shown = mapData && indicators?.find((i) => i.id === mapData.indicator)
-  const model = useMemo(() => (shown && mapData ? buildModel(shown, mapData, theme) : null), [shown, mapData, theme])
-  const shownLevel = model?.data.level ?? level
-  const collection = shownLevel === 1 ? adm1 : adm2
-
-  const [range, setRange] = useState<[number, number]>([0, 100])
-  const bounds = useMemo(() => rangeBounds(model, range), [model, range])
-  const colors = useMemo(() => (model ? new Map([...model.byPcode].map(([p, v]) => [p, v.color])) : null), [model])
-  const dimmed = useMemo(() => (model ? model.data.pcodes.filter((_, i) => model.data.values[i] < bounds[0] || model.data.values[i] > bounds[1]) : []), [model, bounds])
-
-  /* ---------------- panel state ---------------- */
-  const [licences, setLicences] = useState<LicenceFilter>({ open: true, attribution: true, unclear: true })
-  const [layers, setLayers] = useState<LayerState>({ rail: true, rivers: false, protected: false, places: true })
-  const [panelOpen, setPanelOpen] = useState(true)
-  // how much of the mobile sheet is showing once it has come to rest: the map keeps the island clear of it
-  const [sheetRest, setSheetRest] = useState(SHEET_PEEK)
-  const [tab, setTab] = useState('controls')
-  const [playing, setPlaying] = useState(false)
-  const [hover, setHover] = useState<string | null>(null)
-  const lastHover = useRef<string | null>(null)
-  if (hover) lastHover.current = hover
-  const tooltipRef = useRef<HTMLDivElement | null>(null)
-  const mapHandle = useRef<MapHandle | null>(null)
-
-  const { data: rail } = useQuery(geoQuery('rail', geo.rail, layers.rail))
-  const { data: rivers } = useQuery(geoQuery('rivers', geo.rivers, layers.rivers))
-  const { data: protectedAreas } = useQuery(geoQuery('protected', geo.protectedAreas, layers.protected))
-  const { data: places } = useQuery(geoQuery('places', geo.places, layers.places))
-  const overlays = useMemo(() => ({ rail, rivers, protectedAreas, places }), [rail, rivers, protectedAreas, places])
-
-  const datasetOf = useCallback((ind: Indicator) => datasets?.find((d) => d.id === ind.dataset), [datasets])
-  const licenceOf = useCallback((ind: Indicator): LicenceStatus | undefined => datasetOf(ind)?.licence.status, [datasetOf])
-
-  /* ---------------- playback ---------------- */
-  const yearRef = useRef(year)
-  yearRef.current = year
-  const years = indicator?.years
   useEffect(() => {
-    if (!playing || !years || years.length < 2) return
-    const id = window.setInterval(() => {
-      const i = years.indexOf(yearRef.current)
-      patchRef.current({ year: years[(i + 1) % years.length] })
-    }, 900)
-    return () => window.clearInterval(id)
-  }, [playing, years])
-
-  /* ---------------- handlers ---------------- */
-  const onIndicator = (id: string) => {
-    const next = indicators?.find((i) => i.id === id)
-    if (!next) return
-    setRange([0, 100])
-    patch({ indicator: id, year: next.years.includes(year) ? year : next.years[next.years.length - 1] })
-  }
-  const onLevel = (l: Level) => {
-    if (l === level) return
-    setRange([0, 100])
-    patch({ level: l, area: l === 1 && selected ? selected.slice(0, 3) : null })
-  }
-  const onYear = useCallback((y: number) => {
-    setPlaying(false)
-    patchRef.current({ year: y })
-  }, [])
-  const onPlay = () => {
-    if (!years || years.length < 2) return
-    // reduced motion: step once instead of auto-animating the colours
-    if (reducedMotion) patch({ year: years[(years.indexOf(year) + 1) % years.length] })
-    else setPlaying((v) => !v)
-  }
-  const onLicence = (status: LicenceStatus, on: boolean) => {
-    const next = { ...licences, [status]: on }
-    setLicences(next)
-    if (indicator && indicators && !next[licenceOf(indicator) ?? 'open']) {
-      const first = indicators.find((i) => next[licenceOf(i) ?? 'open'])
-      if (first) onIndicator(first.id)
+    if (!opened) return
+    if (skip.current === key) {
+      // the document just saved under this id is already the one in the store
+      skip.current = ''
+      loaded.current = key
+      return setOrigin(opened.origin)
     }
-  }
-  const onLayer = (key: LayerKey, on: boolean) => setLayers((s) => ({ ...s, [key]: on }))
-  const onSelect = useCallback((pcode: string | null) => patchRef.current({ area: pcode }), [])
-  const onClose = useCallback(() => patchRef.current({ area: null }), [])
-  const onPick = (pcode: string) => {
-    patch({ area: pcode })
-    mapHandle.current?.focus(pcode)
-  }
-
-  // On a phone the sheet covers most of the map, so bring the selected area into the strip that is left.
-  const hasGeometry = !!collection
+    const same = loaded.current === key
+    // a theme change re-issues a starter in the other scheme; edits in progress are kept instead
+    if (same && getWs().doc !== getWs().saved) return
+    open(opened, key, !same)
+  }, [opened, key, open])
+  const doc = useDoc()
+  const dirty = useWs((s) => s.doc !== s.saved)
   useEffect(() => {
-    if (!desktop && selected && hasGeometry) mapHandle.current?.focus(selected)
-  }, [desktop, selected, hasGeometry])
+    const t = window.setTimeout(() => {
+      try {
+        if (dirty && doc && loaded.current) localStorage.setItem(DRAFT, JSON.stringify({ key: loaded.current, doc }))
+        else localStorage.removeItem(DRAFT)
+      } catch {
+        /* private mode */
+      }
+    }, 500)
+    return () => window.clearTimeout(t)
+  }, [doc, dirty])
 
-  /* ---------------- camera padding: keep the island clear of the panels ---------------- */
-  const padding = useMemo(
-    () =>
-      desktop
-        ? { top: 72, bottom: 24, left: panelOpen ? 364 : 16, right: selected ? 404 : 16 }
-        : { top: 60, bottom: selected ? Math.round(window.innerHeight * 0.62) + 4 : sheetRest + 8, left: 8, right: 8 },
-    [desktop, panelOpen, selected, sheetRest],
+  /* ---- what rides in the URL beside the document ---- */
+  const view = useRef<{ center: [number, number]; zoom: number } | null>(null)
+  // through `navigate`, not `setSearchParams`: a map that lives in the fragment (`#d=`) must keep it
+  const here = useRef({ search: '', hash: '' })
+  here.current = { search: params.toString(), hash }
+  const patch = useCallback(
+    (p: Record<string, string | null>) => {
+      const next = new URLSearchParams(here.current.search)
+      for (const [k, v] of Object.entries(p)) {
+        if (v === null) next.delete(k)
+        else next.set(k, v)
+      }
+      if (next.toString() === here.current.search) return
+      here.current.search = next.toString()
+      navigate({ search: next.toString(), hash: here.current.hash }, { replace: true, preventScrollReset: true })
+    },
+    [navigate],
+  )
+  const onView = useCallback(
+    (v: { center: [number, number]; zoom: number }) => {
+      view.current = v
+      patch({ v: `${v.center[0]},${v.center[1]},${v.zoom}` })
+    },
+    [patch],
+  )
+  const cursor = doc?.time?.cursor ?? null
+  useEffect(() => {
+    if (loaded.current) patch({ t: cursor })
+  }, [cursor, patch])
+  const onArea = useCallback((pcode: string | null) => patch({ area: pcode }), [patch])
+  const [initialView] = useState(() => {
+    const v = params.get('v')?.split(',').map(Number)
+    return v && v.length === 3 && v.every(Number.isFinite) ? { center: [v[0], v[1]] as [number, number], zoom: v[2] } : null
+  })
+
+  /* ---- document actions ---- */
+  const withView = (d: MapDocument): MapDocument => (view.current ? { ...d, view: { center: view.current.center, zoom: view.current.zoom } } : d)
+  const save = useMutation({
+    mutationFn: (d: MapDocument) => saveMap(d),
+    onSuccess: (saved) => {
+      actions.markSaved(saved)
+      void client.invalidateQueries({ queryKey: ['maps'] })
+      setImported(null)
+      if (saved.id !== mapParam) {
+        // the map now lives under its own id: point the address at it without reloading it
+        skip.current = `${saved.id}::`
+        navigate(`/explore?map=${saved.id}`, { replace: true })
+      }
+    },
+  })
+  const docActions = useMemo<Omit<DocActions, 'exportPng'>>(
+    () => ({
+      origin,
+      saving: save.isPending,
+      save: () => {
+        const d = getWs().doc
+        if (d && !save.isPending) save.mutate(withView(d))
+      },
+      revert: () => {
+        try {
+          localStorage.removeItem(DRAFT)
+        } catch {
+          /* ignore */
+        }
+        if (opened) open(opened, loaded.current, false)
+      },
+      open: (next) => {
+        setImported(null)
+        loaded.current = ''
+        navigate(next ? `/explore?map=${next}` : '/explore')
+      },
+      openDocument: (d) => {
+        loaded.current = ''
+        setImported((cur) => ({ doc: { ...d, id: undefined }, n: (cur?.n ?? 0) + 1 }))
+      },
+      blank: () => {
+        setImported(null)
+        loaded.current = ''
+        navigate('/explore?map=new')
+      },
+      share: async () => {
+        const d = getWs().doc
+        if (d) await navigator.clipboard?.writeText(await shareLink(withView(d))).catch(() => {})
+      },
+      exportJson: () => {
+        const d = getWs().doc
+        if (d) exportJson(withView(d))
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [origin, save.isPending, opened, navigate, open],
   )
 
-  const controls: ControlsProps = {
-    indicators,
-    themes,
-    licenceOf,
-    licences,
-    onLicence,
-    indicator,
-    onIndicator,
-    level,
-    onLevel,
-    year,
-    onYear,
-    playing,
-    onPlay,
-    reducedMotion,
-    model,
-    range,
-    onRange: setRange,
-    layers,
-    onLayer,
-  }
-
-  const tabs = (
-    <Tabs value={tab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
-      <div className="px-3 pb-3 max-md:pt-3">
-        <TabsList className="flex w-full max-md:h-11">
-          <TabsTrigger value="controls" className="flex-1">
-            <SlidersHorizontal />
-            Controls
-          </TabsTrigger>
-          <TabsTrigger value="ranking" className="flex-1">
-            <ListOrdered />
-            Ranking
-          </TabsTrigger>
-        </TabsList>
-      </div>
-      <TabsContent value="controls" className="scroll-thin min-h-0 flex-1 border-t border-glass-line md:overflow-y-auto">
-        <Controls {...controls} />
-      </TabsContent>
-      <TabsContent value="ranking" className="scroll-thin min-h-0 flex-1 border-t border-glass-line md:overflow-y-auto">
-        <RankedList model={model} areas={areas} selected={selected} bounds={bounds} onPick={onPick} />
-      </TabsContent>
-    </Tabs>
-  )
-
-  const tip = hover ?? lastHover.current
-  const tipData = tip ? model?.byPcode.get(tip) : undefined
-
-  return (
-    <div
-      className="relative h-[100dvh] w-full overflow-hidden bg-bg"
-      style={{ '--inset-r': desktop && selected ? '396px' : '0px', '--inset-b': desktop ? '0px' : sheetRest > SHEET_PEEK + 60 ? `${sheetRest}px` : `calc(${SHEET_PEEK}px + env(safe-area-inset-bottom))` } as React.CSSProperties}
-    >
-      <h1 className="sr-only">Explore the map</h1>
-      <ExploreMap
-        theme={theme}
-        basemap={basemap}
-        collection={collection}
-        provinces={adm1}
-        colors={colors}
-        dimmed={dimmed}
-        selected={selected}
-        layers={layers}
-        overlays={overlays}
-        padding={padding}
-        reducedMotion={reducedMotion}
-        tooltipRef={tooltipRef}
-        onHover={setHover}
-        onSelect={onSelect}
-        handle={mapHandle}
-      />
-
-      {/* keeps the floating nav legible over any basemap */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-bg/80 to-transparent" aria-hidden />
-
-      {/* hover tooltip: positioned imperatively by the map, content only changes per area */}
-      <div ref={tooltipRef} className={cn('glass pointer-events-none absolute top-0 left-0 z-20 min-w-[176px] rounded-xl px-3 py-2.5 transition-opacity duration-150 will-change-transform', hover ? 'opacity-100' : 'opacity-0')} aria-hidden>
-        {tip && (
-          <>
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-[13px] font-semibold tracking-[-0.01em] text-ink">{areas?.get(tip)?.name.en ?? tip}</span>
-              <PcodePlate code={tip} size="sm" />
-            </div>
-            <div className="mt-2 flex items-baseline justify-between gap-4">
-              {tipData && model ? (
-                <>
-                  <span className="t-num font-mono text-[15px] font-medium tracking-[-0.02em] text-ink">
-                    {fmtBare(tipData.value, model.indicator.unit)}
-                    <span className="ml-1 font-sans text-[11.5px] font-normal text-ink2">{unitSuffix(model.indicator.unit)}</span>
-                  </span>
-                  <span className="t-label t-num">
-                    {ordinal(tipData.rank)} of {model.data.pcodes.length}
-                  </span>
-                </>
-              ) : (
-                <span className="text-[12px] text-ink3">No data</span>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      {desktop ? (
-        <>
-          <aside
-            aria-label="Map controls"
-            inert={!panelOpen}
-            className={cn(
-              'glass absolute top-[68px] bottom-4 left-4 z-30 flex w-[340px] flex-col overflow-hidden rounded-2xl transition-[transform,opacity] duration-[340ms] ease-[var(--ease-drawer)] motion-reduce:transition-none',
-              !panelOpen && 'pointer-events-none -translate-x-[calc(100%+24px)] opacity-0',
-            )}
-          >
-            <div className="flex items-center gap-1.5 p-3">
-              <SearchField />
-              <Button variant="ghost" size="icon" onClick={() => setPanelOpen(false)} aria-label="Hide controls">
-                <PanelLeftClose />
-              </Button>
-            </div>
-            {tabs}
-            <Legend docked model={model} dataset={shown ? datasetOf(shown) : undefined} loading={mapQuery.isPlaceholderData} />
-          </aside>
-          <Button
-            variant="glass"
-            size="icon"
-            onClick={() => setPanelOpen(true)}
-            aria-label="Show controls"
-            inert={panelOpen}
-            className={cn('absolute top-[68px] left-4 z-20 size-10 rounded-xl transition-opacity duration-200', panelOpen ? 'pointer-events-none opacity-0' : 'opacity-100 delay-150')}
-          >
-            <PanelLeftOpen />
-          </Button>
-          <Legend
-            model={model}
-            dataset={shown ? datasetOf(shown) : undefined}
-            loading={mapQuery.isPlaceholderData}
-            className={cn('absolute bottom-4 left-4 z-20 transition-opacity duration-200', panelOpen ? 'pointer-events-none opacity-0' : 'opacity-100 delay-150')}
-          />
-        </>
-      ) : (
-        <MobileSheet model={model} year={year} playing={playing} onPlay={onPlay} reducedMotion={reducedMotion} onRest={setSheetRest}>
-          <div className="flex px-3 pt-3">
-            <SearchField />
+  if (!doc || !docKey) {
+    const failed = (inline && linked.isError) || (!inline && !imported && stored.isFetched && !stored.data && mapParam !== 'new')
+    return (
+      <div className="grid h-[100dvh] place-items-center bg-bg px-6">
+        {failed ? (
+          <div className="max-w-sm text-center">
+            <h1 className="t-h3">This map could not be opened</h1>
+            <p className="mt-2 text-[14px] leading-[1.55] text-ink2">{inline ? 'The link is incomplete, or it was made by a newer version of the map format.' : 'It is not among the starters or the maps saved in this browser.'}</p>
+            <button type="button" onClick={() => navigate('/explore')} className="pressable mt-5 h-9 rounded-lg bg-ink px-4 text-[13.5px] font-medium text-bg">
+              Open the default map
+            </button>
           </div>
-          {tabs}
-        </MobileSheet>
-      )}
-
-      {/* map controls */}
-      <div
-        className="glass absolute right-4 z-20 flex flex-col overflow-hidden rounded-xl transition-transform duration-[380ms] ease-[var(--ease-drawer)] motion-reduce:transition-none max-md:top-[68px] max-md:right-3 md:bottom-12"
-        style={{ transform: desktop ? 'translateX(calc(-1 * var(--inset-r)))' : undefined }}
-      >
-        {desktop && (
-          <>
-            <button type="button" onClick={() => mapHandle.current?.zoomIn()} aria-label="Zoom in" className="pressable grid size-9 place-items-center text-ink2 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-bg3/70 [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink">
-              <Plus className="size-4" />
-            </button>
-            <button type="button" onClick={() => mapHandle.current?.zoomOut()} aria-label="Zoom out" className="pressable grid size-9 place-items-center border-t border-glass-line text-ink2 [@media(hover:hover)_and_(pointer:fine)]:hover:bg-bg3/70 [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink">
-              <Minus className="size-4" />
-            </button>
-          </>
+        ) : (
+          <div className="skeleton h-1 w-40" role="status" aria-label="Opening the map" />
         )}
-        <button
-          type="button"
-          onClick={() => mapHandle.current?.reset()}
-          aria-label="Reset view to Sri Lanka"
-          className="pressable grid size-9 place-items-center text-ink2 max-md:size-11 md:border-t md:border-glass-line [@media(hover:hover)_and_(pointer:fine)]:hover:bg-bg3/70 [@media(hover:hover)_and_(pointer:fine)]:hover:text-ink"
-        >
-          <LocateFixed className="size-4" />
-        </button>
       </div>
-
-      <AreaDrawer pcode={selected} model={model} areas={areas} theme={theme} year={year} mobile={!desktop} onYear={onYear} onClose={onClose} />
-    </div>
-  )
+    )
+  }
+  return <Workspace doc={doc} docActions={docActions} initialView={initialView ?? doc.view} docKey={docKey} onView={onView} area={area} onArea={onArea} />
 }

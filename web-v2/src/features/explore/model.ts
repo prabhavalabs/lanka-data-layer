@@ -1,23 +1,14 @@
-// Shared, framework-free helpers for the Explore map.
-import type { Indicator, IndicatorMap, LicenceStatus } from '@/api/types'
+// Shared, framework-free helpers for the area drawer: one indicator on admin units.
+import type { Indicator, IndicatorMap } from '@/api/types'
 import { fmtValue } from '@/lib/format'
 import type { Theme } from '@/lib/hooks'
 import { classOf, ramp } from '@/lib/palettes'
 
 export type Level = 1 | 2
-export type LayerKey = 'rail' | 'rivers' | 'protected' | 'places'
-export type LayerState = Record<LayerKey, boolean>
-export type LicenceFilter = Record<LicenceStatus, boolean>
-
-export const DEFAULT_INDICATOR = 'pop.density'
 export const LEVEL_NAME: Record<Level, string> = { 1: 'Province', 2: 'District' }
-export const LEVEL_PLURAL: Record<Level, string> = { 1: 'provinces', 2: 'districts' }
 
 /** Selection accent — the only place rose touches the map. */
 export const SELECT_HEX: Record<Theme, string> = { dark: '#d8446b', light: '#c22f5a' }
-export const NODATA_HEX: Record<Theme, string> = { dark: '#1b222b', light: '#e3e6e5' }
-
-export const levelOfPcode = (pcode: string): Level | null => (pcode.length === 3 ? 1 : pcode.length === 4 ? 2 : null)
 
 export function ordinal(n: number): string {
   const s = ['th', 'st', 'nd', 'rd']
@@ -65,11 +56,4 @@ export function buildModel(indicator: Indicator, data: IndicatorMap, theme: Them
     byPcode.set(p, { value, cls, color: colors[cls], rank: data.values.filter((v) => v > value).length + 1 })
   })
   return { indicator, data, colors, byPcode, min: Math.min(...data.values), max: Math.max(...data.values) }
-}
-
-/** Percent thumbs -> value bounds. Thumbs resting at the ends mean "unbounded". */
-export function rangeBounds(model: MapModel | null, pct: [number, number]): [number, number] {
-  if (!model) return [-Infinity, Infinity]
-  const span = model.max - model.min
-  return [pct[0] <= 0 ? -Infinity : model.min + (span * pct[0]) / 100, pct[1] >= 100 ? Infinity : model.min + (span * pct[1]) / 100]
 }
