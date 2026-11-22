@@ -1086,7 +1086,7 @@ POST /v2/analyses (ldl-analysis/1) ─► schema ─► RESOLVE pin → release,
 | Route | |
 |---|---|
 | `GET /v2/analysis/methods`, `/{id}` | roles, supports, params/estimates schemas, min n, guards, citations, page; the guard registry |
-| `POST /v2/analyses` | `303` → `/v2/analyses/{id}` (`payload.computed` says whether it ran); 400 `{problems, hints}`; 422 over the sync budget (30 s estimate; async lane = WP-30); 503 busy or engine off |
+| `POST /v2/analyses` | `303` → `/v2/analyses/{id}` (`payload.computed` says whether it ran); 400 `{problems, hints}` (a period without data: `problems[].path` `/variables/<role>/period`, `hints.available_periods`; `/plan` answers the same); 422 over the sync budget (30 s estimate; async lane = WP-30); 503 busy or engine off |
 | `POST /v2/analyses/plan` | id, resolved request, support + n_expected, alignment, cost (`sync`/`async`, expected ms), guards known in advance |
 | `GET /v2/analyses/{id}` | the stored document inside the envelope, `immutable`, `ETag: "<id>"` (304) |
 | `GET /v2/analyses/{id}/outputs/{output}?format=json\|csv\|arrow` | frames (`{codes, columns}`) and charts |

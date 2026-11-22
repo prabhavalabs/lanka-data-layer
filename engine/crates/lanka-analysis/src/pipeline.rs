@@ -27,13 +27,15 @@ use sqlx::PgPool;
 use crate::frame::{AlignedFrame, AlignmentRecord, BASIS, Column, InputRef, Support};
 use crate::method::{AnalysisMethod, ExposureFrame};
 use crate::methods::Registry;
-use crate::request::{Pin, Request, Support as SupportSpec, SupportRef, Variable};
+use crate::request::{Pin, Problem, Request, Support as SupportSpec, SupportRef, Variable};
 
 /// A request error: HTTP 400 with hints (11 §11.1).
 #[derive(Debug, Clone, PartialEq)]
 pub struct BadRequest {
     pub message: String,
     pub hints: Value,
+    /// JSON-pointer problems into the request (empty = the request as a whole).
+    pub problems: Vec<Problem>,
 }
 
 impl std::fmt::Display for BadRequest {
@@ -47,6 +49,20 @@ impl std::error::Error for BadRequest {}
 pub fn bad(message: impl Into<String>, hints: Value) -> anyhow::Error {
     anyhow::Error::new(BadRequest {
         message: message.into(),
+        hints,
+        problems: Vec::new(),
+    })
+}
+
+/// A request error pointing at one member of the request (`/variables/x/period`).
+pub fn bad_at(path: impl Into<String>, message: impl Into<String>, hints: Value) -> anyhow::Error {
+    let message = message.into();
+    anyhow::Error::new(BadRequest {
+        problems: vec![Problem {
+            path: path.into(),
+            message: message.clone(),
+        }],
+        message,
         hints,
     })
 }
@@ -322,6 +338,36 @@ fn dims_map(t: &str) -> BTreeMap<String, String> {
         .collect()
 }
 
+/// Periods (start dates, ascending) with data for an indicator/dims at a level.
+async fn periods_of(
+    pool: &PgPool,
+    v: &Version,
+    ind_key: i32,
+    level: i16,
+    dims_key: Option<i32>,
+) -> Result<Vec<NaiveDate>> {
+    Ok(sqlx::query_scalar(
+        "SELECT DISTINCT time_start FROM data.observations WHERE dataset_key = $1 AND indicator_key = $2
+         AND geo_level = $3 AND vfrom <= $4 AND vto >= $4 AND ($5::int IS NULL OR dims_key = $5)
+         ORDER BY time_start",
+    )
+    .bind(v.dataset_key)
+    .bind(ind_key)
+    .bind(level)
+    .bind(v.seq)
+    .bind(dims_key)
+    .fetch_all(pool)
+    .await?)
+}
+
+/// JSON pointer of a role's variable in the request.
+fn var_path(role: &str) -> String {
+    role.strip_prefix("control:").map_or_else(
+        || format!("/variables/{role}"),
+        |i| format!("/variables/controls/{i}"),
+    )
+}
+
 async fn latest_period(
     pool: &PgPool,
     v: &Version,
@@ -581,7 +627,9 @@ pub async fn resolve(env: &Env, req: &Request) -> Result<Resolved> {
             }
             .cloned()
             .ok_or_else(|| {
-                bad(
+                let member = if rows.is_empty() { "grid" } else { "period" };
+                bad_at(
+                    format!("{}/{member}", var_path(&role)),
                     format!("unknown grid layer \"{layer}\" (period {:?})", v.period),
                     json!({"periods": rows.iter().map(|r| r.0.clone()).collect::<Vec<_>>()}),
                 )
@@ -796,11 +844,43 @@ pub async fn resolve(env: &Env, req: &Request) -> Result<Resolved> {
                 let dims_key = env.catalog.dims.key(&dims);
                 let period = match p.var.period.as_deref().filter(|s| *s != "latest") {
                     Some(s) => {
-                        Period::parse(freq, s, &profile.calendars)
+                        let at = format!("{}/period", var_path(&p.role));
+                        let start = Period::parse(freq, s, &profile.calendars)
                             .map_err(|e| {
-                                bad(format!("period {s:?} for {}: {e}", info.id), json!({}))
+                                bad_at(
+                                    at.clone(),
+                                    format!("period {s:?} for {}: {e}", info.id),
+                                    json!({}),
+                                )
                             })?
-                            .start
+                            .start;
+                        // an explicit period must have data: a request whose
+                        // inputs resolve to nothing is a 400, never a frame error
+                        let have =
+                            periods_of(&env.pool, &p.version, info.key, source_level, dims_key)
+                                .await?;
+                        if !have.contains(&start) {
+                            let available: Vec<String> = have
+                                .iter()
+                                .rev()
+                                .map(|d| Period { freq, start: *d }.render(&profile.calendars))
+                                .collect();
+                            return Err(bad_at(
+                                at,
+                                format!(
+                                    "\"{}\" has no data for period {s} at level {source_level}{}",
+                                    info.id,
+                                    if available.is_empty() {
+                                        String::new()
+                                    } else {
+                                        format!(" (available: {})", available.join(", "))
+                                    }
+                                ),
+                                json!({"indicator": info.id, "dims": dims_map(&dims),
+                                       "level": source_level, "available_periods": available}),
+                            ));
+                        }
+                        start
                     }
                     None => latest_period(&env.pool, &p.version, info.key, source_level, dims_key)
                         .await?
@@ -1221,7 +1301,12 @@ async fn read_frame(
         .columns
         .iter()
         .find(|c| c.dims == want && c.period == period)
-        .with_context(|| format!("frame {id} has no column for dims {dims:?} period {period}"))?;
+        .ok_or_else(|| {
+            bad(
+                format!("\"{id}\" has no data for dims {dims:?} period {period} at level {level}"),
+                json!({"indicator": id, "level": level, "period": period}),
+            )
+        })?;
     let mut out = HashMap::new();
     for (i, code) in fr.codes.iter().enumerate() {
         let v = col.values[i];

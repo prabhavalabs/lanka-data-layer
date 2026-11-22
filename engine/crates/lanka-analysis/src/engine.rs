@@ -85,7 +85,7 @@ impl From<anyhow::Error> for EngineError {
         match e.downcast::<BadRequest>() {
             Ok(b) => Self::Bad {
                 message: b.message,
-                problems: Vec::new(),
+                problems: b.problems,
                 hints: b.hints,
             },
             Err(e) => Self::Internal(e),

@@ -454,7 +454,7 @@ Consequences for the product:
 | Call | Notes |
 |---|---|
 | `GET /v2/analysis/methods` · `/v2/analysis/methods/{id}` | catalogue: roles, supports, parameter schema, result schema, min n, guards, citations, method page |
-| `POST /v2/analyses` | body `ldl-analysis/1`; public inputs only. `303` → result (ready), `202` (queued), `400` with `hints` (unknown indicator, no common support, level unavailable → `available_levels`), `429` over quota |
+| `POST /v2/analyses` | body `ldl-analysis/1`; public inputs only. `303` → result (ready), `202` (queued), `400` with `problems` (JSON pointers) and `hints` (unknown indicator, no common support, level unavailable → `available_levels`, a requested period without data → `problems[].path` `/variables/<role>/period` and `available_periods`; the plan answers the same 400 — an input that resolves to no data is never a blocked result or a 500, and an override cannot run it), `429` over quota |
 | `POST /v2/analyses/plan` | dry run: chosen support, alignment per variable, expected n, cost, sync/async, guards already known. Used by the UI before the user commits. |
 | `GET /v2/analyses/{id}` · `/outputs/{output}?format=json\|arrow\|csv\|parquet\|geojson` · `/outputs/{output}/values/{z}/{x}/{y}.png` (grid outputs) · `/events` | immutable once `ready` |
 | `GET /v2/analyses/{id}/bundle` | zip: `result.json`, outputs as Parquet/COG, `README.md` (method, guards, citation), `prov.jsonld`, `datapackage.json` |

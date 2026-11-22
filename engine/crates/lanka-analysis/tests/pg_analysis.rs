@@ -558,6 +558,52 @@ async fn run_cycle(url: String) {
         Err(lanka_analysis::EngineError::Bad { .. })
     ));
 
+    // a period without data: plan and POST agree on a 400 pointing at the
+    // period (with the periods that exist), with or without the override —
+    // never a frame error (HTTP 500), nothing stored
+    let results_before: i64 = sqlx::query_scalar("SELECT count(*) FROM analysis.results")
+        .fetch_one(&pool)
+        .await
+        .expect("count");
+    let mut no_data = relate(2);
+    no_data["variables"]["x"]["period"] = json!("2015");
+    let mut no_data_override = no_data.clone();
+    no_data_override["override"] = json!(["PERIOD_MISMATCH"]);
+    for body in [&no_data, &no_data_override] {
+        let plan = engine.plan(body).await;
+        let run = engine.run(body).await;
+        for (what, r) in [("plan", plan.map(|_| ())), ("run", run.map(|_| ()))] {
+            match r {
+                Err(lanka_analysis::EngineError::Bad {
+                    message,
+                    problems,
+                    hints,
+                }) => {
+                    assert!(
+                        message.contains("no data for period 2015"),
+                        "{what}: {message}"
+                    );
+                    assert_eq!(problems.len(), 1, "{what}: {problems:?}");
+                    assert_eq!(problems[0].path, "/variables/x/period", "{what}");
+                    assert_eq!(hints["available_periods"], json!(["2024"]), "{what}");
+                }
+                other => panic!("{what}: expected 400, got {other:?}"),
+            }
+        }
+    }
+    let results_after: i64 = sqlx::query_scalar("SELECT count(*) FROM analysis.results")
+        .fetch_one(&pool)
+        .await
+        .expect("count");
+    assert_eq!(results_before, results_after);
+    // the same request at a period with data plans and runs
+    let mut with_data = relate(2);
+    with_data["variables"]["x"]["period"] = json!("2024");
+    let planned = engine.plan(&with_data).await.expect("plan 2024");
+    let ran = engine.run(&with_data).await.expect("run 2024");
+    assert_eq!(planned["id"], json!(ran.id));
+    assert_eq!(ran.state, "ready");
+
     // roles: lanka_analysis writes analysis.* only
     for sql in [
         "INSERT INTO data.releases (data_version) VALUES ('x')",
