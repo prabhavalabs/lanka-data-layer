@@ -65,9 +65,9 @@ standardise:
             miscellaneous-goods-and-services_ccpi: "13"
       value: { number: { missing: [""] } }
 expect:
-  - { check: range, indicator: econ.cpi.ccpi_yoy, min: -20, max: 100 }
-  - { check: range, indicator: econ.cpi.ccpi_core_yoy, min: -20, max: 100 }
-  - { check: range, indicator: econ.cpi.ccpi_index, min: 50, max: 600 }
-  - { check: no_future }
-  - { check: period_continuity }
-  - { check: row_count, min: 600 }
+  - { dataset: dcs-ccpi, check: range, indicator: econ.cpi.ccpi_yoy, min: -20, max: 100 }
+  - { dataset: dcs-ccpi, check: range, indicator: econ.cpi.ccpi_core_yoy, min: -20, max: 100 }
+  - { dataset: dcs-ccpi, check: range, indicator: econ.cpi.ccpi_index, min: 50, max: 600 }
+  - { dataset: dcs-ccpi, check: no_future }
+  - { dataset: dcs-ccpi, check: period_continuity }
+  - { dataset: dcs-ccpi, check: row_count, min: 600 }

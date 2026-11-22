@@ -1,0 +1,42 @@
+# DCS price statistics: the "Movements of the NCPI" PDF (base 2021=100), replaced in
+# place every month at the same URL. Class B (PDF), reviewed against its evidence sheet.
+# statistics.gov.lk: the engine's HTTP client cannot negotiate its TLS (see
+# dcs-agriculture); run with `--from DIR` (DIR/ncpi-movements.pdf, fetched with curl)
+# until that is fixed. CCPI comes from nuuuwan-lk-dcs (machine-readable TSV).
+source: dcs-prices
+driver: pdf_table
+version: 1.0.0
+description: NCPI (2021=100) monthly index, month-on-month and year-on-year change, since January 2022.
+discover:
+  files:
+    - { key: ncpi-movements, url: "https://www.statistics.gov.lk/Resource/en/InflationAndPrices/NCPI/MovementsOf-NCPI.pdf", edition: "2026" }
+extract:
+  tables:
+    - { id: ncpi, file: ncpi-movements, template: dcs-prices/ncpi-movements }
+standardise:
+  dataset: dcs-ncpi
+  vintage: "Movements of the NCPI (DCS, edition {edition})"
+  outputs:
+    - { table: ncpi, indicator: econ.cpi.ncpi_index, geo: { fixed: root }, period: { from_label: month },
+        columns: { index: { group: total } } }
+    - { table: ncpi, indicator: econ.cpi.ncpi_mom, geo: { fixed: root }, period: { from_label: month },
+        columns: { mom: { group: total } } }
+    - { table: ncpi, indicator: econ.cpi.ncpi_yoy, geo: { fixed: root }, period: { from_label: month },
+        columns: { yoy: { group: total } } }
+    - { table: ncpi, indicator: econ.cpi.ncpi_12m_avg, geo: { fixed: root }, period: { from_label: month },
+        columns: { ma12: { group: total } } }
+expect:
+  - { dataset: dcs-ncpi, check: range, indicator: econ.cpi.ncpi_index, min: 90, max: 400 }
+  - { dataset: dcs-ncpi, check: range, indicator: econ.cpi.ncpi_yoy, min: -20, max: 100 }
+  - { dataset: dcs-ncpi, check: period_continuity, indicator: econ.cpi.ncpi_index }
+  - { dataset: dcs-ncpi, check: row_count, min: 150 }
+  - { dataset: dcs-ncpi, check: no_future }
+  - dataset: dcs-ncpi
+    check: sql
+    note: Year-on-year inflation agrees with the index twelve months earlier (±0.15 points, rounding).
+    query: >-
+      SELECT c.period_start, c.value AS yoy, round(((i.value / p.value - 1) * 100)::numeric, 2) AS from_index
+      FROM stage_obs c
+      JOIN stage_obs i ON i.indicator_id = 'econ.cpi.ncpi_index' AND i.period_start = c.period_start
+      JOIN stage_obs p ON p.indicator_id = 'econ.cpi.ncpi_index' AND p.period_start = c.period_start - interval '1 year'
+      WHERE c.indicator_id = 'econ.cpi.ncpi_yoy' AND abs(c.value - (i.value / p.value - 1) * 100) > 0.15
