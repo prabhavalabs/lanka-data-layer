@@ -1,12 +1,15 @@
-//! Ingestion run tracking, structured run events and alerting.
+//! Ingestion run tracking and the event feed.
+//!
+//! The platform emits state and notifies no one (ADR 0016): every run stage,
+//! job, train, review and incident change is an `ops.run_events` row
+//! written through `ops.emit`, which hands out ids in commit order, so the
+//! `/v2/status/events?after=` feed is strictly ordered and loss-free.
 //!
 //! A run holds a session-level advisory lock on a dedicated connection for
 //! its whole life, so two runs of one source can never overlap, and a
 //! `running` row whose lock is free is provably abandoned (crash, OOM, kill)
 //! and is closed as failed — the silent-stale-run failure mode that hid
 //! developing-country.org's broken cron for weeks cannot happen here.
-
-use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
@@ -27,8 +30,15 @@ pub enum Stage {
     Validate,
     Stage,
     Publish,
-    Alert,
     Run,
+    Recipe,
+    Release,
+    Export,
+    Job,
+    Review,
+    Incident,
+    Worker,
+    Schedule,
 }
 
 impl Stage {
@@ -44,8 +54,15 @@ impl Stage {
             Self::Validate => "validate",
             Self::Stage => "stage",
             Self::Publish => "publish",
-            Self::Alert => "alert",
             Self::Run => "run",
+            Self::Recipe => "recipe",
+            Self::Release => "release",
+            Self::Export => "export",
+            Self::Job => "job",
+            Self::Review => "review",
+            Self::Incident => "incident",
+            Self::Worker => "worker",
+            Self::Schedule => "schedule",
         }
     }
 }
@@ -59,7 +76,8 @@ pub enum Level {
 }
 
 impl Level {
-    const fn as_str(self) -> &'static str {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::Debug => "debug",
             Self::Info => "info",
@@ -90,23 +108,68 @@ impl RunStatus {
     }
 }
 
-/// Alert delivery settings (from the environment).
+/// One event of the feed. `kind` defaults to the stage name.
 #[derive(Debug, Clone, Default)]
-pub struct AlertConfig {
-    /// POSTed a JSON body on every failed run (ntfy, Slack/Matrix hooks …).
-    pub webhook: Option<String>,
-    /// GET after every successful run — an external dead-man's switch.
-    pub heartbeat: Option<String>,
+pub struct Event<'a> {
+    pub kind: Option<&'a str>,
+    pub run_id: Option<i64>,
+    pub job_id: Option<i64>,
+    pub source_id: Option<&'a str>,
+    pub dataset_id: Option<&'a str>,
+    pub data: Option<serde_json::Value>,
 }
 
-impl AlertConfig {
-    #[must_use]
-    pub fn from_env() -> Self {
-        let get = |k: &str| std::env::var(k).ok().filter(|v| !v.trim().is_empty());
-        Self {
-            webhook: get("LANKA_ALERT_WEBHOOK"),
-            heartbeat: get("LANKA_HEARTBEAT_URL"),
-        }
+/// Appends an event to the feed (autocommit, through `ops.emit`) and mirrors
+/// it to `tracing`. Never fails the caller: a lost event is logged.
+pub async fn emit(pool: &PgPool, level: Level, stage: Stage, message: &str, ev: Event<'_>) {
+    match level {
+        Level::Debug => tracing::debug!(
+            stage = stage.as_str(),
+            kind = ev.kind,
+            run = ev.run_id,
+            job = ev.job_id,
+            source = ev.source_id,
+            "{message}"
+        ),
+        Level::Info => tracing::info!(
+            stage = stage.as_str(),
+            kind = ev.kind,
+            run = ev.run_id,
+            job = ev.job_id,
+            source = ev.source_id,
+            "{message}"
+        ),
+        Level::Warn => tracing::warn!(
+            stage = stage.as_str(),
+            kind = ev.kind,
+            run = ev.run_id,
+            job = ev.job_id,
+            source = ev.source_id,
+            "{message}"
+        ),
+        Level::Error => tracing::error!(
+            stage = stage.as_str(),
+            kind = ev.kind,
+            run = ev.run_id,
+            job = ev.job_id,
+            source = ev.source_id,
+            "{message}"
+        ),
+    }
+    let res = sqlx::query("SELECT ops.emit($1::ops.event_level, $2, $3, $4, $5, $6, $7, $8, $9)")
+        .bind(level.as_str())
+        .bind(stage.as_str())
+        .bind(ev.kind)
+        .bind(message)
+        .bind(ev.data)
+        .bind(ev.run_id)
+        .bind(ev.job_id)
+        .bind(ev.source_id)
+        .bind(ev.dataset_id)
+        .execute(pool)
+        .await;
+    if let Err(e) = res {
+        tracing::error!(error = %e, "failed to record event");
     }
 }
 
@@ -116,6 +179,7 @@ pub struct RunTracker {
     lock: Option<PoolConnection<Postgres>>,
     pub run_id: i64,
     pub source_id: String,
+    pub job_id: Option<i64>,
     finished: bool,
 }
 
@@ -123,6 +187,16 @@ impl RunTracker {
     /// Starts a run: takes the per-source lock, closes abandoned runs, inserts
     /// the run row. Fails fast if another run of this source is active.
     pub async fn start(pool: &PgPool, source_id: &str, trigger: &str) -> Result<Self> {
+        Self::start_for_job(pool, source_id, trigger, None).await
+    }
+
+    /// [`Self::start`] for a run executed by a worker job.
+    pub async fn start_for_job(
+        pool: &PgPool,
+        source_id: &str,
+        trigger: &str,
+        job_id: Option<i64>,
+    ) -> Result<Self> {
         let mut lock = pool.acquire().await?;
         let got: bool =
             sqlx::query_scalar("SELECT pg_try_advisory_lock(hashtext('lanka-ingest:' || $1))")
@@ -143,13 +217,14 @@ impl RunTracker {
         .rows_affected();
         let host = std::env::var("HOSTNAME").ok();
         let run_id: i64 = sqlx::query_scalar(
-            "INSERT INTO ops.ingestion_runs (source_id, trigger, host, engine_version)
-             VALUES ($1, $2, $3, $4) RETURNING id",
+            "INSERT INTO ops.ingestion_runs (source_id, trigger, host, engine_version, job_id)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id",
         )
         .bind(source_id)
         .bind(trigger)
         .bind(host)
         .bind(lanka_core::ENGINE_VERSION)
+        .bind(job_id)
         .fetch_one(pool)
         .await
         .with_context(|| {
@@ -160,6 +235,7 @@ impl RunTracker {
             lock: Some(lock),
             run_id,
             source_id: source_id.to_owned(),
+            job_id,
             finished: false,
         };
         if abandoned > 0 {
@@ -179,7 +255,7 @@ impl RunTracker {
         Ok(t)
     }
 
-    /// Records an event; also mirrored to `tracing`. Never fails the run.
+    /// Records an event of this run (see [`emit`]). Never fails the run.
     pub async fn event(
         &self,
         level: Level,
@@ -187,34 +263,20 @@ impl RunTracker {
         message: &str,
         data: Option<serde_json::Value>,
     ) {
-        match level {
-            Level::Debug => {
-                tracing::debug!(run = self.run_id, source = %self.source_id, stage = stage.as_str(), "{message}")
-            }
-            Level::Info => {
-                tracing::info!(run = self.run_id, source = %self.source_id, stage = stage.as_str(), "{message}")
-            }
-            Level::Warn => {
-                tracing::warn!(run = self.run_id, source = %self.source_id, stage = stage.as_str(), "{message}")
-            }
-            Level::Error => {
-                tracing::error!(run = self.run_id, source = %self.source_id, stage = stage.as_str(), "{message}")
-            }
-        }
-        let res = sqlx::query(
-            "INSERT INTO ops.run_events (run_id, level, stage, message, data)
-             VALUES ($1, $2::ops.event_level, $3, $4, $5)",
+        emit(
+            &self.pool,
+            level,
+            stage,
+            message,
+            Event {
+                run_id: Some(self.run_id),
+                job_id: self.job_id,
+                source_id: Some(&self.source_id),
+                data,
+                ..Event::default()
+            },
         )
-        .bind(self.run_id)
-        .bind(level.as_str())
-        .bind(stage.as_str())
-        .bind(message)
-        .bind(data)
-        .execute(&self.pool)
         .await;
-        if let Err(e) = res {
-            tracing::error!(run = self.run_id, error = %e, "failed to record run event");
-        }
     }
 
     pub async fn info(&self, stage: Stage, message: &str, data: Option<serde_json::Value>) {
@@ -264,16 +326,16 @@ impl RunTracker {
         Ok(())
     }
 
-    pub async fn finish(
-        mut self,
-        status: RunStatus,
-        message: &str,
-        alerts: &AlertConfig,
-    ) -> Result<()> {
-        self.info(
+    pub async fn finish(mut self, status: RunStatus, message: &str) -> Result<()> {
+        self.event(
+            if status == RunStatus::NeedsReview {
+                Level::Warn
+            } else {
+                Level::Info
+            },
             Stage::Run,
             &format!("run finished: {}", status.as_str()),
-            Some(json!({ "message": message })),
+            Some(json!({ "status": status.as_str(), "message": message })),
         )
         .await;
         sqlx::query(
@@ -285,26 +347,19 @@ impl RunTracker {
         .execute(&self.pool)
         .await?;
         self.release_lock().await;
-        if let Some(url) = &alerts.heartbeat
-            && let Err(e) = http_client()?
-                .get(url)
-                .send()
-                .await
-                .and_then(reqwest::Response::error_for_status)
-        {
-            tracing::warn!(error = %e, "heartbeat ping failed");
-        }
         Ok(())
     }
 
-    /// Closes the run as failed, stores an alert and delivers it.
-    pub async fn fail(mut self, error: &anyhow::Error, alerts: &AlertConfig) -> Result<()> {
+    /// Closes the run as failed. The failure is an `error` event of the feed
+    /// and, after repeated failures, a `source_failing` incident (opened by
+    /// the worker's tick) — nothing is delivered anywhere.
+    pub async fn fail(mut self, error: &anyhow::Error) -> Result<()> {
         let text = format!("{error:#}");
         self.event(
             Level::Error,
             Stage::Run,
             &format!("run failed: {text}"),
-            None,
+            Some(json!({ "status": "failed" })),
         )
         .await;
         sqlx::query(
@@ -315,15 +370,7 @@ impl RunTracker {
         .execute(&self.pool)
         .await?;
         self.release_lock().await;
-        raise_alert(
-            &self.pool,
-            Some(&self.source_id),
-            Some(self.run_id),
-            "run_failed",
-            &text,
-            alerts,
-        )
-        .await
+        Ok(())
     }
 }
 
@@ -357,62 +404,4 @@ impl Drop for RunTracker {
             }
         }
     }
-}
-
-fn http_client() -> Result<reqwest::Client> {
-    Ok(reqwest::Client::builder()
-        .timeout(Duration::from_secs(15))
-        .build()?)
-}
-
-/// Persists an alert and tries to deliver it to the webhook. Delivery
-/// failures are recorded on the alert row (and retried by the scheduler).
-pub async fn raise_alert(
-    pool: &PgPool,
-    source_id: Option<&str>,
-    run_id: Option<i64>,
-    kind: &str,
-    message: &str,
-    cfg: &AlertConfig,
-) -> Result<()> {
-    let id: i64 = sqlx::query_scalar(
-        "INSERT INTO ops.alerts (source_id, run_id, kind, message, channel) VALUES ($1, $2, $3, $4, $5) RETURNING id",
-    )
-    .bind(source_id)
-    .bind(run_id)
-    .bind(kind)
-    .bind(message)
-    .bind(cfg.webhook.as_ref().map(|_| "webhook"))
-    .fetch_one(pool)
-    .await?;
-    tracing::error!(alert = id, kind, source = source_id, "{message}");
-    let Some(url) = &cfg.webhook else {
-        return Ok(());
-    };
-    let body = json!({
-        "title": format!("lanka: {kind} {}", source_id.unwrap_or("-")),
-        "kind": kind, "source": source_id, "run_id": run_id, "message": message,
-    });
-    let res = http_client()?
-        .post(url)
-        .json(&body)
-        .send()
-        .await
-        .and_then(reqwest::Response::error_for_status);
-    match res {
-        Ok(_) => {
-            sqlx::query("UPDATE ops.alerts SET delivered_at = now() WHERE id = $1")
-                .bind(id)
-                .execute(pool)
-                .await?
-        }
-        Err(e) => {
-            sqlx::query("UPDATE ops.alerts SET error = $2 WHERE id = $1")
-                .bind(id)
-                .bind(e.to_string())
-                .execute(pool)
-                .await?
-        }
-    };
-    Ok(())
 }

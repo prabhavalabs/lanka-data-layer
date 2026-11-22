@@ -12,7 +12,7 @@
 //! the last successful run's → `no_change` before extract; (3) the staged
 //! content equals the published version → `unchanged` with nothing written.
 //! Every stage writes `ops.run_events`; any error closes the run as failed
-//! and raises an alert — nothing fails silently.
+//! (an `error` event of the status feed) — nothing fails silently.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -39,7 +39,7 @@ use crate::extract::{ExtractArtifact, ExtractOut, ExtractRef, from_parquet, to_p
 use crate::geo_load::{publish_admin_units, upsert_crosswalks};
 use crate::publish::{PublishResult, StageInput, publish_observations};
 use crate::registry::Registry;
-use crate::run::{AlertConfig, Level, RunStatus, RunTracker, Stage};
+use crate::run::{Level, RunStatus, RunTracker, Stage};
 
 const FETCH_ATTEMPTS: u32 = 3;
 /// Concurrent requests per upstream host (03 §1).
@@ -97,7 +97,6 @@ pub struct Env<'a> {
     pub registry: &'a Registry,
     pub profile: &'a Profile,
     pub store: &'a dyn BlobStore,
-    pub alerts: &'a AlertConfig,
 }
 
 fn connector(env: &Env<'_>, source_id: &str) -> Result<Arc<dyn Connector>> {
@@ -120,26 +119,31 @@ pub async fn run_source(env: &Env<'_>, source_id: &str, opts: &RunOptions) -> Re
     } else {
         opts.trigger.as_str()
     };
-    let run = RunTracker::start(env.pool, source_id, trigger).await?;
+    let run = RunTracker::start_for_job(env.pool, source_id, trigger, opts.job_id).await?;
     let result = execute(env, &run, c.as_ref(), opts).await;
-    close(run, result, env.alerts).await
+    close(run, result).await
 }
 
 /// Re-runs `standardise` (and everything after it) over the extracts of the
 /// source's latest extracting run — no network, no parsing of raw bytes.
 /// Used after a registry, crosswalk or codelist change (03 §7).
 pub async fn restandardise(env: &Env<'_>, source_id: &str) -> Result<RunReport> {
-    let c = connector(env, source_id)?;
-    let run = RunTracker::start(env.pool, source_id, "restandardise").await?;
-    let result = restandardise_inner(env, &run, c.as_ref()).await;
-    close(run, result, env.alerts).await
+    restandardise_for_job(env, source_id, None).await
 }
 
-async fn close(
-    run: RunTracker,
-    result: Result<RunReport>,
-    alerts: &AlertConfig,
+/// [`restandardise`] executed by a worker job.
+pub async fn restandardise_for_job(
+    env: &Env<'_>,
+    source_id: &str,
+    job_id: Option<i64>,
 ) -> Result<RunReport> {
+    let c = connector(env, source_id)?;
+    let run = RunTracker::start_for_job(env.pool, source_id, "restandardise", job_id).await?;
+    let result = restandardise_inner(env, &run, c.as_ref()).await;
+    close(run, result).await
+}
+
+async fn close(run: RunTracker, result: Result<RunReport>) -> Result<RunReport> {
     let run_id = run.run_id;
     match result {
         Ok(mut report) => {
@@ -153,11 +157,11 @@ async fn close(
             if let Some(s) = &report.short_circuit {
                 msg = format!("{s} unchanged");
             }
-            run.finish(report.status, &msg, alerts).await?;
+            run.finish(report.status, &msg).await?;
             Ok(report)
         }
         Err(e) => {
-            run.fail(&e, alerts).await?;
+            run.fail(&e).await?;
             Err(e)
         }
     }
@@ -217,12 +221,24 @@ fn keyed(tag: &[u8], config: &[u8; 32], payload: &[u8]) -> [u8; 32] {
 }
 
 /// (fingerprint, input_hash) of the source's last successful run.
-async fn last_ok(pool: &PgPool, source_id: &str) -> Result<(Option<Vec<u8>>, Option<Vec<u8>>)> {
+///
+/// A reviewer's rejection of one of the source's versions invalidates every
+/// change key recorded before it: the next run fetches, extracts and stages
+/// again instead of short-circuiting on the inputs that produced the
+/// rejected version (no `--force` needed after a reject).
+pub async fn last_change_keys(
+    pool: &PgPool,
+    source_id: &str,
+) -> Result<(Option<Vec<u8>>, Option<Vec<u8>>)> {
     Ok(sqlx::query_as(
-        "SELECT fingerprint, input_hash FROM ops.ingestion_runs
-         WHERE source_id = $1 AND status IN ('succeeded', 'no_change', 'needs_review')
-           AND trigger <> 'restandardise'
-         ORDER BY id DESC LIMIT 1",
+        "SELECT r.fingerprint, r.input_hash FROM ops.ingestion_runs r
+         WHERE r.source_id = $1 AND r.status IN ('succeeded', 'no_change', 'needs_review')
+           AND r.trigger <> 'restandardise'
+           AND NOT EXISTS (
+             SELECT 1 FROM data.dataset_versions v
+             JOIN catalog.dataset_sources ds ON ds.dataset_id = v.dataset_id AND ds.source_id = $1
+             WHERE v.status = 'rejected' AND v.reviewed_by IS NOT NULL AND v.reviewed_at >= r.started_at)
+         ORDER BY r.id DESC LIMIT 1",
     )
     .bind(source_id)
     .fetch_optional(pool)
@@ -239,7 +255,7 @@ async fn execute(
     let source_id = c.source_id().to_owned();
     let http = http_client()?;
     let config = config_hash(env, c);
-    let (prev_fp, prev_input) = last_ok(env.pool, &source_id).await?;
+    let (prev_fp, prev_input) = last_change_keys(env.pool, &source_id).await?;
 
     // ── discover ──
     let dctx = DiscoverCtx {

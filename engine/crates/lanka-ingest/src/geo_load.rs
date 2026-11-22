@@ -20,7 +20,7 @@ use sqlx::PgPool;
 use crate::connector::{AdminUnitIn, BoundarySet, CrosswalkRow};
 use crate::copy_bin::BinCopy;
 use crate::publish::{
-    Diff, PublishResult, boundary_schema, create_release, current_version, unit_row_bytes,
+    Diff, PublishResult, boundary_schema, current_version, mark_approved, unit_row_bytes,
 };
 
 /// Ancestor codes (root → parent) for every unit, by walking parents.
@@ -289,6 +289,16 @@ pub async fn publish_admin_units(
     .execute(&mut *tx)
     .await?;
 
+    // One open version per dataset: a newer staging supersedes an older one.
+    sqlx::query(
+        "UPDATE data.dataset_versions SET status = 'rejected',
+            review_note = 'superseded by a newer staging of ' || $2
+         WHERE dataset_id = $1 AND dsv <> $2 AND status IN ('staged', 'in_review', 'approved')",
+    )
+    .bind(dataset_id)
+    .bind(&dsv)
+    .execute(&mut *tx)
+    .await?;
     let existing: Option<i64> =
         sqlx::query_scalar("SELECT id FROM data.dataset_versions WHERE dsv = $1")
             .bind(&dsv)
@@ -345,14 +355,14 @@ pub async fn publish_admin_units(
         rows_restated: 0,
         prev_rows: prev,
     });
-    let dv = create_release(
+    // Boundary versions are class A: approved here, released by the next
+    // train (geo.units / unit_geoms themselves are updated in place until
+    // boundary vintages are release-pinned, WP-10).
+    mark_approved(
         &mut tx,
-        dataset_id,
         version_id,
-        current.as_ref().map(|c| c.0),
-        diff.as_ref(),
-        &format!("{dataset_id} → {dsv} (boundary set {})", set.id),
-        Some(run_id),
+        None,
+        Some("auto-approved (boundaries)"),
     )
     .await?;
     tx.commit().await?;
@@ -362,8 +372,8 @@ pub async fn publish_admin_units(
         dataset_id: dataset_id.to_owned(),
         dsv,
         version_id,
-        outcome: "published",
-        data_version: Some(dv),
+        outcome: "approved",
+        data_version: None,
         rows: n,
         rows_written: added + changed,
         rows_hashed: u64::try_from(units.len())?,

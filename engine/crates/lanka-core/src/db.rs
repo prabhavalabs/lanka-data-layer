@@ -12,8 +12,11 @@ pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("../../migrations"
 pub enum PoolRole {
     /// Read path (server, CLI queries): bounded statements, larger pool.
     Api,
-    /// Ingestion / maintenance: no statement timeout, small pool.
+    /// Ingestion / maintenance (CLI): no statement timeout, small pool.
     Ingest,
+    /// `lanka worker`: like `Ingest`, sized for the leader session, the job
+    /// listener and two sessions (job lock + run lock) per running job.
+    Worker,
 }
 
 /// Connects a pool tuned for `role`. Prepared statements are cached per
@@ -30,6 +33,7 @@ pub async fn connect(url: &str, role: PoolRole) -> Result<PgPool, sqlx::Error> {
             Duration::from_millis(250),
         ),
         PoolRole::Ingest => ("lanka-ingest", 8, "0", "auto", Duration::from_secs(300)),
+        PoolRole::Worker => ("lanka-worker", 16, "0", "auto", Duration::from_secs(300)),
     };
     let opts: PgConnectOptions = url
         .parse::<PgConnectOptions>()?
@@ -50,7 +54,19 @@ pub async fn connect(url: &str, role: PoolRole) -> Result<PgPool, sqlx::Error> {
         .await
 }
 
-/// Applies pending migrations.
+/// Applies pending migrations, then re-applies ownership and grants
+/// (`ops.apply_grants`, migration 0004) so objects created by any migration
+/// belong to `lanka_owner` and are visible to the application roles.
+/// Run by the migration (admin) role, never by `lanka_api`/`lanka_ingest`.
 pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
-    MIGRATOR.run(pool).await
+    MIGRATOR.run(pool).await?;
+    let has: bool = sqlx::query_scalar("SELECT to_regprocedure('ops.apply_grants()') IS NOT NULL")
+        .fetch_one(pool)
+        .await?;
+    if has {
+        sqlx::query("SELECT ops.apply_grants()")
+            .execute(pool)
+            .await?;
+    }
+    Ok(())
 }

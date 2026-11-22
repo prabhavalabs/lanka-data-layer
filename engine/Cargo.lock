@@ -1618,6 +1618,7 @@ dependencies = [
  "jsonschema",
  "lanka-core",
  "lanka-store",
+ "nix",
  "parquet",
  "proptest",
  "reqwest",

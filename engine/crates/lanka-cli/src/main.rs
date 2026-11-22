@@ -1,13 +1,17 @@
 //! `lanka` — the Lanka Data Layer command-line tool.
 //!
 //! ```text
-//! lanka db migrate
+//! lanka db migrate | set-passwords
 //! lanka registry validate | sync
 //! lanka ingest run <source> [--from DIR] [--force]
 //! lanka ingest restandardise <source>
 //! lanka ingest status
 //! lanka review list | approve <dsv> --by NAME | reject <dsv> --by NAME --note TEXT
-//! lanka serve [--bind 127.0.0.1:8601]
+//! lanka release cut [--note TEXT] | list
+//! lanka worker [--lane batch|interactive] [--slots 4] [--once]
+//! lanka jobs list | show <id> | enqueue ingest|restandardise|release … | cancel <id>
+//! lanka ops tick | record-backup --kind pg|store|drill (--ok|--failed)
+//! lanka serve [--bind 127.0.0.1:8601] | serve rebuild
 //! lanka reverse <lat> <lon>
 //! lanka area <pcode>
 //! ```
@@ -20,8 +24,10 @@ use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use lanka_core::db::{self, PoolRole};
 use lanka_core::{Catalog, Profile, query};
+use lanka_ingest::jobs::{self, NewJob};
 use lanka_ingest::{
-    AlertConfig, Env, Registry, RunOptions, implemented, publish, restandardise, run_source,
+    Env, Registry, RunOptions, implemented, publish, restandardise, run_source, scheduler, train,
+    worker,
 };
 use lanka_store::FsStore;
 use sqlx::PgPool;
@@ -79,10 +85,24 @@ enum Cmd {
     /// Review gate for class B/C dataset versions.
     #[command(subcommand)]
     Review(ReviewCmd),
-    /// Run the REST v2 server.
+    /// Release trains: approved versions become visible in one release.
+    #[command(subcommand)]
+    Release(ReleaseCmd),
+    /// Run the job worker: scheduler tick + executor over ops.jobs.
+    Worker(WorkerArgs),
+    /// Inspect and manage the job queue.
+    #[command(subcommand)]
+    Jobs(JobsCmd),
+    /// Operations: scheduler tick, backup records.
+    #[command(subcommand)]
+    Ops(OpsCmd),
+    /// Run the REST v2 server (or `serve rebuild` the serving projections).
+    #[command(args_conflicts_with_subcommands = true)]
     Serve {
         #[arg(long, env = "LANKA_BIND", default_value = "127.0.0.1:8601")]
         bind: SocketAddr,
+        #[command(subcommand)]
+        action: Option<ServeCmd>,
     },
     /// Reverse geocode a point to admin units and the canonical grid cell.
     #[command(allow_negative_numbers = true)]
@@ -94,12 +114,121 @@ enum Cmd {
     },
     /// Print the area profile of a p-code as JSON.
     Area { pcode: String },
+    /// HTTP GET a local URL and exit 0 on 200 (container health checks; the
+    /// image has no curl). Only plain `http://host:port/path` is supported.
+    Probe {
+        #[arg(default_value = "http://127.0.0.1:8601/v2/health")]
+        url: String,
+    },
 }
 
 #[derive(Subcommand)]
 enum DbCmd {
-    /// Apply pending migrations (engine/migrations).
-    Migrate,
+    /// Apply pending migrations (engine/migrations), ownership and grants.
+    /// Run as the database admin role, never as lanka_api / lanka_ingest.
+    Migrate {
+        /// Also set the application roles' passwords from LANKA_API_PASSWORD,
+        /// LANKA_INGEST_PASSWORD, LANKA_RECIPE_PASSWORD (when set).
+        #[arg(long)]
+        set_role_passwords: bool,
+    },
+    /// Set the application roles' passwords from LANKA_API_PASSWORD,
+    /// LANKA_INGEST_PASSWORD and LANKA_RECIPE_PASSWORD.
+    SetPasswords,
+}
+
+#[derive(Subcommand)]
+enum ReleaseCmd {
+    /// Run a release train now (manual trigger): every approved version is
+    /// released together; nothing approved = no_change.
+    Cut {
+        #[arg(long)]
+        note: Option<String>,
+    },
+    /// Recent releases and trains.
+    List {
+        #[arg(long, default_value_t = 10)]
+        limit: i64,
+    },
+}
+
+#[derive(Args)]
+struct WorkerArgs {
+    #[arg(long, env = "LANKA_WORKER_LANE", default_value = "batch", value_parser = ["batch", "interactive"])]
+    lane: String,
+    /// Slot budget (sum of running jobs' weights; an ingest weighs 2).
+    #[arg(long, env = "LANKA_WORKER_SLOTS", default_value_t = 4)]
+    slots: i16,
+    /// Scheduler tick interval in seconds.
+    #[arg(long, env = "LANKA_WORKER_TICK", default_value_t = 60)]
+    tick: u64,
+    /// Seconds running jobs may finish after SIGTERM before being re-queued.
+    #[arg(long, env = "LANKA_WORKER_GRACE", default_value_t = 25)]
+    grace: u64,
+    /// One tick, run what is runnable, exit.
+    #[arg(long)]
+    once: bool,
+}
+
+#[derive(Subcommand)]
+enum JobsCmd {
+    /// Recent jobs (newest first).
+    List {
+        #[arg(long, value_parser = ["queued", "running", "succeeded", "failed", "cancelled"])]
+        state: Option<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: i64,
+    },
+    /// One job as JSON.
+    Show { id: i64 },
+    /// Enqueue a job (idempotent: a live job with the same key is returned).
+    #[command(subcommand)]
+    Enqueue(EnqueueCmd),
+    /// Cancel a job (queued: at once; running: on its next heartbeat).
+    Cancel { id: i64 },
+}
+
+#[derive(Subcommand)]
+enum EnqueueCmd {
+    Ingest {
+        source: String,
+        #[arg(long)]
+        from: Option<PathBuf>,
+        #[arg(long)]
+        force: bool,
+    },
+    Restandardise {
+        source: String,
+    },
+    /// A manual release train.
+    Release {
+        #[arg(long)]
+        note: Option<String>,
+    },
+}
+
+#[derive(Subcommand)]
+enum OpsCmd {
+    /// Run one scheduler tick (enqueue due work, reap abandoned jobs, sync incidents).
+    Tick,
+    /// Record a backup / restore-drill outcome (called by the backup scripts).
+    RecordBackup {
+        #[arg(long, value_parser = ["pg", "store", "drill"])]
+        kind: String,
+        #[arg(long, conflicts_with = "failed")]
+        ok: bool,
+        #[arg(long)]
+        failed: bool,
+        /// JSON detail (size, duration, repository …).
+        #[arg(long)]
+        detail: Option<String>,
+    },
+}
+
+#[derive(Subcommand)]
+enum ServeCmd {
+    /// Rebuild the serving projections (serve.area_latest) from the current release.
+    Rebuild,
 }
 
 #[derive(Subcommand)]
@@ -149,7 +278,7 @@ enum IngestCmd {
 enum ReviewCmd {
     /// Dataset versions waiting for sign-off.
     List,
-    /// Approve and publish a version.
+    /// Approve a version: it is released by the next train.
     Approve {
         dsv: String,
         #[arg(long)]
@@ -240,9 +369,18 @@ async fn main() -> ExitCode {
 async fn run(cli: Cli) -> Result<()> {
     let g = &cli.global;
     match cli.cmd {
-        Cmd::Db(DbCmd::Migrate) => {
+        Cmd::Db(DbCmd::SetPasswords) => {
+            let pool = pool(g, PoolRole::Ingest).await?;
+            set_role_passwords(&pool).await?;
+        }
+        Cmd::Db(DbCmd::Migrate {
+            set_role_passwords: pw,
+        }) => {
             let pool = pool(g, PoolRole::Ingest).await?;
             db::migrate(&pool).await?;
+            if pw {
+                set_role_passwords(&pool).await?;
+            }
             let n: i64 = sqlx::query_scalar("SELECT count(*) FROM _sqlx_migrations WHERE success")
                 .fetch_one(&pool)
                 .await?;
@@ -312,13 +450,11 @@ async fn run(cli: Cli) -> Result<()> {
                 .await
                 .context("syncing registry")?;
             let store = store(g, &dir);
-            let alerts = AlertConfig::from_env();
             let env = Env {
                 pool: &pool,
                 registry: &reg,
                 profile: &profile,
                 store: &store,
-                alerts: &alerts,
             };
             let report = match cmd {
                 IngestCmd::Run {
@@ -331,6 +467,7 @@ async fn run(cli: Cli) -> Result<()> {
                         from_dir: from,
                         trigger,
                         force,
+                        job_id: None,
                     };
                     run_source(&env, &source, &opts).await?
                 }
@@ -350,6 +487,11 @@ async fn run(cli: Cli) -> Result<()> {
                 IngestCmd::Status { .. } => unreachable!("matched above"),
             };
             print_json(&report)?;
+            if report.published.iter().any(|p| p.outcome == "approved") {
+                eprintln!(
+                    "approved version(s) are released by the next train (daily, or `lanka release cut`)"
+                );
+            }
         }
         Cmd::Ingest(IngestCmd::Status { json }) => {
             let implemented = find_registry(g.registry.as_deref())
@@ -372,9 +514,148 @@ async fn run(cli: Cli) -> Result<()> {
                 }
             }
         }
-        Cmd::Serve { bind } => {
+        Cmd::Serve {
+            action: Some(ServeCmd::Rebuild),
+            ..
+        } => {
+            let pool = pool(g, PoolRole::Ingest).await?;
+            let n = train::rebuild_serve(&pool).await?;
+            sqlx::query("SELECT pg_notify('lanka_release', 'serve-rebuild')")
+                .execute(&pool)
+                .await?;
+            println!("serve.area_latest rebuilt: {n} rows");
+        }
+        Cmd::Serve { bind, action: None } => {
             let pool = pool(g, PoolRole::Api).await?;
             lanka_server::serve(pool, bind).await?;
+        }
+        Cmd::Release(cmd) => {
+            let pool = pool(g, PoolRole::Ingest).await?;
+            match cmd {
+                ReleaseCmd::Cut { note } => {
+                    print_json(&train::run_train(&pool, "manual", None, note.as_deref()).await?)?;
+                }
+                ReleaseCmd::List { limit } => release_list(&pool, limit).await?,
+            }
+        }
+        Cmd::Worker(w) => {
+            let dir = find_registry(g.registry.as_deref())?;
+            let pool = pool(g, PoolRole::Worker).await?;
+            let cfg = worker::WorkerConfig {
+                lane: w.lane,
+                slots: w.slots.max(1),
+                tick: std::time::Duration::from_secs(w.tick.max(1)),
+                profile_path: g.profile.clone(),
+                store_root: store(g, &dir).root().to_path_buf(),
+                registry_dir: dir,
+                grace: std::time::Duration::from_secs(w.grace),
+                once: w.once,
+                tick_cfg: scheduler::TickConfig::from_env(),
+            };
+            worker::run(pool, cfg, shutdown_signal()).await?;
+        }
+        Cmd::Jobs(cmd) => {
+            let pool = pool(g, PoolRole::Ingest).await?;
+            match cmd {
+                JobsCmd::List { state, limit } => {
+                    let list = jobs::list(&pool, state.as_deref(), limit).await?;
+                    println!(
+                        "{:>6} {:<14} {:<34} {:<10} {:>4} {:<20} ERROR",
+                        "ID", "KIND", "DEDUPE KEY", "STATE", "TRY", "RUN AFTER / FINISHED"
+                    );
+                    for j in list {
+                        println!(
+                            "{:>6} {:<14} {:<34} {:<10} {:>4} {:<20} {}",
+                            j.id,
+                            j.kind,
+                            j.dedupe_key,
+                            j.state,
+                            format!("{}/{}", j.attempts, j.max_attempts),
+                            j.finished_at
+                                .unwrap_or(j.run_after)
+                                .format("%Y-%m-%d %H:%M:%S"),
+                            j.error
+                                .as_deref()
+                                .and_then(|e| e.lines().next())
+                                .unwrap_or_default()
+                        );
+                    }
+                }
+                JobsCmd::Show { id } => match jobs::get(&pool, id).await? {
+                    Some(j) => print_json(&j)?,
+                    None => anyhow::bail!("no job {id}"),
+                },
+                JobsCmd::Cancel { id } => println!("job {id}: {}", jobs::cancel(&pool, id).await?),
+                JobsCmd::Enqueue(e) => {
+                    let job = match e {
+                        EnqueueCmd::Ingest {
+                            source,
+                            from,
+                            force,
+                        } => NewJob::ingest(
+                            &source,
+                            "manual",
+                            serde_json::json!({ "from": from, "force": force }),
+                        ),
+                        EnqueueCmd::Restandardise { source } => {
+                            let mut j = NewJob::ingest(&source, "manual", serde_json::json!({}));
+                            j.kind = "restandardise".into();
+                            j.dedupe_key = format!("restandardise:{source}");
+                            j
+                        }
+                        EnqueueCmd::Release { note } => {
+                            let mut j = NewJob::release(
+                                &format!("manual:{}", chrono::Utc::now().format("%Y%m%dT%H%M%S")),
+                                "manual",
+                                "manual",
+                            );
+                            j.payload =
+                                serde_json::json!({ "train_trigger": "manual", "note": note });
+                            j
+                        }
+                    };
+                    let (id, created) = jobs::enqueue(&pool, &job).await?;
+                    println!(
+                        "job {id} {} ({})",
+                        if created { "queued" } else { "already live" },
+                        job.dedupe_key
+                    );
+                }
+            }
+        }
+        Cmd::Ops(OpsCmd::Tick) => {
+            let pool = pool(g, PoolRole::Ingest).await?;
+            let mut cfg = scheduler::TickConfig::from_env();
+            if let Ok(dir) = find_registry(g.registry.as_deref()) {
+                cfg.store_pct = worker::store_pct(store(g, &dir).root());
+            }
+            print_json(&scheduler::tick(&pool, &cfg).await?)?;
+        }
+        Cmd::Ops(OpsCmd::RecordBackup {
+            kind,
+            ok,
+            failed,
+            detail,
+        }) => {
+            anyhow::ensure!(ok || failed, "pass --ok or --failed");
+            let detail: Option<serde_json::Value> = detail
+                .as_deref()
+                .map(serde_json::from_str)
+                .transpose()
+                .context("--detail must be JSON")?;
+            let pool = pool(g, PoolRole::Ingest).await?;
+            let id: i64 = sqlx::query_scalar(
+                "INSERT INTO ops.backups (kind, ok, detail) VALUES ($1, $2, $3) RETURNING id",
+            )
+            .bind(&kind)
+            .bind(ok)
+            .bind(&detail)
+            .fetch_one(&pool)
+            .await?;
+            println!(
+                "backup record {id}: {kind} {}",
+                if ok { "ok" } else { "failed" }
+            );
         }
         Cmd::Reverse { lat, lon, json } => {
             let pool = pool(g, PoolRole::Api).await?;
@@ -396,6 +677,7 @@ async fn run(cli: Cli) -> Result<()> {
                 }
             }
         }
+        Cmd::Probe { url } => probe(&url).await?,
         Cmd::Area { pcode } => {
             let pool = pool(g, PoolRole::Api).await?;
             let cat = Catalog::load(&pool).await?;
@@ -412,14 +694,8 @@ async fn run(cli: Cli) -> Result<()> {
     Ok(())
 }
 
-/// (id, source, kind, message, created_at)
-type AlertRow = (
-    i64,
-    Option<String>,
-    String,
-    String,
-    chrono::DateTime<chrono::Utc>,
-);
+/// (id, kind, subject, opened_at)
+type IncidentRow = (i64, String, String, chrono::DateTime<chrono::Utc>);
 
 async fn ingest_status(pool: &PgPool, json: bool, implemented: &[String]) -> Result<()> {
     let ids: Vec<String> = sqlx::query_scalar("SELECT id FROM catalog.sources ORDER BY id")
@@ -427,9 +703,8 @@ async fn ingest_status(pool: &PgPool, json: bool, implemented: &[String]) -> Res
         .await?;
     let fresh = query::source_freshness(pool, &ids).await?;
     let pending = publish::pending_reviews(pool).await?;
-    let alerts: Vec<AlertRow> = sqlx::query_as(
-        "SELECT id, source_id, kind, message, created_at FROM ops.alerts
-         WHERE created_at > now() - interval '7 days' ORDER BY id DESC LIMIT 10",
+    let incidents: Vec<IncidentRow> = sqlx::query_as(
+        "SELECT id, kind, subject, opened_at FROM ops.incidents WHERE closed_at IS NULL ORDER BY id DESC LIMIT 20",
     )
     .fetch_all(pool)
     .await?;
@@ -437,18 +712,18 @@ async fn ingest_status(pool: &PgPool, json: bool, implemented: &[String]) -> Res
         return print_json(&serde_json::json!({
             "sources": fresh,
             "pending_reviews": pending,
-            "recent_alerts": alerts.iter().map(|a| serde_json::json!({
-                "id": a.0, "source": a.1, "kind": a.2, "message": a.3, "at": a.4.to_rfc3339()
+            "open_incidents": incidents.iter().map(|i| serde_json::json!({
+                "id": i.0, "kind": i.1, "subject": i.2, "opened_at": i.3.to_rfc3339()
             })).collect::<Vec<_>>(),
         }));
     }
     println!(
-        "{:<30} {:<10} {:<10} {:<13} {:<17} CONNECTOR",
+        "{:<30} {:<10} {:<16} {:<13} {:<17} CONNECTOR",
         "SOURCE", "CADENCE", "STATE", "LAST", "LAST SUCCESS"
     );
     for f in &fresh {
         println!(
-            "{:<30} {:<10} {:<10} {:<13} {:<17} {}",
+            "{:<30} {:<10} {:<16} {:<13} {:<17} {}",
             f.source_id,
             f.cadence,
             f.state,
@@ -473,17 +748,150 @@ async fn ingest_status(pool: &PgPool, json: bool, implemented: &[String]) -> Res
             );
         }
     }
-    if !alerts.is_empty() {
-        println!("\nalerts (7 days):");
-        for a in &alerts {
+    if !incidents.is_empty() {
+        println!("\nopen incidents:");
+        for i in &incidents {
             println!(
-                "  #{} {} {} {}",
-                a.0,
-                a.1.as_deref().unwrap_or("-"),
-                a.2,
-                a.3.lines().next().unwrap_or_default()
+                "  #{} {} {} since {}",
+                i.0,
+                i.1,
+                i.2,
+                i.3.format("%Y-%m-%d %H:%M")
             );
         }
     }
     Ok(())
+}
+
+/// (data_version, created_at, train id, notes)
+type ReleaseRow = (
+    String,
+    chrono::DateTime<chrono::Utc>,
+    Option<i64>,
+    Option<String>,
+);
+
+/// (id, trigger, started_at, outcome, data_version, versions)
+type TrainRow = (
+    i64,
+    String,
+    chrono::DateTime<chrono::Utc>,
+    String,
+    Option<String>,
+    i32,
+);
+
+async fn release_list(pool: &PgPool, limit: i64) -> Result<()> {
+    let rel: Vec<ReleaseRow> = sqlx::query_as(
+        "SELECT data_version, created_at, train_id, notes FROM data.releases ORDER BY seq DESC LIMIT $1",
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+    println!("releases:");
+    for r in rel {
+        println!(
+            "  {:<12} {}  train {:<6} {}",
+            r.0,
+            r.1.format("%Y-%m-%d %H:%M:%S"),
+            r.2.map_or_else(|| "-".to_owned(), |t| t.to_string()),
+            r.3.unwrap_or_default()
+        );
+    }
+    let trains: Vec<TrainRow> = sqlx::query_as(
+        "SELECT id, trigger, started_at, outcome, data_version, versions FROM ops.trains
+             ORDER BY id DESC LIMIT $1",
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+    println!("trains:");
+    for t in trains {
+        println!(
+            "  #{:<5} {:<8} {}  {:<9} {} ({} version(s))",
+            t.0,
+            t.1,
+            t.2.format("%Y-%m-%d %H:%M:%S"),
+            t.3,
+            t.4.unwrap_or_else(|| "-".to_owned()),
+            t.5
+        );
+    }
+    Ok(())
+}
+
+/// ALTER ROLE … PASSWORD for the application roles, from the environment.
+/// The password travels as a bound parameter into a transaction-local
+/// setting and is quoted server-side, so no statement text (client or
+/// server log) ever contains it.
+async fn set_role_passwords(pool: &PgPool) -> Result<()> {
+    for (role, var) in [
+        ("lanka_api", "LANKA_API_PASSWORD"),
+        ("lanka_ingest", "LANKA_INGEST_PASSWORD"),
+        ("lanka_recipe", "LANKA_RECIPE_PASSWORD"),
+    ] {
+        let Some(pw) = std::env::var(var).ok().filter(|v| !v.is_empty()) else {
+            continue;
+        };
+        let mut tx = pool.begin().await?;
+        sqlx::query("SELECT set_config('lanka.role', $1, true), set_config('lanka.pw', $2, true)")
+            .bind(role)
+            .bind(&pw)
+            .execute(&mut *tx)
+            .await?;
+        sqlx::raw_sql(
+            "DO $$ BEGIN
+               EXECUTE format('ALTER ROLE %I PASSWORD %L', current_setting('lanka.role'), current_setting('lanka.pw'));
+             END $$",
+        )
+        .execute(&mut *tx)
+        .await?;
+        tx.commit().await?;
+        println!("password set for {role}");
+    }
+    Ok(())
+}
+
+/// Minimal HTTP/1.0 GET over TCP: succeeds on a 200 status line.
+async fn probe(url: &str) -> Result<()> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let rest = url
+        .strip_prefix("http://")
+        .context("probe supports http:// URLs only")?;
+    let (hostport, path) = rest.split_once('/').unwrap_or((rest, ""));
+    let fut = async {
+        let mut s = tokio::net::TcpStream::connect(hostport).await?;
+        s.write_all(format!("GET /{path} HTTP/1.0\r\nHost: {hostport}\r\n\r\n").as_bytes())
+            .await?;
+        let mut buf = vec![0u8; 64];
+        let n = s.read(&mut buf).await?;
+        anyhow::Ok(String::from_utf8_lossy(&buf[..n]).into_owned())
+    };
+    let head = tokio::time::timeout(std::time::Duration::from_secs(5), fut)
+        .await
+        .context("probe timed out")??;
+    let line = head.lines().next().unwrap_or_default();
+    anyhow::ensure!(
+        line.split_whitespace().nth(1) == Some("200"),
+        "probe: {line}"
+    );
+    Ok(())
+}
+
+/// Resolves on SIGINT or SIGTERM.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        let _ = tokio::signal::ctrl_c().await;
+    };
+    #[cfg(unix)]
+    let term = async {
+        if let Ok(mut s) = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+        {
+            s.recv().await;
+        }
+    };
+    #[cfg(not(unix))]
+    let term = std::future::pending::<()>();
+    tokio::select! { () = ctrl_c => {}, () = term => {} }
+    tracing::info!("shutdown requested");
 }

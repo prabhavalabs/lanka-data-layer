@@ -318,6 +318,8 @@ pub struct RunOptions {
     pub trigger: String,
     /// Skip the fingerprint and artifact-set short-circuits.
     pub force: bool,
+    /// The worker job executing this run (`ops.jobs.id`), if any.
+    pub job_id: Option<i64>,
 }
 
 /// `discover` may use the network (cheap listing endpoints, HEAD requests).

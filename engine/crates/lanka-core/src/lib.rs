@@ -18,6 +18,7 @@ pub mod grid;
 pub mod period;
 pub mod profile;
 pub mod query;
+pub mod status;
 pub mod units;
 
 pub use basis::{Basis, IndicatorClass, Method, Review, Status};

@@ -34,11 +34,12 @@ use lanka_core::query::{self, MapQuery, SeriesQuery};
 use lanka_core::{Basis, Catalog, Flags, Method, Profile, Status};
 use lanka_ingest::Registry;
 use lanka_ingest::connector::{AdminUnitIn, BoundarySet, ObsRow};
-use lanka_ingest::geo_load::publish_admin_units;
+use lanka_ingest::geo_load;
 use lanka_ingest::publish::{
-    PublishResult, StageInput, approve, multiset_at, publish_observations, reject,
+    self, PublishResult, StageInput, multiset_at, publish_observations, reject,
 };
-use lanka_ingest::run::{AlertConfig, RunStatus, RunTracker};
+use lanka_ingest::run::{RunStatus, RunTracker};
+use lanka_ingest::train::run_train;
 use lanka_store::{BlobStore, FsStore, Ns};
 use serde_json::json;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
@@ -225,9 +226,40 @@ async fn fetched(
     (id, blob.sha256)
 }
 
-/// `publish_observations` with the fixture's single artifact.
+/// Runs a release train when `r` was approved, so the assertions below see
+/// the version released (staging itself never releases, ADR 0012).
+async fn release_if_approved(pool: &PgPool, mut r: PublishResult) -> anyhow::Result<PublishResult> {
+    if r.outcome == "approved" {
+        let t = run_train(pool, "test", None, None).await?;
+        anyhow::ensure!(t.outcome == "released", "train released nothing");
+        r.outcome = "published";
+        r.data_version = t.data_version;
+    }
+    Ok(r)
+}
+
+/// `publish_observations` with the fixture's single artifact, then the train.
 #[allow(clippy::too_many_arguments)]
 async fn stage(
+    pool: &PgPool,
+    reg: &Registry,
+    profile: &Profile,
+    run_id: i64,
+    dataset_id: &str,
+    vintage: Option<&str>,
+    rows: &[ObsRow],
+    artifact: i64,
+) -> anyhow::Result<PublishResult> {
+    let r = stage_only(
+        pool, reg, profile, run_id, dataset_id, vintage, rows, artifact,
+    )
+    .await?;
+    release_if_approved(pool, r).await
+}
+
+/// `publish_observations` without the train.
+#[allow(clippy::too_many_arguments)]
+async fn stage_only(
     pool: &PgPool,
     reg: &Registry,
     profile: &Profile,
@@ -251,6 +283,44 @@ async fn stage(
         },
     )
     .await
+}
+
+/// `geo_load::publish_admin_units`, then the train.
+#[allow(clippy::too_many_arguments)]
+async fn publish_admin_units(
+    pool: &PgPool,
+    profile: &Profile,
+    run_id: i64,
+    dataset_id: &str,
+    set: &BoundarySet,
+    units: &[AdminUnitIn],
+    artifact_ids: &[i64],
+    extract_ids: &[i64],
+) -> anyhow::Result<PublishResult> {
+    let r = geo_load::publish_admin_units(
+        pool,
+        profile,
+        run_id,
+        dataset_id,
+        set,
+        units,
+        artifact_ids,
+        extract_ids,
+    )
+    .await?;
+    release_if_approved(pool, r).await
+}
+
+/// `publish::approve`, then the train.
+async fn approve(
+    pool: &PgPool,
+    dsv: &str,
+    by: &str,
+    note: Option<&str>,
+) -> anyhow::Result<PublishResult> {
+    let r = publish::approve(pool, dsv, by, note).await?;
+    anyhow::ensure!(r.outcome == "approved", "approve → {}", r.outcome);
+    release_if_approved(pool, r).await
 }
 
 /// Creates a throwaway database, runs `f` against its URL, drops it.
@@ -312,9 +382,8 @@ async fn run_cycle(url: String) {
     assert_eq!((sync.sources, sync.datasets, sync.indicators), (1, 3, 2));
     assert_eq!((sync.units, sync.codelists), (1, 1));
     let store = FsStore::new(tmp("store"));
-    let alerts = AlertConfig::default();
 
-    // ── run 1: boundaries + first data version (class A → auto-publish) ──
+    // ── run 1: boundaries + first data version (class A → approved → train) ──
     let run = RunTracker::start(&pool, "it-src", "test")
         .await
         .expect("run");
@@ -431,7 +500,7 @@ async fn run_cycle(url: String) {
         (again.outcome, again.dsv.as_str(), again.rows_written),
         ("unchanged", r1.dsv.as_str(), 0)
     );
-    run.finish(RunStatus::Succeeded, "ok", &alerts)
+    run.finish(RunStatus::Succeeded, "ok")
         .await
         .expect("finish");
 
@@ -568,7 +637,7 @@ async fn run_cycle(url: String) {
     .expect("revise");
     assert_eq!(r2.outcome, "in_review");
     assert_eq!(r2.diff.as_ref().map(|d| d.rows_changed), Some(40));
-    run2.finish(RunStatus::NeedsReview, "gate", &alerts)
+    run2.finish(RunStatus::NeedsReview, "gate")
         .await
         .expect("finish 2");
     // still serving v1: staged rows are invisible
@@ -700,21 +769,28 @@ async fn run_cycle(url: String) {
         .expect_err("guard trigger");
     assert!(err.to_string().contains("immutable"), "{err}");
 
-    // ── failure path: run closed as failed + alert recorded ──
+    // ── failure path: run closed as failed, an error event in the feed ──
     let run3 = RunTracker::start(&pool, "it-src", "test")
         .await
         .expect("run 3");
-    run3.fail(&anyhow::anyhow!("upstream exploded"), &alerts)
+    let run3_id = run3.run_id;
+    run3.fail(&anyhow::anyhow!("upstream exploded"))
         .await
         .expect("fail");
-    let (state, alerts_n): (String, i64) = sqlx::query_as(
-        "SELECT last_status::text, (SELECT count(*) FROM ops.alerts WHERE kind = 'run_failed')
-         FROM ops.source_health WHERE source_id = 'it-src'",
+    let (state, events): (String, i64) = sqlx::query_as(
+        "SELECT last_status, (SELECT count(*) FROM ops.run_events WHERE run_id = $1 AND level = 'error')
+         FROM ops.source_freshness WHERE source_id = 'it-src'",
     )
+    .bind(run3_id)
     .fetch_one(&pool)
     .await
-    .expect("health");
-    assert_eq!((state.as_str(), alerts_n), ("failed", 1));
+    .expect("freshness");
+    assert_eq!((state.as_str(), events), ("failed", 1));
+    let alerts: bool = sqlx::query_scalar("SELECT to_regclass('ops.alerts') IS NULL")
+        .fetch_one(&pool)
+        .await
+        .expect("alerts");
+    assert!(alerts, "ops.alerts is gone (ADR 0016)");
     pool.close().await;
 }
 
@@ -901,6 +977,7 @@ async fn reset_dataset(pool: &PgPool) {
     for q in [
         "DELETE FROM data.changelog WHERE dataset_id = 'it-a'",
         "DELETE FROM data.release_datasets WHERE dataset_id = 'it-a'",
+        "UPDATE ops.trains SET data_version = NULL",
         "DELETE FROM data.releases r WHERE NOT EXISTS (SELECT 1 FROM data.release_datasets x WHERE x.data_version = r.data_version)",
         "DELETE FROM data.obs_provenance p USING catalog.datasets d WHERE d.id = 'it-a' AND p.dataset_key = d.key",
         "DELETE FROM data.observations o USING catalog.datasets d WHERE d.id = 'it-a' AND o.dataset_key = d.key",
@@ -1085,7 +1162,7 @@ fn range_versions_property() {
         .await
         .expect("join");
         result.expect("range-version invariants hold");
-        run.finish(RunStatus::Succeeded, "ok", &AlertConfig::default())
+        run.finish(RunStatus::Succeeded, "ok")
             .await
             .expect("finish");
         pool.close().await;
@@ -1245,8 +1322,507 @@ async fn run_scale(url: String) {
         (stored, u64::try_from(n + 1000).expect("n"))
     );
     drop(conn);
-    run.finish(RunStatus::Succeeded, "ok", &AlertConfig::default())
+    run.finish(RunStatus::Succeeded, "ok")
         .await
         .expect("finish");
+    pool.close().await;
+}
+
+// ───────────────────────────── WP-03: operations ───────────────────────────
+
+/// Roles, approval timing, the release train, the job queue (dedupe, claim,
+/// crash → re-queue, retry backoff, cancellation), the scheduler tick, the
+/// worker end to end, incidents and the status reads, the event feed order,
+/// and re-staging after a rejection without `--force`.
+#[tokio::test(flavor = "multi_thread")]
+async fn operations_against_postgis() {
+    with_database("ops", run_operations).await;
+}
+
+#[allow(clippy::too_many_lines)]
+async fn run_operations(url: String) {
+    use lanka_core::status;
+    use lanka_ingest::jobs::{self, NewJob};
+    use lanka_ingest::scheduler::{self, TickConfig};
+    use lanka_ingest::worker::{self, WorkerConfig};
+
+    let pool = lanka_core::db::connect(&url, lanka_core::db::PoolRole::Worker)
+        .await
+        .expect("pool");
+    lanka_core::db::migrate(&pool).await.expect("migrate");
+    let (dir, profile) = fixture_registry();
+    let reg = Registry::load(&dir).expect("fixture registry");
+    reg.sync(&pool, &profile).await.expect("sync");
+    let store = FsStore::new(tmp("ops-store"));
+
+    // ── roles: the API role cannot write, the worker cannot rewrite releases ──
+    {
+        let mut c = pool.acquire().await.expect("conn");
+        for (role, sql, ok) in [
+            ("lanka_api", "SELECT count(*) FROM data.observations", true),
+            (
+                "lanka_api",
+                "SELECT count(*) FROM ops.source_freshness",
+                true,
+            ),
+            (
+                "lanka_api",
+                "INSERT INTO ops.jobs (kind, dedupe_key, trigger) VALUES ('ingest', 'x', 'manual')",
+                false,
+            ),
+            (
+                "lanka_api",
+                "UPDATE catalog.sources SET paused = true",
+                false,
+            ),
+            ("lanka_api", "DELETE FROM data.releases", false),
+            (
+                "lanka_api",
+                "SELECT data.ensure_obs_partition('it-a')",
+                false,
+            ),
+            (
+                "lanka_ingest",
+                "INSERT INTO ops.jobs (kind, dedupe_key, trigger) VALUES ('ingest', 'x', 'manual')",
+                true,
+            ),
+            (
+                "lanka_ingest",
+                "UPDATE data.releases SET notes = 'x'",
+                false,
+            ),
+            ("lanka_ingest", "DELETE FROM data.releases", false),
+            (
+                "lanka_ingest",
+                "INSERT INTO ops.run_events (level, stage, kind, message) VALUES ('info', 'job', 'x', 'forged')",
+                false,
+            ),
+            ("lanka_ingest", "CREATE TABLE data.evil (x int)", false),
+            (
+                "lanka_ingest",
+                "SELECT data.ensure_obs_partition('it-a')",
+                true,
+            ),
+            (
+                "lanka_recipe",
+                "INSERT INTO ops.jobs (kind, dedupe_key, trigger) VALUES ('ingest', 'y', 'manual')",
+                false,
+            ),
+        ] {
+            sqlx::raw_sql(sqlx::AssertSqlSafe(format!("BEGIN; SET LOCAL ROLE {role}")))
+                .execute(&mut *c)
+                .await
+                .expect("set role");
+            let r = sqlx::raw_sql(sqlx::AssertSqlSafe(sql))
+                .execute(&mut *c)
+                .await;
+            sqlx::raw_sql("ROLLBACK")
+                .execute(&mut *c)
+                .await
+                .expect("rollback");
+            assert_eq!(r.is_ok(), ok, "{role}: {sql}: {r:?}");
+            if !ok {
+                let e = r.expect_err("denied").to_string();
+                assert!(e.contains("permission denied"), "{role}: {sql}: {e}");
+            }
+        }
+    }
+
+    // ── approval timing: approved versions wait for the train ──
+    let run = RunTracker::start(&pool, "it-src", "test")
+        .await
+        .expect("run");
+    let f = fetched(&pool, &store, run.run_id, b"ops fixture").await;
+    let units = vec![
+        unit("ZZ", 0, None, square(80.0, 7.0, 1.0)),
+        unit("ZZ1", 1, Some("ZZ"), square(80.0, 7.0, 0.5)),
+        unit("ZZ11", 2, Some("ZZ1"), square(80.0, 7.0, 0.25)),
+    ];
+    let set = BoundarySet {
+        id: "it-set".into(),
+        title: "Fixture".into(),
+        vintage: None,
+        notes: None,
+    };
+    let geo = geo_load::publish_admin_units(
+        &pool,
+        &profile,
+        run.run_id,
+        "it-geo",
+        &set,
+        &units,
+        &[f.0],
+        &[],
+    )
+    .await
+    .expect("units");
+    assert_eq!(
+        (geo.outcome, geo.data_version.as_deref()),
+        ("approved", None)
+    );
+    let rows: Vec<ObsRow> = (2020..2025)
+        .flat_map(|y| {
+            [
+                obs("ZZ", &y.to_string(), "female", f64::from(y)),
+                obs("ZZ11", &y.to_string(), "male", f64::from(y) / 10.0),
+            ]
+        })
+        .collect();
+    let r1 = stage_only(
+        &pool,
+        &reg,
+        &profile,
+        run.run_id,
+        "it-a",
+        Some("v1"),
+        &rows,
+        f.0,
+    )
+    .await
+    .expect("stage");
+    assert_eq!((r1.outcome, r1.data_version.as_deref()), ("approved", None));
+    let cat = Catalog::load(&pool).await.expect("catalog");
+    assert_eq!(
+        cat.data_version, None,
+        "nothing is visible before the train"
+    );
+    let t1 = run_train(&pool, "test", None, None).await.expect("train");
+    assert_eq!((t1.outcome, t1.versions.len()), ("released", 2));
+    let dv1 = t1.data_version.clone().expect("dv");
+    let cat = Catalog::load(&pool).await.expect("catalog");
+    assert_eq!(cat.data_version.as_deref(), Some(dv1.as_str()));
+    let area_rows: i64 = sqlx::query_scalar("SELECT count(*) FROM serve.area_latest")
+        .fetch_one(&pool)
+        .await
+        .expect("area_latest");
+    assert_eq!(area_rows, 2, "latest row per (geo, indicator, dims)");
+    let zz11 = query::parse_pcode(&cat, "ZZ11").expect("pcode");
+    let (area, _) = query::area_profile(&pool, &cat, &zz11).await.expect("area");
+    assert_eq!(area.indicators[0].period, "2024");
+    assert_eq!(area.indicators[0].values[0].value, Some(202.4));
+    let t2 = run_train(&pool, "test", None, None).await.expect("train 2");
+    assert_eq!((t2.outcome, t2.data_version), ("no_change", None));
+    run.finish(RunStatus::Succeeded, "ok")
+        .await
+        .expect("finish");
+
+    // ── rejection invalidates change keys; the same content re-stages ──
+    let run2 = RunTracker::start(&pool, "it-src", "test")
+        .await
+        .expect("run 2");
+    let run2_id = run2.run_id;
+    run2.set_change_keys("test", Some([7; 32]), Some([8; 32]))
+        .await
+        .expect("keys");
+    let truncated: Vec<ObsRow> = rows.iter().take(2).cloned().collect();
+    let r2 = stage_only(
+        &pool,
+        &reg,
+        &profile,
+        run2.run_id,
+        "it-a",
+        Some("v2"),
+        &truncated,
+        f.0,
+    )
+    .await
+    .expect("stage truncated");
+    assert_eq!(
+        r2.outcome, "in_review",
+        "removing 80% of rows trips the gate"
+    );
+    run2.finish(RunStatus::NeedsReview, "gate")
+        .await
+        .expect("finish 2");
+    let keys = lanka_ingest::pipeline::last_change_keys(&pool, "it-src")
+        .await
+        .expect("keys");
+    assert_eq!(keys.0.as_deref(), Some([7u8; 32].as_slice()));
+    reject(&pool, &r2.dsv, "tester", "upstream truncated")
+        .await
+        .expect("reject");
+    let keys = lanka_ingest::pipeline::last_change_keys(&pool, "it-src")
+        .await
+        .expect("keys");
+    assert_eq!(
+        keys,
+        (None, None),
+        "a rejection invalidates earlier change keys"
+    );
+    let r3 = stage_only(
+        &pool,
+        &reg,
+        &profile,
+        run2_id,
+        "it-a",
+        Some("v2"),
+        &truncated,
+        f.0,
+    )
+    .await
+    .expect("re-stage");
+    assert_eq!(
+        (r3.outcome, r3.dsv.as_str()),
+        ("in_review", r2.dsv.as_str())
+    );
+    let (open_reviews, decided): (i64, i64) = sqlx::query_as(
+        "SELECT count(*) FILTER (WHERE state = 'open'), count(*) FILTER (WHERE state = 'rejected') FROM ops.reviews",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("reviews");
+    assert_eq!((open_reviews, decided), (1, 1));
+    reject(&pool, &r3.dsv, "tester", "still truncated")
+        .await
+        .expect("reject again");
+
+    // ── job queue ──
+    let j = NewJob::ingest("it-src", "manual", json!({}));
+    let (id, created) = jobs::enqueue(&pool, &j).await.expect("enqueue");
+    assert!(created);
+    assert_eq!(
+        jobs::enqueue(&pool, &j).await.expect("again"),
+        (id, false),
+        "dedupe"
+    );
+    let kinds = ["ingest", "release"];
+    let c = jobs::claim(&pool, "w1", "batch", 4, &kinds)
+        .await
+        .expect("claim")
+        .expect("a job");
+    assert_eq!(
+        (c.job.id, c.job.attempts, c.job.state.as_str()),
+        (id, 1, "running")
+    );
+    assert!(
+        jobs::claim(&pool, "w2", "batch", 4, &kinds)
+            .await
+            .expect("claim")
+            .is_none()
+    );
+    assert!(
+        jobs::reap_abandoned(&pool).await.expect("reap").is_empty(),
+        "lock held → alive"
+    );
+    // the worker dies mid-job: its session goes away with the lock
+    c.lock.detach().close().await.expect("close session");
+    let mut reaped = Vec::new();
+    for _ in 0..50 {
+        reaped = jobs::reap_abandoned(&pool).await.expect("reap");
+        if !reaped.is_empty() {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+    assert_eq!(reaped, [id], "abandoned job is re-queued");
+    let c = jobs::claim(&pool, "w1", "batch", 4, &kinds)
+        .await
+        .expect("claim")
+        .expect("again");
+    assert_eq!(c.job.attempts, 2);
+    assert_eq!(
+        jobs::fail(&pool, &c.job, "boom", true).await.expect("fail"),
+        "queued"
+    );
+    c.release().await;
+    let wait: f64 = sqlx::query_scalar(
+        "SELECT extract(epoch FROM run_after - now())::float8 FROM ops.jobs WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_one(&pool)
+    .await
+    .expect("run_after");
+    assert!(
+        (3500.0..3700.0).contains(&wait),
+        "second retry backs off 1 h, got {wait}"
+    );
+    assert!(
+        jobs::claim(&pool, "w1", "batch", 4, &kinds)
+            .await
+            .expect("claim")
+            .is_none(),
+        "backing off"
+    );
+    assert_eq!(jobs::cancel(&pool, id).await.expect("cancel"), "cancelled");
+    let mut rj = NewJob::release("manual:test", "manual", "test");
+    rj.max_attempts = 1;
+    let (rid, _) = jobs::enqueue(&pool, &rj).await.expect("enqueue release");
+    let c = jobs::claim(&pool, "w1", "batch", 1, &kinds)
+        .await
+        .expect("claim")
+        .expect("release job");
+    assert_eq!(c.job.id, rid);
+    assert_eq!(
+        jobs::cancel(&pool, rid).await.expect("cancel running"),
+        "cancel_requested"
+    );
+    assert!(
+        jobs::heartbeat(&pool, rid).await.expect("heartbeat"),
+        "heartbeat sees the cancel"
+    );
+    jobs::mark_cancelled(&pool, &c.job, "cancel requested")
+        .await
+        .expect("cancelled");
+    c.release().await;
+    let weights_full = {
+        let mut big = NewJob::ingest("it-src", "manual", json!({}));
+        big.weight = 4;
+        let (bid, _) = jobs::enqueue(&pool, &big).await.expect("enqueue big");
+        let none = jobs::claim(&pool, "w1", "batch", 3, &kinds)
+            .await
+            .expect("claim");
+        jobs::cancel(&pool, bid).await.expect("cancel big");
+        none.is_none()
+    };
+    assert!(weights_full, "a job heavier than the free slots waits");
+
+    // ── scheduler: due sources and the daily train are enqueued once ──
+    sqlx::query("UPDATE catalog.sources SET schedulable = true WHERE id = 'it-src'")
+        .execute(&pool)
+        .await
+        .expect("schedulable");
+    sqlx::query("UPDATE ops.ingestion_runs SET started_at = started_at - interval '30 days'")
+        .execute(&pool)
+        .await
+        .expect("age runs");
+    let cfg = TickConfig {
+        train_at: chrono::NaiveTime::MIN,
+        ..TickConfig::default()
+    };
+    let t = scheduler::tick(&pool, &cfg).await.expect("tick");
+    assert_eq!(t.enqueued.len(), 1, "{t:?}");
+    assert!(t.train_job.is_some());
+    let t = scheduler::tick(&pool, &cfg).await.expect("tick 2");
+    assert!(
+        t.enqueued.is_empty() && t.train_job.is_none(),
+        "idempotent: {t:?}"
+    );
+    // the source has no connector in the fixture: drop its ingest, keep the train
+    sqlx::query(
+        "UPDATE ops.jobs SET state = 'cancelled' WHERE kind = 'ingest' AND state = 'queued'",
+    )
+    .execute(&pool)
+    .await
+    .expect("drop ingest");
+
+    // ── the worker runs the queued train and stops (--once) ──
+    let wcfg = WorkerConfig {
+        lane: "batch".into(),
+        slots: 4,
+        tick: std::time::Duration::from_secs(60),
+        registry_dir: dir.clone(),
+        profile_path: Some(dir.join("profile.yaml")),
+        store_root: tmp("ops-store"),
+        grace: std::time::Duration::from_secs(5),
+        once: true,
+        tick_cfg: cfg.clone(),
+    };
+    tokio::time::timeout(
+        std::time::Duration::from_secs(60),
+        worker::run(pool.clone(), wcfg, std::future::pending()),
+    )
+    .await
+    .expect("worker finished")
+    .expect("worker ok");
+    let (state, outcome): (String, String) = sqlx::query_as(
+        "SELECT j.state, t.outcome FROM ops.jobs j JOIN ops.trains t ON t.job_id = j.id
+         WHERE j.kind = 'release' AND j.dedupe_key LIKE 'release:daily:%'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("train job");
+    assert_eq!(
+        (state.as_str(), outcome.as_str()),
+        ("succeeded", "no_change")
+    );
+
+    // ── a forced failure shows in /v2/status within one tick ──
+    for _ in 0..3 {
+        RunTracker::start(&pool, "it-src", "test")
+            .await
+            .expect("run")
+            .fail(&anyhow::anyhow!("upstream exploded"))
+            .await
+            .expect("fail");
+    }
+    let t = scheduler::tick(&pool, &cfg).await.expect("tick 3");
+    assert_eq!(t.incidents_opened, 1);
+    let s = status::summary(&pool).await.expect("summary");
+    assert_eq!(s.sources.failing, 1);
+    assert_ne!(s.overall, "ok");
+    assert!(
+        s.reasons.iter().any(|r| r.contains("source(s) failing")),
+        "{:?}",
+        s.reasons
+    );
+    assert_eq!(s.incidents_open, 1);
+    assert_eq!(s.release.data_version.as_deref(), Some(dv1.as_str()));
+    assert_eq!(
+        s.release.last_train.as_ref().map(|t| t.outcome.as_str()),
+        Some("no_change")
+    );
+    let failing = status::sources(&pool, Some("failing"), None)
+        .await
+        .expect("sources");
+    assert_eq!(failing.len(), 1);
+    assert_eq!(failing[0].consecutive_failures, 3);
+    let runs = status::runs(&pool, None, Some("it-src"), Some("failed"), None, 2)
+        .await
+        .expect("runs");
+    assert_eq!(runs.runs.len(), 2);
+    let older = status::runs(
+        &pool,
+        None,
+        Some("it-src"),
+        Some("failed"),
+        runs.next_cursor,
+        2,
+    )
+    .await
+    .expect("page 2");
+    assert!(older.runs.iter().all(|r| r.id < runs.runs[1].id));
+    // recovery closes the incident at the next tick
+    RunTracker::start(&pool, "it-src", "test")
+        .await
+        .expect("run")
+        .finish(RunStatus::NoChange, "ok")
+        .await
+        .expect("finish");
+    let t = scheduler::tick(&pool, &cfg).await.expect("tick 4");
+    assert_eq!(t.incidents_closed, 1);
+
+    // ── the event feed is strictly ordered and resumable ──
+    let all = status::events(&pool, 0, None, None, 1000)
+        .await
+        .expect("events");
+    assert!(all.len() > 20);
+    assert!(
+        all.windows(2).all(|w| w[0].id < w[1].id),
+        "strictly increasing ids"
+    );
+    let mid = all[all.len() / 2].id;
+    let tail = status::events(&pool, mid, None, None, 1000)
+        .await
+        .expect("tail");
+    assert_eq!(
+        tail.first().map(|e| e.id),
+        all.iter().map(|e| e.id).find(|i| *i > mid)
+    );
+    let errors = status::events(&pool, 0, Some("error"), None, 1000)
+        .await
+        .expect("errors");
+    assert!(errors.iter().all(|e| e.level == "error") && !errors.is_empty());
+    for k in [
+        "job_queued",
+        "job_abandoned",
+        "job_retry",
+        "job_cancelled",
+        "release_cut",
+        "incident_opened",
+        "review_rejected",
+        "worker_started",
+    ] {
+        assert!(all.iter().any(|e| e.kind == k), "event kind {k} missing");
+    }
     pool.close().await;
 }

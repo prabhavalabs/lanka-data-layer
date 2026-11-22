@@ -1,13 +1,16 @@
-//! Validate → stage → publish for observation outputs, plus releases and the
-//! review gate, on the range-versioned model (05 §2–§3, ADR 0004).
+//! Validate → stage → gate → approve/review for observation outputs on the
+//! range-versioned model (05 §2–§3, ADR 0004). Publication is decoupled from
+//! approval (ADR 0012): an approved version — class A passing the gate, or
+//! B/C signed off by a reviewer — is released by the next release train
+//! (`train.rs`), never by the staging run itself.
 //!
 //! A version is a dataset-local sequence number `seq`. Staging version *n*
 //! COPYs the connector's rows into an unlogged-per-session temp table, diffs
 //! them set-wise against the open rows of the released version and inserts
 //! only new or changed rows (`vfrom = n`, `vto = open`); the rows it will
 //! close are recorded in `data.version_closes`. Unchanged rows are not
-//! touched. Releasing *n* closes those rows (`vto = n - 1`) — the only
-//! UPDATE the table ever sees. Rejecting *n* deletes its rows and closes.
+//! touched. Releasing *n* (the train) closes those rows (`vto = n - 1`) — the
+//! only UPDATE the table ever sees. Rejecting *n* deletes its rows and closes.
 //!
 //! The dsv is `dsv(schema_hash, multiset_hash, rows)` over canonical rows
 //! (lanka-core `dsv`), so it is order- and path-independent. It is computed
@@ -31,13 +34,13 @@ use lanka_core::{
 };
 use serde::Serialize;
 use serde_json::json;
-use sqlx::{PgConnection, PgPool, Postgres, Transaction};
+use sqlx::{PgConnection, PgPool};
 
 use crate::connector::ObsRow;
 use crate::copy_bin::BinCopy;
 use crate::registry::Registry;
 
-/// Class-A auto-publish gates (design doc §4.4). Exceeding one demotes the
+/// Class-A auto-approval gates (design doc §4.4). Exceeding one demotes the
 /// version to human review instead of failing the run.
 pub const MAX_CHANGED_SHARE: f64 = 0.01;
 pub const MAX_REMOVED_SHARE: f64 = 0.01;
@@ -62,7 +65,8 @@ pub struct PublishResult {
     pub dataset_id: String,
     pub dsv: String,
     pub version_id: i64,
-    /// published | in_review | unchanged
+    /// approved (released by the next train) | in_review | unchanged;
+    /// `published` once a train has released it
     pub outcome: &'static str,
     pub data_version: Option<String>,
     pub rows: i64,
@@ -718,136 +722,57 @@ async fn discard_open(
     .bind(note)
     .execute(&mut *conn)
     .await?;
+    if reviewer.is_none() {
+        // Superseded by a newer staging: the open review ends with it.
+        sqlx::query(
+            "UPDATE ops.reviews SET state = 'rejected', decided_at = now(), note = $2
+             WHERE version_id = $1 AND state = 'open'",
+        )
+        .bind(version_id)
+        .bind(note)
+        .execute(&mut *conn)
+        .await?;
+    }
     Ok(())
 }
 
-/// Creates the release (`YYYYMMDD.N`): the current release's map with
-/// `dataset_id` re-pointed to `version_id`. Applies the version's closes
-/// (the only UPDATE on observations), supersedes the previous version and
-/// writes the changelog row. Serialised by a transaction advisory lock.
-pub async fn create_release(
-    tx: &mut Transaction<'_, Postgres>,
-    dataset_id: &str,
+/// Opens the review record of a version that waits for a person.
+pub(crate) async fn open_review(
+    conn: &mut PgConnection,
     version_id: i64,
-    prev_version: Option<i64>,
-    diff: Option<&Diff>,
-    notes: &str,
-    run_id: Option<i64>,
-) -> Result<String> {
-    sqlx::query("SELECT pg_advisory_xact_lock(hashtext('lanka-release'))")
-        .execute(&mut **tx)
-        .await?;
-    let (dataset_key, seq): (i32, i32) = sqlx::query_as(
-        "SELECT d.key, v.seq FROM data.dataset_versions v JOIN catalog.datasets d ON d.id = v.dataset_id
-         WHERE v.id = $1",
+    reason: &str,
+) -> Result<()> {
+    sqlx::query(
+        "INSERT INTO ops.reviews (version_id, reason) VALUES ($1, $2)
+         ON CONFLICT (version_id) WHERE state = 'open' DO UPDATE SET reason = EXCLUDED.reason",
     )
     .bind(version_id)
-    .fetch_one(&mut **tx)
+    .bind(reason)
+    .execute(&mut *conn)
     .await?;
-    sqlx::query(
-        "UPDATE data.observations o SET vto = $3 - 1
-         FROM data.version_closes c
-         WHERE c.version_id = $1 AND o.dataset_key = $2 AND o.obs_id = c.obs_id AND o.vto = 2147483647",
-    )
-    .bind(version_id)
-    .bind(dataset_key)
-    .bind(seq)
-    .execute(&mut **tx)
-    .await?;
-    sqlx::query("DELETE FROM data.version_closes WHERE version_id = $1")
-        .bind(version_id)
-        .execute(&mut **tx)
-        .await?;
+    Ok(())
+}
 
-    let data_version: String = sqlx::query_scalar(
-        "SELECT d || '.' || (coalesce(max(split_part(data_version, '.', 2)::int), 0) + 1)
-         FROM (SELECT to_char(now() AT TIME ZONE 'UTC', 'YYYYMMDD') AS d) t
-         LEFT JOIN data.releases r ON r.data_version LIKE t.d || '.%'
-         GROUP BY d",
-    )
-    .fetch_one(&mut **tx)
-    .await?;
-    let prev_release: Option<String> =
-        sqlx::query_scalar("SELECT data_version FROM data.current_release")
-            .fetch_optional(&mut **tx)
-            .await?;
-
-    sqlx::query("INSERT INTO data.releases (data_version, notes, run_id) VALUES ($1, $2, $3)")
-        .bind(&data_version)
-        .bind(notes)
-        .bind(run_id)
-        .execute(&mut **tx)
-        .await?;
-    if let Some(prev) = &prev_release {
-        sqlx::query(
-            "INSERT INTO data.release_datasets (data_version, dataset_id, version_id)
-             SELECT $1, dataset_id, version_id FROM data.release_datasets
-             WHERE data_version = $2 AND dataset_id <> $3",
-        )
-        .bind(&data_version)
-        .bind(prev)
-        .bind(dataset_id)
-        .execute(&mut **tx)
-        .await?;
-    }
-    sqlx::query("INSERT INTO data.release_datasets (data_version, dataset_id, version_id) VALUES ($1, $2, $3)")
-        .bind(&data_version)
-        .bind(dataset_id)
-        .bind(version_id)
-        .execute(&mut **tx)
-        .await?;
+/// Marks a version approved: it is released by the next train.
+pub(crate) async fn mark_approved(
+    conn: &mut PgConnection,
+    version_id: i64,
+    reviewer: Option<&str>,
+    note: Option<&str>,
+) -> Result<()> {
     sqlx::query(
-        "UPDATE data.dataset_versions SET status = 'published', published_at = coalesce(published_at, now())
+        "UPDATE data.dataset_versions SET status = 'approved', approved_at = now(),
+            reviewed_by = coalesce($2, reviewed_by),
+            reviewed_at = CASE WHEN $2 IS NULL THEN reviewed_at ELSE now() END,
+            review_note = coalesce($3, review_note)
          WHERE id = $1",
     )
     .bind(version_id)
-    .execute(&mut **tx)
+    .bind(reviewer)
+    .bind(note)
+    .execute(&mut *conn)
     .await?;
-    if let Some(prev) = prev_version.filter(|p| *p != version_id) {
-        sqlx::query("UPDATE data.dataset_versions SET status = 'superseded' WHERE id = $1")
-            .bind(prev)
-            .execute(&mut **tx)
-            .await?;
-    }
-    let (added, removed, changed) = diff.map_or((0, 0, 0), |d| {
-        (
-            d.rows_added,
-            d.rows_removed,
-            d.rows_changed + d.rows_restated,
-        )
-    });
-    let row_count: i64 =
-        sqlx::query_scalar("SELECT row_count FROM data.dataset_versions WHERE id = $1")
-            .bind(version_id)
-            .fetch_one(&mut **tx)
-            .await?;
-    let summary = match diff {
-        Some(d) if d.prev_rows > 0 => format!(
-            "+{} −{} ~{} rows (was {}; {} restated)",
-            d.rows_added, d.rows_removed, d.rows_changed, d.prev_rows, d.rows_restated
-        ),
-        _ => format!("first version: {row_count} rows"),
-    };
-    sqlx::query(
-        "INSERT INTO data.changelog (data_version, dataset_id, from_version_id, to_version_id,
-            rows_added, rows_removed, rows_changed, summary)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-    )
-    .bind(&data_version)
-    .bind(dataset_id)
-    .bind(prev_version)
-    .bind(version_id)
-    .bind(if diff.is_none_or(|d| d.prev_rows == 0) {
-        row_count
-    } else {
-        added
-    })
-    .bind(removed)
-    .bind(changed)
-    .bind(summary)
-    .execute(&mut **tx)
-    .await?;
-    Ok(data_version)
+    Ok(())
 }
 
 /// One observation dataset to stage, as produced by `standardise`.
@@ -1015,19 +940,30 @@ pub async fn publish_observations(
             .bind(&dsv)
             .fetch_optional(&mut *tx)
             .await?;
-    if let Some((vid, status)) = existing {
-        tx.rollback().await?;
-        let mut r = unchanged(
-            vid,
-            dsv,
-            format!("identical content already exists as a {status} version"),
-        );
-        r.rows_hashed = hashed;
-        if status == "in_review" {
-            r.outcome = "in_review";
+    // A rejected version is re-staged when the same content is delivered
+    // again (its rows were deleted at rejection); every other status means
+    // the content already exists.
+    let revive = match existing {
+        Some((vid, status)) if status == "rejected" => Some(vid),
+        Some((vid, status)) => {
+            tx.rollback().await?;
+            let mut r = unchanged(
+                vid,
+                dsv,
+                format!("identical content already exists as a {status} version"),
+            );
+            r.rows_hashed = hashed;
+            if status == "in_review" || status == "approved" {
+                r.outcome = if status == "in_review" {
+                    "in_review"
+                } else {
+                    "approved"
+                };
+            }
+            return Ok(r);
         }
-        return Ok(r);
-    }
+        None => None,
+    };
     // One open version per dataset: a newer staging supersedes an older one.
     let open: Vec<(i64, i32)> = sqlx::query_as(
         "SELECT id, seq FROM data.dataset_versions
@@ -1055,6 +991,15 @@ pub async fn publish_observations(
     .bind(dataset_id)
     .fetch_one(&mut *tx)
     .await?;
+    if let Some(vid) = revive {
+        // Free the dsv for the new row; the old row keeps the decision record.
+        sqlx::query(
+            "UPDATE data.dataset_versions SET dsv = dsv || '~rejected' || id::text WHERE id = $1",
+        )
+        .bind(vid)
+        .execute(&mut *tx)
+        .await?;
+    }
     let version_id: i64 = sqlx::query_scalar(
         "INSERT INTO data.dataset_versions (dataset_id, dsv, content_sha256, row_count, status,
             publication_class, vintage, run_id, supersedes_id, seq, multiset_hash, schema_hash, boundary_set,
@@ -1138,23 +1083,19 @@ pub async fn publish_observations(
         .await?;
 
     let (outcome, data_version, note) = if class == "A" && gate_failure.is_none() {
-        let dv = create_release(
-            &mut tx,
-            dataset_id,
-            version_id,
-            current.as_ref().map(|c| c.version_id),
-            diff_out.as_ref(),
-            &format!("{dataset_id} → {dsv} (auto, class A)"),
-            Some(run_id),
+        mark_approved(&mut tx, version_id, None, Some("auto-approved (class A)")).await?;
+        (
+            "approved",
+            None,
+            "auto-approved (class A); released by the next train".to_owned(),
         )
-        .await?;
-        ("published", Some(dv), "auto-published (class A)".to_owned())
     } else {
         sqlx::query("UPDATE data.dataset_versions SET status = 'in_review' WHERE id = $1")
             .bind(version_id)
             .execute(&mut *tx)
             .await?;
         let why = gate_failure.unwrap_or_else(|| format!("class {class} requires human review"));
+        open_review(&mut tx, version_id, &why).await?;
         (
             "in_review",
             None,
@@ -1205,7 +1146,8 @@ pub async fn pending_reviews(pool: &PgPool) -> Result<Vec<PendingVersion>> {
     .await?)
 }
 
-/// Human sign-off: approves every pending row of the version and publishes it.
+/// Human sign-off: approves every pending row of the version and marks it
+/// `approved`. It becomes visible with the next release train (ADR 0012).
 pub async fn approve(
     pool: &PgPool,
     dsv: &str,
@@ -1246,44 +1188,75 @@ pub async fn approve(
     .execute(&mut *tx)
     .await?
     .rows_affected();
-    sqlx::query(
-        "UPDATE data.dataset_versions SET status = 'approved', reviewed_by = $2, reviewed_at = now(),
-            review_note = $3 WHERE id = $1",
-    )
-    .bind(version_id)
-    .bind(reviewer)
-    .bind(note)
-    .execute(&mut *tx)
-    .await?;
-    let current = current_version(&mut tx, &dataset_id).await?;
-    let diff: Option<Diff> = diff.and_then(|d| serde_json::from_value(d).ok());
-    let dv = create_release(
-        &mut tx,
-        &dataset_id,
-        version_id,
-        current.map(|c| c.0),
-        diff.as_ref(),
-        &format!("{dataset_id} → {dsv} (approved by {reviewer})"),
-        None,
-    )
-    .await?;
+    mark_approved(&mut tx, version_id, Some(reviewer), note).await?;
+    decide_review(&mut tx, version_id, "approved", reviewer, note).await?;
     tx.commit().await?;
+    let diff: Option<Diff> = diff.and_then(|d| serde_json::from_value(d).ok());
+    crate::run::emit(
+        pool,
+        crate::run::Level::Info,
+        crate::run::Stage::Review,
+        &format!("{dataset_id} {dsv} approved by {reviewer}; released by the next train"),
+        crate::run::Event {
+            kind: Some("review_approved"),
+            dataset_id: Some(&dataset_id),
+            data: Some(json!({ "dsv": dsv, "reviewer": reviewer, "note": note })),
+            ..crate::run::Event::default()
+        },
+    )
+    .await;
     Ok(PublishResult {
         dataset_id,
         dsv: dsv.to_owned(),
         version_id,
-        outcome: "published",
-        data_version: Some(dv),
+        outcome: "approved",
+        data_version: None,
         rows,
         rows_written: i64::try_from(reviewed)?,
         rows_hashed: 0,
         diff,
-        note: format!("{reviewed} rows approved by {reviewer}"),
+        note: format!("{reviewed} rows approved by {reviewer}; released by the next train"),
     })
 }
 
+/// Closes the open review of a version with a decision.
+async fn decide_review(
+    conn: &mut PgConnection,
+    version_id: i64,
+    state: &str,
+    reviewer: &str,
+    note: Option<&str>,
+) -> Result<()> {
+    let n = sqlx::query(
+        "UPDATE ops.reviews SET state = $2, reviewer = $3, decided_at = now(), note = $4
+         WHERE version_id = $1 AND state = 'open'",
+    )
+    .bind(version_id)
+    .bind(state)
+    .bind(reviewer)
+    .bind(note)
+    .execute(&mut *conn)
+    .await?
+    .rows_affected();
+    if n == 0 {
+        sqlx::query(
+            "INSERT INTO ops.reviews (version_id, state, reviewer, decided_at, note)
+             VALUES ($1, $2, $3, now(), $4)",
+        )
+        .bind(version_id)
+        .bind(state)
+        .bind(reviewer)
+        .bind(note)
+        .execute(&mut *conn)
+        .await?;
+    }
+    Ok(())
+}
+
 /// Rejects a version in review: its rows and closes are deleted, the version
-/// row stays (status `rejected`) as the record of the decision.
+/// row stays (status `rejected`) as the record of the decision. Delivering
+/// the same content again re-stages it for review, and the rejection also
+/// invalidates the source's change keys (`pipeline::last_change_keys`).
 pub async fn reject(pool: &PgPool, dsv: &str, reviewer: &str, note: &str) -> Result<()> {
     let mut tx = pool.begin().await?;
     let (version_id, seq, dataset_key): (i64, i32, i32) = sqlx::query_as(
@@ -1305,7 +1278,26 @@ pub async fn reject(pool: &PgPool, dsv: &str, reviewer: &str, note: &str) -> Res
         note,
     )
     .await?;
+    decide_review(&mut tx, version_id, "rejected", reviewer, Some(note)).await?;
+    let dataset_id: String =
+        sqlx::query_scalar("SELECT dataset_id FROM data.dataset_versions WHERE id = $1")
+            .bind(version_id)
+            .fetch_one(&mut *tx)
+            .await?;
     tx.commit().await?;
+    crate::run::emit(
+        pool,
+        crate::run::Level::Warn,
+        crate::run::Stage::Review,
+        &format!("{dataset_id} {dsv} rejected by {reviewer}: {note}"),
+        crate::run::Event {
+            kind: Some("review_rejected"),
+            dataset_id: Some(&dataset_id),
+            data: Some(json!({ "dsv": dsv, "reviewer": reviewer, "note": note })),
+            ..crate::run::Event::default()
+        },
+    )
+    .await;
     Ok(())
 }
 

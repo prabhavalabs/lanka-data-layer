@@ -31,6 +31,12 @@ pub struct SourceSpec {
     pub access: Access,
     pub licence: Licence,
     pub cadence: Cadence,
+    /// Scheduling overrides for `lanka worker` (03 §4).
+    #[serde(default)]
+    pub schedule: Option<Schedule>,
+    /// Stops scheduled runs; manual runs still work.
+    #[serde(default)]
+    pub paused: bool,
     pub geo: GeoSpec,
     pub themes: Vec<String>,
     pub datasets: Vec<String>,
@@ -126,6 +132,30 @@ pub struct Cadence {
     pub release_calendar_url: Option<String>,
     #[serde(default)]
     pub expected_lag_days: Option<i32>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Schedule {
+    /// ISO 8601 duration (`P1D`, `PT6H`); default by cadence.
+    #[serde(default)]
+    pub check_every: Option<String>,
+    /// Local-time politeness window, `HH:MM-HH:MM`.
+    #[serde(default)]
+    pub window: Option<String>,
+    /// Overdue threshold (ISO 8601 duration); default 2 × cadence.
+    #[serde(default)]
+    pub stale_after: Option<String>,
+    #[serde(default)]
+    pub release_calendar: Vec<CalendarEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CalendarEntry {
+    pub edition: String,
+    /// `YYYY-MM-DD`.
+    pub expected: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -608,6 +638,32 @@ impl Registry {
                 }
             }
         }
+        for s in self.sources.values() {
+            let Some(sched) = &s.spec.schedule else {
+                continue;
+            };
+            for (name, d) in [
+                ("check_every", &sched.check_every),
+                ("stale_after", &sched.stale_after),
+            ] {
+                if let Some(d) = d
+                    && (d == "P" || d.ends_with('T'))
+                {
+                    errors.push(format!(
+                        "source {:?}: schedule.{name} {d:?} is not an ISO 8601 duration",
+                        s.spec.id
+                    ));
+                }
+            }
+            for c in &sched.release_calendar {
+                if chrono::NaiveDate::parse_from_str(&c.expected, "%Y-%m-%d").is_err() {
+                    errors.push(format!(
+                        "source {:?}: release_calendar {:?} has an invalid date {:?}",
+                        s.spec.id, c.edition, c.expected
+                    ));
+                }
+            }
+        }
         // One licence id must mean one status everywhere.
         let mut lic: HashMap<&str, (&str, &Licence)> = HashMap::new();
         for s in self.sources.values() {
@@ -888,6 +944,7 @@ impl Registry {
         }
         report.licences = licences.len();
 
+        let schedulable = crate::connector::implemented(self);
         for l in self.sources.values() {
             let s = &l.spec;
             let verified: Option<chrono::NaiveDate> = s
@@ -930,6 +987,46 @@ impl Registry {
             .bind(&s.notes)
             .bind(&l.json)
             .bind(l.sha256.as_slice())
+            .execute(&mut *tx)
+            .await?;
+            let sched = s.schedule.clone().unwrap_or_default();
+            sqlx::query(
+                "UPDATE catalog.sources SET paused = $2, schedulable = $3, check_every = $4::interval,
+                    stale_after = $5::interval, check_window = $6 WHERE id = $1",
+            )
+            .bind(&s.id)
+            .bind(s.paused)
+            .bind(schedulable.contains(&s.id))
+            .bind(&sched.check_every)
+            .bind(&sched.stale_after)
+            .bind(&sched.window)
+            .execute(&mut *tx)
+            .await
+            .with_context(|| format!("source {}: schedule", s.id))?;
+            let (editions, dates): (Vec<&str>, Vec<chrono::NaiveDate>) = sched
+                .release_calendar
+                .iter()
+                .filter_map(|c| {
+                    chrono::NaiveDate::parse_from_str(&c.expected, "%Y-%m-%d")
+                        .ok()
+                        .map(|d| (c.edition.as_str(), d))
+                })
+                .unzip();
+            sqlx::query(
+                "DELETE FROM ops.release_calendar WHERE source_id = $1 AND edition <> ALL($2)",
+            )
+            .bind(&s.id)
+            .bind(&editions)
+            .execute(&mut *tx)
+            .await?;
+            sqlx::query(
+                "INSERT INTO ops.release_calendar (source_id, edition, expected)
+                 SELECT $1, e, d FROM unnest($2::text[], $3::date[]) AS t(e, d)
+                 ON CONFLICT (source_id, edition) DO UPDATE SET expected = EXCLUDED.expected",
+            )
+            .bind(&s.id)
+            .bind(&editions)
+            .bind(&dates)
             .execute(&mut *tx)
             .await?;
         }

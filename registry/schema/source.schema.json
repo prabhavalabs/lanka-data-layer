@@ -148,6 +148,54 @@
         }
       }
     },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Scheduling overrides for `lanka worker` (03 §4). Everything is optional; defaults derive from cadence.",
+      "properties": {
+        "check_every": {
+          "$ref": "#/$defs/duration",
+          "description": "How often discover runs. Default by cadence: realtime PT15M, daily PT6H, weekly/monthly P1D, quarterly P3D, annual/irregular P7D, one_off manual."
+        },
+        "window": {
+          "type": "string",
+          "pattern": "^[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]$",
+          "description": "Politeness window in the country profile's local time, e.g. 01:00-05:00 (may wrap midnight)."
+        },
+        "stale_after": {
+          "$ref": "#/$defs/duration",
+          "description": "Overdue threshold since the last successful check. Default 2 × cadence."
+        },
+        "release_calendar": {
+          "type": "array",
+          "description": "Expected upstream editions, entered yearly. A reached date makes the source due; 3 days past it without new content is expected_missing.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "edition",
+              "expected"
+            ],
+            "properties": {
+              "edition": {
+                "type": "string",
+                "minLength": 1
+              },
+              "expected": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "paused": {
+      "type": "boolean",
+      "default": false,
+      "description": "Stop scheduled runs (manual runs still work)."
+    },
     "geo": {
       "type": "object",
       "additionalProperties": false,
@@ -273,6 +321,11 @@
         "TRAN"
       ],
       "description": "EU DCAT-AP data theme codes."
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^P([0-9]+Y)?([0-9]+M)?([0-9]+W)?([0-9]+D)?(T([0-9]+H)?([0-9]+M)?([0-9]+S)?)?$",
+      "description": "ISO 8601 duration (P1D, PT6H, P3DT12H)."
     }
   }
 }

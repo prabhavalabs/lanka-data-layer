@@ -130,15 +130,14 @@ pub struct AreaProfile {
     pub indicators: Vec<AreaIndicator>,
 }
 
+/// A row of `serve.area_latest` (migration 0005).
 #[derive(Debug, Clone, FromRow)]
 struct OpenObs {
     obs_id: i64,
-    dataset_key: i32,
     indicator_key: i32,
     dims_key: i32,
     freq: i8,
     time_start: NaiveDate,
-    vfrom: i32,
     value: Option<f64>,
     lo: Option<f64>,
     hi: Option<f64>,
@@ -174,15 +173,7 @@ pub async fn area_profile(
         .await?
         .ok_or_else(|| CoreError::not_found(format!("no admin unit \"{pcode}\"")))?;
 
-    let seqs = cat.current_seqs();
-    let (ds_keys, cur_seq): (Vec<i32>, Vec<i32>) = seqs.iter().copied().unzip();
-    let ind_keys: Vec<i32> = ds_keys
-        .iter()
-        .filter_map(|k| cat.dataset_by_key.get(k))
-        .filter_map(|d| cat.datasets.get(d))
-        .flat_map(|d| d.indicator_ids.iter())
-        .filter_map(|i| cat.indicators.get(i).map(|i| i.key))
-        .collect();
+    let ds_keys: Vec<i32> = cat.current_seqs().iter().map(|(k, _)| *k).collect();
     let (ancestors, children, open) = tokio::join!(
         sqlx::query_as::<_, AreaRef>(
             "SELECT code AS pcode, level, name_en, name_si, name_ta FROM geo.units
@@ -198,31 +189,24 @@ pub async fn area_profile(
         .bind(row.key)
         .bind(set)
         .fetch_all(pool),
-        // One index probe per (partition, indicator): `_series` leads with
-        // (indicator_key, geo_key).
+        // One primary-key range scan: the release train keeps the latest
+        // released row per (geo, indicator, dims) in serve.area_latest.
         sqlx::query_as::<_, OpenObs>(
-            "SELECT obs_id, dataset_key, indicator_key, dims_key, freq, time_start, vfrom,
-                    value, lo, hi, basis, status, flags
-             FROM data.observations
-             WHERE dataset_key = ANY($2) AND indicator_key = ANY($3) AND geo_key = $1
-               AND vto = 2147483647",
+            "SELECT obs_id, indicator_key, dims_key, freq, time_start, value, lo, hi, basis, status, flags
+             FROM serve.area_latest
+             WHERE geo_key = $1 AND dataset_key = ANY($2)",
         )
         .bind(row.key)
         .bind(&ds_keys)
-        .bind(&ind_keys)
         .fetch_all(pool),
     );
     let (ancestors, children, open) = (ancestors?, children?, open?);
-    let released: HashMap<i32, i32> = ds_keys.into_iter().zip(cur_seq).collect();
 
     // Latest released row per (indicator, dims); then keep only the latest
     // period per indicator so a dims value that stopped being published does
     // not mix vintages.
     let mut latest: BTreeMap<(String, i32), OpenObs> = BTreeMap::new();
-    for o in open
-        .into_iter()
-        .filter(|o| released.get(&o.dataset_key).is_some_and(|s| o.vfrom <= *s))
-    {
+    for o in open {
         let Some(ind) = cat.indicator_by_key.get(&o.indicator_key) else {
             continue;
         };
@@ -900,7 +884,7 @@ pub fn catalog_list(cat: &Catalog, q: &CatalogQuery) -> Vec<CatalogEntry> {
         .collect()
 }
 
-#[derive(Debug, Clone, Serialize, ToSchema)]
+#[derive(Debug, Clone, Serialize, ToSchema, FromRow)]
 pub struct SourceFreshness {
     pub source_id: String,
     pub cadence: String,
@@ -908,7 +892,7 @@ pub struct SourceFreshness {
     pub last_started_at: Option<DateTime<Utc>>,
     pub last_success_at: Option<DateTime<Utc>>,
     pub consecutive_failures: i64,
-    /// fresh | due | overdue | failing | never_run
+    /// fresh | due | overdue | failing | in_review | expected_missing | never_run | paused | retired
     pub state: String,
 }
 
@@ -922,80 +906,22 @@ pub struct DatasetCard {
     pub freshness: Vec<SourceFreshness>,
 }
 
-#[derive(Debug, Clone, FromRow)]
-struct HealthRow {
-    source_id: String,
-    cadence: String,
-    last_status: Option<String>,
-    last_started_at: Option<DateTime<Utc>>,
-    last_success_at: Option<DateTime<Utc>>,
-    consecutive_failures: i64,
-    check_every_secs: Option<f64>,
-}
-
-/// Freshness state from the monitoring view. A source is `failing` after
-/// three consecutive failed runs, `due` once its cadence has elapsed since
-/// the last success, and `overdue` at twice the cadence.
+/// Freshness of the given sources from `ops.source_freshness` (migration
+/// 0004): `fresh | due | overdue | failing | in_review | expected_missing |
+/// never_run | paused | retired`, computed in SQL so the scheduler, the
+/// status API and dataset cards agree.
 pub async fn source_freshness(
     pool: &PgPool,
     source_ids: &[String],
 ) -> CoreResult<Vec<SourceFreshness>> {
-    let rows: Vec<HealthRow> = sqlx::query_as(
-        "SELECT source_id, cadence, last_status::text AS last_status, last_started_at, last_success_at,
-                consecutive_failures, extract(epoch FROM check_every)::float8 AS check_every_secs
-         FROM ops.source_health WHERE source_id = ANY($1) ORDER BY source_id",
+    Ok(sqlx::query_as(
+        "SELECT source_id, cadence, last_status, last_run_at AS last_started_at, last_success_at,
+                consecutive_failures, state
+         FROM ops.source_freshness WHERE source_id = ANY($1) ORDER BY source_id",
     )
     .bind(source_ids)
     .fetch_all(pool)
-    .await?;
-    let now = Utc::now();
-    Ok(rows
-        .into_iter()
-        .map(|r| {
-            let state = freshness_state(
-                now,
-                r.last_success_at,
-                r.check_every_secs,
-                r.consecutive_failures,
-            );
-            SourceFreshness {
-                source_id: r.source_id,
-                cadence: r.cadence,
-                last_status: r.last_status,
-                last_started_at: r.last_started_at,
-                last_success_at: r.last_success_at,
-                consecutive_failures: r.consecutive_failures,
-                state: state.to_owned(),
-            }
-        })
-        .collect())
-}
-
-#[must_use]
-pub fn freshness_state(
-    now: DateTime<Utc>,
-    last_success: Option<DateTime<Utc>>,
-    check_every_secs: Option<f64>,
-    consecutive_failures: i64,
-) -> &'static str {
-    if consecutive_failures >= 3 {
-        return "failing";
-    }
-    let Some(ok) = last_success else {
-        return "never_run";
-    };
-    let Some(every) = check_every_secs else {
-        return "fresh";
-    };
-    #[allow(clippy::cast_precision_loss)]
-    let age = (now - ok).num_seconds() as f64;
-    if age > 2.0 * every {
-        "overdue"
-    } else if age > every {
-        "due"
-    } else {
-        "fresh"
-    }
+    .await?)
 }
 
 pub async fn dataset_card(pool: &PgPool, cat: &Catalog, id: &str) -> CoreResult<DatasetCard> {
@@ -1165,43 +1091,6 @@ pub async fn provenance(pool: &PgPool, cat: &Catalog, obs_id: i64) -> CoreResult
     })
 }
 
-// ───────────────────────────── health ──────────────────────────────────────
-
-#[derive(Debug, Clone, Serialize, ToSchema)]
-pub struct Health {
-    pub status: String,
-    pub database: bool,
-    pub postgis: Option<String>,
-    pub data_version: Option<String>,
-    pub datasets_published: usize,
-    pub admin_units: i64,
-    pub country: Option<String>,
-}
-
-pub async fn health(pool: &PgPool, cat: &Catalog) -> CoreResult<Health> {
-    let scheme = cat.profile.as_deref().map_or("admin", |p| p.admin_scheme());
-    let (postgis, admin_units): (Option<String>, i64) = sqlx::query_as(
-        "SELECT postgis_lib_version(),
-                (SELECT count(*) FROM geo.units WHERE scheme_id = $1 AND valid_to IS NULL)",
-    )
-    .bind(scheme)
-    .fetch_one(pool)
-    .await?;
-    Ok(Health {
-        status: "ok".to_owned(),
-        database: true,
-        postgis,
-        data_version: cat.data_version.clone(),
-        datasets_published: cat
-            .datasets
-            .values()
-            .filter(|d| d.current.is_some())
-            .count(),
-        admin_units,
-        country: cat.profile.as_deref().map(|p| p.spec.id.clone()),
-    })
-}
-
 /// Parses a p-code with the catalog's profile (transport helper).
 pub fn parse_pcode(cat: &Catalog, s: &str) -> CoreResult<Pcode> {
     cat.profile()?
@@ -1237,26 +1126,5 @@ mod tests {
     #[test]
     fn open_range_is_the_sql_literal() {
         assert_eq!(OPEN_RANGE, 2_147_483_647);
-    }
-
-    #[test]
-    fn freshness_thresholds() {
-        let now = Utc::now();
-        let day = 86_400.0;
-        let ago = |d: i64| Some(now - chrono::Duration::days(d));
-        assert_eq!(freshness_state(now, None, Some(day), 0), "never_run");
-        assert_eq!(freshness_state(now, ago(0), Some(day), 0), "fresh");
-        assert_eq!(
-            freshness_state(
-                now,
-                ago(1).map(|t| t - chrono::Duration::hours(1)),
-                Some(day),
-                0
-            ),
-            "due"
-        );
-        assert_eq!(freshness_state(now, ago(3), Some(day), 0), "overdue");
-        assert_eq!(freshness_state(now, ago(0), Some(day), 3), "failing");
-        assert_eq!(freshness_state(now, ago(900), None, 0), "fresh");
     }
 }
