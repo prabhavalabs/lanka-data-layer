@@ -25,4 +25,11 @@ enrichment:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
   aggregations:
   - codes per DS/district
+kind: features
 publication_class: A
+searchable: true
+fields:
+- {name: postal_code, type: string, label: Postal code}
+- {name: admin1, type: string, label: Province (as printed by GeoNames)}
+- {name: admin2, type: string, label: District (as printed by GeoNames)}
+- {name: accuracy, type: integer, label: GeoNames coordinate accuracy (1 estimated … 6 centroid)}

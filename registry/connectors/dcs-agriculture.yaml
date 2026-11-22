@@ -1,0 +1,136 @@
+# DCS agriculture statistics (Department of Census and Statistics, Agriculture and
+# Environment Statistics Division). Licence status permission_unclear: published with
+# attribution and the takedown contact (08 §2); it does not block ingestion.
+#
+# - Volume index of agricultural production (2002=100): an HTML table, groups × years.
+# - Paddy statistics 1979-2025: the "pages" under PaddyStatistics/ serve XLSX workbooks,
+#   one per variable × season, districts × seasons. Extent and yield sheets have a two-row
+#   header (season, then Major/Minor/Rainfed/Total); only the Total column is read.
+#   Production sheets have a one-row header and print '000 t.
+#   Seasons are periods (freq S): Maha 1978/1979 → 1978-Maha (starts Sep 1978),
+#   Yala 1979 → 1979-Yala. Udawalawe, Mahaweli 'H' and Highland paddy are reporting
+#   areas, not districts; they are part of the SRI LANKA row and skipped as units.
+#
+# Transport: www.statistics.gov.lk offers only TLS 1.2 CBC suites (ECDHE-RSA-AES256-SHA384,
+# verified 2026-11-22), which rustls does not implement, and the engine image has no
+# OpenSSL (infra/v2/Dockerfile). The same documents are served over plain HTTP; every
+# artifact is still content-addressed (sha256) in the archive. Switch back to https when
+# DCS enables an AEAD suite.
+source: dcs-agriculture
+driver: html_table
+version: 1.0.0
+description: DCS agricultural production index (HTML) and paddy statistics by district and season (XLSX).
+discover:
+  kind: static
+  files:
+    - key: agri_index
+      url: http://www.statistics.gov.lk/Agriculture/StaticalInformation/VolumeIndexofAgriculturalProduction
+      file: agri_index.html
+    - { key: production_maha, format: xlsx, file: production_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Production-Maha_Season-1979-2025" }
+    - { key: production_yala, format: xlsx, file: production_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Production-Yala_Season-1979-2025" }
+    - { key: sown_maha, format: xlsx, file: sown_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Sown_Extent-Maha_Seasons-1979-2025" }
+    - { key: sown_yala, format: xlsx, file: sown_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Sown_Extent-Yala_Seasons-1979-2025" }
+    - { key: harvested_maha, format: xlsx, file: harvested_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Harvested_Extent-Maha_Seasons-1979-2025" }
+    - { key: harvested_yala, format: xlsx, file: harvested_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Harvested_Extent-Yala_Seasons-1979-2025" }
+    - { key: yield_maha, format: xlsx, file: yield_maha.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Average_Yeild-Maha_Season-1979-2025" }
+    - { key: yield_yala, format: xlsx, file: yield_yala.xlsx, url: "http://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics/Average_Yeild-Yala_Season-1979-2025" }
+standardise:
+  dataset: dcs-paddy-statistics
+  tables:
+    - id: agri_index
+      artifact: ^agri_index$
+      header: { anchor: "^Items$" }
+    # one-row header: DISTRICT | 1978/1979 | … (Yala: 1979 | 198 | 1981 …)
+    - id: production_maha
+      artifact: ^production_maha$
+      header: { anchor: "^DISTRICT$" }
+      rows: { stop: ["^After the"] }
+    - id: production_yala
+      artifact: ^production_yala$
+      header: { anchor: "^DISTRICT$" }
+      rows: { stop: ["^After the"] }
+      rename: { "198": "1980" }            # printed header typo (1979, 198, 1981 …)
+    # two-row header: season (merged over 4 columns), then Major | Minor | Rainfed | Total
+    - id: sown_maha
+      artifact: ^sown_maha$
+      header: { anchor: "^DISTRICT$", rows: 2, fill_right: true }
+      rows: { stop: ["^After the"] }
+      # printed header typo between 2019/2020 and 2021/2022 (also in harvested and yield)
+      rename: { "2000/2021 Total": "2020/2021 Total" }
+    - { id: sown_yala, artifact: ^sown_yala$, header: { anchor: "^DISTRICT$", rows: 2, fill_right: true }, rows: { stop: ["^After the"] } }
+    - { id: harvested_maha, artifact: ^harvested_maha$, header: { anchor: "^District$", rows: 2, fill_right: true }, rows: { stop: ["^After the"] },
+        rename: { "2000/2021 Total": "2020/2021 Total" } }
+    - { id: harvested_yala, artifact: ^harvested_yala$, header: { anchor: "^District$", rows: 2, fill_right: true }, rows: { stop: ["^After the"] } }
+    - { id: yield_maha, artifact: ^yield_maha$, header: { anchor: "^District$", rows: 2, fill_right: true }, rows: { stop: ["^After the"] },
+        rename: { "2000/2021 Total": "2020/2021 Total" } }
+    - { id: yield_yala, artifact: ^yield_yala$, header: { anchor: "^District$", rows: 2, fill_right: true }, rows: { stop: ["^After the"] } }
+  outputs:
+    - table: agri_index
+      dataset: dcs-agri-production-index
+      method: sheet_cell
+      indicator: { value: agri.production_index }
+      melt: { columns: "^\\d{4}$" }
+      geo: { root: true }
+      period: { melt: true, freq: A, parse: year }
+      dims:
+        group:
+          column: Items
+          map:
+            "1. Tea": tea
+            "2. Rubber": rubber
+            "3. Coconut": coconut
+            "4. Paddy": paddy
+            "5. Coarse Grain": coarse_grain
+            "6. Other Food Crops": other_food_crops
+            "7. Vegetables": vegetables
+            "8. Fruits": fruits
+            "9. Livestock & Livestock Products": livestock
+            "10. Minor Export Crops": minor_export_crops
+            "OVERALL INDEX": total
+      value: { number: { missing: ["-", ""] } }
+
+    - table: production_maha
+      indicator: { value: agri.paddy_production_t }
+      melt: { columns: "^\\d{4}/\\d{4}$" }
+      geo: &district { column: DISTRICT, match: name, level: 2, root_names: ["SRI LANKA"], skip: [UDAWALAWE, "MAHAWELI'H'", "MAHAWELI 'H'", HIGHLAND PADDY] }
+      period: &maha { melt: true, regex: "^(\\d{4})/\\d{4}", replace: "${1}-Maha", freq: S }
+      value: &num { number: { missing: ["-", ""] } }
+    - table: production_yala
+      indicator: { value: agri.paddy_production_t }
+      melt: { columns: "^\\d{4}$" }
+      geo: *district
+      period: &yala { melt: true, regex: "^(\\d{4})", replace: "${1}-Yala", freq: S }
+      value: *num
+    - { table: sown_maha, indicator: { value: agri.paddy_sown_ha }, melt: { columns: "^\\d{4}/\\d{4} Total$" }, geo: *district, period: *maha, value: *num }
+    - { table: sown_yala, indicator: { value: agri.paddy_sown_ha }, melt: { columns: "^\\d{4} Total$" }, geo: *district, period: *yala, value: *num }
+    - table: harvested_maha
+      indicator: { value: agri.paddy_harvested_ha }
+      melt: { columns: "^\\d{4}/\\d{4} Total$" }
+      geo: { column: District, match: name, level: 2, root_names: ["SRI LANKA"], skip: [UDAWALAWE, "MAHAWELI'H'", "MAHAWELI 'H'", HIGHLAND PADDY] }
+      period: *maha
+      value: *num
+    - table: harvested_yala
+      indicator: { value: agri.paddy_harvested_ha }
+      melt: { columns: "^\\d{4} Total$" }
+      geo: { column: District, match: name, level: 2, root_names: ["SRI LANKA"], skip: [UDAWALAWE, "MAHAWELI'H'", "MAHAWELI 'H'", HIGHLAND PADDY] }
+      period: *yala
+      value: *num
+    - table: yield_maha
+      indicator: { value: agri.paddy_yield }
+      melt: { columns: "^\\d{4}/\\d{4} Total$" }
+      geo: { column: District, match: name, level: 2, root_names: ["SRI LANKA"], skip: [UDAWALAWE, "MAHAWELI'H'", "MAHAWELI 'H'", HIGHLAND PADDY] }
+      period: *maha
+      value: *num
+    - table: yield_yala
+      indicator: { value: agri.paddy_yield }
+      melt: { columns: "^\\d{4} Total$" }
+      geo: { column: District, match: name, level: 2, root_names: ["SRI LANKA"], skip: [UDAWALAWE, "MAHAWELI'H'", "MAHAWELI 'H'", HIGHLAND PADDY] }
+      period: *yala
+      value: *num
+expect:
+  - { dataset: dcs-agri-production-index, check: range, indicator: agri.production_index, min: 10, max: 3000 }
+  - { dataset: dcs-agri-production-index, check: row_count, min: 100 }
+  - { dataset: dcs-paddy-statistics, check: range, indicator: agri.paddy_yield, min: 0, max: 9000, note: "0 = printed nil yield (no cultivation)" }
+  - { dataset: dcs-paddy-statistics, check: no_future }
+  - { dataset: dcs-paddy-statistics, check: completeness, indicator: agri.paddy_production_t, level: 2, min_units: 20, severity: warn,
+      note: "Mullaitivu and Kilinochchi are missing in conflict years." }

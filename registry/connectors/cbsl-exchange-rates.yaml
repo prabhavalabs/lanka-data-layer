@@ -1,0 +1,58 @@
+# CBSL exchange rates (Central Bank of Sri Lanka, "Rates and indicators"). Two workbooks
+# with the same layout: Year | Month | SDR | USD | GBP | … (LKR per unit of foreign
+# currency), the year printed once per block (filled down), an "Annual Averages" row
+# after each December (skipped: the annual mean is not a monthly observation), one blank
+# row between years. SDR is ISO 4217 XDR. Licence status permission_unclear: published
+# with attribution and the takedown contact (08 §2); it does not block ingestion.
+# CBSL's firewall answers 403 to user agents without the `Mozilla/5.0 (compatible; …)`
+# crawler prefix; the ingest client sends one (pipeline::USER_AGENT).
+source: cbsl-exchange-rates
+driver: xlsx_table
+version: 1.0.0
+description: CBSL monthly average and end-of-month exchange rates (LKR per unit), 1986/1995 onwards.
+discover:
+  kind: static
+  files:
+    - { key: monthly_average, file: IF_Monthly_Average_Exchange_Rates.xlsx, url: "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/IF_Monthly_Average_Exchange_Rates.xlsx" }
+    - { key: end_of_month, file: IF_End_of_the_Month_Exchange_Rates.xlsx, url: "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/IF_End_of_the_Month_Exchange_Rates.xlsx" }
+standardise:
+  dataset: cbsl-exchange-rates
+  tables:
+    - id: monthly_average
+      artifact: ^monthly_average$
+      header: { anchor: "^Year$" }
+      rows: { until_blank: 3, skip: ["^Annual Average"], stop: ["^Source"] }
+      fill_down: [Year]
+    - id: end_of_month
+      artifact: ^end_of_month$
+      header: { anchor: "^Year$" }
+      rows: { until_blank: 3, skip: ["^Annual Average"], stop: ["^Source"] }
+      fill_down: [Year]
+  outputs:
+    - table: monthly_average
+      indicator: { value: fx.rate_monthly_avg }
+      melt: &currencies { columns: "^[A-Z]{3}$" }
+      geo: { root: true }
+      period: &month { template: "{Year} {Month}", parse: "%Y %B", freq: M }
+      dims: &currency
+        currency: { melt: true, map: { SDR: XDR }, unmapped: keep }
+      value: &num { number: { missing: ["-", ""] } }
+    - table: end_of_month
+      indicator: { value: fx.rate_end_month }
+      melt: *currencies
+      geo: { root: true }
+      period: *month
+      dims: *currency
+      value: *num
+expect:
+  - { check: range, min: 0.001, max: 2000 }
+  - { check: no_future }
+  - { check: max_step_change, indicator: fx.rate_monthly_avg, pct: 60,
+      note: "Largest month-on-month move: April 2022 float (about +50 %)." }
+  - { check: period_continuity, indicator: fx.rate_monthly_avg }
+  - { check: row_count, min: 4000 }
+  - check: sql
+    note: USD is quoted in every month that has any rate.
+    query: >-
+      SELECT period_start FROM stage_obs WHERE indicator_id = 'fx.rate_monthly_avg'
+      GROUP BY period_start HAVING bool_and(dims <> 'currency=USD')

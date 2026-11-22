@@ -6,6 +6,7 @@
 //! lanka ingest run <source> [--from DIR] [--force]
 //! lanka ingest restandardise <source>
 //! lanka ingest status
+//! lanka connector test <source> [--from DIR] [--rows N] [--json] | list
 //! lanka review list | approve <dsv> --by NAME | reject <dsv> --by NAME --note TEXT
 //! lanka release cut [--note TEXT] | list
 //! lanka worker [--lane batch|interactive] [--slots 4] [--once]
@@ -88,6 +89,9 @@ enum Cmd {
     /// Run connectors and inspect ingestion state.
     #[command(subcommand)]
     Ingest(IngestCmd),
+    /// Declarative connectors: dry-run a spec against fixtures or upstream.
+    #[command(subcommand)]
+    Connector(ConnectorCmd),
     /// Review gate for class B/C dataset versions.
     #[command(subcommand)]
     Review(ReviewCmd),
@@ -348,6 +352,31 @@ enum IngestCmd {
         #[arg(long)]
         json: bool,
     },
+}
+
+#[derive(Subcommand)]
+enum ConnectorCmd {
+    /// Discover (unless --from), fetch, extract and standardise one source in
+    /// memory and evaluate its expectations; nothing is archived or published.
+    /// Exits 1 when an error-severity expectation fails.
+    Test {
+        source: String,
+        /// Fixture directory: each file is one artifact keyed by its name
+        /// without the last extension.
+        #[arg(long)]
+        from: Option<PathBuf>,
+        /// Rows to print per output.
+        #[arg(long, default_value_t = 5)]
+        rows: usize,
+        /// Print the full report as JSON.
+        #[arg(long)]
+        json: bool,
+        /// Do not read the unit lookup from the database (name matching off).
+        #[arg(long)]
+        no_db: bool,
+    },
+    /// Sources with a connector, and their driver.
+    List,
 }
 
 #[derive(Subcommand)]
@@ -789,6 +818,7 @@ async fn run(cli: Cli) -> Result<()> {
                 );
             }
         }
+        Cmd::Connector(cmd) => connector_cmd(g, cmd).await?,
         Cmd::Ingest(IngestCmd::Status { json }) => {
             let implemented = find_registry(g.registry.as_deref())
                 .ok()
@@ -1041,6 +1071,97 @@ async fn run(cli: Cli) -> Result<()> {
 
 /// (id, kind, subject, opened_at)
 type IncidentRow = (i64, String, String, chrono::DateTime<chrono::Utc>);
+
+async fn connector_cmd(g: &Global, cmd: ConnectorCmd) -> Result<()> {
+    let dir = find_registry(g.registry.as_deref())?;
+    let reg = Registry::load(&dir)?;
+    let profile = load_profile(g, &dir)?;
+    match cmd {
+        ConnectorCmd::List => {
+            for (id, c) in &reg.connectors {
+                println!("{id}\t{}\t{}", c.spec.driver, c.spec.version);
+            }
+            for id in lanka_ingest::connector::CODE_CONNECTORS {
+                println!("{id}\tcode\t-");
+            }
+        }
+        ConnectorCmd::Test {
+            source,
+            from,
+            rows,
+            json,
+            no_db,
+        } => {
+            let lookup = if no_db {
+                lanka_ingest::connector::Lookup::default()
+            } else {
+                match pool(g, PoolRole::Ingest).await {
+                    Ok(p) => lanka_ingest::pipeline::load_lookup(&p, &profile)
+                        .await
+                        .unwrap_or_default(),
+                    Err(_) => lanka_ingest::connector::Lookup::default(),
+                }
+            };
+            let work = std::env::temp_dir().join(format!(
+                "lanka-connector-test-{source}-{}",
+                std::process::id()
+            ));
+            let report = lanka_ingest::connector_test::run(
+                &reg,
+                &profile,
+                &source,
+                from.as_deref(),
+                &work,
+                &lookup,
+                rows,
+            )
+            .await;
+            let _ = std::fs::remove_dir_all(&work);
+            let report = report?;
+            if json {
+                print_json(&report)?;
+            } else {
+                println!(
+                    "{} ({}): {} artifact(s), extracts {}",
+                    report.source,
+                    report.driver,
+                    report.artifacts.len(),
+                    report
+                        .extracts
+                        .iter()
+                        .map(|e| format!("{}×{}", e["shape"].as_str().unwrap_or("?"), e["rows"]))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+                for w in &report.warnings {
+                    println!("warning: {w}");
+                }
+                for o in &report.outputs {
+                    println!(
+                        "\n{} [{}] {} row(s){}",
+                        o.dataset,
+                        o.kind,
+                        o.rows,
+                        o.vintage
+                            .as_ref()
+                            .map(|v| format!(", vintage {v:?}"))
+                            .unwrap_or_default()
+                    );
+                    for r in &o.first {
+                        println!("  {r}");
+                    }
+                    for e in &o.expectations {
+                        println!("  {}", e.line());
+                    }
+                }
+            }
+            if report.failed() {
+                anyhow::bail!("an error-severity expectation failed");
+            }
+        }
+    }
+    Ok(())
+}
 
 async fn ingest_status(pool: &PgPool, json: bool, implemented: &[String]) -> Result<()> {
     let ids: Vec<String> = sqlx::query_scalar("SELECT id FROM catalog.sources ORDER BY id")

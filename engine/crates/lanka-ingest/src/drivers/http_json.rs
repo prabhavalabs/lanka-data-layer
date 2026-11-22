@@ -67,6 +67,9 @@ pub struct Spec {
     pub discover: DiscoverSpec,
     pub extract: ExtractSpec,
     pub standardise: StdSpec,
+    /// Expectations (expect.rs); read by the pipeline, not the driver.
+    #[serde(default)]
+    pub expect: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

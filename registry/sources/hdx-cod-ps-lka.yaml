@@ -1,0 +1,32 @@
+id: hdx-cod-ps-lka
+publisher: UN OCHA (data from the Department of Census and Statistics, Sri Lanka)
+title: Sri Lanka Subnational Population Statistics (COD-PS)
+homepage: https://data.humdata.org/dataset/cod-ps-lka
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=cod-ps-lka
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: OCHA, Department of Census and Statistics Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: pcode
+themes:
+- SOCI
+datasets:
+- cod-ps-lka-population
+priority: P1
+effort: S
+status: active
+verified_at: '2026-11-22'
+notes: COD-PS 2023 (projections from the 2012 census) by sex and 5-year age band at ADM0-ADM2 with COD-AB p-codes; CSV
+  resources lka_admpop_adm{0,1,2}_2023.csv. Superseded as a denominator by the 2024 census once DCS publishes the age-sex
+  tables at ADM3/ADM4.

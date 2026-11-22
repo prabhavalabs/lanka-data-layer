@@ -1,0 +1,53 @@
+# IMF World Economic Outlook via the DataMapper API: one request per WEO subject
+# (`/api/v1/<subject>/<alpha3>` returns {"values": {<subject>: {<alpha3>: {<year>: value}}}})
+# plus the indicator catalogue, whose `source` names the edition ("World Economic Outlook
+# (October 2026)") — the `vintage` dimension (codelist edition, YYYY-MM).
+# Projections: the DataMapper does not flag them; years from the edition year on are marked
+# basis = forecast by the regex below (bump it when a new decade starts).
+# Licence: imf-terms, permission_unclear — published with attribution (08 §2).
+source: imf-data
+driver: http_json
+version: 1.0.0
+description: IMF WEO macro series and projections for the profile's country (DataMapper API).
+discover:
+  kind: keys
+  url: https://www.imf.org/external/datamapper/api/v1/{key}/{alpha3}
+  keys: [NGDP_RPCH, NGDPD, NGDPDPC, PCPIPCH, PCPIEPCH, LUR, LP, GGR_NGDP, GGX_NGDP, GGXCNL_NGDP, GGXWDG_NGDP, BCA_NGDPD]
+  files:
+    - { key: indicators, url: "https://www.imf.org/external/datamapper/api/v1/indicators", file: indicators.json }
+extract:
+  format: json
+  tables:
+    - id: values
+      artifact: "^[A-Z]"
+      path: "$.values.{key}.{alpha3}"
+      entries: true
+    - id: catalogue
+      artifact: ^indicators$
+      path: $.indicators
+      entries: true
+      fields: { source: source, label: label, unit: unit, dataset: dataset }
+standardise:
+  dataset: imf-weo-lka
+  vintage: { table: catalogue, column: source, key_column: _key, regex: "\\(([A-Za-z]+ \\d{4})\\)$" }
+  outputs:
+    - table: values
+      method: api
+      indicator: { value: imf.weo_value }
+      geo: { root: true }
+      period: { column: _key, freq: A, parse: year }
+      dims:
+        series: { template: "{key}" }
+        vintage: { table: catalogue, column: source, key_column: _key, regex: "\\(([A-Za-z]+ \\d{4})\\)$", date: { parse: "%B %Y", format: "%Y-%m" } }
+      value: { column: _value }
+      status:
+        template: "{_key}"
+        regex: "^(20(2[6-9]|[3-9]\\d))$"
+        replace: projection
+        unmapped: keep
+        codes: { projection: [forecast, normal] }
+expect:
+  - { check: row_count, min: 300 }
+  - { check: no_future }
+  - { check: period_continuity }
+  - { check: range, min: -100, max: 100000 }

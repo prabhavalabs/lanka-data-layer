@@ -1,0 +1,10 @@
+# FAOSTAT element
+# Source/authority: FAOSTAT QCL element codes (Production_Crops_Livestock_E_Elements.csv).
+# Note: Elements loaded into faostat-crops-livestock (production quantity only; area and yield need their own indicators).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only (FAOSTAT).
+# Used by: faostat-crops-livestock
+id: fao_element
+title: FAOSTAT element
+codes:
+  - { code: "5510", label: Production }

@@ -1,0 +1,56 @@
+# FAOSTAT food security indicator
+# Source/authority: FAOSTAT Suite of Food Security Indicators (FS) item codes.
+# Note: Indicators with values for the profile's country; 3-year averages are stored at the last year of their window.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only (FAOSTAT).
+# Used by: faostat-food-security
+id: fao_fs_indicator
+title: FAOSTAT food security indicator
+codes:
+  - { code: "210011", label: "Number of people undernourished (million) (3-year average)" }
+  - { code: "210041", label: "Prevalence of undernourishment (percent) (3-year average)" }
+  - { code: "210071", label: "Number of severely food insecure people (million) (3-year average)" }
+  - { code: "210071F", label: "Number of severely food insecure female adults (million) (3-year average)" }
+  - { code: "210071M", label: "Number of severely food insecure male adults (million) (3-year average)" }
+  - { code: "210081", label: "Number of moderately or severely food insecure people (million) (3-year average)" }
+  - { code: "210081F", label: "Number of moderately or severely food insecure female adults (million) (3-year average)" }
+  - { code: "210081M", label: "Number of moderately or severely food insecure male adults (million) (3-year average)" }
+  - { code: "210091", label: "Prevalence of moderate or severe food insecurity in the total population (percent) (3-year average)" }
+  - { code: "210091F", label: "Prevalence of moderate or severe food insecurity in the female adult population (percent) (3-year average)" }
+  - { code: "210091M", label: "Prevalence of moderate or severe food insecurity in the male adult population (percent) (3-year average)" }
+  - { code: "21010", label: "Average dietary energy supply adequacy (percent) (3-year average)" }
+  - { code: "21012", label: "Share of dietary energy supply derived from cereals, roots and tubers (percent) (3-year average)" }
+  - { code: "21013", label: "Average protein supply (g/cap/day) (3-year average)" }
+  - { code: "21014", label: "Average supply of protein of animal origin (g/cap/day) (3-year average)" }
+  - { code: "21016", label: "Rail lines density (total route in km per 100 square km of land area)" }
+  - { code: "21025", label: "Percentage of children under 5 years of age who are stunted (modelled estimates) (percent)" }
+  - { code: "210250", label: "Number of children under 5 years of age who are stunted (modeled estimates) (million)" }
+  - { code: "21026", label: "Percentage of children under 5 years affected by wasting (percent)" }
+  - { code: "210260", label: "Number of children under 5 years affected by wasting (million)" }
+  - { code: "21031", label: "Per capita food supply variability (kcal/cap/day)" }
+  - { code: "21033", label: "Value of food imports in total merchandise exports (percent) (3-year average)" }
+  - { code: "21034", label: "Percent of arable land equipped for irrigation (percent) (3-year average)" }
+  - { code: "21035", label: "Cereal import dependency ratio (percent) (3-year average)" }
+  - { code: "210401", label: "Prevalence of severe food insecurity in the total population (percent) (3-year average)" }
+  - { code: "210401F", label: "Prevalence of severe food insecurity in the female adult population (percent) (3-year average)" }
+  - { code: "210401M", label: "Prevalence of severe food insecurity in the male adult population (percent) (3-year average)" }
+  - { code: "21041", label: "Percentage of children under 5 years of age who are overweight (modelled estimates) (percent)" }
+  - { code: "210410", label: "Number of children under 5 years of age who are overweight (modeled estimates) (million)" }
+  - { code: "21042", label: "Prevalence of obesity in the adult population (18 years and older) (percent)" }
+  - { code: "210420", label: "Number of obese adults (18 years and older) (million)" }
+  - { code: "21043", label: "Prevalence of anemia among women of reproductive age (15-49 years) (percent)" }
+  - { code: "210430", label: "Number of women of reproductive age (15-49 years) affected by anemia (million)" }
+  - { code: "21044", label: "Prevalence of exclusive breastfeeding among infants 0-5 months of age (percent)" }
+  - { code: "21045", label: "Percentage of population using safely managed drinking water services (percent)" }
+  - { code: "21047", label: "Percentage of population using at least basic drinking water services (percent)" }
+  - { code: "21048", label: "Percentage of population using at least basic sanitation services (percent)" }
+  - { code: "21049", label: "Prevalence of low birthweight (percent)" }
+  - { code: "210490", label: "Number of newborns with low birthweight (million)" }
+  - { code: "21056", label: "Minimum dietary energy requirement (kcal/cap/day)" }
+  - { code: "21057", label: "Average dietary energy requirement (kcal/cap/day)" }
+  - { code: "21058", label: "Coefficient of variation of habitual caloric consumption distribution (real number)" }
+  - { code: "21059", label: "Incidence of caloric losses at retail distribution level (percent)" }
+  - { code: "21061", label: "Average fat supply (g/cap/day) (3-year average)" }
+  - { code: "22000", label: "Dietary energy supply used in the estimation of the prevalence of undernourishment (kcal/cap/day) (3-year average)" }
+  - { code: "220001", label: "Dietary energy supply used in the estimation of the prevalence of undernourishment (kcal/cap/day)" }
+  - { code: "22013", label: "Gross domestic product per capita, PPP, (constant 2021 international $)" }

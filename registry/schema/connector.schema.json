@@ -4,160 +4,1663 @@
   "title": "Declarative connector (registry/connectors/<source>.yaml)",
   "description": "Configures a generic driver for one source (docs/architecture-v2/03-ingestion.md §2.2). The envelope is common; each driver defines its own sections.",
   "type": "object",
-  "required": ["source", "driver", "version"],
+  "required": [
+    "source",
+    "driver",
+    "version"
+  ],
   "properties": {
-    "source": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-    "driver": {
-      "enum": ["http_json", "sdmx", "ckan", "csv", "xlsx_table", "html_table", "pdf_table", "geo_file", "osm_pbf", "raster", "gtfs", "git_files"]
+    "source": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
     },
-    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-    "description": { "type": "string" },
-    "discover": { "type": "object" },
-    "extract": { "type": "object" },
-    "standardise": { "type": "object" },
-    "expect": { "type": "array", "items": { "type": "object" } }
+    "driver": {
+      "enum": [
+        "http_json",
+        "sdmx",
+        "ckan",
+        "csv",
+        "xlsx_table",
+        "html_table",
+        "pdf_table",
+        "geo_file",
+        "osm_pbf",
+        "raster",
+        "gtfs",
+        "git_files"
+      ]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "discover": {
+      "type": "object"
+    },
+    "extract": {
+      "type": "object"
+    },
+    "standardise": {
+      "type": "object"
+    },
+    "expect": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/expectation"
+      },
+      "description": "Declarative expectations checked on every staging (03 §5.2)."
+    }
   },
   "allOf": [
     {
-      "if": { "properties": { "driver": { "const": "http_json" } } },
-      "then": {
-        "required": ["discover", "extract", "standardise"],
+      "if": {
         "properties": {
-          "discover": {
-            "type": "object",
-            "required": ["url"],
-            "additionalProperties": false,
-            "properties": {
-              "url": { "type": "string", "pattern": "^https?://" },
-              "media_type": { "type": "string" },
-              "keys": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "list": { "type": "array", "items": { "type": "string" } },
-                  "from_dataset": {
-                    "type": "object",
-                    "required": ["dataset"],
-                    "additionalProperties": false,
-                    "properties": {
-                      "dataset": { "type": "string" },
-                      "exclude": { "type": "array", "items": { "type": "string" } },
-                      "code": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                          "strip_prefix": { "type": "string" },
-                          "replace": { "type": "array", "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 } },
-                          "case": { "enum": ["upper", "lower"] }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              "fingerprint": {
-                "type": "object",
-                "required": ["url", "select"],
-                "additionalProperties": false,
-                "properties": {
-                  "url": { "type": "string" },
-                  "select": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
-                }
-              }
-            }
-          },
-          "extract": {
-            "type": "object",
-            "required": ["records"],
-            "additionalProperties": false,
-            "properties": {
-              "meta": { "$ref": "#/$defs/table" },
-              "records": { "$ref": "#/$defs/table" },
-              "single_page": {
-                "type": "object",
-                "required": ["page", "pages"],
-                "additionalProperties": false,
-                "properties": { "page": { "type": "string" }, "pages": { "type": "string" } }
-              }
-            }
-          },
-          "standardise": {
-            "type": "object",
-            "required": ["dataset", "indicator", "geo", "period", "value", "method"],
-            "additionalProperties": false,
-            "properties": {
-              "dataset": { "type": "string" },
-              "vintage": { "type": "string" },
-              "indicator": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                  "by_key": { "type": "boolean" },
-                  "fixed": { "type": "string" },
-                  "generic": {
-                    "type": "object",
-                    "required": ["indicator", "dim"],
-                    "additionalProperties": false,
-                    "properties": { "indicator": { "type": "string" }, "dim": { "type": "string" } }
-                  }
-                }
-              },
-              "geo": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": { "root": { "type": "boolean" }, "field": { "type": "string" }, "fixed": { "type": "string" } }
-              },
-              "period": {
-                "type": "object",
-                "required": ["field", "format"],
-                "additionalProperties": false,
-                "properties": { "field": { "type": "string" }, "format": { "enum": ["year", "as_is"] } }
-              },
-              "value": {
-                "type": "object",
-                "required": ["field"],
-                "additionalProperties": false,
-                "properties": { "field": { "type": "string" } }
-              },
-              "status": {
-                "type": "object",
-                "required": ["field", "default"],
-                "additionalProperties": false,
-                "properties": {
-                  "field": { "type": "string" },
-                  "map": { "type": "object", "additionalProperties": { "$ref": "#/$defs/basis_status" } },
-                  "default": { "$ref": "#/$defs/basis_status" }
-                }
-              },
-              "locator": { "type": "object", "additionalProperties": { "type": "string" } },
-              "verbatim": { "type": "string" },
-              "method": { "enum": ["api", "sheet_cell", "csv_row", "pdf_text", "pdf_reviewed", "ocr", "llm_dual", "manual", "feature", "spatial", "derived"] },
-              "warn_empty": { "type": "boolean" }
-            }
+          "driver": {
+            "const": "http_json"
           }
         }
+      },
+      "then": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/http_json_keys"
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/$defs/tabular"
+              }
+            ],
+            "properties": {
+              "extract": {
+                "required": [
+                  "tables"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "driver": {
+            "enum": [
+              "csv",
+              "sdmx",
+              "ckan",
+              "xlsx_table",
+              "html_table",
+              "git_files"
+            ]
+          }
+        }
+      },
+      "then": {
+        "$ref": "#/$defs/tabular"
       }
     }
   ],
   "$defs": {
     "table": {
       "type": "object",
-      "required": ["path"],
+      "required": [
+        "path"
+      ],
       "additionalProperties": false,
       "properties": {
-        "path": { "type": "string", "pattern": "^\\$" },
-        "fields": { "type": "object", "additionalProperties": { "type": "string" } },
-        "require": { "type": "array", "items": { "type": "string" } }
+        "path": {
+          "type": "string",
+          "pattern": "^\\$"
+        },
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "require": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "basis_status": {
       "type": "array",
       "prefixItems": [
-        { "enum": ["reported", "computed", "estimated", "forecast"] },
-        { "enum": ["normal", "provisional", "break", "low_reliability", "missing", "nil", "suppressed"] }
+        {
+          "enum": [
+            "reported",
+            "computed",
+            "estimated",
+            "forecast"
+          ]
+        },
+        {
+          "enum": [
+            "normal",
+            "provisional",
+            "break",
+            "low_reliability",
+            "missing",
+            "nil",
+            "suppressed"
+          ]
+        }
       ],
       "minItems": 2,
       "maxItems": 2
+    },
+    "expectation": {
+      "description": "One declarative expectation (03 §5.2, engine/crates/lanka-ingest/src/expect.rs).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "check"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "row_count"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "min": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "pct"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "row_count_change"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "pct": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "level",
+            "min_units"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "completeness"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "min_units": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "range"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "sum_to_parent"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            },
+            "tol_pct": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "dim"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "sum_dims"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            },
+            "dim": {
+              "type": "string"
+            },
+            "tol": {
+              "type": "number"
+            },
+            "tol_pct": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "indicator"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "ratio_consistency"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            },
+            "numerator": {
+              "type": "string"
+            },
+            "denominator": {
+              "type": "string"
+            },
+            "scale": {
+              "type": "number"
+            },
+            "tol_pct": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "direction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "monotonic"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            },
+            "direction": {
+              "enum": [
+                "increasing",
+                "decreasing"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "pct"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "max_step_change"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            },
+            "pct": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "pct_changed",
+            "pct_removed"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "revision_limit"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "pct_changed": {
+              "type": "number"
+            },
+            "pct_removed": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "no_future"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "period_continuity"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "geometry"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "valid": {
+              "type": "boolean"
+            },
+            "within_bbox": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 4,
+                  "maxItems": 4
+                }
+              ]
+            },
+            "nesting_tol": {
+              "type": "number"
+            },
+            "overlap_tol": {
+              "type": "number"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "check",
+            "query"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "check": {
+              "const": "sql"
+            },
+            "severity": {
+              "enum": [
+                "error",
+                "warn"
+              ]
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            },
+            "query": {
+              "type": "string"
+            },
+            "expect": {
+              "const": "empty"
+            }
+          }
+        }
+      ]
+    },
+    "src_fields": {
+      "description": "Where a text comes from and how it is transformed (engine/crates/lanka-ingest/src/drivers/table.rs).",
+      "type": "object",
+      "properties": {
+        "column": {
+          "type": "string"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "melt": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        },
+        "template": {
+          "type": "string"
+        },
+        "table": {
+          "type": "string"
+        },
+        "key_column": {
+          "type": "string"
+        },
+        "regex": {
+          "type": "string"
+        },
+        "replace": {
+          "type": "string"
+        },
+        "date": {
+          "type": "object",
+          "required": [
+            "parse",
+            "format"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "parse": {
+              "type": "string"
+            },
+            "format": {
+              "type": "string"
+            }
+          }
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "unmapped": {
+          "enum": [
+            "error",
+            "drop",
+            "keep"
+          ]
+        },
+        "case": {
+          "enum": [
+            "upper",
+            "lower"
+          ]
+        }
+      }
+    },
+    "src": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "allOf": [
+            {
+              "$ref": "#/$defs/src_fields"
+            }
+          ],
+          "unevaluatedProperties": false
+        }
+      ]
+    },
+    "tab_output": {
+      "type": "object",
+      "required": [
+        "table"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "table": {
+          "type": "string"
+        },
+        "dataset": {
+          "type": "string"
+        },
+        "method": {
+          "enum": [
+            "api",
+            "sheet_cell",
+            "csv_row",
+            "pdf_text",
+            "pdf_reviewed",
+            "ocr",
+            "llm_dual",
+            "manual",
+            "feature",
+            "spatial",
+            "derived"
+          ]
+        },
+        "filter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "column"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "column": {
+                "type": "string"
+              },
+              "eq": {
+                "type": "string"
+              },
+              "in": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "not_in": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "regex": {
+                "type": "string"
+              },
+              "empty": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "melt": {
+          "type": "object",
+          "required": [
+            "columns"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "columns": {
+              "type": "string"
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "indicator": {
+          "$ref": "#/$defs/src"
+        },
+        "geo": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/src_fields"
+            }
+          ],
+          "properties": {
+            "root": {
+              "type": "boolean"
+            },
+            "code": {
+              "type": "string"
+            },
+            "match": {
+              "enum": [
+                "code",
+                "name"
+              ]
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "root_names": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "skip": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        "period": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/src_fields"
+            }
+          ],
+          "properties": {
+            "freq": {
+              "type": "string"
+            },
+            "parse": {
+              "type": "string"
+            }
+          },
+          "unevaluatedProperties": false,
+          "required": [
+            "freq"
+          ]
+        },
+        "dims": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/src"
+          }
+        },
+        "value": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/src_fields"
+            }
+          ],
+          "properties": {
+            "number": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "thousands": {
+                  "type": "string"
+                },
+                "decimal": {
+                  "type": "string"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "scale": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        "lo": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/src_fields"
+            }
+          ],
+          "properties": {
+            "number": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "thousands": {
+                  "type": "string"
+                },
+                "decimal": {
+                  "type": "string"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "scale": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        "hi": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/src_fields"
+            }
+          ],
+          "properties": {
+            "number": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "thousands": {
+                  "type": "string"
+                },
+                "decimal": {
+                  "type": "string"
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "scale": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        "status": {
+          "type": "object",
+          "allOf": [
+            {
+              "$ref": "#/$defs/src_fields"
+            }
+          ],
+          "properties": {
+            "codes": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/basis_status"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/basis_status"
+            }
+          },
+          "unevaluatedProperties": false
+        },
+        "feature": {
+          "type": "object",
+          "required": [
+            "key",
+            "kind",
+            "lon",
+            "lat"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "$ref": "#/$defs/src"
+            },
+            "kind": {
+              "$ref": "#/$defs/src"
+            },
+            "name": {
+              "$ref": "#/$defs/src"
+            },
+            "lon": {
+              "$ref": "#/$defs/src"
+            },
+            "lat": {
+              "$ref": "#/$defs/src"
+            },
+            "attrs": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/src"
+              }
+            }
+          }
+        }
+      }
+    },
+    "tab_table": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "artifact": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "header": {
+          "type": "object",
+          "required": [
+            "anchor"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "anchor": {
+              "type": "string"
+            },
+            "rows": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "fill_right": {
+              "type": "boolean"
+            }
+          }
+        },
+        "rows": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "until_blank": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "stop": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "skip": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "rename": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "fill_down": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tabular": {
+      "required": [
+        "discover",
+        "standardise"
+      ],
+      "properties": {
+        "discover": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "static",
+                "keys",
+                "listing_page",
+                "url_pattern",
+                "ckan",
+                "git"
+              ]
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string"
+                  },
+                  "media_type": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "enum": [
+                      "csv",
+                      "tsv",
+                      "xlsx",
+                      "html",
+                      "json"
+                    ]
+                  }
+                }
+              }
+            },
+            "url": {
+              "type": "string"
+            },
+            "keys": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "page": {
+              "type": "string"
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "pattern"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "pattern": {
+                    "type": "string"
+                  },
+                  "pick": {
+                    "enum": [
+                      "latest",
+                      "all"
+                    ]
+                  },
+                  "format": {
+                    "enum": [
+                      "csv",
+                      "tsv",
+                      "xlsx",
+                      "html",
+                      "json"
+                    ]
+                  }
+                }
+              }
+            },
+            "probe": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "days": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "step_days": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            },
+            "package": {
+              "type": "string"
+            },
+            "resources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "key",
+                  "name"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "format": {
+                    "type": "string"
+                  },
+                  "read_as": {
+                    "enum": [
+                      "csv",
+                      "tsv",
+                      "xlsx",
+                      "html",
+                      "json"
+                    ]
+                  }
+                }
+              }
+            },
+            "repo": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+            },
+            "ref": {
+              "type": "string"
+            },
+            "media_type": {
+              "type": "string"
+            }
+          }
+        },
+        "extract": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "format": {
+              "enum": [
+                "csv",
+                "tsv",
+                "xlsx",
+                "html",
+                "json"
+              ]
+            },
+            "zip_member": {
+              "type": "string"
+            },
+            "delimiter": {
+              "type": "string"
+            },
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "skip_lines": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "sheets": {
+              "type": "string"
+            },
+            "tables": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "path"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "entries": {
+                        "type": "boolean"
+                      },
+                      "artifact": {
+                        "type": "string"
+                      },
+                      "require": {
+                        "type": "string"
+                      },
+                      "fields": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "filter": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "column",
+                  "in"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "column": {
+                    "type": "string"
+                  },
+                  "in": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "standardise": {
+          "type": "object",
+          "required": [
+            "dataset",
+            "outputs"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "dataset": {
+              "type": "string"
+            },
+            "vintage": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "allOf": [
+                    {
+                      "$ref": "#/$defs/src_fields"
+                    }
+                  ],
+                  "unevaluatedProperties": false
+                }
+              ]
+            },
+            "tables": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/tab_table"
+              }
+            },
+            "outputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/tab_output"
+              }
+            },
+            "allow_empty": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "http_json_keys": {
+      "required": [
+        "discover",
+        "extract",
+        "standardise"
+      ],
+      "properties": {
+        "discover": {
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https?://"
+            },
+            "media_type": {
+              "type": "string"
+            },
+            "keys": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "list": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "from_dataset": {
+                  "type": "object",
+                  "required": [
+                    "dataset"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "dataset": {
+                      "type": "string"
+                    },
+                    "exclude": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "code": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "strip_prefix": {
+                          "type": "string"
+                        },
+                        "replace": {
+                          "type": "array",
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "minItems": 2,
+                            "maxItems": 2
+                          }
+                        },
+                        "case": {
+                          "enum": [
+                            "upper",
+                            "lower"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "fingerprint": {
+              "type": "object",
+              "required": [
+                "url",
+                "select"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "select": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        },
+        "extract": {
+          "type": "object",
+          "required": [
+            "records"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "meta": {
+              "$ref": "#/$defs/table"
+            },
+            "records": {
+              "$ref": "#/$defs/table"
+            },
+            "single_page": {
+              "type": "object",
+              "required": [
+                "page",
+                "pages"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "page": {
+                  "type": "string"
+                },
+                "pages": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "standardise": {
+          "type": "object",
+          "required": [
+            "dataset",
+            "indicator",
+            "geo",
+            "period",
+            "value",
+            "method"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "dataset": {
+              "type": "string"
+            },
+            "vintage": {
+              "type": "string"
+            },
+            "indicator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "by_key": {
+                  "type": "boolean"
+                },
+                "fixed": {
+                  "type": "string"
+                },
+                "generic": {
+                  "type": "object",
+                  "required": [
+                    "indicator",
+                    "dim"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "indicator": {
+                      "type": "string"
+                    },
+                    "dim": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "geo": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "root": {
+                  "type": "boolean"
+                },
+                "field": {
+                  "type": "string"
+                },
+                "fixed": {
+                  "type": "string"
+                }
+              }
+            },
+            "period": {
+              "type": "object",
+              "required": [
+                "field",
+                "format"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "format": {
+                  "enum": [
+                    "year",
+                    "as_is"
+                  ]
+                }
+              }
+            },
+            "value": {
+              "type": "object",
+              "required": [
+                "field"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "field": {
+                  "type": "string"
+                }
+              }
+            },
+            "status": {
+              "type": "object",
+              "required": [
+                "field",
+                "default"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "map": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/$defs/basis_status"
+                  }
+                },
+                "default": {
+                  "$ref": "#/$defs/basis_status"
+                }
+              }
+            },
+            "locator": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "verbatim": {
+              "type": "string"
+            },
+            "method": {
+              "enum": [
+                "api",
+                "sheet_cell",
+                "csv_row",
+                "pdf_text",
+                "pdf_reviewed",
+                "ocr",
+                "llm_dual",
+                "manual",
+                "feature",
+                "spatial",
+                "derived"
+              ]
+            },
+            "warn_empty": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
     }
   }
 }

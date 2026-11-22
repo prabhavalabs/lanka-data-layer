@@ -11,8 +11,10 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - item
-  - element
+  - id: item
+    codelist: fao_item
+  - id: element
+    codelist: fao_element
   geo_levels:
   - national
   period_type: year

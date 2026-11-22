@@ -1,8 +1,11 @@
 //! Declarative drivers (03 §2.2, ADR 0008): generic connectors implemented
 //! once in Rust and configured per source by `registry/connectors/<id>.yaml`.
 //!
-//! WP-02 ships `http_json` (REST/JSON APIs); the other drivers of the table
-//! in 03 §2.2 follow in WP-07 behind the same lookup.
+//! `http_json` (REST/JSON APIs: the per-key form of WP-02, or the table form
+//! of `tabular.rs`), the tabular drivers `csv`, `sdmx`, `ckan`, `xlsx_table`,
+//! `html_table` and `git_files` (WP-07, one implementation in `tabular.rs`
+//! with the selector language of `table.rs`), and the spatial drivers
+//! `osm_pbf`, `geo_file` and `raster`. `pdf_table` and `gtfs` follow.
 
 use std::sync::Arc;
 
@@ -17,16 +20,25 @@ pub mod http_json;
 pub mod json_path;
 pub mod osm_pbf;
 pub mod raster;
+pub mod table;
+pub mod tabular;
 
 /// The driver a connector spec names.
 pub fn driver_for(spec: &Loaded<ConnectorSpec>) -> Result<Arc<dyn Connector>> {
     match spec.spec.driver.as_str() {
-        "http_json" => Ok(Arc::new(http_json::HttpJson::from_spec(spec)?)),
+        // The per-key WDI form has `extract.records`; the table form has
+        // `standardise.outputs`.
+        "http_json" if spec.json["extract"].get("records").is_some() => {
+            Ok(Arc::new(http_json::HttpJson::from_spec(spec)?))
+        }
+        "http_json" | "csv" | "sdmx" | "ckan" | "xlsx_table" | "html_table" | "git_files" => {
+            Ok(Arc::new(tabular::Tabular::from_spec(spec)?))
+        }
         "osm_pbf" => Ok(Arc::new(osm_pbf::OsmPbf::from_spec(spec)?)),
         "geo_file" => Ok(Arc::new(geo_file::GeoFile::from_spec(spec)?)),
         "raster" => Ok(Arc::new(raster::Raster::from_spec(spec)?)),
         d => bail!(
-            "{}: driver {d:?} is not implemented (available: http_json, osm_pbf, geo_file, raster)",
+            "{}: driver {d:?} is not implemented (available: http_json, csv, sdmx, ckan, xlsx_table, html_table, git_files, osm_pbf, geo_file, raster)",
             spec.path.display()
         ),
     }

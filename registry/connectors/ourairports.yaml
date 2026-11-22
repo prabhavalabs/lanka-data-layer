@@ -1,0 +1,33 @@
+# OurAirports (public domain): the world airports CSV, filtered to the profile's country.
+# Each airport is a point feature keyed by its OurAirports ident; kind = OurAirports type
+# (codelist airport_type). Counts per unit come from the features (point-in-polygon at staging).
+source: ourairports
+driver: csv
+version: 1.0.0
+description: Airports, airstrips, heliports and seaplane bases (OurAirports CSV).
+discover:
+  kind: static
+  files:
+    - { key: airports, url: "https://davidmegginson.github.io/ourairports-data/airports.csv", file: airports.csv }
+standardise:
+  dataset: ourairports-lka
+  tables:
+    - { id: airports, artifact: ^airports$ }
+  outputs:
+    - table: airports
+      filter:
+        - { column: iso_country, eq: LK }
+      feature:
+        key: ident
+        kind: type
+        name: name
+        lon: longitude_deg
+        lat: latitude_deg
+        attrs:
+          iata: iata_code
+          icao: icao_code
+          elevation_ft: elevation_ft
+          municipality: municipality
+          scheduled_service: scheduled_service
+expect:
+  - { check: geometry, valid: true, within_bbox: true }

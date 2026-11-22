@@ -10,55 +10,49 @@ indicators:
   measure_type: sum
   aggregation: sum
   class: official
-  dims:
-  - season
   geo_levels:
   - national
   - adm2
-  period_type: year
+  period_type: season
 - id: agri.paddy_harvested_ha
   label: Paddy extent harvested
   unit: har
   measure_type: sum
   aggregation: sum
   class: official
-  dims:
-  - season
   geo_levels:
   - national
   - adm2
-  period_type: year
+  period_type: season
 - id: agri.paddy_production_t
   label: Paddy production
   unit: t
+  unit_mult: 3
   measure_type: sum
   aggregation: sum
   class: official
-  dims:
-  - season
   geo_levels:
   - national
   - adm2
-  period_type: year
+  period_type: season
 - id: agri.paddy_yield
   label: Average paddy yield
   unit: kg/har
   measure_type: rate
   aggregation: none
   class: official
-  dims:
-  - season
   geo_levels:
   - national
   - adm2
-  period_type: year
+  period_type: season
 time_coverage:
-  from: '1979'
+  from: '1978'
   to: '2025'
-method: HTML/XLS tables per variable x season; reviewed.
+method: DCS XLSX workbooks per variable x season (Total column of extent and yield sheets); seasons are periods (1978-Maha = Maha 1978/79, 1979-Yala); reviewed.
 limits:
 - District totals; no DS breakdown.
 - Mullaitivu/Kilinochchi missing in conflict years.
+- Udawalawe, Mahaweli 'H' and highland paddy are DCS reporting areas, not districts; they are included in the national (SRI LANKA) row only. After 2017/18 Maha the districts include them.
 enrichment:
   joins:
   - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil

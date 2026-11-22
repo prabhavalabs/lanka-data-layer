@@ -11,7 +11,8 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - indicator
+  - id: indicator
+    codelist: ilo_indicator
   - sex
   - age
   geo_levels:

@@ -11,7 +11,8 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - indicator
+  - id: indicator
+    codelist: fao_fs_indicator
   geo_levels:
   - national
   period_type: year
@@ -20,7 +21,7 @@ time_coverage:
   to: '2024'
 method: FS domain.
 limits:
-- 3-year averages.
+- 3-year averages are stored at the last year of the window (2000-2002 → 2002); the item label says "3-year average".
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'

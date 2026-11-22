@@ -1,0 +1,40 @@
+# ILOSTAT SDMX REST API (sdmx.ilo.org), SDMX-CSV: one dataflow per request, the profile's
+# country, annual. Ages: the youth/adult aggregate bands (AGE_YTHADULT_*); the 5- and 10-year
+# bands are not loaded. OBS_STATUS B (break in series) and U (unreliable) are kept as
+# statuses. Harmonised ILO estimates may differ from DCS LFS definitions (dataset limits).
+source: ilostat
+driver: sdmx
+version: 1.0.0
+description: ILOSTAT labour-market rates by sex and age band (SDMX-CSV).
+discover:
+  kind: keys
+  url: https://sdmx.ilo.org/rest/data/ILO,DF_{key},1.0/{alpha3}.A...?format=csvfile
+  keys: [UNE_DEAP_SEX_AGE_RT, EAP_DWAP_SEX_AGE_RT, EMP_DWAP_SEX_AGE_RT]
+standardise:
+  dataset: ilostat-lka
+  tables:
+    - { id: sdmx }      # every dataflow file, columns from the SDMX-CSV header
+  outputs:
+    - table: sdmx
+      method: api
+      filter:
+        - { column: FREQ, eq: A }
+        - { column: AGE, regex: "^AGE_YTHADULT_" }
+      indicator: { value: ilo.value }
+      geo: { column: REF_AREA, map: { LKA: LK } }
+      period: { column: TIME_PERIOD, freq: A, parse: year }
+      dims:
+        indicator: MEASURE
+        sex: { column: SEX, map: { SEX_T: total, SEX_M: male, SEX_F: female }, unmapped: drop }
+        age:
+          column: AGE
+          map: { AGE_YTHADULT_YGE15: "15+", AGE_YTHADULT_Y15-64: "15-64", AGE_YTHADULT_Y15-24: "15-24", AGE_YTHADULT_YGE25: "25+" }
+          unmapped: drop
+      value: { column: OBS_VALUE }
+      lo: { column: LOWER_BOUND }
+      hi: { column: UPPER_BOUND }
+      status: { column: OBS_STATUS, codes: { B: [reported, break], U: [reported, low_reliability], E: [estimated, normal], P: [reported, provisional] } }
+expect:
+  - { check: range, min: 0, max: 100 }
+  - { check: no_future }
+  - { check: row_count, min: 300 }

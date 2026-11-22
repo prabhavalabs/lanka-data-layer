@@ -1,0 +1,76 @@
+# WFP VAM food prices for Sri Lanka on HDX (CKAN): the newest "Food Prices" CSV resource.
+# One row per market × commodity × price type × month (date = the 15th). Per-kg series
+# only (the dataset's unit is LKR/kg). Geography: the market's district (admin2, matched by
+# name); WFP's computed "National Average" rows (no admin2) are not loaded. Markets are dimension codes
+# (WFP market ids, codelist wfp_market); their points are in the Markets resource.
+source: wfp-vam
+driver: ckan
+version: 1.0.0
+description: WFP retail and wholesale food prices by market (per kg), monthly.
+discover:
+  kind: ckan
+  package: https://data.humdata.org/api/3/action/package_show?id=wfp-food-prices-for-sri-lanka
+  resources:
+    - { key: prices, name: "Food Prices", format: CSV }
+standardise:
+  dataset: wfp-food-prices
+  tables:
+    - { id: prices, artifact: ^prices$ }
+  outputs:
+    - table: prices
+      method: csv_row
+      filter:
+        - { column: unit, eq: KG }
+        - { column: currency, eq: LKR }
+        - { column: priceflag, eq: actual }
+      indicator: { value: price.wfp_market }
+      geo: { column: admin2, match: name, level: 2 }
+      period: { column: date, freq: M, parse: "%Y-%m-%d", regex: "^(\\d{4}-\\d{2})-\\d{2}$", replace: "${1}-01" }
+      dims:
+        pricetype: { column: pricetype, map: { Retail: retail, Wholesale: wholesale } }
+        market: market_id
+        commodity:
+          column: commodity
+          map:
+            "Bananas": wfp_bananas
+            "Beans": wfp_beans
+            "Beans (mung)": wfp_beans_mung
+            "Cabbage": wfp_cabbage
+            "Carrots": wfp_carrots
+            "Chili (red, dry raw)": wfp_chili_red_dry_raw
+            "Cowpeas (whole, average)": wfp_cowpeas_whole_average
+            "Eggplants": wfp_eggplants
+            "Fish (dry, katta)": wfp_fish_dry_katta
+            "Fish (dry, sprats)": wfp_fish_dry_sprats
+            "Fish (goldstripe sardinella)": wfp_fish_goldstripe_sardinella
+            "Fish (jack)": wfp_fish_jack
+            "Fish (sail fish)": wfp_fish_sail_fish
+            "Fish (skipjack tuna)": wfp_fish_skipjack_tuna
+            "Fish (trenched sardinella)": wfp_fish_trenched_sardinella
+            "Fish (yellowfin tuna)": wfp_fish_yellowfin_tuna
+            "Lentils": wfp_lentils
+            "Meat (chicken, broiler)": wfp_meat_chicken_broiler
+            "Meat (chicken, fresh)": wfp_meat_chicken_fresh
+            "Onions (imported)": wfp_onions_imported
+            "Onions (red)": wfp_onions_red
+            "Onions (red, imported)": wfp_onions_red_imported
+            "Onions (red, local)": wfp_onions_red_local
+            "Papaya": wfp_papaya
+            "Pineapples": wfp_pineapples
+            "Potatoes (imported)": wfp_potatoes_imported
+            "Potatoes (local)": wfp_potatoes_local
+            "Pumpkin": wfp_pumpkin
+            "Rice (long grain)": wfp_rice_long_grain
+            "Rice (medium grain)": wfp_rice_medium_grain
+            "Rice (red nadu)": wfp_rice_red_nadu
+            "Rice (red)": wfp_rice_red
+            "Rice (white)": wfp_rice_white
+            "Snake gourd": wfp_snake_gourd
+            "Sugar": wfp_sugar
+            "Tomatoes": wfp_tomatoes
+            "Wheat flour": wfp_wheat_flour
+      value: { column: price }
+expect:
+  - { check: range, min: 1, max: 20000 }
+  - { check: no_future }
+  - { check: row_count, min: 20000 }

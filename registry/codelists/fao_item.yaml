@@ -1,0 +1,129 @@
+# FAOSTAT item (crops and livestock products)
+# Source/authority: FAOSTAT QCL item codes (Production_Crops_Livestock_E_ItemCodes.csv).
+# Note: Items with a production quantity (t) for the profile's country; extend from the bulk file when FAO adds items.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only (FAOSTAT).
+# Used by: faostat-crops-livestock
+id: fao_item
+title: FAOSTAT item
+codes:
+  - { code: "27", label: "Rice" }
+  - { code: "51", label: "Beer of barley, malted" }
+  - { code: "56", label: "Maize (corn)" }
+  - { code: "60", label: "Oil of maize" }
+  - { code: "79", label: "Millet" }
+  - { code: "83", label: "Sorghum" }
+  - { code: "116", label: "Potatoes" }
+  - { code: "122", label: "Sweet potatoes" }
+  - { code: "125", label: "Cassava, fresh" }
+  - { code: "149", label: "Edible roots and tubers with high starch or inulin content, n.e.c., fresh" }
+  - { code: "156", label: "Sugar cane" }
+  - { code: "162", label: "Raw cane or beet sugar (centrifugal only)" }
+  - { code: "165", label: "Molasses" }
+  - { code: "176", label: "Beans, dry" }
+  - { code: "195", label: "Cow peas, dry" }
+  - { code: "217", label: "Cashew nuts, in shell" }
+  - { code: "226", label: "Areca nuts" }
+  - { code: "236", label: "Soya beans" }
+  - { code: "237", label: "Soya bean oil" }
+  - { code: "242", label: "Groundnuts, excluding shelled" }
+  - { code: "244", label: "Groundnut oil" }
+  - { code: "249", label: "Coconuts, in shell" }
+  - { code: "252", label: "Coconut oil" }
+  - { code: "268", label: "Sunflower-seed oil, crude" }
+  - { code: "271", label: "Rapeseed or canola oil, crude" }
+  - { code: "281", label: "Safflower-seed oil, crude" }
+  - { code: "289", label: "Sesame seed" }
+  - { code: "290", label: "Oil of sesame seed" }
+  - { code: "292", label: "Mustard seed" }
+  - { code: "328", label: "Seed cotton, unginned" }
+  - { code: "329", label: "Cotton seed" }
+  - { code: "331", label: "Cottonseed oil" }
+  - { code: "334", label: "Oil of linseed" }
+  - { code: "358", label: "Cabbages" }
+  - { code: "388", label: "Tomatoes" }
+  - { code: "393", label: "Cauliflowers and broccoli" }
+  - { code: "394", label: "Pumpkins, squash and gourds" }
+  - { code: "397", label: "Cucumbers and gherkins" }
+  - { code: "399", label: "Eggplants (aubergines)" }
+  - { code: "401", label: "Chillies and peppers, green (Capsicum spp. and Pimenta spp.)" }
+  - { code: "403", label: "Onions and shallots, dry (excluding dehydrated)" }
+  - { code: "407", label: "Leeks and other alliaceous vegetables" }
+  - { code: "414", label: "Other beans, green" }
+  - { code: "426", label: "Carrots and turnips" }
+  - { code: "430", label: "Okra" }
+  - { code: "463", label: "Other vegetables, fresh n.e.c." }
+  - { code: "489", label: "Plantains and cooking bananas" }
+  - { code: "490", label: "Oranges" }
+  - { code: "497", label: "Lemons and limes" }
+  - { code: "564", label: "Wine" }
+  - { code: "568", label: "Cantaloupes and other melons" }
+  - { code: "571", label: "Mangoes, guavas and mangosteens" }
+  - { code: "572", label: "Avocados" }
+  - { code: "574", label: "Pineapples" }
+  - { code: "619", label: "Other fruits, n.e.c." }
+  - { code: "656", label: "Coffee, green" }
+  - { code: "661", label: "Cocoa beans" }
+  - { code: "667", label: "Tea leaves" }
+  - { code: "675", label: "Green tea (not fermented), black tea (fermented) and partly fermented tea, in immediate packings of a content not exceeding 3 kg" }
+  - { code: "687", label: "Pepper (Piper spp.), raw" }
+  - { code: "693", label: "Cinnamon and cinnamon-tree flowers, raw" }
+  - { code: "698", label: "Cloves (whole stems), raw" }
+  - { code: "702", label: "Nutmeg, mace, cardamoms, raw" }
+  - { code: "720", label: "Ginger, raw" }
+  - { code: "723", label: "Other stimulant, spice and aromatic crops, n.e.c." }
+  - { code: "767", label: "Cotton lint, ginned" }
+  - { code: "813", label: "Coir, raw" }
+  - { code: "821", label: "Other fibre crops, raw, n.e.c." }
+  - { code: "826", label: "Unmanufactured tobacco" }
+  - { code: "836", label: "Natural rubber in primary forms" }
+  - { code: "867", label: "Meat of cattle with the bone, fresh or chilled" }
+  - { code: "868", label: "Edible offal of cattle, fresh, chilled or frozen" }
+  - { code: "869", label: "Cattle fat, unrendered" }
+  - { code: "882", label: "Raw milk of cattle" }
+  - { code: "886", label: "Butter of cow milk" }
+  - { code: "888", label: "Skim milk of cows" }
+  - { code: "889", label: "Whole milk, condensed" }
+  - { code: "897", label: "Whole milk powder" }
+  - { code: "919", label: "Raw hides and skins of cattle" }
+  - { code: "947", label: "Meat of buffalo, fresh or chilled" }
+  - { code: "948", label: "Edible offal of buffalo, fresh, chilled or frozen" }
+  - { code: "949", label: "Buffalo fat, unrendered" }
+  - { code: "951", label: "Raw milk of buffalo" }
+  - { code: "957", label: "Raw hides and skins of buffaloes" }
+  - { code: "977", label: "Meat of sheep, fresh or chilled" }
+  - { code: "978", label: "Edible offal of sheep, fresh, chilled or frozen" }
+  - { code: "979", label: "Sheep fat, unrendered" }
+  - { code: "995", label: "Raw hides and skins of sheep or lambs" }
+  - { code: "1017", label: "Meat of goat, fresh or chilled" }
+  - { code: "1018", label: "Edible offal of goat, fresh, chilled or frozen" }
+  - { code: "1019", label: "Goat fat, unrendered" }
+  - { code: "1020", label: "Raw milk of goats" }
+  - { code: "1025", label: "Raw hides and skins of goats or kids" }
+  - { code: "1035", label: "Meat of pig with the bone, fresh or chilled" }
+  - { code: "1036", label: "Edible offal of pigs, fresh, chilled or frozen" }
+  - { code: "1037", label: "Fat of pigs" }
+  - { code: "1058", label: "Meat of chickens, fresh or chilled" }
+  - { code: "1062", label: "Hen eggs in shell, fresh" }
+  - { code: "1069", label: "Meat of ducks, fresh or chilled" }
+  - { code: "1091", label: "Eggs from other birds in shell, fresh, n.e.c." }
+  - { code: "1242", label: "Margarine and shortening" }
+  - { code: "1717", label: "Cereals, primary" }
+  - { code: "1720", label: "Roots and Tubers, Total" }
+  - { code: "1723", label: "Sugar Crops Primary" }
+  - { code: "1726", label: "Pulses, Total" }
+  - { code: "1729", label: "Treenuts, Total" }
+  - { code: "1732", label: "Oilcrops, Oil Equivalent" }
+  - { code: "1735", label: "Vegetables Primary" }
+  - { code: "1738", label: "Fruit Primary" }
+  - { code: "1765", label: "Meat, Total" }
+  - { code: "1780", label: "Milk, Total" }
+  - { code: "1783", label: "Eggs Primary" }
+  - { code: "1804", label: "Citrus Fruit, Total" }
+  - { code: "1806", label: "Beef and Buffalo Meat, primary" }
+  - { code: "1807", label: "Sheep and Goat Meat" }
+  - { code: "1808", label: "Meat, Poultry" }
+  - { code: "1811", label: "Butter and Ghee" }
+  - { code: "1816", label: "Evaporated & Condensed Milk" }
+  - { code: "1841", label: "Oilcrops, Cake Equivalent" }
+  - { code: "17530", label: "Fibre Crops, Fibre Equivalent" }
