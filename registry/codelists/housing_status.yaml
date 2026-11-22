@@ -1,0 +1,14 @@
+# Status of housing unit (census)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing 2024 - status of housing units (final report table 11.7).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-housing-tenure
+id: housing_status
+title: Status of housing unit (census)
+codes:
+  - { code: total, label: All housing units, total: true, sdmx: _T }
+  - { code: permanent, label: Permanent, parent: total }
+  - { code: semi_permanent, label: Semi-permanent, parent: total }
+  - { code: improvised, label: Improvised, parent: total }
+  - { code: not_classified, label: Not classified, parent: total }

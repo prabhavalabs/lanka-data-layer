@@ -1,0 +1,26 @@
+# Statistical Abstract, chapter 6, table 6.7: constructed new buildings (residential and
+# non-residential) and additions/alterations by district: number of buildings and floor space
+# (sq. ft.). Trilingual labels; Tamil names sit left of the English district column, so some
+# English names print on their own line next to the numbers (wrapped). The 2025 edition prints
+# four non-residential floor areas with a misplaced thousands separator ("29,7322"); they are
+# ambiguous (297,322 or 29,732), read as missing and left to the reviewer.
+id: dcs-statistical-abstract/table-6.7-building-construction-district
+title: Constructed new buildings, additions and alterations by district
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 6.7", then_text: "Constructed new buildings" }
+    label: { key: district, header: "District" }
+    columns:
+      - { key: res_n, header: "No.of buildings", nth: 1 }
+      - { key: res_area, header: "Floor space", nth: 1 }
+      - { key: nonres_n, header: "No.of buildings", nth: 2 }
+      - { key: nonres_area, header: "Floor space", nth: 2 }
+      - { key: add_n, header: "No.of buildings", nth: 3 }
+      - { key: add_area, header: "Floor space", nth: 3 }
+    rows: { stop_at: ["Source"], wrapped_labels: true }
+    number: { missing: ["29,7322", "90,2593", "37,9196", "20,6575"] }
+    checks:
+      - { row_count: { min: 26, max: 26 } }
+      - { rows_present: ["Total", "Colombo", "Kegalle"] }
+      - { sum_rows: all_but_first, equals_row: "Total", columns: [res_n, nonres_n, add_n], tol: 0 }

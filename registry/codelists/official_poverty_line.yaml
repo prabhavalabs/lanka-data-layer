@@ -1,0 +1,14 @@
+# Official poverty line vintage (Department of Census and Statistics)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka - official poverty line, cost of basic needs method.
+# Note: DCS publishes poverty indices against two official lines: the original line (2002 HIES base, adjusted by CCPI)
+#   for 1995/96-2019, and the updated line (2012/13 HIES base, adjusted by NCPI) from 2019. Values on different lines are
+#   not comparable; 2019 is published on both.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-hies-poverty
+id: official_poverty_line
+title: Official poverty line vintage
+codes:
+  - { code: base_2002, label: Official poverty line (2002 HIES base) }
+  - { code: base_2012, label: Updated official poverty line (2012/13 HIES base) }

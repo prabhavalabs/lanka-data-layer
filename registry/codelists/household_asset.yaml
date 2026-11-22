@@ -26,3 +26,10 @@ codes:
   - { code: car_van, label: Motor car / van }
   - { code: lorry, label: Lorry / tractor }
   - { code: boat, label: Boat }
+  # Census 2024 final report (table 11.19): usage of equipment and vehicles, regardless of ownership.
+  - { code: smart_phone, label: Smart mobile phone }
+  - { code: basic_mobile_phone, label: Normal (basic) mobile phone }
+  - { code: desktop_computer, label: Desktop computer }
+  - { code: laptop_computer, label: Laptop computer }
+  - { code: tablet_computer, label: Tablet computer }
+  - { code: other_equipment, label: Other equipment or vehicle }

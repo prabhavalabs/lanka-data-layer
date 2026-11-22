@@ -1,0 +1,30 @@
+# Census of Population and Housing 2024, final report, table 11.19: households using
+# communication technology equipment and vehicles (%), by sector. Column headers are printed
+# rotated; each resolves from its single horizontal word in the text layer (Radio, Television,
+# Fixed, Smart, Normal, Desktop, Laptop, Tablet, Internet, Bicycle, Motorcycle/Scooter,
+# Three-wheeler, Other). Usage, regardless of ownership.
+id: dcs-census-2024-report/table-11.19-household-equipment
+title: Households using communication equipment and vehicles by sector, 2024 (%)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 11.19 : Percentage Distribution of Households Using Communication", then_text: "Television" }
+    label: { key: sector, header: "Sector", slack: 20 }
+    columns:
+      - { key: radio, header: "Radio" }
+      - { key: television, header: "Television" }
+      - { key: fixed_phone, header: "Fixed" }
+      - { key: smart_phone, header: "Smart" }
+      - { key: normal_phone, header: "Normal" }
+      - { key: desktop, header: "Desktop" }
+      - { key: laptop, header: "Laptop" }
+      - { key: tablet, header: "Tablet" }
+      - { key: internet, header: "Internet" }
+      - { key: bicycle, header: "Bicycle" }
+      - { key: motorcycle, header: "Motorcycle/Scooter" }
+      - { key: three_wheeler, header: "Three-wheeler" }
+      - { key: other, header: "Other" }
+    rows: { stop_at: ["The information on electronic"] }
+    checks:
+      - { row_count: { min: 5, max: 5 } }
+      - { rows_present: ["Sri Lanka", "Urban", "Estate- Urban", "Rural", "Estate- Rural"] }

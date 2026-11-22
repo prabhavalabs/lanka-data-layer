@@ -1,0 +1,17 @@
+# Statistical Pocket Book, table 2.11: deaths from natural disasters by type of disaster,
+# four years (National Disaster Relief Service Centre).
+id: dcs-pocketbook-social/table-2.11-disaster-deaths
+title: Deaths from natural disasters by type
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "2.11 Number of Persons Death by Natural Disasters", then_text: "Landslides" }
+    label: { key: hazard, header: "Type of Disaster" }
+    columns:
+      - { key: y1, header: "2022" }
+      - { key: y2, header: "2023" }
+      - { key: y3, header: "2024" }
+      - { key: y4, header: "2025" }
+    rows: { stop_at: ["Source:"] }
+    checks:
+      - { row_count: { min: 5, max: 5 } }

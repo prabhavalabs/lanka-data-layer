@@ -16,3 +16,11 @@ codes:
   - { code: warrants_fines, label: Warrant costs and fines, parent: total }
   - { code: grants, label: Grants (central / provincial), parent: total }
   - { code: other, label: Other revenue, parent: total }
+  # Statistical Abstract table 15.4 layout: recurrent and capital subtotals and their items.
+  - { code: recurrent, label: Total recurrent revenue }
+  - { code: capital, label: Total capital revenue }
+  - { code: revenue_grants, label: Revenue grants, parent: recurrent }
+  - { code: capital_grants, label: Capital grants, parent: capital }
+  - { code: loans, label: Loans, parent: capital }
+  - { code: sale_capital_assets, label: Sales of capital assets, parent: capital }
+  - { code: other_capital, label: Other capital revenue, parent: capital }

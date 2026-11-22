@@ -1,0 +1,208 @@
+# Census of Population and Housing 2024 (DCS), final report tables without an Excel release:
+# literacy (7.10, 7.13), functional difficulty and disability (6.2.2, 6.2.6), tenure and housing
+# status (11.4, 11.7), solid waste disposal (11.17) and household equipment use (11.19).
+# Read from the PDF text layer through
+# registry/templates/dcs-census-2024-report/. Class B: every version is reviewed against its
+# evidence sheet. Licence permission_unclear: published with attribution and the takedown
+# contact (08 §2).
+#
+# Districts are name-matched at ADM2 ("Sri Lanka" is the root); sector rows are fixed to the root
+# with a sector dimension. Tables mixing sector and district rows select their rows explicitly.
+# Transport: statistics.gov.lk serves only TLS 1.2 CBC suites (see dcs-agriculture): plain HTTP.
+source: dcs-census-2024-report
+driver: pdf_table
+version: 1.0.0
+description: Census 2024 final report tables (literacy, disability, tenure, housing status, solid waste).
+discover:
+  files:
+    - key: cph2024-final
+      url: http://www.statistics.gov.lk/Resource/en/Population/CPH_2024/CPH2024_Final_Eng.pdf
+      edition: "2024"
+extract:
+  tables:
+    - { id: t6_2_2, file: cph2024-final, template: dcs-census-2024-report/table-6.2.2-difficulty-district }
+    - { id: t6_2_6, file: cph2024-final, template: dcs-census-2024-report/table-6.2.6-disability-district }
+    - { id: t7_10, file: cph2024-final, template: dcs-census-2024-report/table-7.10-language-literacy-district }
+    - { id: t7_13, file: cph2024-final, template: dcs-census-2024-report/table-7.13-computer-literacy-district }
+    - { id: t11_4, file: cph2024-final, template: dcs-census-2024-report/table-11.4-housing-tenure }
+    - { id: t11_7, file: cph2024-final, template: dcs-census-2024-report/table-11.7-housing-status }
+    - { id: t11_17, file: cph2024-final, template: dcs-census-2024-report/table-11.17-solid-waste-disposal }
+    - { id: t11_19, file: cph2024-final, template: dcs-census-2024-report/table-11.19-household-equipment }
+standardise:
+  dataset: dcs-census-2024-education-literacy
+  vintage: "Census of Population and Housing {edition}, final report"
+  outputs:
+    # ── 7.10 language literacy, 7.13 computer and digital literacy ─────────────────
+    - table: t7_10
+      indicator: census24.language_literacy_rate
+      geo: &district { from_label: { level: 2, root: ["Sri Lanka"] } }
+      period: &y2024 { fixed: "2024" }
+      columns: { any: { language: any }, sinhala: { language: sinhala }, tamil: { language: tamil }, english: { language: english } }
+    - { table: t7_10, indicator: census24.pop_aged_10_plus, geo: *district, period: *y2024, columns: { pop10: {} } }
+    - { table: t7_13, indicator: census24.computer_literacy, geo: *district, period: *y2024, columns: { computer: { sex: total } } }
+    - { table: t7_13, indicator: census24.digital_literacy, geo: *district, period: *y2024, columns: { digital: { sex: total } } }
+    - { table: t7_13, indicator: census24.pop_aged_5_plus_literacy, geo: *district, period: *y2024, columns: { pop5: {} } }
+    # ── 6.2.2 any difficulty, 6.2.6 disability: numbers and rates per 1,000 ─────────
+    - table: t6_2_2
+      dataset: dcs-census-2024-disability
+      indicator: census24.functional_difficulty
+      geo: *district
+      period: *y2024
+      columns: { any_n: { domain: total, severity: any_difficulty, sex: total }, seeing_n: { domain: seeing, severity: any_difficulty, sex: total }, hearing_n: { domain: hearing, severity: any_difficulty, sex: total }, walking_n: { domain: walking, severity: any_difficulty, sex: total }, cognition_n: { domain: cognition, severity: any_difficulty, sex: total }, self_care_n: { domain: self_care, severity: any_difficulty, sex: total }, communication_n: { domain: communication, severity: any_difficulty, sex: total } }
+    - table: t6_2_2
+      dataset: dcs-census-2024-disability
+      indicator: census24.functional_difficulty_rate
+      geo: *district
+      period: *y2024
+      columns: { any_rate: { domain: total, severity: any_difficulty }, seeing_rate: { domain: seeing, severity: any_difficulty }, hearing_rate: { domain: hearing, severity: any_difficulty }, walking_rate: { domain: walking, severity: any_difficulty }, cognition_rate: { domain: cognition, severity: any_difficulty }, self_care_rate: { domain: self_care, severity: any_difficulty }, communication_rate: { domain: communication, severity: any_difficulty } }
+    - table: t6_2_6
+      dataset: dcs-census-2024-disability
+      indicator: census24.functional_difficulty
+      geo: *district
+      period: *y2024
+      columns: { any_n: { domain: total, severity: disability, sex: total }, seeing_n: { domain: seeing, severity: disability, sex: total }, hearing_n: { domain: hearing, severity: disability, sex: total }, walking_n: { domain: walking, severity: disability, sex: total }, cognition_n: { domain: cognition, severity: disability, sex: total }, self_care_n: { domain: self_care, severity: disability, sex: total }, communication_n: { domain: communication, severity: disability, sex: total } }
+    - table: t6_2_6
+      dataset: dcs-census-2024-disability
+      indicator: census24.functional_difficulty_rate
+      geo: *district
+      period: *y2024
+      columns: { any_rate: { domain: total, severity: disability }, seeing_rate: { domain: seeing, severity: disability }, hearing_rate: { domain: hearing, severity: disability }, walking_rate: { domain: walking, severity: disability }, cognition_rate: { domain: cognition, severity: disability }, self_care_rate: { domain: self_care, severity: disability }, communication_rate: { domain: communication, severity: disability } }
+    - { table: t6_2_6, dataset: dcs-census-2024-disability, indicator: census24.pop_aged_5_plus, geo: *district, period: *y2024, columns: { pop5: {} } }
+    # ── 11.4 tenure (%), 11.7 housing units by status ───────────────────────────────
+    - table: t11_4
+      dataset: dcs-census-2024-housing-tenure
+      indicator: census24.tenure_share
+      geo: *district
+      period: *y2024
+      rows: &districts { "Sri Lanka": { sector: total }, "Colombo": { sector: total }, "Gampaha": { sector: total }, "Kalutara": { sector: total }, "Kandy": { sector: total }, "Matale": { sector: total }, "Nuwara Eliya": { sector: total }, "Galle": { sector: total }, "Matara": { sector: total }, "Hambantota": { sector: total }, "Jaffna": { sector: total }, "Mannar": { sector: total }, "Vavuniya": { sector: total }, "Mullaitivu": { sector: total }, "Kilinochchi": { sector: total }, "Batticaloa": { sector: total }, "Ampara": { sector: total }, "Trincomalee": { sector: total }, "Kurunegala": { sector: total }, "Puttalam": { sector: total }, "Anuradhapura": { sector: total }, "Polonnaruwa": { sector: total }, "Badulla": { sector: total }, "Moneragala": { sector: total }, "Ratnapura": { sector: total }, "Kegalle": { sector: total } }
+      columns: &tenure
+        total: { tenure: total }
+        owned: { tenure: owned }
+        rent_govt: { tenure: rented_government }
+        rent_private: { tenure: rented_private }
+        rent_free: { tenure: rent_free }
+        encroached: { tenure: encroached }
+        other: { tenure: other }
+    - table: t11_4
+      dataset: dcs-census-2024-housing-tenure
+      indicator: census24.tenure_share
+      geo: { fixed: root }
+      period: *y2024
+      rows: { "Urban": { sector: urban }, "Estate- Urban": { sector: estate_urban }, "Rural": { sector: rural }, "Estate- Rural": { sector: estate_rural } }
+      columns: *tenure
+    - table: t11_7
+      dataset: dcs-census-2024-housing-tenure
+      indicator: census24.housing_status_units
+      geo: *district
+      period: *y2024
+      rows: *districts
+      columns: &status
+        total: { housing_status: total }
+        permanent: { housing_status: permanent }
+        semi_permanent: { housing_status: semi_permanent }
+        improvised: { housing_status: improvised }
+        not_classified: { housing_status: not_classified }
+    - table: t11_7
+      dataset: dcs-census-2024-housing-tenure
+      indicator: census24.housing_status_units
+      geo: { fixed: root }
+      period: *y2024
+      # "Urban*" includes estate-urban units; "Estate-Rural**" is the 2012 estate sector.
+      rows: { "Urban*": { sector: urban }, "Rural": { sector: rural }, "Estate-Rural**": { sector: estate_rural } }
+      columns: *status
+    # ── 11.17 solid waste disposal (%), by waste type, method and sector ────────────
+    - table: t11_17
+      dataset: dcs-census-2024-waste
+      indicator: census24.waste_disposal_share
+      geo: { fixed: root }
+      period: *y2024
+      rows:
+        "Total#1": { waste_type: biodegradable, method: total }
+        "By the local authority#1": { waste_type: biodegradable, method: collected_by_la }
+        "Occupants burn#1": { waste_type: biodegradable, method: burnt }
+        "Occupants dispose within the premises#1": { waste_type: biodegradable, method: dumped_within }
+        "Composing solid waste#1": { waste_type: biodegradable, method: composted }
+        "Dispose into Road/River/Canal/Sea/ Lagoon/Forest#1": { waste_type: biodegradable, method: dumped_public }
+        "Provide to the waste collectors#1": { waste_type: biodegradable, method: waste_collector }
+        "Other#1": { waste_type: biodegradable, method: other }
+        "Total#2": { waste_type: polythene_plastic, method: total }
+        "By the local authority#2": { waste_type: polythene_plastic, method: collected_by_la }
+        "Occupants burn#2": { waste_type: polythene_plastic, method: burnt }
+        "Occupants dispose within the premises#2": { waste_type: polythene_plastic, method: dumped_within }
+        "Dispose into Road/River/Canal/Sea/ Lagoon/Forest#2": { waste_type: polythene_plastic, method: dumped_public }
+        "Provide to the waste collectors#2": { waste_type: polythene_plastic, method: waste_collector }
+        "Other#2": { waste_type: polythene_plastic, method: other }
+        "Total#3": { waste_type: electronic, method: total }
+        "By the local authority#3": { waste_type: electronic, method: collected_by_la }
+        "Occupants burn#3": { waste_type: electronic, method: burnt }
+        "Occupants dispose within the premises#3": { waste_type: electronic, method: dumped_within }
+        "Dispose into Road/River/Canal/Sea/ Lagoon/Forest#3": { waste_type: electronic, method: dumped_public }
+        "Provide to the waste collectors#3": { waste_type: electronic, method: waste_collector }
+        "Other#3": { waste_type: electronic, method: other }
+        "Total#4": { waste_type: glass, method: total }
+        "By the local authority#4": { waste_type: glass, method: collected_by_la }
+        "Occupants dispose within the premises#4": { waste_type: glass, method: dumped_within }
+        "Dispose into Road/River/Canal/Sea/ Lagoon/Forest#4": { waste_type: glass, method: dumped_public }
+        "Provide to the waste collectors#4": { waste_type: glass, method: waste_collector }
+        "Other#4": { waste_type: glass, method: other }
+        "Total#5": { waste_type: other, method: total }
+        "By the local authority#5": { waste_type: other, method: collected_by_la }
+        "Occupants burn#4": { waste_type: other, method: burnt }
+        "Occupants dispose within the premises#5": { waste_type: other, method: dumped_within }
+        "Dispose into Road/River/Canal/Sea/ Lagoon/Forest#5": { waste_type: other, method: dumped_public }
+        "Provide to the waste collectors#5": { waste_type: other, method: waste_collector }
+        "Other#5": { waste_type: other, method: other }
+      columns:
+        sri_lanka: { sector: total }
+        urban: { sector: urban }
+        estate_urban: { sector: estate_urban }
+        rural: { sector: rural }
+        estate_rural: { sector: estate_rural }
+    # ── 11.19 households using equipment and vehicles (%), by sector ─────────────────
+    - table: t11_19
+      dataset: dcs-census-2024-household-assets
+      indicator: census24.hh_assets_share
+      geo: { fixed: root }
+      period: *y2024
+      rows:
+        "Sri Lanka": { sector: total }
+        "Urban": { sector: urban }
+        "Estate- Urban": { sector: estate_urban }
+        "Rural": { sector: rural }
+        "Estate- Rural": { sector: estate_rural }
+      columns:
+        radio: { item: radio }
+        television: { item: television }
+        fixed_phone: { item: fixed_telephone }
+        smart_phone: { item: smart_phone }
+        normal_phone: { item: basic_mobile_phone }
+        desktop: { item: desktop_computer }
+        laptop: { item: laptop_computer }
+        tablet: { item: tablet_computer }
+        internet: { item: internet }
+        bicycle: { item: bicycle }
+        motorcycle: { item: motorcycle }
+        three_wheeler: { item: three_wheeler }
+        other: { item: other_equipment }
+expect:
+  - { dataset: dcs-census-2024-education-literacy, check: range, indicator: census24.language_literacy_rate, min: 0, max: 100 }
+  - { dataset: dcs-census-2024-education-literacy, check: range, indicator: census24.computer_literacy, min: 0, max: 100 }
+  - { dataset: dcs-census-2024-education-literacy, check: range, indicator: census24.digital_literacy, min: 0, max: 100 }
+  - { dataset: dcs-census-2024-education-literacy, check: sum_to_parent, indicator: census24.pop_aged_10_plus, tol_pct: 0 }
+  - { dataset: dcs-census-2024-education-literacy, check: completeness, indicator: census24.language_literacy_rate, level: 2, min_units: 25 }
+  - { dataset: dcs-census-2024-education-literacy, check: row_count, min: 205, max: 210, note: "26 areas x 8 values" }
+  - { dataset: dcs-census-2024-disability, check: sum_to_parent, indicator: census24.functional_difficulty, tol_pct: 0 }
+  - { dataset: dcs-census-2024-disability, check: range, indicator: census24.functional_difficulty_rate, min: 0, max: 1000 }
+  - { dataset: dcs-census-2024-disability, check: completeness, indicator: census24.functional_difficulty, level: 2, min_units: 25 }
+  - { dataset: dcs-census-2024-disability, check: row_count, min: 750, max: 760, note: "26 areas x (2 tables x 14 values) + 26 denominators" }
+  - { dataset: dcs-census-2024-housing-tenure, check: sum_dims, indicator: census24.housing_status_units, dim: housing_status, tol: 0 }
+  - { dataset: dcs-census-2024-housing-tenure, check: sum_dims, indicator: census24.tenure_share, dim: tenure, tol: 0.3,
+      note: "printed shares are rounded to one decimal" }
+  - { dataset: dcs-census-2024-housing-tenure, check: sum_to_parent, indicator: census24.housing_status_units, tol_pct: 0 }
+  - { dataset: dcs-census-2024-housing-tenure, check: range, indicator: census24.tenure_share, min: 0, max: 100 }
+  - { dataset: dcs-census-2024-waste, check: range, min: 0, max: 100 }
+  - { dataset: dcs-census-2024-waste, check: sum_dims, indicator: census24.waste_disposal_share, dim: method, tol: 0.3,
+      note: "printed shares are rounded to one decimal" }
+  - { dataset: dcs-census-2024-waste, check: row_count, min: 170, max: 175, note: "35 rows x 5 sector columns" }
+  - { dataset: dcs-census-2024-household-assets, check: row_count, min: 65, max: 65, note: "13 items x 5 sectors" }
+  - { dataset: dcs-census-2024-household-assets, check: range, min: 0, max: 100 }

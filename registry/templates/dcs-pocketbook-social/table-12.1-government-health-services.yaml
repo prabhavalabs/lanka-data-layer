@@ -1,0 +1,21 @@
+# Statistical Pocket Book, table 12.1: government medical institutions, medical personnel and
+# patients treated, ten years. Patients in thousands (visits). "*" provisional, "#" revised.
+id: dcs-pocketbook-social/table-12.1-government-health-services
+title: Government medical institutions, personnel and patients treated
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "12.1 Government Medical Institutions", then_text: "Practitioners" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: hospitals, header: "Hospitals" }
+      - { key: beds, header: "Beds" }
+      - { key: dispensaries, header: "Dispensaries" }
+      - { key: doctors, header: "Doctors" }
+      - { key: amp, header: "Registered" }
+      - { key: nurses, header: "Nurses" }
+      - { key: outpatients_k, header: "Out Patients" }
+      - { key: inpatients_k, header: "In Patients" }
+    rows: { stop_at: ["Provisional"], wrapped_labels: true }
+    checks:
+      - { row_count: { min: 10, max: 10 } }

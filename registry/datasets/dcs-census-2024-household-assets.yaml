@@ -3,6 +3,7 @@ title: 'Census 2024: household equipment and assets'
 description: Households owning TV, radio, phone, computer, internet, refrigerator, vehicles etc.
 source_ids:
 - dcs-census-2024
+- dcs-census-2024-report
 indicators:
 - id: census24.hh_assets
   label: Households with item
@@ -17,9 +18,24 @@ indicators:
   - national
   - adm2
   period_type: snapshot
+- id: census24.hh_assets_share
+  label: Households using item (%)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - id: item
+    codelist: household_asset
+  - sector
+  geo_levels:
+  - national
+  period_type: snapshot
 time_coverage:
   from: '2024'
-method: PDF extraction.
+method: >-
+  Census 2024 final report table 11.19 (households using communication equipment and vehicles by sector,
+  %) read from the PDF text layer through a registry template; reviewed against the evidence sheet.
 limits:
 - Census reference night 2024; no intercensal updates.
 enrichment:

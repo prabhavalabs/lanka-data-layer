@@ -1,0 +1,24 @@
+# Statistical Pocket Book, table 4.5: poverty gap index and squared poverty gap index by
+# sector (%), HIES 2012/13-2019 on the old official line and 2019 on the updated line.
+# The 2026 edition prints the Estate 2019 old-line poverty gap as "1,2" (a typo for 1.2);
+# it is read as missing and left to the reviewer.
+id: dcs-pocketbook-social/table-4.5-poverty-gap-sector
+title: Poverty gap and squared poverty gap indices by sector (%)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "4.5 Poverty Gap and Squared", then_text: "Squared Poverty Gap Index" }
+    label: { key: sector, header: "Sector" }
+    columns:
+      - { key: pg_2012, header: "2012", nth: 1, under: "Poverty Gap Index" }
+      - { key: pg_2016, header: "2016", nth: 1, under: "Poverty Gap Index" }
+      - { key: pg_2019, header: "2019", nth: 1, under: "Poverty Gap Index" }
+      - { key: pg_2019_updated, header: "2019", nth: 2, under: "Poverty Gap Index" }
+      - { key: spg_2012, header: "2012", nth: 2, under: "Poverty Gap Index" }
+      - { key: spg_2016, header: "2016", nth: 2, under: "Poverty Gap Index" }
+      - { key: spg_2019, header: "2019", nth: 3, under: "Poverty Gap Index" }
+      - { key: spg_2019_updated, header: "2019", nth: 4, under: "Poverty Gap Index" }
+    rows: { stop_at: ["Old poverty line"], wrapped_labels: true }
+    number: { missing: ["1,2"] }
+    checks:
+      - { row_count: { min: 4, max: 4 } }

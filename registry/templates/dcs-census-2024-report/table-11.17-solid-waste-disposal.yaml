@@ -1,0 +1,21 @@
+# Census of Population and Housing 2024, final report, table 11.17: households by main method
+# of disposing solid waste (%), by waste type (five blocks under group lines without numbers)
+# and sector. The "Dispose into Road/River/Canal/Sea/ Lagoon/Forest" label wraps around its
+# numbers. Rows repeat per block: the connector addresses them as "Label#n".
+id: dcs-census-2024-report/table-11.17-solid-waste-disposal
+title: Households by main method of disposing solid waste and sector, 2024 (%)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 11.17: Percentage Distribution of Households by the Main Method of Disposing Solid", then_text: "Disposal of easy decaying waste" }
+    label: { key: method, header: "Method of disposing solid waste", slack: 30 }
+    columns:
+      - { key: sri_lanka, header: "Sri Lanka" }
+      - { key: urban, header: "Urban" }
+      - { key: estate_urban, header: "Estate-", nth: 1 }
+      - { key: rural, header: "Rural" }
+      - { key: estate_rural, header: "Estate-", nth: 2 }
+    rows: { stop_at: ["Information on solid waste"], wrapped_labels: true }
+    checks:
+      - { rows_present: ["Total number of households", "By the local authority", "Occupants burn"] }
+      - { row_count: { min: 35, max: 36 } }

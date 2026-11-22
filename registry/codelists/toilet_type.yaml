@@ -16,3 +16,10 @@ codes:
   - { code: direct_pit, label: Direct pit, parent: total }
   - { code: other, label: Other, parent: total }
   - { code: none, label: Not using a toilet, parent: total }
+  # Census 2024 workbook categories (HH_DS_excel, HousingA/A8): location and exclusive vs shared use.
+  - { code: within_unit_exclusive, label: Within the housing unit - exclusive to the household, parent: total }
+  - { code: within_unit_shared, label: Within the housing unit - shared with another household, parent: total }
+  - { code: within_premises_exclusive, label: Outside the unit within premises - exclusive to the household, parent: total }
+  - { code: within_premises_shared, label: Outside the unit within premises - shared with another household, parent: total }
+  - { code: shared_other_unit, label: No toilet - shares one with another housing unit, parent: total }
+  - { code: public_toilet, label: Common / public toilet, parent: total }

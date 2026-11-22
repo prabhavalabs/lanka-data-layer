@@ -1,0 +1,30 @@
+# Census of Population and Housing 2024, final report, table 6.2.6: persons aged 5 and over
+# with disabilities (a lot of difficulty or cannot do at all, Washington Group short set) by
+# district and domain: number and rate per 1,000 persons.
+id: dcs-census-2024-report/table-6.2.6-disability-district
+title: Persons with disabilities by district and domain, 2024
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 6.2.6 : Distribution of Persons Aged 5 Years and Over with Disabilities by District", then_text: "Kegalle" }
+    label: { key: district, header: "District", slack: 45 }
+    columns:
+      - { key: pop5, header: "Persons Aged 5" }
+      - { key: any_n, header: "Number", under: "one Disability" }
+      - { key: any_rate, header: "Rate", under: "one Disability" }
+      - { key: seeing_n, header: "Number", under: "Seeing" }
+      - { key: seeing_rate, header: "Rate", under: "Seeing" }
+      - { key: hearing_n, header: "Number", under: "Hearing" }
+      - { key: hearing_rate, header: "Rate", under: "Hearing" }
+      - { key: walking_n, header: "Number", under: "Walking or climbing" }
+      - { key: walking_rate, header: "Rate", under: "Walking or climbing" }
+      - { key: cognition_n, header: "Number", under: "Remembering or" }
+      - { key: cognition_rate, header: "Rate", under: "Remembering or" }
+      - { key: self_care_n, header: "Number", under: "Selfcare, such as" }
+      - { key: self_care_rate, header: "Rate", under: "Selfcare, such as" }
+      - { key: communication_n, header: "Number", under: "Communicating with" }
+      - { key: communication_rate, header: "Rate", under: "Communicating with" }
+    checks:
+      - { row_count: { min: 26, max: 26 } }
+      - { rows_present: ["Sri Lanka", "Colombo", "Kegalle"] }
+      - { sum_rows: all_but_first, equals_row: "Sri Lanka", columns: [pop5, any_n, seeing_n, hearing_n, walking_n], tol: 0 }

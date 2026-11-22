@@ -1,0 +1,28 @@
+# Statistical Pocket Book, table 4.3: poverty headcount index and percentage of poor
+# households by sector (%), HIES 2006/07-2019, on the old official line (2002 base) and,
+# for 2019, the updated line (2012/13 base). 2006/07 excludes the Northern province and
+# Trincomalee, 2009/10 Mannar, Kilinochchi and Mullaitivu.
+id: dcs-pocketbook-social/table-4.3-poverty-headcount-sector
+title: Poverty headcount index and percentage of poor households by sector (%)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "4.3 Poverty Headcount Index", then_text: "All Island" }
+    label: { key: sector, header: "Sector" }
+    columns:
+      - { key: hci_2006, header: "2006/07", nth: 1 }
+      - { key: hci_2009, header: "2009/10", nth: 1 }
+      - { key: hci_2012, header: "2012/13", nth: 1 }
+      - { key: hci_2016, header: "2016", nth: 1 }
+      - { key: hci_2019, header: "2019", nth: 1 }
+      - { key: hci_2019_updated, header: "2019", nth: 2 }
+      - { key: hh_2006, header: "2006/07", nth: 2 }
+      - { key: hh_2009, header: "2009/10", nth: 2 }
+      - { key: hh_2012, header: "2012/13", nth: 2 }
+      - { key: hh_2016, header: "2016", nth: 2 }
+      - { key: hh_2019, header: "2019", nth: 3 }
+      - { key: hh_2019_updated, header: "2019", nth: 4 }
+    rows: { stop_at: ["(a) Exclude"] }
+    checks:
+      - { row_count: { min: 4, max: 4 } }
+      - { rows_present: ["All Island", "Urban", "Rural", "Estate"] }

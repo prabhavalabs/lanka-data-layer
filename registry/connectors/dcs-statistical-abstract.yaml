@@ -9,14 +9,20 @@ discover:
     - key: abstract-2025-2.1a
       url: https://www.statistics.gov.lk/abstract2025/CHAP2/2.1a.pdf
       edition: "2025"
+    - { key: abstract-2025-6.7, url: "https://www.statistics.gov.lk/abstract2025/CHAP6/6.7.pdf", edition: "2025" }
+    - { key: abstract-2025-15.4, url: "https://www.statistics.gov.lk/abstract2025/CHAP15/15.4.pdf", edition: "2025" }
+    - { key: abstract-2025-15.6, url: "https://www.statistics.gov.lk/abstract2025/CHAP15/15.6.pdf", edition: "2025" }
 extract:
   tables:
     - id: t2_1a
       file: abstract-2025-2.1a
       template: dcs-statistical-abstract/table-2.1a-midyear-population-district
+    - { id: t6_7, file: abstract-2025-6.7, template: dcs-statistical-abstract/table-6.7-building-construction-district }
+    - { id: t15_4, file: abstract-2025-15.4, template: dcs-statistical-abstract/table-15.4-lg-revenue-mc-uc }
+    - { id: t15_6, file: abstract-2025-15.6, template: dcs-statistical-abstract/table-15.6-lg-expenditure-mc-uc }
 standardise:
   dataset: dcs-midyear-population-district
-  vintage: "Statistical Abstract {edition}, table 2.1a"
+  vintage: "Statistical Abstract {edition}"
   outputs:
     - table: t2_1a
       indicator: pop.midyear_district
@@ -42,3 +48,85 @@ standardise:
       scale: 1000
       # "(1) Provisional" marks the year headers.
       status: { header_markers: { "(1)": provisional } }
+    # Table 6.7: constructed buildings by district, 2024 (the title year); floor space in sq. ft.
+    - table: t6_7
+      dataset: dcs-building-construction
+      indicator: constr.buildings_constructed
+      geo: { from_label: { level: 2, root: ["Total"] } }
+      period: { fixed: "2024" }
+      columns:
+        res_n: { construction_type: residential }
+        nonres_n: { construction_type: non_residential }
+        add_n: { construction_type: additions_alterations }
+    - table: t6_7
+      dataset: dcs-building-construction
+      indicator: constr.floor_area_constructed
+      geo: { from_label: { level: 2, root: ["Total"] } }
+      period: { fixed: "2024" }
+      columns:
+        res_area: { construction_type: residential }
+        nonres_area: { construction_type: non_residential }
+        add_area: { construction_type: additions_alterations }
+      scale: 0.09290304
+    # Tables 15.4 / 15.6: municipal and urban council revenue and expenditure, 2024
+    # (provisional), Rs. thousands (the indicators carry unit_mult 3).
+    - table: t15_4
+      dataset: dcs-local-government-finance
+      indicator: lgov.revenue
+      geo: { fixed: root }
+      period: { fixed: "2024" }
+      status: { default: provisional }
+      rows:
+        "Total revenue(1+2)": { revenue_type: total }
+        "1. Total recurrent revenue": { revenue_type: recurrent }
+        "i. Rates and taxes": { revenue_type: rates_taxes }
+        "ii. Rents": { revenue_type: rents }
+        "iii .Licences": { revenue_type: licences }
+        "iv. Fees for services": { revenue_type: fees_charges }
+        "v. Warrant costs, fines and": { revenue_type: warrants_fines }
+        "vi..Other income": { revenue_type: other }
+        "vii .Revenue grants": { revenue_type: revenue_grants }
+        "2. Total capital revenue": { revenue_type: capital }
+        "i. Capital grants": { revenue_type: capital_grants }
+        "ii. Loans": { revenue_type: loans }
+        "iii. Sales of capital assets": { revenue_type: sale_capital_assets }
+        "vi. Others": { revenue_type: other_capital }
+      columns:
+        mc: { council_type: municipal_council }
+        uc: { council_type: urban_council }
+    - table: t15_6
+      dataset: dcs-local-government-finance
+      indicator: lgov.expenditure
+      geo: { fixed: root }
+      period: { fixed: "2024" }
+      status: { default: provisional }
+      rows:
+        "Total expenditure ( 1 + 2 )": { expenditure_type: total }
+        "I. Total recurrent expenditure": { expenditure_type: recurrent }
+        "i. Personal emoluments": { expenditure_type: personal_emoluments }
+        "ii. Travelling expenses": { expenditure_type: travelling }
+        "iii .Supplies & requisites": { expenditure_type: supplies }
+        "iv. Repairs & maintanance of capital assests": { expenditure_type: repairs_maintenance }
+        "v. Transportation, communication utility and other services": { expenditure_type: transport_utilities }
+        "vi..Interest payments, dividends & bonuses": { expenditure_type: interest }
+        "vii .Grants, contributions & subsidies": { expenditure_type: grants_subsidies }
+        "viii .Pensions, retirement benefits & gratuities": { expenditure_type: pensions }
+        "2. Total capital expenditure": { expenditure_type: capital }
+        "ix. Equipment outlay, land, land improvement and structural outlay": { expenditure_type: capital_outlay }
+        "x. Loan repayments": { expenditure_type: loan_repayments }
+      columns:
+        mc: { council_type: municipal_council }
+        uc: { council_type: urban_council }
+expect:
+  - { dataset: dcs-midyear-population-district, check: row_count, min: 375, max: 390, note: "26 rows x 5 years x 3 sexes" }
+  - { dataset: dcs-midyear-population-district, check: range, indicator: pop.midyear_district, min: 20000, max: 23000000 }
+  - { dataset: dcs-midyear-population-district, check: sum_dims, indicator: pop.midyear_district, dim: sex, tol_pct: 0.5 }
+  - { dataset: dcs-midyear-population-district, check: sum_to_parent, indicator: pop.midyear_district, tol_pct: 0.5,
+      note: "districts are printed in thousands; rounding" }
+  - { dataset: dcs-midyear-population-district, check: completeness, indicator: pop.midyear_district, level: 2, min_units: 25 }
+  - { dataset: dcs-building-construction, check: row_count, min: 150, max: 156, note: "26 areas x 6 values; 4 floor areas printed ambiguously (missing)" }
+  - { dataset: dcs-building-construction, check: sum_dims, indicator: constr.buildings_constructed, dim: construction_type, tol: 0,
+      note: "no total column is printed: passes vacuously" }
+  - { dataset: dcs-building-construction, check: completeness, indicator: constr.buildings_constructed, level: 2, min_units: 25 }
+  - { dataset: dcs-local-government-finance, check: row_count, min: 54, max: 54, note: "(14 revenue + 13 expenditure rows) x 2 council types" }
+  - { dataset: dcs-local-government-finance, check: range, min: 0, max: 100000000 }

@@ -17,3 +17,12 @@ codes:
   - { code: line_room, label: Line room / row house, parent: total }
   - { code: hut_shanty, label: Hut / shanty, parent: total }
   - { code: other, label: Other, parent: total }
+  # Census 2024 workbook categories (OHU_DS_excel, HousingA/A1).
+  - { code: single_house_two_floors, label: Single house - two floors, parent: total }
+  - { code: single_house_three_plus_floors, label: Single house - more than two floors, parent: total }
+  - { code: attached_1_floor, label: Attached house - 1st floor, parent: total }
+  - { code: attached_2_floors, label: Attached house - 2nd floor, parent: total }
+  - { code: attached_3_4_floors, label: Attached house - 3rd or 4th floor, parent: total }
+  - { code: attached_5_10_floors, label: Attached house - 5th to 10th floor, parent: total }
+  - { code: attached_11_19_floors, label: Attached house - 11th to 19th floor, parent: total }
+  - { code: attached_20_plus_floors, label: Attached house - 20th floor or higher, parent: total }

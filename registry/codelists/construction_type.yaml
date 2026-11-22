@@ -1,0 +1,13 @@
+# Type of building construction (DCS building construction statistics)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka - constructed new buildings, additions and alterations (Statistical Abstract table 6.7).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-building-construction
+id: construction_type
+title: Type of building construction
+codes:
+  - { code: total, label: All construction, total: true, sdmx: _T }
+  - { code: residential, label: New residential buildings, parent: total }
+  - { code: non_residential, label: New non-residential buildings, parent: total }
+  - { code: additions_alterations, label: Additions and alterations, parent: total }

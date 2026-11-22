@@ -1,0 +1,18 @@
+# Statistical Pocket Book, table 15.2: type of service provided by local government
+# institutions, by type of council (one year).
+id: dcs-pocketbook-social/table-15.2-local-government-services
+title: Services provided by local government institutions by type of council
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "15.2 Type of Service Provided by Local Government", then_text: "Dispensaries" }
+    label: { key: service, header: "Type of Service" }
+    columns:
+      - { key: municipal, header: "Municipal" }
+      - { key: urban, header: "Urban" }
+      - { key: ps, header: "Pradeshiya Sabha" }
+      - { key: total, header: "Total" }
+    rows: { stop_at: ["Source:"] }
+    checks:
+      - { row_count: { min: 5, max: 5 } }
+      - { sum: [municipal, urban, ps], equals: total, tol: 0 }

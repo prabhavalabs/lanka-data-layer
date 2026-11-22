@@ -1,0 +1,25 @@
+# Statistical Pocket Book, table 4.4: average monthly household income (Rs., current
+# prices) and Gini coefficient of household income by sector, HIES 2006/07-2019.
+id: dcs-pocketbook-social/table-4.4-household-income-gini-sector
+title: Average monthly household income and Gini coefficient by sector
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "4.4 Average Monthly Household Income", then_text: "Gini Coefficient" }
+    label: { key: sector, header: "Sector", slack: 12 }
+    columns:
+      - { key: inc_2006, header: "2006/07", nth: 1 }
+      - { key: inc_2009, header: "2009/10", nth: 1 }
+      - { key: inc_2012, header: "2012/13", nth: 1 }
+      - { key: inc_2016, header: "2016", nth: 1 }
+      - { key: inc_2019, header: "2019", nth: 1 }
+      - { key: gini_2006, header: "2006/07", nth: 2 }
+      - { key: gini_2009, header: "2009/10", nth: 2 }
+      - { key: gini_2012, header: "2012/13", nth: 2 }
+      - { key: gini_2016, header: "2016", nth: 2 }
+      - { key: gini_2019, header: "2019", nth: 2 }
+    rows: { stop_at: ["(a) Exclude"] }
+    number: { thousands: "," }
+    checks:
+      - { row_count: { min: 4, max: 4 } }
+      - { rows_present: ["All Island", "Urban", "Rural", "Estate"] }

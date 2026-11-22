@@ -1,0 +1,951 @@
+# Census of Population and Housing 2024 (DCS): housing and household workbooks served by the
+# CPH2024 web pages. Licence permission_unclear: published with attribution and the takedown
+# contact (08 §2); it does not block ingestion.
+#
+# - HH_DS_excel / OHU_DS_excel (BIFF .xls, read through calamine) and HH_GND_excel: one row per
+#   DS / GN division with DCS province, district, DS and GN codes. These are the COD-AB p-code
+#   digits: LK + district (2) + DS (2, zero-padded) + GN (3, zero-padded), so geography is a
+#   code match, never a name match.
+# - HousingA/A1-A8: district tables with trilingual (Sinhala / Tamil / English) labels and a
+#   percentage row under every district (no label: dropped). Districts are name-matched from
+#   the English tail of the label; column categories from the English tail of the header.
+#
+# Class B (irregular workbooks: merged three-row headers, trilingual labels, printed typos such
+# as "Not relavent"). "Not relavent" in the housing tables counts the units whose structure is
+# "Other" (non-conventional units); in the cooking table it counts households that do not cook.
+#
+# Boundary vintage: COD-AB carries the pre-2024 DS/GN layout. DS divisions created or re-coded since
+# (Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Wanduramba, Madampagama,
+# Rathgama, Eravur Pattu, Eravur Town, Kalmunai, Kaltota) map to "" in the DS geo map and are dropped,
+# never re-assigned. At GN level the GN rows of 18 re-delimited DS divisions (GN renumbered when the DS
+# was split) are filtered out by DS name (a selection, not a join), plus 9 GN codes absent from COD-AB.
+# Dropped rows stay in the archived workbook; they come back when the boundaries are updated.
+#
+# Transport: statistics.gov.lk offers only TLS 1.2 CBC suites (see dcs-agriculture), so the
+# workbooks are fetched over plain HTTP; every artifact is content-addressed.
+# Outputs are spelled out (the engine YAML reader has no merge keys).
+source: dcs-census-2024-tables
+driver: xlsx_table
+version: 1.0.0
+description: Census 2024 household and housing workbooks (DS and GN codes; district tables A1-A8).
+discover:
+  kind: static
+  files:
+  - {key: hh_ds, file: hh_ds.xls, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HH_DS_excel'}
+  - {key: ohu_ds, file: ohu_ds.xls, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/OHU_DS_excel'}
+  - {key: hh_gnd, file: hh_gnd.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HH_GND_excel'}
+  - {key: a1, file: a1.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A1'}
+  - {key: a2, file: a2.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A2'}
+  - {key: a3, file: a3.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A3'}
+  - {key: a4, file: a4.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A4'}
+  - {key: a5, file: a5.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A5'}
+  - {key: a6, file: a6.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A6'}
+  - {key: a7, file: a7.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A7'}
+  - {key: a8, file: a8.xlsx, url: 'http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/HousingA/A8'}
+extract: {format: xlsx}
+standardise:
+  dataset: dcs-census-2024-households
+  tables:
+  - id: hh_ds
+    artifact: ^hh_ds$
+    header: {anchor: ^Province, rows: 3, fill_right: true}
+  - id: hh_gnd
+    artifact: ^hh_gnd$
+    header: {anchor: ^Province, rows: 3, fill_right: true}
+  - id: ohu_ds
+    artifact: ^ohu_ds$
+    header: {anchor: ^Province, rows: 2, fill_right: true}
+  - id: a1
+    artifact: ^a1$
+    header: {anchor: District\s*$, rows: 2, fill_right: true}
+  - id: a2
+    artifact: ^a2$
+    header: {anchor: District\s*$, rows: 2, fill_right: true}
+  - id: a3
+    artifact: ^a3$
+    header: {anchor: District\s*$, rows: 2, fill_right: true}
+  - id: a4
+    artifact: ^a4$
+    header: {anchor: District\s*$, rows: 2, fill_right: true}
+  - id: a5
+    artifact: ^a5$
+    header: {anchor: District\s*$, rows: 3, fill_right: true}
+  - id: a6
+    artifact: ^a6$
+    header: {anchor: District\s*$, rows: 2, fill_right: true}
+  - id: a7
+    artifact: ^a7$
+    header: {anchor: District\s*$, rows: 2, fill_right: true}
+  - id: a8
+    artifact: ^a8$
+    header: {anchor: District\s*$, rows: 3, fill_right: true}
+  outputs:
+  - table: hh_ds
+    indicator: {value: census24.households}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    value: {column: Number of Households}
+  - table: hh_gnd
+    indicator: {value: census24.households}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+    period: {value: '2024', freq: A}
+    value: {column: Number of Households}
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_water_source}
+    melt: {columns: '^Main Source/way of drinking water '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      water_source:
+        melt: true
+        regex: ^Main Source/way of drinking water (?:Ground Water|Pipe Borne water|Other) (.+)$
+        map: {Protected well: protected_well, Semi protected well: semi_protected_well, Unprotected well: well_unprotected, Tube well: tube_well,
+          Spring/ Fountain: spring, Pipe borne water - National water supply & drainage board: piped_nwsdb, Pipe borne water - Local Authority: piped_local_authority,
+          Pipe borne water - Community base organiziation: piped_community, Pipe borne water - Private water supply project: piped_private, Tank/ River/Streams: surface_water,
+          Rain water: rain_water, Bottled water: bottled_water, Filter water (R.O. Plant): filtered_ro, Bowser: bowser, Other (specify): other}
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_water_source}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      water_source: {value: total}
+    value: {column: Number of Households}
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_cooking_fuel}
+    melt: {columns: '^Main Source of Energy/Fuel Used for Cooking '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      fuel:
+        melt: true
+        regex: ^Main Source of Energy/Fuel Used for Cooking (?:Other )?(.+)$
+        map: {Fire wood: firewood, Kerosene: kerosene, Gas: lp_gas, Electricity: electricity, Saw dust/Paddy husk: sawdust_paddy_husk, Bio gas: biogas,
+          Other (Specify bellow ): other, Other (Specify bellow): other, Not relavent: none}
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_cooking_fuel}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      fuel: {value: total}
+    value: {column: Number of Households}
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_lighting}
+    melt: {columns: '^Main source of Lighting '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      lighting:
+        melt: true
+        regex: ^Main source of Lighting (?:Other )?(.+)$
+        map: {Electricity - from National grid/rural hydro power project: electricity, Kerosene lamp: kerosene, Solar power (grid connected): solar_grid,
+          Solar power (stand alone): solar_standalone, Bio gas: biogas, Generator: generator, Other (Specify bellow ): other, Other (Specify bellow): other}
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_lighting}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      lighting: {value: total}
+    value: {column: Number of Households}
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_toilet}
+    melt: {columns: '^Toilet facilities '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      toilet_type:
+        melt: true
+        regex: ^Toilet facilities (?:Within the unit|Outside the unit|Other) (.+)$
+        map: {Within the housing unit - Exclusively for the household: within_unit_exclusive, Within the housing unit - Sharing with another household: within_unit_shared,
+          Within Premises - Exclusively for the household: within_premises_exclusive, Within Premises - Sharing with another household: within_premises_shared,
+          No toilet but sharing with another housing unit/units: shared_other_unit, Common/ Public toilet: public_toilet, 'Not using a toilet (use jungle, beach and open ground)': none}
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_ds
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_toilet}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      toilet_type: {value: total}
+    value: {column: Number of Households}
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_water_source}
+    melt: {columns: '^Main Source/way of drinking water '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      water_source:
+        melt: true
+        regex: ^Main Source/way of drinking water (?:Ground Water|Pipe Borne water|Other) (.+)$
+        map: {Protected well: protected_well, Semi protected well: semi_protected_well, Unprotected well: well_unprotected, Tube well: tube_well,
+          Spring/ Fountain: spring, Pipe borne water - National water supply & drainage board: piped_nwsdb, Pipe borne water - Local Authority: piped_local_authority,
+          Pipe borne water - Community base organiziation: piped_community, Pipe borne water - Private water supply project: piped_private, Tank/ River/Streams: surface_water,
+          Rain water: rain_water, Bottled water: bottled_water, Filter water (R.O. Plant): filtered_ro, Bowser: bowser, Other (specify): other}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_water_source}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      water_source: {value: total}
+    value: {column: Number of Households}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_cooking_fuel}
+    melt: {columns: '^Main Source of Energy/Fuel Used for Cooking '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      fuel:
+        melt: true
+        regex: ^Main Source of Energy/Fuel Used for Cooking (?:Other )?(.+)$
+        map: {Fire wood: firewood, Kerosene: kerosene, Gas: lp_gas, Electricity: electricity, Saw dust/Paddy husk: sawdust_paddy_husk, Bio gas: biogas,
+          Other (Specify bellow ): other, Other (Specify bellow): other, Not relavent: none}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_cooking_fuel}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      fuel: {value: total}
+    value: {column: Number of Households}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_lighting}
+    melt: {columns: '^Main source of Lighting '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      lighting:
+        melt: true
+        regex: ^Main source of Lighting (?:Other )?(.+)$
+        map: {Electricity - from National grid/rural hydro power project: electricity, Kerosene lamp: kerosene, Solar power (grid connected): solar_grid,
+          Solar power (stand alone): solar_standalone, Bio gas: biogas, Generator: generator, Other (Specify bellow ): other, Other (Specify bellow): other}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_lighting}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      lighting: {value: total}
+    value: {column: Number of Households}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_toilet}
+    melt: {columns: '^Toilet facilities '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      toilet_type:
+        melt: true
+        regex: ^Toilet facilities (?:Within the unit|Outside the unit|Other) (.+)$
+        map: {Within the housing unit - Exclusively for the household: within_unit_exclusive, Within the housing unit - Sharing with another household: within_unit_shared,
+          Within Premises - Exclusively for the household: within_premises_exclusive, Within Premises - Sharing with another household: within_premises_shared,
+          No toilet but sharing with another housing unit/units: shared_other_unit, Common/ Public toilet: public_toilet, 'Not using a toilet (use jungle, beach and open ground)': none}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+    value:
+      number:
+        missing: ['', '-']
+  - table: hh_gnd
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_toilet}
+    geo:
+      template: '{District Code}-0{DS_Division Code}-00{GN_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)-0*(\d\d\d)$
+      replace: LK${1}${2}${3}
+      match: code
+      level: 4
+      unmapped: keep
+      map: {LK2206265: '', LK2215150: '', LK2218120: '', LK2221090: '', LK4415095: '', LK8215105: '', LK8218090: '', LK9103210: '', LK9103215: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      toilet_type: {value: total}
+    value: {column: Number of Households}
+    filter:
+    - column: DS_Division Name
+      not_in: [Kothmale West, Mathurata, Walapane, Nildandahinna, Thalawakelle, Norwood, Baddegama, Wanduramba, Madampagama, Hikkaduwa, Rathgama,
+        Eravur Pattu, Eravur Town, Kalmunai, Kuruvita, Balangoda, Kaltota, Galewela]
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_units}
+    melt: {columns: '^Type of Housing unit Structure '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      structure_type:
+        melt: true
+        regex: ^Type of Housing unit Structure (.+)$
+        map: {Single house - single storeyed: single_house_one_floor, Single house - Single storeyed: single_house_one_floor, Single house - two storeyed: single_house_two_floors,
+          Single house - Two storeyed: single_house_two_floors, Single house - more than two storeyed: single_house_three_plus_floors, Attached house - 1st Floor: attached_1_floor,
+          Attached House - 1st Floor: attached_1_floor, Attached house - 2nd Floor: attached_2_floors, Attached House - 2nd Floor: attached_2_floors,
+          Attached house - From 3 to 4 Floors: attached_3_4_floors, Attached House - 3rd or 4th Floors: attached_3_4_floors, Attached house - From 5 to 10 Floors: attached_5_10_floors,
+          Attached House - 5th to 10th Floors: attached_5_10_floors, Attached house - From 11to 19 Floors: attached_11_19_floors, Attached House - 11th to 19th Floors: attached_11_19_floors,
+          Attached house - From 20 Floors or more: attached_20_plus_floors, Attached House - From 20th Floors or more: attached_20_plus_floors,
+          Other: other}
+    value:
+      number:
+        missing: ['', '-']
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_units}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      structure_type: {value: total}
+    value: {column: Occupied Housing Units}
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    melt: {columns: '^Principal material of construction of the Walls '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: wall}
+      material:
+        melt: true
+        regex: ^Principal material of construction of the \w+ (.+)$
+        map: {Bricks: brick, Brick: brick, Cement block: cement_block, Granite/ Cube stones: granite, Granite/Cube stones: granite, Cabook: cabook,
+          Pressed soil bricks: pressed_soil_brick, Warichchi / Mud: mud, Mud/Warichchi: mud, Cadjan/ Palmyrah: cadjan_palmyrah, Kadjan/ Palmyrah: cadjan_palmyrah,
+          Cadjan/ Palmyrah/ Straw: cadjan_palmyrah, cadjan/ Palmyrah/Straw: cadjan_palmyrah, Planks/ Metal Sheets/ Asbestos: plank_metal_sheet,
+          Plank/ Metal Sheet/Asbestos: plank_metal_sheet, Zink Aluminium Sheets: zinc_aluminium_sheet, Zink Aluminium Sheet: zinc_aluminium_sheet,
+          Other (specify): other, Other: other, Not relavent: not_applicable, Not Relavent: not_applicable, Cement: cement, Terrazzo/Tile/Granite/Wood (Finished): terrazzo_tile,
+          Terrazzo/Tile/Granite/Wood(finished)/Titanium: terrazzo_tile, Concrete: concrete, Mud: mud, Wood: wood, Sand: sand, Tile: tile, Asbestos: asbestos,
+          Metal Sheet: metal_sheet}
+    value:
+      number:
+        missing: ['', '-']
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    melt: {columns: '^Principal material of construction of the Floor '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: floor}
+      material:
+        melt: true
+        regex: ^Principal material of construction of the \w+ (.+)$
+        map: {Bricks: brick, Brick: brick, Cement block: cement_block, Granite/ Cube stones: granite, Granite/Cube stones: granite, Cabook: cabook,
+          Pressed soil bricks: pressed_soil_brick, Warichchi / Mud: mud, Mud/Warichchi: mud, Cadjan/ Palmyrah: cadjan_palmyrah, Kadjan/ Palmyrah: cadjan_palmyrah,
+          Cadjan/ Palmyrah/ Straw: cadjan_palmyrah, cadjan/ Palmyrah/Straw: cadjan_palmyrah, Planks/ Metal Sheets/ Asbestos: plank_metal_sheet,
+          Plank/ Metal Sheet/Asbestos: plank_metal_sheet, Zink Aluminium Sheets: zinc_aluminium_sheet, Zink Aluminium Sheet: zinc_aluminium_sheet,
+          Other (specify): other, Other: other, Not relavent: not_applicable, Not Relavent: not_applicable, Cement: cement, Terrazzo/Tile/Granite/Wood (Finished): terrazzo_tile,
+          Terrazzo/Tile/Granite/Wood(finished)/Titanium: terrazzo_tile, Concrete: concrete, Mud: mud, Wood: wood, Sand: sand, Tile: tile, Asbestos: asbestos,
+          Metal Sheet: metal_sheet}
+    value:
+      number:
+        missing: ['', '-']
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    melt: {columns: '^Principal material of construction of the Roof '}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: roof}
+      material:
+        melt: true
+        regex: ^Principal material of construction of the \w+ (.+)$
+        map: {Bricks: brick, Brick: brick, Cement block: cement_block, Granite/ Cube stones: granite, Granite/Cube stones: granite, Cabook: cabook,
+          Pressed soil bricks: pressed_soil_brick, Warichchi / Mud: mud, Mud/Warichchi: mud, Cadjan/ Palmyrah: cadjan_palmyrah, Kadjan/ Palmyrah: cadjan_palmyrah,
+          Cadjan/ Palmyrah/ Straw: cadjan_palmyrah, cadjan/ Palmyrah/Straw: cadjan_palmyrah, Planks/ Metal Sheets/ Asbestos: plank_metal_sheet,
+          Plank/ Metal Sheet/Asbestos: plank_metal_sheet, Zink Aluminium Sheets: zinc_aluminium_sheet, Zink Aluminium Sheet: zinc_aluminium_sheet,
+          Other (specify): other, Other: other, Not relavent: not_applicable, Not Relavent: not_applicable, Cement: cement, Terrazzo/Tile/Granite/Wood (Finished): terrazzo_tile,
+          Terrazzo/Tile/Granite/Wood(finished)/Titanium: terrazzo_tile, Concrete: concrete, Mud: mud, Wood: wood, Sand: sand, Tile: tile, Asbestos: asbestos,
+          Metal Sheet: metal_sheet}
+    value:
+      number:
+        missing: ['', '-']
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: wall}
+      material: {value: total}
+    value: {column: Occupied Housing Units}
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: floor}
+      material: {value: total}
+    value: {column: Occupied Housing Units}
+  - table: ohu_ds
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    geo:
+      template: '{District Code}-0{DS_Division Code}'
+      regex: ^(\d\d)-0*(\d\d)$
+      replace: LK${1}${2}
+      match: code
+      level: 3
+      unmapped: keep
+      map: {LK2302: '', LK2307: '', LK2309: '', LK2310: '', LK2313: '', LK2314: '', LK3128: '', LK3135: '', LK3137: '', LK5112: '', LK5115: '',
+        LK5224: '', LK9119: ''}
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: roof}
+      material: {value: total}
+    value: {column: Occupied Housing Units}
+  - table: a1
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_units}
+    melt: {columns: 'Structure of housing unit .*[A-Za-z]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      structure_type:
+        melt: true
+        regex: ([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        map: {Single house - single storeyed: single_house_one_floor, Single house - Single storeyed: single_house_one_floor, Single house - two storeyed: single_house_two_floors,
+          Single house - Two storeyed: single_house_two_floors, Single house - more than two storeyed: single_house_three_plus_floors, Attached house - 1st Floor: attached_1_floor,
+          Attached House - 1st Floor: attached_1_floor, Attached house - 2nd Floor: attached_2_floors, Attached House - 2nd Floor: attached_2_floors,
+          Attached house - From 3 to 4 Floors: attached_3_4_floors, Attached House - 3rd or 4th Floors: attached_3_4_floors, Attached house - From 5 to 10 Floors: attached_5_10_floors,
+          Attached House - 5th to 10th Floors: attached_5_10_floors, Attached house - From 11to 19 Floors: attached_11_19_floors, Attached House - 11th to 19th Floors: attached_11_19_floors,
+          Attached house - From 20 Floors or more: attached_20_plus_floors, Attached House - From 20th Floors or more: attached_20_plus_floors,
+          Other: other}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a1
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_units}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      structure_type: {value: total}
+    value: {index: 1}
+  - table: a2
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    melt: {columns: 'Main material of construction of the roof .*[A-Za-z)]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: wall}
+      material:
+        melt: true
+        regex: ([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        map: {Bricks: brick, Brick: brick, Cement block: cement_block, Granite/ Cube stones: granite, Granite/Cube stones: granite, Cabook: cabook,
+          Pressed soil bricks: pressed_soil_brick, Warichchi / Mud: mud, Mud/Warichchi: mud, Cadjan/ Palmyrah: cadjan_palmyrah, Kadjan/ Palmyrah: cadjan_palmyrah,
+          Cadjan/ Palmyrah/ Straw: cadjan_palmyrah, cadjan/ Palmyrah/Straw: cadjan_palmyrah, Planks/ Metal Sheets/ Asbestos: plank_metal_sheet,
+          Plank/ Metal Sheet/Asbestos: plank_metal_sheet, Zink Aluminium Sheets: zinc_aluminium_sheet, Zink Aluminium Sheet: zinc_aluminium_sheet,
+          Other (specify): other, Other: other, Not relavent: not_applicable, Not Relavent: not_applicable, Cement: cement, Terrazzo/Tile/Granite/Wood (Finished): terrazzo_tile,
+          Terrazzo/Tile/Granite/Wood(finished)/Titanium: terrazzo_tile, Concrete: concrete, Mud: mud, Wood: wood, Sand: sand, Tile: tile, Asbestos: asbestos,
+          Metal Sheet: metal_sheet}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a2
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: wall}
+      material: {value: total}
+    value: {index: 1}
+  - table: a3
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    melt: {columns: 'Main material of construction of the roof .*[A-Za-z)]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: roof}
+      material:
+        melt: true
+        regex: ([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        map: {Bricks: brick, Brick: brick, Cement block: cement_block, Granite/ Cube stones: granite, Granite/Cube stones: granite, Cabook: cabook,
+          Pressed soil bricks: pressed_soil_brick, Warichchi / Mud: mud, Mud/Warichchi: mud, Cadjan/ Palmyrah: cadjan_palmyrah, Kadjan/ Palmyrah: cadjan_palmyrah,
+          Cadjan/ Palmyrah/ Straw: cadjan_palmyrah, cadjan/ Palmyrah/Straw: cadjan_palmyrah, Planks/ Metal Sheets/ Asbestos: plank_metal_sheet,
+          Plank/ Metal Sheet/Asbestos: plank_metal_sheet, Zink Aluminium Sheets: zinc_aluminium_sheet, Zink Aluminium Sheet: zinc_aluminium_sheet,
+          Other (specify): other, Other: other, Not relavent: not_applicable, Not Relavent: not_applicable, Cement: cement, Terrazzo/Tile/Granite/Wood (Finished): terrazzo_tile,
+          Terrazzo/Tile/Granite/Wood(finished)/Titanium: terrazzo_tile, Concrete: concrete, Mud: mud, Wood: wood, Sand: sand, Tile: tile, Asbestos: asbestos,
+          Metal Sheet: metal_sheet}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a3
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: roof}
+      material: {value: total}
+    value: {index: 1}
+  - table: a4
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    melt: {columns: 'Main material of construction of the floor .*[A-Za-z)]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: floor}
+      material:
+        melt: true
+        regex: ([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        map: {Bricks: brick, Brick: brick, Cement block: cement_block, Granite/ Cube stones: granite, Granite/Cube stones: granite, Cabook: cabook,
+          Pressed soil bricks: pressed_soil_brick, Warichchi / Mud: mud, Mud/Warichchi: mud, Cadjan/ Palmyrah: cadjan_palmyrah, Kadjan/ Palmyrah: cadjan_palmyrah,
+          Cadjan/ Palmyrah/ Straw: cadjan_palmyrah, cadjan/ Palmyrah/Straw: cadjan_palmyrah, Planks/ Metal Sheets/ Asbestos: plank_metal_sheet,
+          Plank/ Metal Sheet/Asbestos: plank_metal_sheet, Zink Aluminium Sheets: zinc_aluminium_sheet, Zink Aluminium Sheet: zinc_aluminium_sheet,
+          Other (specify): other, Other: other, Not relavent: not_applicable, Not Relavent: not_applicable, Cement: cement, Terrazzo/Tile/Granite/Wood (Finished): terrazzo_tile,
+          Terrazzo/Tile/Granite/Wood(finished)/Titanium: terrazzo_tile, Concrete: concrete, Mud: mud, Wood: wood, Sand: sand, Tile: tile, Asbestos: asbestos,
+          Metal Sheet: metal_sheet}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a4
+    dataset: dcs-census-2024-housing
+    indicator: {value: census24.housing_material}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      element: {value: floor}
+      material: {value: total}
+    value: {index: 1}
+  - table: a5
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_water_source}
+    melt: {columns: 'Main source of drinking water .*[A-Za-z)]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      water_source:
+        melt: true
+        regex: ([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        map: {Protected well: protected_well, Semi Protected well: semi_protected_well, Unprotected well: well_unprotected, Tube Well: tube_well,
+          Spring/Fountain: spring, National Water Supply &drainage board: piped_nwsdb, Local Authority: piped_local_authority, Community base Organiziation: piped_community,
+          Private Water Supply Project: piped_private, Tank/River/Streams: surface_water, Rain Water: rain_water, Bottled water: bottled_water,
+          R.O. Plant) Filter water(R.O.plant): filtered_ro, Bowser: bowser, Other: other}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a5
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_water_source}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      water_source: {value: total}
+    value: {index: 1}
+  - table: a6
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_cooking_fuel}
+    melt: {columns: 'Used for Cooking .*[A-Za-z)]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      fuel:
+        melt: true
+        regex: ([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        map: {Fire wood: firewood, Kerosene: kerosene, Gas: lp_gas, Electricity: electricity, Saw dust/Paddy husk: sawdust_paddy_husk, Bio gas: biogas,
+          Other (Specify bellow ): other, Other (Specify bellow): other, Not relavent: none, Other: other}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a6
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_cooking_fuel}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      fuel: {value: total}
+    value: {index: 1}
+  - table: a7
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_lighting}
+    melt: {columns: 'Main type of lighting .*[A-Za-z)]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      lighting:
+        melt: true
+        regex: ([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        map: {Electricity - from National Grid / from rural electrification project: electricity, Kerosene lamp: kerosene, Solar power (grid connected): solar_grid,
+          Solar power (stand alone): solar_standalone, Bio gas: biogas, Generator: generator, Other: other}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a7
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_lighting}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      lighting: {value: total}
+    value: {index: 1}
+  - table: a8
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_toilet}
+    melt: {columns: 'Toilet facilities .*[a-z)]$'}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      toilet_type:
+        melt: true
+        regex: (Within the unit|Outside the unit|Other) .*?([A-Za-z][A-Za-z0-9 /&().,'-]*)$
+        replace: '${1}: ${2}'
+        map: {'Within the unit: Exclusively for the household': within_unit_exclusive, 'Within the unit: Sharing with another household': within_unit_shared,
+          'Outside the unit: Exclusively for the household': within_premises_exclusive, 'Outside the unit: Sharing with another household': within_premises_shared,
+          'Other: No toilet but sharing with another housing unit/ units': shared_other_unit, 'Other: Common/ public toilet': public_toilet, 'Other: Not using a toilet': none}
+    value:
+      number:
+        missing: ['', '-']
+  - table: a8
+    dataset: dcs-census-2024-basic-services
+    indicator: {value: census24.hh_toilet}
+    geo:
+      index: 0
+      regex: ([A-Za-z][A-Za-z .-]*)$
+      match: name
+      level: 2
+      root_names: [Sri Lanka]
+    period: {value: '2024', freq: A}
+    dims:
+      toilet_type: {value: total}
+    value: {index: 1}
+expect:
+- {dataset: dcs-census-2024-households, check: row_count, min: 13500, note: '327 DS + ~13,300 GN divisions'}
+- {dataset: dcs-census-2024-households, check: range, indicator: census24.households, min: 0, max: 200000}
+- {dataset: dcs-census-2024-households, check: completeness, indicator: census24.households, level: 3, min_units: 325}
+- {dataset: dcs-census-2024-households, check: completeness, indicator: census24.households, level: 4, min_units: 13250}
+- {dataset: dcs-census-2024-households, check: sum_to_parent, indicator: census24.households, tol_pct: 1, note: GN sums to DS; Maritimepattu (LK4415)
+    loses one GN code absent from COD-AB (0.56 %)}
+- {dataset: dcs-census-2024-basic-services, check: sum_dims, indicator: census24.hh_water_source, dim: water_source, tol: 0}
+- {dataset: dcs-census-2024-basic-services, check: sum_dims, indicator: census24.hh_cooking_fuel, dim: fuel, tol: 0}
+- {dataset: dcs-census-2024-basic-services, check: sum_dims, indicator: census24.hh_lighting, dim: lighting, tol: 0}
+- {dataset: dcs-census-2024-basic-services, check: sum_dims, indicator: census24.hh_toilet, dim: toilet_type, tol: 0}
+- {dataset: dcs-census-2024-basic-services, check: sum_to_parent, indicator: census24.hh_water_source, tol_pct: 1, note: 'fails (warn) for districts
+    with dropped new DS divisions: LK23, LK31, LK51, LK52, LK91'}
+- {dataset: dcs-census-2024-basic-services, check: completeness, indicator: census24.hh_toilet, level: 2, min_units: 25}
+- {dataset: dcs-census-2024-basic-services, check: completeness, indicator: census24.hh_toilet, level: 3, min_units: 325}
+- {dataset: dcs-census-2024-basic-services, check: range, min: 0, max: 7000000}
+- {dataset: dcs-census-2024-housing, check: sum_dims, indicator: census24.housing_units, dim: structure_type, tol: 0}
+- {dataset: dcs-census-2024-housing, check: sum_dims, indicator: census24.housing_material, dim: material, tol: 0}
+- {dataset: dcs-census-2024-housing, check: sum_to_parent, indicator: census24.housing_units, tol_pct: 1, note: 'fails (warn) for districts with
+    dropped new DS divisions: LK23, LK31, LK51, LK52, LK91'}
+- {dataset: dcs-census-2024-housing, check: completeness, indicator: census24.housing_units, level: 2, min_units: 25}
+- {dataset: dcs-census-2024-housing, check: completeness, indicator: census24.housing_material, level: 3, min_units: 325}

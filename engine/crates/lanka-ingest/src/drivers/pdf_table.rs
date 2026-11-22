@@ -1011,6 +1011,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn outputs_may_name_their_dataset() {
+        let o: OutSpec = serde_json::from_value(serde_json::json!({
+            "table": "t", "dataset": "other-ds", "indicator": "x.y",
+            "geo": { "fixed": "root" }, "period": { "fixed": "2024" }, "columns": { "a": {} }
+        }))
+        .expect("out spec");
+        assert_eq!(o.dataset.as_deref(), Some("other-ds"));
+        let o: OutSpec = serde_json::from_value(serde_json::json!({
+            "table": "t", "indicator": "x.y",
+            "geo": { "fixed": "root" }, "period": { "fixed": "2024" }, "columns": { "a": {} }
+        }))
+        .expect("out spec");
+        assert_eq!(o.dataset, None);
+    }
+
+    #[test]
     fn periods_from_printed_headers() {
         assert_eq!(
             parse_period(PeriodParse::Year, "2020(1) Total;").expect("y"),

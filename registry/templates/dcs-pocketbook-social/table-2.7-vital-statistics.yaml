@@ -1,0 +1,21 @@
+# Statistical Pocket Book, table 2.7: vital statistics, eight years. Rates per 1,000
+# population (birth, death), per 100,000 live births (maternal mortality) and per 1,000
+# live births (under-5, infant). "*" provisional, "#" revised; ".." not available.
+id: dcs-pocketbook-social/table-2.7-vital-statistics
+title: Vital statistics
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "2.7 Vital Statistics", then_text: "Infant Mortality" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: population_k, header: "(‟000)" }
+      - { key: birth_rate, header: "Birth" }
+      - { key: death_rate, header: "Death Rate" }
+      - { key: mmr, header: "Maternal Mortality" }
+      - { key: u5mr, header: "Under 5" }
+      - { key: imr, header: "Infant Mortality" }
+    rows: { stop_at: ["Provisional"] }
+    number: { missing: [".."] }
+    checks:
+      - { row_count: { min: 8, max: 8 } }

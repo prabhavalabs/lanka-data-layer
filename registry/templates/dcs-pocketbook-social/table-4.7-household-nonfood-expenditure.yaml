@@ -1,0 +1,19 @@
+# Statistical Pocket Book, table 4.7: average monthly household expenditure (Rs.) on major
+# non-food expenditure groups, HIES 2009/10-2019 (2009/10 excludes Mannar, Kilinochchi
+# and Mullaitivu).
+id: dcs-pocketbook-social/table-4.7-household-nonfood-expenditure
+title: Average monthly household expenditure on major non-food groups
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "4.7 Average Monthly Household Expenditure", then_text: "Fuel and Light" }
+    label: { key: group, header: "Variable" }
+    columns:
+      - { key: e2009, header: "2009/10" }
+      - { key: e2012, header: "2012/13" }
+      - { key: e2016, header: "2016" }
+      - { key: e2019, header: "2019" }
+    rows: { stop_at: ["Note:"] }
+    checks:
+      - { row_count: { min: 11, max: 11 } }
+      - { rows_present: ["Housing", "Liquor and Tobacco"] }

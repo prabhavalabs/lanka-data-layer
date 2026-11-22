@@ -1,0 +1,18 @@
+# Census of Population and Housing 2024, final report, table 7.10: language literacy rate (%)
+# of the population aged 10 and over, by language and district.
+id: dcs-census-2024-report/table-7.10-language-literacy-district
+title: Language literacy rate by language and district, 2024
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 7.10 : Language Literacy Rate by Language and District", then_text: "Kegalle" }
+    label: { key: district, header: "District", slack: 45 }
+    columns:
+      - { key: pop10, header: "Population" }
+      - { key: any, header: "At least one" }
+      - { key: sinhala, header: "Sinhala" }
+      - { key: tamil, header: "Tamil" }
+      - { key: english, header: "English" }
+    checks:
+      - { row_count: { min: 26, max: 26 } }
+      - { rows_present: ["Sri Lanka", "Colombo", "Kegalle"] }

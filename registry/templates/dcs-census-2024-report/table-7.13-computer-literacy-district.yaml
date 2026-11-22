@@ -1,0 +1,17 @@
+# Census of Population and Housing 2024, final report, table 7.13: computer and digital
+# literacy rate (%) of the population aged 5 and over, by district.
+id: dcs-census-2024-report/table-7.13-computer-literacy-district
+title: Computer and digital literacy rate by district, 2024
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 7.13 : Computer and Digital Literacy Rate by District", then_text: "Kegalle" }
+    label: { key: district, header: "District" }
+    columns:
+      - { key: pop5, header: "Population Aged 5" }
+      - { key: computer, header: "Computer Literacy" }
+      - { key: digital, header: "Digital Literacy" }
+    rows: { stop_at: ["As given in Table"] }
+    checks:
+      - { row_count: { min: 26, max: 26 } }
+      - { rows_present: ["Sri Lanka", "Colombo", "Kegalle"] }

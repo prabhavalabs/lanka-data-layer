@@ -1,0 +1,13 @@
+# Type of local authority
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka - local government finance (Statistical Abstract chapter 15).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-local-government-finance
+id: council_type
+title: Type of local authority
+codes:
+  - { code: total, label: All local authorities, total: true, sdmx: _T }
+  - { code: municipal_council, label: Municipal councils, parent: total }
+  - { code: urban_council, label: Urban councils, parent: total }
+  - { code: pradeshiya_sabha, label: Pradeshiya sabhas, parent: total }

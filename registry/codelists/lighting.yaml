@@ -16,3 +16,7 @@ codes:
   - { code: kerosene, label: Kerosene, parent: total }
   - { code: biogas, label: Biogas, parent: total }
   - { code: other, label: Other, parent: total }
+  # Census 2024 workbook categories (HH_DS_excel, HousingA/A7).
+  - { code: solar_grid, label: Solar power - grid connected, parent: total }
+  - { code: solar_standalone, label: Solar power - stand alone, parent: total }
+  - { code: generator, label: Generator, parent: total }

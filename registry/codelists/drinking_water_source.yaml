@@ -23,3 +23,14 @@ codes:
   - { code: bowser, label: Bowser, parent: total }
   - { code: surface_water, label: River / tank / stream / spring, parent: total }
   - { code: other, label: Other, parent: total }
+  # Census 2024 workbook categories (HH_DS_excel, HousingA/A5).
+  - { code: protected_well, label: Protected well, parent: total }
+  - { code: semi_protected_well, label: Semi-protected well, parent: total }
+  - { code: spring, label: Spring / fountain, parent: total }
+  - { code: piped_nwsdb, label: Pipe-borne - National Water Supply and Drainage Board, parent: total }
+  - { code: piped_local_authority, label: Pipe-borne - local authority, parent: total }
+  - { code: piped_community, label: Pipe-borne - community-based organisation, parent: total }
+  - { code: piped_private, label: Pipe-borne - private water supply project, parent: total }
+  - { code: rain_water, label: Rain water, parent: total }
+  - { code: filtered_ro, label: Filtered water (R.O. plant), parent: total }
+  - { code: well_unprotected, label: Unprotected well (census 2024 layout), parent: total }

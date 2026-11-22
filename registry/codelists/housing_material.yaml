@@ -24,3 +24,9 @@ codes:
   - { code: terrazzo_tile, label: Terrazzo / tile / granite (floor), parent: total }
   - { code: wood, label: Wood, parent: total }
   - { code: other, label: Other, parent: total }
+  # Census 2024 workbook categories (OHU_DS_excel, HousingA/A2-A4).
+  - { code: granite, label: Granite / cube stones (wall), parent: total }
+  - { code: pressed_soil_brick, label: Pressed soil bricks (wall), parent: total }
+  - { code: zinc_aluminium_sheet, label: Zinc-aluminium sheet, parent: total }
+  - { code: sand, label: Sand (floor), parent: total }
+  - { code: not_applicable, label: Not applicable (non-conventional unit), parent: total }
