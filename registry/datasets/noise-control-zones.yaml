@@ -33,10 +33,14 @@ indicators:
 time_coverage:
   from: 1996
   to: 2026
-method: Encode Gazette 924/12 thresholds; buffer facility points (moh-health-institutions, giga-schools, courthouses, OSM
-  worship) by 100 m.
+method: 'Gazette 924/12 Schedule I read from the CEA PDF (pdf_table, template cea/noise-schedule-1): permissible LAeq,T by
+  area type, day and night, as a snapshot dated 1996-05-21. Silent zones are to be derived by buffering facility points
+  (moh-health-institutions, giga-schools, courthouses, OSM worship) by 100 m.'
 limits:
 - Rule-derived, not gazetted polygons; local authority enforcement varies.
+- Silent-zone polygons (envi.silent_zone_area) are not generated yet; their facility inputs (MoH institutions, courthouses)
+  are not ingested.
+- The medium-noise day limit carries a footnote (not above 60 dB(A) inside existing houses), kept in the review notes.
 enrichment:
   derived_from:
   - moh-health-institutions
