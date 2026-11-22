@@ -964,6 +964,58 @@ async fn run_cycle(url: String) {
 
     // the failed recipe keeps failing (deterministically) without blocking anything
     assert_eq!(outcome(&r6, "it-official-sum"), "failed");
+
+    // ── a new boundary version reruns recipes that read the hierarchy
+    //    without naming the boundary dataset (the roll-up) ──
+    let mut renamed = units.clone();
+    renamed[1].name_en = "Region one".into();
+    let run = RunTracker::start(&pool, "it-src", "test")
+        .await
+        .expect("run");
+    geo_load::publish_admin_units(
+        &pool,
+        &ctx.profile,
+        run.run_id,
+        "it-geo",
+        &set,
+        &renamed,
+        &[],
+        &[],
+    )
+    .await
+    .expect("units v2");
+    run.finish(lanka_ingest::run::RunStatus::Succeeded, "units v2")
+        .await
+        .expect("finish");
+    let (_, r7) = ctx.train().await;
+    assert_ne!(outcome(&r7, "derived-it-rollup"), "reused", "{r7:?}");
+    assert_ne!(outcome(&r7, "derived-it-admin"), "reused", "{r7:?}");
+
+    // ── a unit whose parent contradicts its p-code is refused ──
+    let mut moved = units.clone();
+    moved[4].parent_pcode = Some("ZZ2".into()); // ZZ12 under ZZ2
+    let run = RunTracker::start(&pool, "it-src", "test")
+        .await
+        .expect("run");
+    let err = geo_load::publish_admin_units(
+        &pool,
+        &ctx.profile,
+        run.run_id,
+        "it-geo",
+        &set,
+        &moved,
+        &[],
+        &[],
+    )
+    .await
+    .expect_err("parent must follow the p-code");
+    assert!(
+        err.to_string().contains("ZZ12: parent ZZ2, p-code says ZZ1"),
+        "{err}"
+    );
+    run.finish(lanka_ingest::run::RunStatus::Failed, "refused")
+        .await
+        .expect("finish");
 }
 
 #[test]

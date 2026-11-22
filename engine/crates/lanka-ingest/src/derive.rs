@@ -202,6 +202,9 @@ impl RecomputeReport {
     }
 }
 
+/// Fingerprint port of the implicit boundary input (the admin hierarchy).
+const HIERARCHY_PORT: &str = "~hierarchy";
+
 /// A dataset version a recipe may read.
 #[derive(Debug, Clone)]
 struct Candidate {
@@ -395,7 +398,7 @@ async fn run_one(
             .with_context(|| format!("output dataset {} is not synced", spec.output))?;
     let methods = runner::resolve_methods(spec, env.methods)?;
     let tools: BTreeMap<String, String> = BTreeMap::new();
-    let fp_inputs: Vec<FpInput> = pins
+    let mut fp_inputs: Vec<FpInput> = pins
         .iter()
         .map(|p| FpInput {
             port: p.port.clone(),
@@ -403,6 +406,19 @@ async fn run_one(
             dsv: p.dsv.clone(),
         })
         .collect();
+    // Every recipe can read the admin hierarchy (rollups sum children into
+    // parents, unit metrics count them): a new boundary version is an input
+    // change even when the recipe does not name the boundary dataset.
+    let boundaries = env.profile.boundary_dataset();
+    if !fp_inputs.iter().any(|i| i.dataset == boundaries)
+        && let Some(c) = cands.get(boundaries)
+    {
+        fp_inputs.push(FpInput {
+            port: HIERARCHY_PORT.to_owned(),
+            dataset: boundaries.to_owned(),
+            dsv: c.dsv.clone(),
+        });
+    }
     let fp = runner::fingerprint(spec, &out_sha, &methods, &tools, &fp_inputs);
     res.fingerprint = Some(hex::encode(&fp[..8]));
     // 3. reuse
