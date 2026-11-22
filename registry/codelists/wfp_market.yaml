@@ -1,0 +1,53 @@
+# WFP VAM market
+# Source/authority: WFP VAM food prices for Sri Lanka (HDX wfp-food-prices-for-sri-lanka), market_id and market name.
+# Note: Codes are WFP market ids; names as WFP prints them (spelling variants kept, e.g. Mullativu/Mulaitivu are two ids).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only.
+# Used by: wfp-food-prices
+id: wfp_market
+title: WFP market
+codes:
+  - { code: "360", label: "Ampara" }
+  - { code: "361", label: "Batticaloa" }
+  - { code: "362", label: "Jaffna" }
+  - { code: "363", label: "Kilinochchi" }
+  - { code: "364", label: "Mannar" }
+  - { code: "365", label: "Mulaitivu" }
+  - { code: "366", label: "Trincomalee" }
+  - { code: "367", label: "Vavuniya" }
+  - { code: "368", label: "Colombo City" }
+  - { code: "1565", label: "National Average" }
+  - { code: "1888", label: "Polonnaruwa" }
+  - { code: "1889", label: "Monaragala" }
+  - { code: "1906", label: "Anuradhapura" }
+  - { code: "1907", label: "Badulla" }
+  - { code: "1908", label: "Hambantota" }
+  - { code: "1909", label: "Gampaha" }
+  - { code: "1910", label: "Galle" }
+  - { code: "1911", label: "Kalutara" }
+  - { code: "1912", label: "Kandy" }
+  - { code: "1913", label: "Kegalle" }
+  - { code: "1914", label: "Kurunegala" }
+  - { code: "1915", label: "Matale" }
+  - { code: "1916", label: "Matara" }
+  - { code: "1917", label: "Nuwara Eliya" }
+  - { code: "1918", label: "Puttalam" }
+  - { code: "1919", label: "Rathnapura" }
+  - { code: "2786", label: "Economic Centre-Pettah" }
+  - { code: "2787", label: "Economic Centre-Maradagahamula" }
+  - { code: "2788", label: "Economic Centre-Dambulla" }
+  - { code: "2789", label: "Fish market-Peliyagoda" }
+  - { code: "2790", label: "Fish market-Negombo" }
+  - { code: "5287", label: "Dammbagalla" }
+  - { code: "5346", label: "Thambuttegama" }
+  - { code: "5885", label: "Economic Centre - Peliyagoda" }
+  - { code: "7833", label: "Embilipitiya" }
+  - { code: "7834", label: "Tissamaharama" }
+  - { code: "7835", label: "Galenbindunuwewa" }
+  - { code: "7836", label: "Bandarawela" }
+  - { code: "7837", label: "Dehiattakandiya" }
+  - { code: "7839", label: "Keppetipola (DEC}" }
+  - { code: "7840", label: "Hanguranketha" }
+  - { code: "7841", label: "Meegoda(DEC)" }
+  - { code: "7842", label: "Nikaweratiya" }
+  - { code: "7843", label: "Mullativu" }

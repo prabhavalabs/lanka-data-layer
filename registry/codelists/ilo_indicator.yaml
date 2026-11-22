@@ -1,0 +1,12 @@
+# ILOSTAT measure (indicator) code
+# Source/authority: ILO Department of Statistics, ILOSTAT SDMX API (sdmx.ilo.org), MEASURE dimension.
+# Note: The measures of the dataflows the ilostat connector fetches (registry/connectors/ilostat.yaml); add a code here when adding a dataflow there.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only.
+# Used by: ilostat-lka
+id: ilo_indicator
+title: ILOSTAT measure
+codes:
+  - { code: UNE_DEAP_RT, label: "Unemployment rate (%)" }
+  - { code: EAP_DWAP_RT, label: "Labour force participation rate (%)" }
+  - { code: EMP_DWAP_RT, label: "Employment-to-population ratio (%)" }

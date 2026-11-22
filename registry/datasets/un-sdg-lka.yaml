@@ -12,8 +12,10 @@ indicators:
   class: third_party
   dims:
   - goal
-  - target
-  - series
+  - id: target
+    codelist: sdg_target
+  - id: series
+    codelist: sdg_series
   geo_levels:
   - national
   period_type: year

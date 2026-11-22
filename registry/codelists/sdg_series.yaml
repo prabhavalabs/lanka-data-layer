@@ -1,0 +1,21 @@
+# UN SDG Global Database series code
+# Source/authority: UN Statistics Division, SDG Global Database (unstats.un.org/sdgapi), seriesDescription.
+# Note: The series the un-sdg connector fetches (registry/connectors/un-sdg.yaml); add a code here when adding a key there.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only.
+# Used by: un-sdg-lka
+id: sdg_series
+title: SDG series code
+codes:
+  - { code: SI_POV_DAY1, label: "Proportion of population below international poverty line (%)" }
+  - { code: SN_ITK_DEFC, label: "Prevalence of undernourishment (%)" }
+  - { code: SH_STA_MORT, label: "Maternal mortality ratio" }
+  - { code: SH_DYN_MORT, label: "Under-five mortality rate, by sex (deaths per 1,000 live births)" }
+  - { code: SH_DYN_NMRT, label: "Neonatal mortality rate (deaths per 1,000 live births)" }
+  - { code: SG_GEN_PARL, label: "Proportion of seats held by women in national parliaments (% of total number of seats)" }
+  - { code: SH_H2O_SAFE, label: "Proportion of population using safely managed drinking water services, by urban/rural (%)" }
+  - { code: SL_TLF_UEM, label: "Unemployment rate, by sex and age - 13th ICLS (%)" }
+  - { code: IT_USE_ii99, label: "Proportion of individuals using the Internet (%)" }
+  - { code: EN_ATM_CO2, label: "Carbon dioxide emissions from fuel combustion (millions of tonnes)" }
+  - { code: AG_LND_FRST, label: "Forest area as a proportion of total land area (%)" }
+  - { code: SH_TBS_INCD, label: "Tuberculosis incidence (per 100,000 population)" }

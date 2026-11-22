@@ -1,0 +1,43 @@
+# WHO Global Health Observatory OData API: one request per indicator, filtered to the
+# profile's country. Both-sexes rows only (Dim1 = SEX_BTSX, or no sex breakdown); the
+# age group of age-specific indicators (Dim2) is part of the indicator definition.
+# Low/High are the published uncertainty interval. Licence CC BY-NC-SA 3.0 IGO
+# (restricted): stored and served with the licence; kept out of open bulk bundles (08 §2).
+source: who-gho
+driver: http_json
+version: 1.0.0
+description: WHO GHO health indicators for the profile's country.
+discover:
+  kind: keys
+  url: "https://ghoapi.azureedge.net/api/{key}?$filter=SpatialDim%20eq%20%27{alpha3}%27"
+  keys: [WHOSIS_000001, WHOSIS_000002, NCDMORT3070, UHC_INDEX_REPORTED, HWF_0001, MDG_0000000001, MDG_0000000026, WHS4_100]
+extract:
+  format: json
+  tables:
+    - id: values
+      path: $.value
+      require: $.value
+      fields: { indicator: IndicatorCode, area: SpatialDim, area_type: SpatialDimType, year: TimeDim,
+                year_type: TimeDimType, sex: Dim1, dim2: Dim2, dim3: Dim3, value: NumericValue, low: Low, high: High }
+standardise:
+  dataset: who-gho-lka
+  outputs:
+    - table: values
+      method: api
+      filter:
+        - { column: area_type, eq: COUNTRY }
+        - { column: year_type, eq: YEAR }
+        - { column: sex, in: [SEX_BTSX, ""] }
+        - { column: dim3, empty: true }
+      indicator: { value: who.value }
+      geo: { root: true }
+      period: { column: year, freq: A, parse: year }
+      dims:
+        indicator: indicator
+      value: { column: value }
+      lo: { column: low }
+      hi: { column: high }
+expect:
+  - { check: row_count, min: 100 }
+  - { check: no_future }
+  - { check: range, min: 0, max: 100000 }

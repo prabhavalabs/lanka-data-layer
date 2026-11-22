@@ -1,0 +1,74 @@
+# UN SDG Global Database API: one request per series for the profile's country (M49 144).
+# The headline value of each series is kept: both sexes / all areas / all ages unless the
+# series is defined on one age group (under-5, neonatal, 15+) or one sex (maternal
+# mortality, women in parliament: second output), and the total activity. Nature E/M
+# (estimated, modelled) → basis estimated; the published bounds become lo/hi.
+source: un-sdg
+driver: http_json
+version: 1.0.0
+description: UN SDG indicator series for the profile's country (headline disaggregation).
+discover:
+  kind: keys
+  url: https://unstats.un.org/sdgapi/v1/sdg/Series/Data?seriesCode={key}&areaCode=144&pageSize=2000
+  keys: [SI_POV_DAY1, SN_ITK_DEFC, SH_STA_MORT, SH_DYN_MORT, SH_DYN_NMRT, SG_GEN_PARL, SH_H2O_SAFE,
+         SL_TLF_UEM, IT_USE_ii99, EN_ATM_CO2, AG_LND_FRST, SH_TBS_INCD]
+extract:
+  format: json
+  tables:
+    - id: data
+      path: $.data
+      require: $.totalElements
+      fields:
+        goal: goal[0]
+        target: target[0]
+        series: series
+        area: geoAreaCode
+        year: timePeriodStart
+        value: value
+        lower: lowerBound
+        upper: upperBound
+        nature: attributes.Nature
+        units: attributes.Units
+        sex: dimensions.Sex
+        age: dimensions.Age
+        location: dimensions.Location
+        activity: dimensions.Activity
+        reporting: dimensions.Reporting Type
+standardise:
+  dataset: un-sdg-lka
+  outputs:
+    - table: data
+      method: api
+      filter: &common
+        - { column: area, eq: "144" }
+        - { column: location, in: [ALLAREA, ""] }
+        - { column: activity, in: [TOTAL, ""] }
+        - { column: sex, in: [BOTHSEX, ""] }
+        - { column: age, in: [ALLAGE, "", "<5Y", "<1M", "15+"] }
+        - { column: series, not_in: [SH_STA_MORT, SG_GEN_PARL] }
+      indicator: { value: sdg.value }
+      geo: { root: true }
+      period: &year { column: year, regex: "^(\\d{4})(\\.0)?$", freq: A, parse: year }
+      dims: &dims { goal: goal, target: target, series: series }
+      value: &v { column: value, number: { missing: ["NaN", "N", ""] } }
+      lo: { column: lower }
+      hi: { column: upper }
+      status: &nature { column: nature, codes: { E: [estimated, normal], M: [estimated, normal] } }
+    - table: data
+      method: api
+      filter:
+        - { column: area, eq: "144" }
+        - { column: series, in: [SH_STA_MORT, SG_GEN_PARL] }
+        - { column: sex, eq: FEMALE }
+        - { column: age, in: [ALLAGE, ""] }
+      indicator: { value: sdg.value }
+      geo: { root: true }
+      period: *year
+      dims: *dims
+      value: *v
+      lo: { column: lower }
+      hi: { column: upper }
+      status: *nature
+expect:
+  - { check: row_count, min: 150 }
+  - { check: no_future }

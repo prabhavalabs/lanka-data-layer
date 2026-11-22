@@ -1,0 +1,17 @@
+# WHO Global Health Observatory indicator code
+# Source/authority: WHO GHO OData API (ghoapi.azureedge.net/api/Indicator).
+# Note: The GHO indicators the who-gho connector fetches (registry/connectors/who-gho.yaml); add a code here when adding a key there.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only (GHO IndicatorName).
+# Used by: who-gho-lka
+id: gho_indicator
+title: WHO GHO indicator code
+codes:
+  - { code: WHOSIS_000001, label: Life expectancy at birth (years) }
+  - { code: WHOSIS_000002, label: Healthy life expectancy (HALE) at birth (years) }
+  - { code: NCDMORT3070, label: "Probability (%) of dying between age 30 and exact age 70 from any of cardiovascular disease, cancer, diabetes, or chronic respiratory disease" }
+  - { code: UHC_INDEX_REPORTED, label: UHC service coverage index (SDG 3.8.1) }
+  - { code: HWF_0001, label: Medical doctors (per 10 000 population) }
+  - { code: MDG_0000000001, label: Infant mortality rate (per 1000 live births) }
+  - { code: MDG_0000000026, label: Maternal mortality ratio (per 100 000 live births) }
+  - { code: WHS4_100, label: DTP3 immunization coverage among 1-year-olds (%) }

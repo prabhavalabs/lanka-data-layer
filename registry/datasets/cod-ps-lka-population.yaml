@@ -1,0 +1,33 @@
+id: cod-ps-lka-population
+title: Population by sex and age (COD-PS)
+description: OCHA common operational dataset on population — 2023 projections by sex and 5-year age band for the country, provinces and districts, keyed on COD-AB p-codes.
+source_ids:
+- hdx-cod-ps-lka
+indicators:
+- id: pop.codps
+  label: Population (COD-PS projection)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - sex
+  - age
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2023'
+  to: '2023'
+method: HDX CKAN package cod-ps-lka, CSV resources per admin level (wide sex × age columns melted).
+limits:
+- Projections from the 2012 census base, not 2024 census counts.
+- Age bands are 5-year groups up to 80+; total = all ages.
+enrichment:
+  joins:
+  - 'pcode: ADM0-ADM2 p-codes of COD-AB'
+  aggregations:
+  - denominator for per-capita rates by age and sex below the national level
+publication_class: A

@@ -1,0 +1,37 @@
+# GeoNames postal-code dump for the country (CC BY 4.0): LK.zip → LK.txt, tab-separated,
+# no header. One point feature per (postal code, place name); GeoNames coordinates are
+# often approximate (accuracy column, kept as an attribute). Admin names are kept as
+# printed; units come from the point at staging.
+source: geonames
+driver: csv
+version: 1.0.0
+description: GeoNames postal codes with place names and points.
+discover:
+  kind: static
+  files:
+    - { key: postal, url: "https://download.geonames.org/export/zip/{alpha2}.zip", file: postal.zip }
+extract:
+  format: tsv
+  zip_member: "^[A-Z]{2}\\.txt$"
+  columns: [country, postal_code, place, admin1, admin1_code, admin2, admin2_code, admin3, admin3_code, lat, lon, accuracy]
+standardise:
+  dataset: geonames-postal-codes
+  tables:
+    - { id: postal, artifact: ^postal$ }
+  outputs:
+    - table: postal
+      filter:
+        - { column: country, eq: LK }
+      feature:
+        key: { template: "{postal_code}/{place}" }
+        kind: { value: postal_code }
+        name: place
+        lon: lon
+        lat: lat
+        attrs:
+          postal_code: postal_code
+          admin1: admin1
+          admin2: admin2
+          accuracy: accuracy
+expect:
+  - { check: geometry, valid: true, within_bbox: true }

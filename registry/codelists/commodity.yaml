@@ -2,8 +2,8 @@
 # Source/authority: Hector Kobbekaduwa Agrarian Research and Training Institute (HARTI) daily food commodities bulletin; WFP VAM food prices (Sri Lanka).
 # Note: Varieties (e.g. fish species, beans types) must be completed from the HARTI bulletin; WFP commodity names map here in a crosswalk.
 # Note: Prices are not additive: parents are a grouping only.
-# Status: SEED - members below are the confidently known ones; complete the list from the
-#   source extract when the connector is built (every observed code must be listed).
+# Status: SEED for HARTI; the wfp_* members are complete for the WFP VAM per-kg series (WP-07 connector).
+#   HARTI varieties are completed when that connector is built (every observed code must be listed).
 # Labels: English only; si/ta pending native-speaker review (not machine-translated).
 # Order: codes are listed in display order.
 # Used by: harti-food-prices, wfp-food-prices
@@ -42,3 +42,40 @@ codes:
   - { code: kerosene, label: Kerosene, parent: fuel }
   - { code: diesel, label: Diesel, parent: fuel }
   - { code: petrol, label: Petrol, parent: fuel }
+  - { code: wfp_bananas, label: "WFP: Bananas", parent: fruits }
+  - { code: wfp_beans, label: "WFP: Beans", parent: pulses }
+  - { code: wfp_beans_mung, label: "WFP: Beans (mung)", parent: pulses }
+  - { code: wfp_cabbage, label: "WFP: Cabbage", parent: vegetables }
+  - { code: wfp_carrots, label: "WFP: Carrots", parent: vegetables }
+  - { code: wfp_chili_red_dry_raw, label: "WFP: Chili (red, dry raw)", parent: other_food }
+  - { code: wfp_cowpeas_whole_average, label: "WFP: Cowpeas (whole, average)", parent: pulses }
+  - { code: wfp_eggplants, label: "WFP: Eggplants", parent: vegetables }
+  - { code: wfp_fish_dry_katta, label: "WFP: Fish (dry, katta)", parent: fish }
+  - { code: wfp_fish_dry_sprats, label: "WFP: Fish (dry, sprats)", parent: fish }
+  - { code: wfp_fish_goldstripe_sardinella, label: "WFP: Fish (goldstripe sardinella)", parent: fish }
+  - { code: wfp_fish_jack, label: "WFP: Fish (jack)", parent: fish }
+  - { code: wfp_fish_sail_fish, label: "WFP: Fish (sail fish)", parent: fish }
+  - { code: wfp_fish_skipjack_tuna, label: "WFP: Fish (skipjack tuna)", parent: fish }
+  - { code: wfp_fish_trenched_sardinella, label: "WFP: Fish (trenched sardinella)", parent: fish }
+  - { code: wfp_fish_yellowfin_tuna, label: "WFP: Fish (yellowfin tuna)", parent: fish }
+  - { code: wfp_lentils, label: "WFP: Lentils", parent: pulses }
+  - { code: wfp_meat_chicken_broiler, label: "WFP: Meat (chicken, broiler)", parent: other_food }
+  - { code: wfp_meat_chicken_fresh, label: "WFP: Meat (chicken, fresh)", parent: other_food }
+  - { code: wfp_onions_imported, label: "WFP: Onions (imported)", parent: vegetables }
+  - { code: wfp_onions_red, label: "WFP: Onions (red)", parent: vegetables }
+  - { code: wfp_onions_red_imported, label: "WFP: Onions (red, imported)", parent: vegetables }
+  - { code: wfp_onions_red_local, label: "WFP: Onions (red, local)", parent: vegetables }
+  - { code: wfp_papaya, label: "WFP: Papaya", parent: fruits }
+  - { code: wfp_pineapples, label: "WFP: Pineapples", parent: fruits }
+  - { code: wfp_potatoes_imported, label: "WFP: Potatoes (imported)", parent: rice }
+  - { code: wfp_potatoes_local, label: "WFP: Potatoes (local)", parent: rice }
+  - { code: wfp_pumpkin, label: "WFP: Pumpkin", parent: vegetables }
+  - { code: wfp_rice_long_grain, label: "WFP: Rice (long grain)", parent: rice }
+  - { code: wfp_rice_medium_grain, label: "WFP: Rice (medium grain)", parent: rice }
+  - { code: wfp_rice_red_nadu, label: "WFP: Rice (red nadu)", parent: rice }
+  - { code: wfp_rice_red, label: "WFP: Rice (red)", parent: rice }
+  - { code: wfp_rice_white, label: "WFP: Rice (white)", parent: rice }
+  - { code: wfp_snake_gourd, label: "WFP: Snake gourd", parent: vegetables }
+  - { code: wfp_sugar, label: "WFP: Sugar", parent: other_food }
+  - { code: wfp_tomatoes, label: "WFP: Tomatoes", parent: vegetables }
+  - { code: wfp_wheat_flour, label: "WFP: Wheat flour", parent: other_food }

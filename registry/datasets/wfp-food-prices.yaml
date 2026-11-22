@@ -12,7 +12,8 @@ indicators:
   class: third_party
   dims:
   - commodity
-  - market
+  - id: market
+    codelist: wfp_market
   - pricetype
   geo_levels:
   - point
@@ -24,6 +25,7 @@ time_coverage:
 method: HDX CSV with market lat/lon and admin names.
 limits:
 - Market coverage changes over time.
+- Per-kg series only (commodities priced per unit, litre or pack are not loaded); geography is the district of the market (National Average rows at the country level).
 enrichment:
   joins:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'

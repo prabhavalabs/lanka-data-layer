@@ -11,7 +11,8 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - indicator
+  - id: indicator
+    codelist: gho_indicator
   geo_levels:
   - national
   period_type: year

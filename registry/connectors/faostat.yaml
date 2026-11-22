@@ -1,0 +1,60 @@
+# FAOSTAT bulk downloads (CC BY 4.0). The REST API is not usable from the engine
+# (fenixservices.fao.org times out, faostatservices.fao.org answers 401 without a token,
+# verified 2026-11-22); the normalized bulk CSVs are. Each zip holds a world file; rows are
+# filtered to the country's FAOSTAT area code (38) while streaming, so the L1 extract holds
+# Sri Lanka only.
+#
+# - QCL (crops and livestock): production quantity in tonnes (element 5510); flags
+#   E (estimated) and I (imputed) → basis estimated.
+# - FS (food security suite): element "Value"; 3-year averages ("2000-2002") are stored at
+#   the last year of the window; flag E → estimated.
+source: faostat
+driver: csv
+version: 1.0.0
+description: FAOSTAT crop and livestock production and the food security suite (bulk CSV).
+discover:
+  kind: static
+  files:
+    - { key: qcl, file: qcl.zip, url: "https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip" }
+    - { key: fs, file: fs.zip, url: "https://bulks-faostat.fao.org/production/Food_Security_Data_E_All_Data_(Normalized).zip" }
+extract:
+  zip_member: "_All_Data_\\(Normalized\\)\\.csv$"
+  filter:
+    - { column: Area Code, in: ["38"] }
+standardise:
+  dataset: faostat-crops-livestock
+  tables:
+    - { id: qcl, artifact: ^qcl$ }
+    - { id: fs, artifact: ^fs$ }
+  outputs:
+    - table: qcl
+      method: csv_row
+      filter:
+        - { column: Element Code, eq: "5510" }
+        - { column: Unit, eq: t }
+      indicator: { value: fao.crop_production }
+      geo: { root: true }
+      period: { column: Year, freq: A, parse: year }
+      dims:
+        item: Item Code
+        element: Element Code
+      value: { column: Value }
+      status: { column: Flag, codes: { E: [estimated, normal], I: [estimated, normal] } }
+    - table: fs
+      dataset: faostat-food-security
+      method: csv_row
+      filter:
+        - { column: Element, eq: Value }
+      indicator: { value: fao.food_security }
+      geo: { root: true }
+      period: { column: Year, regex: "(\\d{4})$", freq: A, parse: year }
+      dims:
+        indicator: Item Code
+      value: { column: Value, number: { missing: ["", "<0.1", "<2.5", "<0.5"] } }
+      status: { column: Flag, codes: { E: [estimated, normal], I: [estimated, normal] } }
+expect:
+  - { dataset: faostat-crops-livestock, check: range, min: 0 }
+  - { dataset: faostat-crops-livestock, check: no_future }
+  - { dataset: faostat-crops-livestock, check: row_count, min: 3000 }
+  - { dataset: faostat-food-security, check: no_future }
+  - { dataset: faostat-food-security, check: row_count, min: 500 }

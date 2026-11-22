@@ -28,4 +28,12 @@ enrichment:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
   aggregations:
   - travel time to nearest commercial airport
+kind: features
 publication_class: A
+searchable: true
+fields:
+- {name: iata, type: string, label: IATA code}
+- {name: icao, type: string, label: ICAO code}
+- {name: elevation_ft, type: integer, label: Elevation (feet)}
+- {name: municipality, type: string, label: Municipality}
+- {name: scheduled_service, type: boolean, label: Scheduled service}

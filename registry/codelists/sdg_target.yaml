@@ -1,0 +1,20 @@
+# SDG target
+# Source/authority: UN General Assembly resolution A/RES/71/313 (global indicator framework), target numbering.
+# Note: The targets of the series the un-sdg connector fetches; extend with the series list.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: target number only (English).
+# Used by: un-sdg-lka
+id: sdg_target
+title: SDG target
+codes:
+  - { code: "1.1", label: "Target 1.1" }
+  - { code: "2.1", label: "Target 2.1" }
+  - { code: "3.1", label: "Target 3.1" }
+  - { code: "3.2", label: "Target 3.2" }
+  - { code: "3.3", label: "Target 3.3" }
+  - { code: "5.5", label: "Target 5.5" }
+  - { code: "6.1", label: "Target 6.1" }
+  - { code: "8.5", label: "Target 8.5" }
+  - { code: "9.4", label: "Target 9.4" }
+  - { code: "15.1", label: "Target 15.1" }
+  - { code: "17.8", label: "Target 17.8" }
