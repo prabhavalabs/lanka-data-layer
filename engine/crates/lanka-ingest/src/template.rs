@@ -114,6 +114,10 @@ pub struct LabelSpec {
     /// Tolerance left of the label header, points.
     #[serde(default = "label_slack")]
     pub slack: f32,
+    /// Keep every word cluster between the label header and the first
+    /// column ("2022    January"), not only the rightmost one.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub all_clusters: bool,
 }
 
 fn label_key() -> String {
@@ -130,6 +134,7 @@ impl Default for LabelSpec {
             key: label_key(),
             header: None,
             slack: label_slack(),
+            all_clusters: false,
         }
     }
 }
@@ -160,6 +165,11 @@ pub struct RowsSpec {
     /// Minimum number cells for a line to be a row (default 1).
     #[serde(default)]
     pub min_cells: Option<usize>,
+    /// A line of numbers without a label takes the label printed on the
+    /// line(s) above it that had no numbers (labels wrapped over two lines,
+    /// numbers aligned with the last or a middle line).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub label_above: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -846,26 +856,32 @@ fn read_at(
         .windows(2)
         .map(|p| (headers[p[0]].bbox[2] + headers[p[1]].bbox[0]) / 2.0)
         .collect();
-    let first_left = {
+    let first_header_left = headers[order[0]].bbox[0];
+    let mut first_left = {
         let h0 = headers[order[0]].bbox;
         let gap = cuts.first().map_or(20.0, |c| (c - h0[2]).max(4.0));
         h0[0] - gap
     };
 
-    // Label column.
+    // Label column. A label header closer to the first column than half the
+    // gap to the second (a narrow "Year | Total | 1 | 2 …" layout) moves the
+    // label/column boundary to its right edge.
     let header_bottom = headers.iter().map(|h| h.bbox[3]).fold(anchor_y, f32::max);
     let (label_min, label_header) = match &e.label.header {
         Some(lh) => {
             let hs = hits(&ls, lh, anchor_y);
             let h = hs
                 .iter()
-                .filter(|h| h.bbox()[2] <= first_left + 1.0)
+                .filter(|h| h.bbox()[2] < first_header_left)
                 .min_by(|a, b| {
                     (a.bbox()[1] - header_bottom)
                         .abs()
                         .total_cmp(&(b.bbox()[1] - header_bottom).abs())
                 })
                 .ok_or_else(|| miss(format!("label header {lh:?} not found")))?;
+            if h.bbox()[2] > first_left + 1.0 {
+                first_left = h.bbox()[2] + 1.0;
+            }
             (
                 h.bbox()[0] - e.label.slack,
                 Some((join(&h.words), h.bbox())),
@@ -889,6 +905,7 @@ fn read_at(
     let min_cells = e.rows.min_cells.unwrap_or(1);
     let span_pages = e.locate.span_pages.max(1);
     let mut cand: Vec<(u32, Vec<&Word>, Vec<&Word>)> = Vec::new();
+    let mut pending: Vec<&Word> = Vec::new();
     let mut other_pages: Vec<Vec<Line>> = Vec::new();
     for p in page + 1..page + span_pages {
         other_pages.push(lines(&page_words(words, p, e.superscript_ratio)));
@@ -908,10 +925,14 @@ fn read_at(
                 .copied()
                 .filter(|w| w.bbox[0] >= label_min && w.cx() < first_left)
                 .collect();
-            let label_ws: Vec<&Word> = clusters(&label_ws, 0.8 * line_h)
-                .last()
-                .map(|c| c.to_vec())
-                .unwrap_or_default();
+            let label_ws: Vec<&Word> = if e.label.all_clusters {
+                label_ws
+            } else {
+                clusters(&label_ws, 0.8 * line_h)
+                    .last()
+                    .map(|c| c.to_vec())
+                    .unwrap_or_default()
+            };
             let col_ws: Vec<&Word> = l
                 .words
                 .iter()
@@ -920,6 +941,15 @@ fn read_at(
                 .collect();
             if !label_ws.is_empty() && !col_ws.is_empty() {
                 cand.push((p, label_ws, col_ws));
+                pending.clear();
+            } else if e.rows.label_above {
+                if col_ws.is_empty() {
+                    // A label line without numbers: the start of a wrapped label.
+                    pending.extend(label_ws);
+                } else if !pending.is_empty() {
+                    // Numbers printed below their (wrapped) label.
+                    cand.push((p, std::mem::take(&mut pending), col_ws));
+                }
             }
         }
     }
@@ -1346,6 +1376,99 @@ editions:
             res[0].cells,
             vec![("Sri Lanka".to_owned(), "total_2023".to_owned())]
         );
+    }
+
+    /// "Year | Total | 1 | 2" with the label header close to the first
+    /// column, a label wrapped above its numbers, and a month table whose
+    /// year is a separate cluster.
+    #[test]
+    fn narrow_label_wrapped_labels_and_all_clusters() {
+        let mut v = vec![
+            w(1, "Table", 10.0, 10.0),
+            w(1, "4.2", 40.0, 10.0),
+            w(1, "Year", 20.0, 30.0),
+            w(1, "Total", 45.0, 30.0),
+            w(1, "1", 110.0, 30.0),
+            w(1, "2", 140.0, 30.0),
+        ];
+        for (i, y) in ["2023", "2024"].iter().enumerate() {
+            #[allow(clippy::cast_precision_loss)]
+            let yy = 45.0 + 15.0 * i as f32;
+            v.extend([
+                w(1, y, 20.0, yy),
+                w(1, "30", 65.0, yy),
+                w(1, "10", 105.0, yy),
+                w(1, "20", 135.0, yy),
+            ]);
+        }
+        let words = Words {
+            pages: vec![lanka_extractd::PageBox {
+                page: 1,
+                width: 400.0,
+                height: 400.0,
+            }],
+            words: v,
+        };
+        let tpl = r#"
+id: test/narrow
+editions:
+  - locate: { page: { find_text: "Table 4.2" } }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: total, header: Total }
+      - { key: g1, header: "1" }
+      - { key: g2, header: "2" }
+    checks:
+      - { sum: [g1, g2], equals: total }
+"#;
+        let t = Template::from_yaml(tpl).expect("template");
+        let tab = t.read(&words, None).expect("read");
+        assert_eq!(tab.rows.len(), 2);
+        assert_eq!(tab.rows[1].label, "2024");
+        assert_eq!(tab.rows[0].cells["total"].text, "30");
+        assert!(tab.check(&t.editions[0]).iter().all(|r| r.ok));
+
+        // A label wrapped over two lines, numbers on a third line without one.
+        let words = Words {
+            pages: vec![lanka_extractd::PageBox {
+                page: 1,
+                width: 400.0,
+                height: 400.0,
+            }],
+            words: vec![
+                w(1, "Table", 10.0, 10.0),
+                w(1, "9", 40.0, 10.0),
+                w(1, "Item", 20.0, 30.0),
+                w(1, "2024", 150.0, 30.0),
+                w(1, "Cars", 20.0, 45.0),
+                w(1, "5", 155.0, 45.0),
+                w(1, "Goods", 20.0, 60.0),
+                w(1, "vehicles", 20.0, 72.0),
+                w(1, "7", 155.0, 84.0),
+                w(1, "January", 60.0, 100.0),
+                w(1, "2025", 20.0, 100.0),
+                w(1, "9", 155.0, 100.0),
+            ],
+        };
+        let wrapped = r#"
+id: test/wrapped
+editions:
+  - locate: { page: { find_text: "Table 9" } }
+    label: { key: item, header: "Item" }
+    columns: [{ key: y, header: "2024" }]
+    rows: { label_above: true }
+"#;
+        let t = Template::from_yaml(wrapped).expect("template");
+        let tab = t.read(&words, None).expect("read");
+        let labels: Vec<&str> = tab.rows.iter().map(|r| r.label.as_str()).collect();
+        assert_eq!(labels, ["Cars", "Goods vehicles", "January"]);
+        let joined = wrapped.replace(
+            "header: \"Item\" }",
+            "header: \"Item\", all_clusters: true }",
+        );
+        let t = Template::from_yaml(&joined).expect("template");
+        let tab = t.read(&words, None).expect("read");
+        assert_eq!(tab.rows[2].label, "2025 January");
     }
 
     #[test]

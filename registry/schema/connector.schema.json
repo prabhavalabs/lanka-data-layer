@@ -167,6 +167,7 @@
                   "additionalProperties": false,
                   "properties": {
                     "table": { "type": "string" },
+                    "dataset": { "type": "string", "description": "Default: standardise.dataset." },
                     "indicator": { "type": "string" },
                     "geo": {
                       "type": "object",
@@ -179,7 +180,8 @@
                           "additionalProperties": false,
                           "properties": {
                             "level": { "type": "integer", "minimum": 1, "maximum": 4 },
-                            "root": { "type": "array", "items": { "type": "string" } }
+                            "root": { "type": "array", "items": { "type": "string" } },
+                            "skip": { "type": "array", "items": { "type": "string" } }
                           }
                         }
                       }
@@ -188,8 +190,8 @@
                       "type": "object",
                       "additionalProperties": false,
                       "properties": {
-                        "from_header": { "enum": ["year", "quarter_end"] },
-                        "from_label": { "enum": ["year", "quarter_end"] },
+                        "from_header": { "enum": ["year", "quarter_end", "month"] },
+                        "from_label": { "enum": ["year", "quarter_end", "month"] },
                         "fixed": { "type": "string" }
                       }
                     },

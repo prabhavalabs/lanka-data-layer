@@ -46,7 +46,8 @@
             "properties": {
               "key": { "$ref": "#/$defs/key" },
               "header": { "type": "string", "minLength": 1 },
-              "slack": { "type": "number", "minimum": 0, "maximum": 50 }
+              "slack": { "type": "number", "minimum": 0, "maximum": 50 },
+              "all_clusters": { "type": "boolean" }
             }
           },
           "columns": {
@@ -70,7 +71,8 @@
             "properties": {
               "start_after": { "type": "string" },
               "stop_at": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-              "min_cells": { "type": "integer", "minimum": 1 }
+              "min_cells": { "type": "integer", "minimum": 1 },
+              "label_above": { "type": "boolean" }
             }
           },
           "number": {
