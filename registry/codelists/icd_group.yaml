@@ -32,3 +32,281 @@ codes:
   - { code: XX, label: External causes of morbidity and mortality (V01-Y98), parent: total }
   - { code: XXI, label: Factors influencing health status and contact with health services (Z00-Z99), parent: total }
   - { code: XXII, label: Codes for special purposes (U00-U85), parent: total }
+  # IMMR disease groups (Indoor Morbidity and Mortality Report 2024, IMMR Code column), children of the ICD-10 chapters
+  - { code: immr_other, label: "Others (IMMR: contact with health services, sterilization, undiagnosed)", parent: total }
+  - { code: "001", label: "Cholera (A00)", parent: I }
+  - { code: "002", label: "Typhoid and para typhoid fever (A01)", parent: I }
+  - { code: "003", label: "Shigellosis (A03)", parent: I }
+  - { code: "004A", label: "Amoebiasis with liver abscess (A06.4)", parent: I }
+  - { code: "004B", label: "Amoebiasis others (A06.0-A06.3,A06.5-A06.9)", parent: I }
+  - { code: "005", label: "Food poisoning (A02.0,A05)", parent: I }
+  - { code: "006", label: "Diarrhoea and gastroenteritis of presumed infectious origin (A09)", parent: I }
+  - { code: "007", label: "Other intestinal infectious diseases (A04,A07,A08)", parent: I }
+  - { code: "008A", label: "Tuberculosis of lung confirmed by sputum microscopy, culture,histologically or by unspecified means (A15.0-A15.3)", parent: I }
+  - { code: "008B", label: "Tuberculosis of lung not confirmed (A16-A16.2)", parent: I }
+  - { code: "009A", label: "Other Respiratory Tuberculosis confirmed bacteriologically and histologically (A15.4-A15.9)", parent: I }
+  - { code: "009B", label: "Other Respiratory Tuberculosis not confirmed (A16.3-A16.9)", parent: I }
+  - { code: "010", label: "Tuberculosis of nervous system (A17)", parent: I }
+  - { code: "011", label: "Tuberculosis of other organs (A18)", parent: I }
+  - { code: "012", label: "Miliary tuberculosis (A19)", parent: I }
+  - { code: "013A", label: "Plague (A20)", parent: I }
+  - { code: "013B", label: "Anthrax (A22)", parent: I }
+  - { code: "014", label: "Brucellosis (A23)", parent: I }
+  - { code: "015", label: "Leptospirosis (A27)", parent: I }
+  - { code: "016", label: "Leprosy (A30)", parent: I }
+  - { code: "017A", label: "Tetanus neonatorum (A33)", parent: I }
+  - { code: "017B", label: "Obsterical tetanus (A34)", parent: I }
+  - { code: "018", label: "Other tetanus (A35)", parent: I }
+  - { code: "019", label: "Diphtheria (A36)", parent: I }
+  - { code: "020", label: "Whooping cough (A37)", parent: I }
+  - { code: "021", label: "Meningococcal infections (A39)", parent: I }
+  - { code: "022", label: "Septicaemia (A40,A41)", parent: I }
+  - { code: "023", label: "Other bacterial diseases (A21,A24-A26,A28,A31,A32,A38,A42-A49)", parent: I }
+  - { code: "024A", label: "Congenital Syphilis (A50)", parent: I }
+  - { code: "024B", label: "Early Syphilis (A51)", parent: I }
+  - { code: "024C", label: "Late Syphilis (A52)", parent: I }
+  - { code: "024D", label: "Other and unspecified Syphilis (A53)", parent: I }
+  - { code: "025", label: "Gonococcal infections (A54)", parent: I }
+  - { code: "026A", label: "Chlamydial lymphogranuloma (venereum) (A55)", parent: I }
+  - { code: "026B", label: "Other sexually transmitted chlamydia diseases (A56)", parent: I }
+  - { code: "026C", label: "Chancroid (A57)", parent: I }
+  - { code: "026D", label: "Granuloma inguinale (A58)", parent: I }
+  - { code: "026E", label: "Trichomoniasis (A59)", parent: I }
+  - { code: "026F", label: "Anogenital herpesviral (herpes simplex) infection (A60)", parent: I }
+  - { code: "026G", label: "Other predominantly sexually transmitted diseases, not elsewhere classified (A63)", parent: I }
+  - { code: "026H", label: "Unspecified sexually transmitted disease (A64)", parent: I }
+  - { code: "027", label: "Acute poliomyelitis (A80)", parent: I }
+  - { code: "028", label: "Rabies (A82)", parent: I }
+  - { code: "029", label: "Viral encephalitis (includes Japanese Encephalitis) (A83-A86)", parent: I }
+  - { code: "030", label: "Viral meningitis (A87)", parent: I }
+  - { code: "031", label: "Dengue fever (A90)", parent: I }
+  - { code: "032", label: "Dengue haemorrhagic fever (A91)", parent: I }
+  - { code: "033", label: "Yellow fever (A95)", parent: I }
+  - { code: "034", label: "Other arthropod-borne viral fever and viral haemorrhagic fever (A92-A94,A96-A99)", parent: I }
+  - { code: "035", label: "Varicella (Chickenpox) (B01)", parent: I }
+  - { code: "036", label: "Zoster (herpese zoster) (B02)", parent: I }
+  - { code: "037", label: "Measles (B05)", parent: I }
+  - { code: "038A", label: "Rubella (B06)", parent: I }
+  - { code: "038B", label: "Congenital rubella (P35.0)", parent: I }
+  - { code: "039A", label: "Acute hepatitis A (B15)", parent: I }
+  - { code: "039B", label: "Acute hepatitis B (B16)", parent: I }
+  - { code: "039C", label: "Chronic, other acute and unspecified viral hepatitis (B17-B19)", parent: I }
+  - { code: "040", label: "Human immunodeficiency virus (HIV) (B20-B24)", parent: I }
+  - { code: "041", label: "Mumps (B26)", parent: I }
+  - { code: "042", label: "Other viral diseases (includes viral fever) (A81,A88,A89,B00,B03,B04,B07-09,B25,B27-B34)", parent: I }
+  - { code: "043", label: "Mycosis (B35-B49)", parent: I }
+  - { code: "044", label: "Malaria (B50-B54)", parent: I }
+  - { code: "045", label: "Filariasis (B74)", parent: I }
+  - { code: "046", label: "Helminthiasis (B76,B77,B79,B80)", parent: I }
+  - { code: "047", label: "Scabies (B86)", parent: I }
+  - { code: "048", label: "Sequelae of infectious and parasitic diseases (B90-B94)", parent: I }
+  - { code: "049", label: "Other infectious and parasitic diseases (A02.1-A02.9,A65-A79,B55-B73,B75,B78,B81-B85,B87-B89,B95-B99)", parent: I }
+  - { code: "050", label: "Malignant neoplasm of lip, oral cavity and pharynx (C00-C14)", parent: II }
+  - { code: "051", label: "Malaignant neoplasm of oesophagus (C15)", parent: II }
+  - { code: "052", label: "Malignant neoplasm of stomach (C16)", parent: II }
+  - { code: "053", label: "Malignant neoplasm of colon (C18)", parent: II }
+  - { code: "054", label: "Malignant neoplasm of rectosigmoid junction,rectum, anus and anal canal (C19-C21)", parent: II }
+  - { code: "055", label: "Malignant neoplasm of liver and intrahepatic bile duct (C22)", parent: II }
+  - { code: "056", label: "Malignant neoplasm of pancreas (C25)", parent: II }
+  - { code: "057", label: "Other malignant neoplasm of digestive organs (C17,C23,C24,C26)", parent: II }
+  - { code: "058", label: "Malignant neoplasm of larnyx (C32)", parent: II }
+  - { code: "059", label: "Malignant neoplasm of trachea, bronchus and lung (C33-C34)", parent: II }
+  - { code: "060", label: "Malignant neoplasm of other respiratory and intrathoracic organs (C30,C31,C37-C39)", parent: II }
+  - { code: "061", label: "Malignant neoplasm of bone and articular cartilage (C40,C41)", parent: II }
+  - { code: "062", label: "Melanoma and other malignant neoplasm of skin (C43,C44)", parent: II }
+  - { code: "063", label: "Malignant neoplasm of masothelial and soft tissue (C45,C49)", parent: II }
+  - { code: "064", label: "Malignant neoplasm of breast (C50)", parent: II }
+  - { code: "065", label: "Malignant neoplasm of cervix uteri (C53)", parent: II }
+  - { code: "066", label: "Malignant neoplasm of other and unspecified parts of uterus (C54,C55)", parent: II }
+  - { code: "067", label: "Malignant neoplasm of placenta (C58)", parent: II }
+  - { code: "068", label: "Malignant neoplasm of female genital organs (C51,C52,C56,C57)", parent: II }
+  - { code: "069", label: "Malignant neoplasm of prostate (C61)", parent: II }
+  - { code: "070", label: "Malignant neoplasm of other male genital organs (C60,C62,C63)", parent: II }
+  - { code: "071", label: "Malignant neoplasm of bladder (C67)", parent: II }
+  - { code: "072", label: "Malignant neoplasm of other parts of the urinary tract (C64-C66,C68)", parent: II }
+  - { code: "073", label: "Malignant neoplasm of eye and adnexa (C69)", parent: II }
+  - { code: "074", label: "Malignant neoplasm of brain (C71)", parent: II }
+  - { code: "075", label: "Malignant neoplasm of other parts of the central nervous system (C70,C72)", parent: II }
+  - { code: "076", label: "Malignant neoplasm of thyroid gland (C73)", parent: II }
+  - { code: "077", label: "Malignant neoplasm of other endocrine, ill-defined, secondary and unspecified sites (C74-C80,C97)", parent: II }
+  - { code: "078", label: "Hodgkin's disease (C81)", parent: II }
+  - { code: "079", label: "Leukaemia (C91-C95)", parent: II }
+  - { code: "080", label: "Malignant neoplasm of other lymphoid haematopoietic and related tissue (C82-C85,C88-C90,C96)", parent: II }
+  - { code: "081", label: "In situ neoplasm (D00-D09)", parent: II }
+  - { code: "082", label: "Benign neoplasm (D10-D36)", parent: II }
+  - { code: "083", label: "Neoplasm of uncertain or unknown behaviour (D37-D48)", parent: II }
+  - { code: "084A", label: "Iron deficiency anaemias (D50)", parent: III }
+  - { code: "084B", label: "Thalasemia (D56)", parent: III }
+  - { code: "085", label: "Other anaemias (D51-D55,D57-D64)", parent: III }
+  - { code: "086", label: "Haemorrhagic conditions and other diseases of blood and blood forming organs and certain disorders involving immune mechanism (D65-D89)", parent: III }
+  - { code: "087", label: "Iodine-deficiency related thyroid disorders (E00-E02)", parent: IV }
+  - { code: "088", label: "Thyrotoxicosis (E05)", parent: IV }
+  - { code: "089", label: "Other disorders of thyroid (E03,E04,E06,E07)", parent: IV }
+  - { code: "090A", label: "Insulin-dependent diabetes mellitus (E10)", parent: IV }
+  - { code: "090B", label: "Non-insulin-dependent diabetes mellitus (E11)", parent: IV }
+  - { code: "090C", label: "Malnutrition-related diabetes mellitus (E12)", parent: IV }
+  - { code: "090D", label: "Other specified diabetes mellitus (E13)", parent: IV }
+  - { code: "090E", label: "Unspecified diabetes mellitus (E14)", parent: IV }
+  - { code: "091A", label: "Kwashiorkor (E40)", parent: IV }
+  - { code: "091B", label: "Nutritional marasmus (E41)", parent: IV }
+  - { code: "091C", label: "Marasmic kwashiorkor (E42)", parent: IV }
+  - { code: "091D", label: "Unspecified severe protein-energy malnutrition (E43)", parent: IV }
+  - { code: "091E", label: "Protin-energy malnutrition of moderate and mild degree (E44)", parent: IV }
+  - { code: "091F", label: "Retarded development following protein-energy malnutrition (E45)", parent: IV }
+  - { code: "091G", label: "Unspecified protin-energy malnutrition (E46)", parent: IV }
+  - { code: "092", label: "Vitamin deficiencies (E50-E56)", parent: IV }
+  - { code: "093", label: "Other endocrine, nutritional and metabolic disorders (E15-E34,E58-E89)", parent: IV }
+  - { code: "094", label: "Dementia (F01,F03)", parent: V }
+  - { code: "095", label: "Mental and behavioural disorders due to use of alcohol (F10)", parent: V }
+  - { code: "096", label: "Mental and behavioural disorders due to other psychoactive substance use (F11-F19)", parent: V }
+  - { code: "097", label: "Schizophrenia, schizotypal and delusional disorders (F20-F29)", parent: V }
+  - { code: "098", label: "Mood (affective) disorders (F30-F39)", parent: V }
+  - { code: "099", label: "Neurotic, stress-related somatoform disorders (F40-F48)", parent: V }
+  - { code: "100", label: "Mental retardation (F70-F79)", parent: V }
+  - { code: "101", label: "Behavioural and emotional disorders with onset usually occuring in childhood and adolescence (F90-F98)", parent: V }
+  - { code: "102", label: "Other mental and behavioural disorders (F04-F09,F50-F69,F80-F89,F99)", parent: V }
+  - { code: "103", label: "Bacterial meningitis not elsewhere classified (G00,G03)", parent: VI }
+  - { code: "104", label: "Encephalitis,myelitis and encephalomyelitis (G04)", parent: VI }
+  - { code: "105", label: "Intracranial and intraspinal abscess and granuloma (G06)", parent: VI }
+  - { code: "106", label: "Parkinson's disease (G20)", parent: VI }
+  - { code: "107", label: "Multiple sclerosis (G35)", parent: VI }
+  - { code: "108", label: "Epilepsy (G40-G41)", parent: VI }
+  - { code: "109", label: "Migraine and headache syndrome (G43,G44)", parent: VI }
+  - { code: "110", label: "Transient cerebral ischaemic attacks and related syndromes (G45)", parent: VI }
+  - { code: "111", label: "Nerve, nerve root and plaxus disorders (G50-G58)", parent: VI }
+  - { code: "112", label: "Cerebral palsy and other paralytic syndromes (G80-G83)", parent: VI }
+  - { code: "113", label: "Other diseases of nervous system (G08,G12,G21-G31,G36,G37,G47,G60-G72,G90-G98)", parent: VI }
+  - { code: "114", label: "Keratitis and other disorders of sclera and cornea (H15-H18)", parent: VII }
+  - { code: "115", label: "Cataract and other disorders of lens (H25-H27)", parent: VII }
+  - { code: "116", label: "Retinal detachment and breaks (H33)", parent: VII }
+  - { code: "117", label: "Glaucoma (H40)", parent: VII }
+  - { code: "118", label: "Strabismus (H49-H50)", parent: VII }
+  - { code: "119", label: "Other diseases of the eye and adnexa (H00-H11,H20,H21,H30,H31,H34,H35,H43-H47,H51-H59)", parent: VII }
+  - { code: "120", label: "Otitis media and other disorders of middle ear and mastoid (H65-H74)", parent: VIII }
+  - { code: "121", label: "Hearing loss (H90,H91)", parent: VIII }
+  - { code: "122", label: "Other diseases of the ear and mastoid process (H60,H61,H80-H83,H92-H95)", parent: VIII }
+  - { code: "123", label: "Acute rheumatic fever (I00-I02)", parent: IX }
+  - { code: "124", label: "Chronic rheumatic heart disease (I05-I09)", parent: IX }
+  - { code: "125", label: "Essential hypertension (I10)", parent: IX }
+  - { code: "126", label: "Hypertensive heart disease (I11)", parent: IX }
+  - { code: "127", label: "Other hypertensive diseases (I12-I15)", parent: IX }
+  - { code: "128", label: "Acute myocardial infarction (I21,I22)", parent: IX }
+  - { code: "129", label: "Other ischaemic heart disease (I20,I23-I25)", parent: IX }
+  - { code: "130", label: "Pulmonary embolism (I26)", parent: IX }
+  - { code: "131", label: "Cor pulmonale (I27.9)", parent: IX }
+  - { code: "132", label: "Heart failure (I50)", parent: IX }
+  - { code: "133", label: "Other heart diseases (I27.0-I27.8, I28-I49,I51)", parent: IX }
+  - { code: "134", label: "Cerebroavascular disease (I60-I69)", parent: IX }
+  - { code: "135", label: "Atherosclerosis (I70)", parent: IX }
+  - { code: "136", label: "Arterial embolism and thrombosis (I74)", parent: IX }
+  - { code: "137", label: "Other diseases of arteries, artherosclerosis and capillaries (I71-I73,I77,I78)", parent: IX }
+  - { code: "138", label: "Phlebitis, thrombophlebitis, venous embolism and thrombosis (I80-I82)", parent: IX }
+  - { code: "139", label: "Vericose veins of lower extremities (I83)", parent: IX }
+  - { code: "140", label: "Haemorrhoids (I84)", parent: IX }
+  - { code: "141", label: "Other diseases of the circulatory system (I85-I99)", parent: IX }
+  - { code: "142", label: "Acute sinusitis and acute tonsillitis (J01-J03)", parent: X }
+  - { code: "143", label: "Other acute upper respiratory infections (J00,J02,J04-J06)", parent: X }
+  - { code: "144", label: "Influenza (J10-J11)", parent: X }
+  - { code: "145", label: "Pneumonia (J12-J18)", parent: X }
+  - { code: "146", label: "Acute bronchitis (J20)", parent: X }
+  - { code: "147", label: "Acute bronchiolitis (J21)", parent: X }
+  - { code: "148", label: "Other diseases of the upper respiratory tract (J30-J39)", parent: X }
+  - { code: "149", label: "Bronchitis, emphysema and other chronic obstructive pulmonary disease (J40-J44)", parent: X }
+  - { code: "150", label: "Asthma (J45-J46)", parent: X }
+  - { code: "151", label: "Bronchiectasis (J47)", parent: X }
+  - { code: "152", label: "Other diseases of the respiratory system (J22,J60-J98)", parent: X }
+  - { code: "153", label: "Diseases of teeth and supporting structure (K00-K08)", parent: XI }
+  - { code: "154", label: "Other diseases of the oral cavity, salivary glands and jaws (K09-K14)", parent: XI }
+  - { code: "155", label: "Gastric and duodenal ulcer, peptic ulcer site unspecified and gastrojejunal ulcer (K25-K28)", parent: XI }
+  - { code: "156", label: "Gastritis and duodenitis (K29)", parent: XI }
+  - { code: "157", label: "Other diseases of oesophagus, stomach and duodenum (K20-K22,K30-K31)", parent: XI }
+  - { code: "158", label: "Diseases of appendix (K35-K38)", parent: XI }
+  - { code: "159", label: "Hernia (K40-K46)", parent: XI }
+  - { code: "160", label: "Noninfective enteritis and colitis (K50-K52)", parent: XI }
+  - { code: "161", label: "Other diseases of intestines and peritoneum (K55-K66)", parent: XI }
+  - { code: "162", label: "Alcoholic liver disease (K70)", parent: XI }
+  - { code: "163", label: "Other diseases of liver (K71-K76)", parent: XI }
+  - { code: "164", label: "Cholelithiasis and cholecystitis (K80,K81)", parent: XI }
+  - { code: "165", label: "Acute pancreatitis and other diseases of the pancreas (K85,K86)", parent: XI }
+  - { code: "166", label: "Other diseases of the digestive system (K82-K83,K90-K92)", parent: XI }
+  - { code: "167", label: "Infections of skin and subcutaneous tissue (L00-L08)", parent: XII }
+  - { code: "168", label: "Other diseases of skin and subcutaneous tissue (L10-L99)", parent: XII }
+  - { code: "169", label: "Disorders of joints (M00-M02,M15-M25)", parent: XIII }
+  - { code: "170", label: "Rheumatoid arthritis and other inflamatory polyarthropathies (M05-M13)", parent: XIII }
+  - { code: "171", label: "Systemic connective tissue disorders (M30-M35)", parent: XIII }
+  - { code: "172", label: "Soft tissue disorders (M60-M79)", parent: XIII }
+  - { code: "173", label: "Osteomyelitis (M86)", parent: XIII }
+  - { code: "174", label: "Other disorders of musculoskeletal system (M40-M54, M80-M85,M87-M99)", parent: XIII }
+  - { code: "175", label: "Glomerular diseases (N00-N07)", parent: XIV }
+  - { code: "176", label: "Infections of the kidney (N10-N12)", parent: XIV }
+  - { code: "177", label: "Renal failure (N17-N19)", parent: XIV }
+  - { code: "178", label: "Urolithiasis (N20-N23)", parent: XIV }
+  - { code: "179", label: "Diseases of breast (N60-N64)", parent: XIV }
+  - { code: "180", label: "Other diseases of the urinary system (N13-N15, N25-N28,N30-N39,N99.0,N99.1,N99.4,N99.5)", parent: XIV }
+  - { code: "181", label: "Hyperplasia of prostate (N40)", parent: XIV }
+  - { code: "182", label: "Hydrocele and spermatocele (N43)", parent: XIV }
+  - { code: "183", label: "Other diseases of the male genital organs (N41,N42,N44-N50)", parent: XIV }
+  - { code: "184", label: "Salpingitis and oophoritis (N70)", parent: XIV }
+  - { code: "185", label: "Female genital prolapse (N81)", parent: XIV }
+  - { code: "186", label: "Other disorders of the female genito-urinary system (N71-N80,N82-N98,N99.2,N99.3)", parent: XIV }
+  - { code: "187", label: "Abortions (O00-O08)", parent: XV }
+  - { code: "188", label: "Oedema, proteinuria and hypertensive disorders in pregnancy, childbirth and the puerperium (O10-O16)", parent: XV }
+  - { code: "189", label: "Supervision of high risk pregnancy (Z35)", parent: XV }
+  - { code: "190", label: "Placenta praevia, premature separation of placenta and antepartum haemorrhage (O44-O46)", parent: XV }
+  - { code: "191A", label: "False Labour (O47)", parent: XV }
+  - { code: "191B", label: "Those admitted and discharged before delivery (Distance from hospital etc.)", parent: XV }
+  - { code: "192", label: "Other Maternal care related to fetus and amniotic cavity and possible delivery problems (O30-O43,O48) * (Includes still births)", parent: XV }
+  - { code: "193", label: "Obstructed Labour (O64-O66)", parent: XV }
+  - { code: "194", label: "Post parturm haemorrhage (O72)", parent: XV }
+  - { code: "195", label: "Single spontaneous delivery (O80)", parent: XV }
+  - { code: "196", label: "Other complications of pregnancy and delivery (020-029,060-063,067-071,073-075,081-084)", parent: XV }
+  - { code: "197A", label: "Complications predominantly related to the puerperium (O85-O92)", parent: XV }
+  - { code: "197B", label: "Other obstetric conditions not elsewhere classified (O95-O99)", parent: XV }
+  - { code: "198", label: "Fetus and newborn affected by maternal factors and by complications of pregnancy, labour and delivery (P00-P04)", parent: XVI }
+  - { code: "199", label: "Slow fetal growth, fetal malnutrition and disorders related to short gestation and low birth weight (P05-P07)", parent: XVI }
+  - { code: "200", label: "Birth trauma (P10-P15)", parent: XVI }
+  - { code: "201", label: "Intrauterine hypoxia, birth asphyxia and other respiratory disorders originating in the perinatal period (P20-P28)", parent: XVI }
+  - { code: "202", label: "Haemolytic disease of fetus and new born (P55)", parent: XVI }
+  - { code: "203", label: "Other conditions originating in the perinatal period (P08,P29,P35.1-P39,P50-P54,P56-P96)", parent: XVI }
+  - { code: "204", label: "Congenital hydrocephalus and spina bifida (Q03,Q05)", parent: XVII }
+  - { code: "205", label: "Other congenital malformations of the nervous system (Q00-Q02,Q04,Q06,Q07)", parent: XVII }
+  - { code: "206", label: "Congenital malformations of the circulatory system (Q20-Q28)", parent: XVII }
+  - { code: "207", label: "Cleft lip and cleft palate (Q35-Q37)", parent: XVII }
+  - { code: "208", label: "Other congenital malformations and deformations (Q10-Q18,Q30-Q34,Q38-Q89)", parent: XVII }
+  - { code: "209", label: "Chromosomal abnormalities, not elsewhere classified (Q90-Q99)", parent: XVII }
+  - { code: "210", label: "Symptoms and signs involving the circulatory and respiratory systems (R00-R09)", parent: XVIII }
+  - { code: "211", label: "Symptoms and signs involving the digestive system and abdomen (R10-R19)", parent: XVIII }
+  - { code: "212", label: "Symptoms and signs involving the skin and subcutaneous tissue (R20-R23)", parent: XVIII }
+  - { code: "213", label: "Fever of unknown origin (R50)", parent: XVIII }
+  - { code: "214", label: "Headache (R51)", parent: XVIII }
+  - { code: "215", label: "Senility (R54)", parent: XVIII }
+  - { code: "216", label: "Convulsions, not elsewhere classified (R56)", parent: XVIII }
+  - { code: "217", label: "Other signs and symptoms and abnormal clinical findings (R25-R49,R52,R53,R55,R57-R69)", parent: XVIII }
+  - { code: "218", label: "Abnormal findings in investigations not elsewhere classified (R70-R94)", parent: XVIII }
+  - { code: "219", label: "Ill-defined and unknown causes of mortality (R95-R99)", parent: XVIII }
+  - { code: "220", label: "Superficial injury (S00,S10,S20,S30,S40,S50,S60,S70,S80,S90, T00,T09.0,T11.0,T13.0,T14.0)", parent: XIX }
+  - { code: "221", label: "Fractures (S02,S12,S22,S32,S42,S52,S62,S72,S82,S92, T02,T08,T10,T12,T14.2)", parent: XIX }
+  - { code: "222", label: "Dislocations, sprains and strains (S03,S13,S23,S33,S43,S53,S63,S73,S83,S93, T03,T09.2,T11.2,T13.2,T14.3)", parent: XIX }
+  - { code: "223", label: "Injury to eye and orbit (S05)", parent: XIX }
+  - { code: "224", label: "Intracranial injuries (S06)", parent: XIX }
+  - { code: "225", label: "Injury of other internal organs (S26,S27,S36,S37)", parent: XIX }
+  - { code: "226", label: "Crushing injuries and traumatic amputations (S07,S08,S17,S18,S28,S38,S47,S48, S57,S58,S67,S68,S77,S78,S87,S88,S97,S98,T04,T05, T09.6,T11.6,T13.6,T14.7)", parent: XIX }
+  - { code: "227", label: "Open wounds and injuries to blood vessels (S01,S11,S15,S21,S25,S31,S35,S41,S45, S51, S55,S61,S65,S71,S75,S81,S85,S91,S95,T01,T06.3,T09.1,T11.1,T11.4,T13.1, T13.4, T14.1, T14.5)", parent: XIX }
+  - { code: "228", label: "Injuries to nerves (S04,S14,S24,S34,S44,S54, S64,S74,S84,S94,T06.2, T11.3,T13.3,T14.4)", parent: XIX }
+  - { code: "229", label: "Bitten or struck by dog (W54)", parent: XIX }
+  - { code: "230", label: "Other injuries of specified, unspecified and multiple body regions (S09,S16,S19,S29,S39,S46,S49,S56, S59,S66,S69,S76,S79, S86,S89,S96,S99,T06.0,T06.1,T06.4-T06.8, T07,T09.3-TO9.5,T09.8,T09.9,T11.5, T11.8,T11.9,T13.5,T13.8,T13.9, T14.6,T14.8,T14.9)", parent: XIX }
+  - { code: "231", label: "Effects of foregin body entering through orifice (T15-T19)", parent: XIX }
+  - { code: "232", label: "Burns and corrosion confined to eye and adnexa (T26)", parent: XIX }
+  - { code: "233", label: "All other burns and corrosions (T20-T25,T27-T32)", parent: XIX }
+  - { code: "234", label: "Poisoning by drugs, medicaments and biological substances (T36-T50)", parent: XIX }
+  - { code: "235", label: "Toxic effects of organophosphate and carbamate insecticides (T60.0)", parent: XIX }
+  - { code: "236", label: "Toxic effects of other pesticides (T60.1-T60.9)", parent: XIX }
+  - { code: "237", label: "Snake bites (T63.0)", parent: XIX }
+  - { code: "238", label: "Toxic effects of other substances chiefly non medicinal as to source (T51-T59,T61,T62,T63.1-T63.9,T64,T65)", parent: XIX }
+  - { code: "239", label: "Other unspecified effects of external causes (T33-T35,T66-T78)", parent: XIX }
+  - { code: "240", label: "Certain early complications of trauma (T79)", parent: XIX }
+  - { code: "241", label: "Complications of surgical and medical care not elsewhere classified (T80-T88)", parent: XIX }
+  - { code: "242", label: "Sequelae of injuries, poisoning and of other consequences of external causes (T90-T98)", parent: XIX }
+  - { code: "243", label: "Persons encountering health services for examination, investigation and for specific procedures of health care (Z00-Z13,Z40-Z54)", parent: immr_other }
+  - { code: "244", label: "Sterilization (Z30.2) (admissions only for sterilization)", parent: immr_other }
+  - { code: "245", label: "Undiagnosed / Uncoded", parent: immr_other }

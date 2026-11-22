@@ -1,0 +1,18 @@
+# IMMR age band
+# Source/authority: Ministry of Health, Medical Statistics Unit, Indoor Morbidity and Mortality Report (IMMR) 2024:
+#   age columns <1, 1-4, 5-16, 17-49, 50-69, 70+, N/Av (not available) and Total.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: moh-immr
+id: immr_age_band
+title: Age band (IMMR)
+codes:
+  - { code: total, label: All ages, total: true, sdmx: _T }
+  - { code: lt1, label: Under 1 year, parent: total }
+  - { code: 1-4, label: 1-4 years, parent: total }
+  - { code: 5-16, label: 5-16 years, parent: total }
+  - { code: 17-49, label: 17-49 years, parent: total }
+  - { code: 50-69, label: 50-69 years, parent: total }
+  - { code: 70+, label: 70 years and over, parent: total }
+  - { code: unknown, label: Age not available, parent: total }

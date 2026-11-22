@@ -1,0 +1,84 @@
+# Ministry of Health, Medical Statistics Unit: Indoor Morbidity and Mortality Report (IMMR).
+# One workbook per edition. Sheet "IMMR Report": a three-row header (LIVE DISCHARGES | DEATHS,
+# then Male | Female, then the age bands <1, 1-4, 5-16, 17-49, 50-69, 70+, N/Av, Total), one
+# row per IMMR disease group (column "IMMR Code", e.g. 001 Cholera (A00)), ICD-10 chapter
+# rows between groups (no values: dropped), and a "Total" row (all causes). Every printed
+# cell is kept, totals included (age total, all causes), so sum checks run on the staged rows.
+# Periods: the 2024 edition's Summary sheet labels the discharges "Live Discharges" (2024,
+# the report year) and the deaths "Deaths - 2023"; the periods below follow those labels and
+# move with the edition URL. Licence permission_unclear: published with attribution and the
+# takedown contact (08 §2).
+source: moh-health
+driver: xlsx_table
+version: 1.0.0
+description: IMMR 2024 live discharges and deaths by disease group, sex and age band (national).
+discover:
+  kind: static
+  files:
+    - { key: immr_2024, file: IMMR-Report-2024-final.xlsx, url: "https://www.health.gov.lk/wp-content/uploads/2025/12/IMMR-Report-2024-final.xlsx" }
+extract:
+  sheets: "^IMMR Report$"
+standardise:
+  dataset: moh-immr
+  tables:
+    - id: immr
+      artifact: ^immr_2024$
+      header: { anchor: "^Dise$", rows: 3, fill_right: true }
+      rows: { until_blank: 3 }
+  outputs:
+    - table: immr
+      filter: [{ column: IMMR Code, empty: false }]
+      indicator: &ind
+        melt: true
+        regex: "^(LIVE DISCHARGES|DEATHS) "
+        map: { LIVE DISCHARGES: heal.inpatient_discharges, DEATHS: heal.hospital_deaths }
+      melt: &cols { columns: "^(LIVE DISCHARGES|DEATHS) (Male|Female) " }
+      geo: { root: true }
+      period: &period
+        freq: A
+        parse: year
+        melt: true
+        regex: "^(LIVE DISCHARGES|DEATHS) "
+        map: { LIVE DISCHARGES: "2024", DEATHS: "2023" }
+      dims:
+        icd_group: { column: IMMR Code }
+        sex: &sex { melt: true, regex: " (Male|Female) ", map: { Male: male, Female: female } }
+        age_group: &age
+          melt: true
+          regex: "(Male|Female) (.+)$"
+          replace: "$2"
+          map: { "<1": lt1, "1 - 4": 1-4, "5 -16": 5-16, "17 -49": 17-49, "50 - 69": 50-69, "70+": 70+, "N/Av": unknown, "Total": total }
+      value: &num { number: { missing: ["-", ""] } }
+    - table: immr
+      filter: [{ column: Dise, eq: Total }]
+      indicator: *ind
+      melt: *cols
+      geo: { root: true }
+      period: *period
+      dims:
+        icd_group: { value: total }
+        sex: *sex
+        age_group: *age
+      value: *num
+expect:
+  - { check: row_count, min: 7000, note: "277 rows × 2 sexes × 8 age columns of discharges; deaths are printed for fewer groups (empty cells are absent)" }
+  - { check: range, min: 0, max: 5000000 }
+  - { check: no_future }
+  - { check: sum_dims, dim: age_group, note: "age bands add up to the printed Total column" }
+  - check: sql
+    note: The disease groups add up to the printed Total row (per indicator, sex and age band; 0.5 % tolerance).
+    query: >-
+      SELECT indicator_id, regexp_replace(dims, 'icd_group=[^;]*;?', '') AS k,
+             sum(value) FILTER (WHERE dims NOT LIKE '%icd_group=total%') AS parts,
+             sum(value) FILTER (WHERE dims LIKE '%icd_group=total%') AS total
+      FROM stage_obs GROUP BY 1, 2
+      HAVING abs(coalesce(sum(value) FILTER (WHERE dims NOT LIKE '%icd_group=total%'), 0)
+                 - coalesce(sum(value) FILTER (WHERE dims LIKE '%icd_group=total%'), 0))
+             > 0.005 * greatest(coalesce(sum(value) FILTER (WHERE dims LIKE '%icd_group=total%'), 0), 1)
+  - check: sql
+    note: The Summary sheet's totals (live discharges 3,684,839 male + 3,441,759 female; deaths 39,290 + 29,011).
+    query: >-
+      SELECT indicator_id, dims, value FROM stage_obs
+      WHERE dims IN ('age_group=total;icd_group=total;sex=male', 'age_group=total;icd_group=total;sex=female')
+        AND NOT ((indicator_id = 'heal.inpatient_discharges' AND value IN (3684839, 3441759))
+              OR (indicator_id = 'heal.hospital_deaths' AND value IN (39290, 29011)))
