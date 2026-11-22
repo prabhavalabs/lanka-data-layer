@@ -1,40 +1,103 @@
 # Merchandise trade category (CBSL)
-# Source/authority: Central Bank of Sri Lanka, External Sector Performance (monthly) and Annual Report - exports by major category and imports by end-use (BEC-based).
-# Note: Export and import categories share one list; the trade flow is the indicator (exports_usd / imports_usd).
-# Status: SEED - members below are the confidently known ones; complete the list from the
-#   source extract when the connector is built (every observed code must be listed).
+# Source/authority: Central Bank of Sri Lanka, statistical tables 2.02 (exports) and 2.04 (imports),
+#   classification revised in January 2023 (HS-code concordance in the workbooks' first sheet).
+# Note: exports (x_) and imports (m_) are separate trees under one root; `total` is the total of
+#   the indicator's own flow (total exports for trade.exports_usd, total imports for trade.imports_usd).
+#   m_non_oil (non-oil imports) is a memo item outside the tree.
+# Status: complete for the classification as cited (every row of the USD sheets).
 # Labels: English only; si/ta pending native-speaker review (not machine-translated).
 # Order: codes are listed in display order.
 # Used by: cbsl-merchandise-trade
 id: trade_category
 title: Merchandise trade category (CBSL)
 codes:
-  - { code: total, label: Total merchandise trade, total: true, sdmx: _T }
-  - { code: exp_agricultural, label: Agricultural exports, parent: total }
-  - { code: exp_industrial, label: Industrial exports, parent: total }
-  - { code: exp_mineral, label: Mineral exports, parent: total }
-  - { code: exp_unclassified, label: Unclassified exports, parent: total }
-  - { code: tea, label: Tea, parent: exp_agricultural }
-  - { code: rubber, label: Rubber, parent: exp_agricultural }
-  - { code: coconut, label: Coconut products, parent: exp_agricultural }
-  - { code: spices, label: Spices, parent: exp_agricultural }
-  - { code: seafood, label: Seafood, parent: exp_agricultural }
-  - { code: textiles_garments, label: Textiles and garments, parent: exp_industrial }
-  - { code: rubber_products, label: Rubber products, parent: exp_industrial }
-  - { code: petroleum_products, label: Petroleum products, parent: exp_industrial }
-  - { code: food_beverages_tobacco, label: "Food, beverages and tobacco", parent: exp_industrial }
-  - { code: gems_jewellery, label: "Gems, diamonds and jewellery", parent: exp_industrial }
-  - { code: machinery_equipment, label: Machinery and mechanical appliances, parent: exp_industrial }
-  - { code: imp_consumer, label: Consumer goods imports, parent: total }
-  - { code: imp_intermediate, label: Intermediate goods imports, parent: total }
-  - { code: imp_investment, label: Investment goods imports, parent: total }
-  - { code: imp_unclassified, label: Unclassified imports, parent: total }
-  - { code: food_beverages, label: Food and beverages, parent: imp_consumer }
-  - { code: non_food_consumer, label: Non-food consumer goods, parent: imp_consumer }
-  - { code: fuel, label: Fuel, parent: imp_intermediate }
-  - { code: textiles_inputs, label: Textiles and textile articles, parent: imp_intermediate }
-  - { code: fertiliser, label: Fertiliser, parent: imp_intermediate }
-  - { code: other_intermediate, label: Other intermediate goods, parent: imp_intermediate }
-  - { code: machinery, label: Machinery and equipment, parent: imp_investment }
-  - { code: building_materials, label: Building materials, parent: imp_investment }
-  - { code: transport_equipment, label: Transport equipment, parent: imp_investment }
+  - { code: total, label: Total (all categories of the flow), total: true, sdmx: _T }
+  # exports
+  - { code: x_agricultural, label: Agricultural exports, parent: total }
+  - { code: x_tea, label: Tea, parent: x_agricultural }
+  - { code: x_rubber, label: Rubber, parent: x_agricultural }
+  - { code: x_coconut, label: Coconut, parent: x_agricultural }
+  - { code: x_coconut_kernel, label: Coconut kernel products, parent: x_coconut }
+  - { code: x_coconut_other, label: Other coconut products, parent: x_coconut }
+  - { code: x_spices, label: Spices, parent: x_agricultural }
+  - { code: x_vegetables, label: Vegetables, parent: x_agricultural }
+  - { code: x_unmanufactured_tobacco, label: Unmanufactured tobacco, parent: x_agricultural }
+  - { code: x_minor_agricultural, label: Minor agricultural products, parent: x_agricultural }
+  - { code: x_seafood, label: Seafood, parent: x_agricultural }
+  - { code: x_industrial, label: Industrial exports, parent: total }
+  - { code: x_food_beverages_tobacco, label: "Food, beverages and tobacco", parent: x_industrial }
+  - { code: x_animal_fodder, label: Animal fodder, parent: x_industrial }
+  - { code: x_textiles_garments, label: Textiles and garments, parent: x_industrial }
+  - { code: x_garments, label: Garments, parent: x_textiles_garments }
+  - { code: x_textiles, label: Textiles, parent: x_textiles_garments }
+  - { code: x_other_textile_articles, label: Other made up textile articles, parent: x_textiles_garments }
+  - { code: x_rubber_products, label: Rubber products, parent: x_industrial }
+  - { code: x_gems_jewellery, label: "Gems, diamonds and jewellery", parent: x_industrial }
+  - { code: x_machinery, label: Machinery and mechanical appliances, parent: x_industrial }
+  - { code: x_transport_equipment, label: Transport equipment, parent: x_industrial }
+  - { code: x_petroleum_products, label: Petroleum products, parent: x_industrial }
+  - { code: x_chemical_products, label: Chemical products, parent: x_industrial }
+  - { code: x_wood_paper, label: Wood and paper products, parent: x_industrial }
+  - { code: x_printing, label: Printing industry products, parent: x_industrial }
+  - { code: x_leather_footwear, label: "Leather, travel goods and footwear", parent: x_industrial }
+  - { code: x_plastics, label: Plastics and articles thereof, parent: x_industrial }
+  - { code: x_base_metals, label: Base metals and articles, parent: x_industrial }
+  - { code: x_ceramics, label: Ceramic products, parent: x_industrial }
+  - { code: x_other_industrial, label: Other industrial exports, parent: x_industrial }
+  - { code: x_mineral, label: Mineral exports, parent: total }
+  - { code: x_earths_stone, label: Earths and stone, parent: x_mineral }
+  - { code: x_ores_slag_ash, label: "Ores, slag and ash", parent: x_mineral }
+  - { code: x_precious_metals, label: Precious metals, parent: x_mineral }
+  - { code: x_unclassified, label: Unclassified exports, parent: total }
+  # imports
+  - { code: m_consumer, label: Consumer goods, parent: total }
+  - { code: m_food_beverages, label: Food and beverages, parent: m_consumer }
+  - { code: m_vegetables, label: Vegetables, parent: m_food_beverages }
+  - { code: m_sugar, label: Sugar and confectionery, parent: m_food_beverages }
+  - { code: m_cereals, label: Cereals and milling industry products, parent: m_food_beverages }
+  - { code: m_dairy, label: Dairy products, parent: m_food_beverages }
+  - { code: m_seafood, label: Seafood, parent: m_food_beverages }
+  - { code: m_oils_fats, label: Oils and fats, parent: m_food_beverages }
+  - { code: m_spices, label: Spices, parent: m_food_beverages }
+  - { code: m_fruits, label: Fruits, parent: m_food_beverages }
+  - { code: m_beverages, label: Beverages, parent: m_food_beverages }
+  - { code: m_other_food_beverages, label: Other food and beverages, parent: m_food_beverages }
+  - { code: m_other_consumer, label: Other consumer goods, parent: m_consumer }
+  - { code: m_medical, label: Medical and pharmaceuticals, parent: m_other_consumer }
+  - { code: m_personal_vehicles, label: Personal vehicles, parent: m_other_consumer }
+  - { code: m_household_furniture, label: Household and furniture items, parent: m_other_consumer }
+  - { code: m_home_appliances, label: Home appliances, parent: m_other_consumer }
+  - { code: m_clothing, label: Clothing and accessories, parent: m_other_consumer }
+  - { code: m_cosmetics, label: Cosmetics and toiletries, parent: m_other_consumer }
+  - { code: m_rubber_products, label: Rubber products, parent: m_other_consumer }
+  - { code: m_printed_materials, label: Printed materials and stationery, parent: m_other_consumer }
+  - { code: m_telecom_devices, label: Telecommunication devices, parent: m_other_consumer }
+  - { code: m_other_non_food, label: Other non-food consumables, parent: m_other_consumer }
+  - { code: m_intermediate, label: Intermediate goods, parent: total }
+  - { code: m_fuel, label: Fuel, parent: m_intermediate }
+  - { code: m_crude_oil, label: "Petroleum: crude oil", parent: m_fuel }
+  - { code: m_refined_petroleum, label: Refined petroleum, parent: m_fuel }
+  - { code: m_coal, label: Coal, parent: m_fuel }
+  - { code: m_textiles, label: Textiles and textile articles, parent: m_intermediate }
+  - { code: m_chemicals, label: Chemical products, parent: m_intermediate }
+  - { code: m_plastics, label: Plastics and articles thereof, parent: m_intermediate }
+  - { code: m_wheat_maize, label: Wheat and maize, parent: m_intermediate }
+  - { code: m_diamonds_stones, label: Diamonds and precious or semi-precious stones, parent: m_intermediate }
+  - { code: m_gold, label: Gold, parent: m_intermediate }
+  - { code: m_paper, label: Paper and paperboards and articles thereof, parent: m_intermediate }
+  - { code: m_base_metals, label: Base metals, parent: m_intermediate }
+  - { code: m_fertiliser, label: Fertiliser, parent: m_intermediate }
+  - { code: m_vehicle_machinery_parts, label: Vehicle and machinery parts, parent: m_intermediate }
+  - { code: m_agricultural_inputs, label: Agricultural inputs, parent: m_intermediate }
+  - { code: m_food_preparations, label: Food preparations, parent: m_intermediate }
+  - { code: m_rubber_articles, label: Rubber and articles thereof, parent: m_intermediate }
+  - { code: m_mineral_products, label: Mineral products, parent: m_intermediate }
+  - { code: m_unmanufactured_tobacco, label: Unmanufactured tobacco, parent: m_intermediate }
+  - { code: m_other_intermediate, label: Other intermediate goods, parent: m_intermediate }
+  - { code: m_investment, label: Investment goods, parent: total }
+  - { code: m_machinery, label: Machinery and equipment, parent: m_investment }
+  - { code: m_building_materials, label: Building materials, parent: m_investment }
+  - { code: m_transport_equipment, label: Transport equipment, parent: m_investment }
+  - { code: m_other_investment, label: Other investment goods, parent: m_investment }
+  - { code: m_unclassified, label: Unclassified imports, parent: total }
+  - { code: m_non_oil, label: Non-oil imports (memo item) }

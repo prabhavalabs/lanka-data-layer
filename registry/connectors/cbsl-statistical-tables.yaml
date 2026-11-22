@@ -1,0 +1,228 @@
+# CBSL statistical tables, external sector (Central Bank of Sri Lanka). Four monthly workbooks:
+#   2.02     Exports, monthly 2007 onwards (sheet "2.02 In USD 2007-2026", US$ million, one row
+#            per category, one column per month);
+#   2.04     Imports, same layout (sheet "2.04 In USD 2007-2026");
+#   2.14.1   Earnings from tourism (US$ million, months down, years across);
+#   2.14.2   Workers' remittances (same layout).
+# File names carry a revision date (table2.02_20261030_e.xlsx): discovery takes the newest link
+# on the external-sector index page. Trade month headers are Excel dates up to late 2021 and
+# printed text ("Nov-21", "June-22", "Oct -22", "Sep-26 (b)") after that: two outputs per flow. (b) marks provisional
+# months (trade) and the provisional year (tourism 2026). The rupee and SITC sheets are not
+# loaded (the rupee sheets are the USD figures at the monthly average rate). Licence
+# permission_unclear: published with attribution and the takedown contact.
+source: cbsl-statistical-tables
+driver: xlsx_table
+version: 1.0.0
+description: CBSL external-sector tables 2.02, 2.04, 2.14.1 and 2.14.2 (monthly).
+discover:
+  kind: listing_page
+  page: https://www.cbsl.gov.lk/en/statistics/statistical-tables/external-sector
+  links:
+    - { key: table2.02, pattern: "/table2\\.02_(\\d{8})_e\\.xlsx$", pick: latest }
+    - { key: table2.04, pattern: "/table2\\.04_(\\d{8})_e\\.xlsx$", pick: latest }
+    - { key: table2.14.1, pattern: "/table2\\.14\\.1_(\\d{8})_e\\.xlsx$", pick: latest }
+    - { key: table2.14.2, pattern: "/table2\\.14\\.2_(\\d{8})_e\\.xlsx$", pick: latest }
+extract:
+  sheets: "^(2\\.0[24] In USD 2007-|Sheet1$)"
+standardise:
+  dataset: cbsl-merchandise-trade
+  tables:
+    - id: exports
+      artifact: ^table2\.02$
+      header: { anchor: "^Category$" }
+      rows: { until_blank: 3, stop: ["^\\(a\\)", "^Sources"] }
+    - id: imports
+      artifact: ^table2\.04$
+      header: { anchor: "^Category$" }
+      rows: { until_blank: 3, stop: ["^\\(a\\)", "^Sources"] }
+    # Months down, years across; the year header row has an empty first cell, so the header
+    # starts at the title (four rows: title, unit, blank, years).
+    - id: tourism
+      artifact: ^table2\.14\.1$
+      header: { anchor: "^Earnings from Tourism", rows: 4 }
+      rename: { "Earnings from Tourism (a)": Month }
+      rows: { until_blank: 2, skip: ["^Total$"], stop: ["^\\(a\\)"] }
+    - id: remittances
+      artifact: ^table2\.14\.2$
+      header: { anchor: "^Workers' Remittances", rows: 4 }
+      rename: { "Workers' Remittances (a) (b)": Month }
+      rows: { until_blank: 2, skip: ["^Total$"], stop: ["^\\(a\\)"] }
+  outputs:
+    # ── exports ──
+    - table: exports
+      indicator: { value: trade.exports_usd }
+      melt: { columns: "^\\d{4}-\\d{2}-\\d{2}$" }
+      geo: { root: true }
+      period: &iso_month { melt: true, parse: "%Y-%m-%d", freq: M }
+      dims: &xcat
+        category:
+          column: Category
+          map:
+            "1. Agricultural exports": x_agricultural
+            "Tea": x_tea
+            "Rubber": x_rubber
+            "Coconut": x_coconut
+            "Kernel products": x_coconut_kernel
+            "Other": x_coconut_other
+            "Spices": x_spices
+            "Vegetables": x_vegetables
+            "Unmanufactured tobacco": x_unmanufactured_tobacco
+            "Minor agricultural products": x_minor_agricultural
+            "Seafood": x_seafood
+            "2. Industrial exports": x_industrial
+            "Food, beverages & tobacco": x_food_beverages_tobacco
+            "Animal fodder": x_animal_fodder
+            "Textiles and garments": x_textiles_garments
+            "Garments": x_garments
+            "Textiles": x_textiles
+            "Other made up textile articles": x_other_textile_articles
+            "Rubber products": x_rubber_products
+            "Gems, diamonds and jewellery": x_gems_jewellery
+            "Machinery and mechanical appliances": x_machinery
+            "Transport equipment": x_transport_equipment
+            "Petroleum products": x_petroleum_products
+            "Chemical products": x_chemical_products
+            "Wood and paper products": x_wood_paper
+            "Printing industry products": x_printing
+            "Leather, travel goods and footwear": x_leather_footwear
+            "Plastics and articles thereof": x_plastics
+            "Base metals and articles": x_base_metals
+            "Ceramic products": x_ceramics
+            "Other industrial exports": x_other_industrial
+            "3. Mineral exports": x_mineral
+            "Earths and stone": x_earths_stone
+            "Ores, slag and ash": x_ores_slag_ash
+            "Precious metals": x_precious_metals
+            "4. Unclassified": x_unclassified
+            "Total exports": total
+      value: &num { number: { missing: ["-", "", "…", "..."] } }
+    - table: exports
+      indicator: { value: trade.exports_usd }
+      melt: { columns: "^[A-Z][a-z]{2,3} ?-\\d{2}\\b" }
+      geo: { root: true }
+      period: &text_month { melt: true, regex: "^([A-Z][a-z]{2})[a-z]? ?-(\\d{2})", replace: "$1-$2", parse: "%b-%y", freq: M }
+      dims: *xcat
+      value: *num
+      status: &prov_b { melt: true, regex: "(\\(b\\))", unmapped: keep, codes: { "(b)": [reported, provisional] } }
+    # ── imports ──
+    - table: imports
+      indicator: { value: trade.imports_usd }
+      melt: { columns: "^\\d{4}-\\d{2}-\\d{2}$" }
+      geo: { root: true }
+      period: *iso_month
+      dims: &mcat
+        category:
+          column: Category
+          map:
+            "1. Consumer goods": m_consumer
+            "Food and beverages": m_food_beverages
+            "Vegetables": m_vegetables
+            "Sugar and confectionery": m_sugar
+            "Cereals and milling industry products": m_cereals
+            "Dairy products": m_dairy
+            "Seafood": m_seafood
+            "Oils and fats": m_oils_fats
+            "Spices": m_spices
+            "Fruits": m_fruits
+            "Beverages": m_beverages
+            "Other food and beverages": m_other_food_beverages
+            "Other consumer goods": m_other_consumer
+            "Medical and pharmaceuticals": m_medical
+            "Personal vehicles": m_personal_vehicles
+            "Household and furniture items": m_household_furniture
+            "Home appliances": m_home_appliances
+            "Clothing and accessories": m_clothing
+            "Cosmetics and toiletries": m_cosmetics
+            "Rubber products": m_rubber_products
+            "Printed materials and stationary": m_printed_materials
+            "Telecommunication devices": m_telecom_devices
+            "Other non-food consumables": m_other_non_food
+            "2. Intermediate goods": m_intermediate
+            "Fuel": m_fuel
+            "Petroleum : Crude oil": m_crude_oil
+            "Refined Petroleum": m_refined_petroleum
+            "Coal": m_coal
+            "Textiles and textile articles": m_textiles
+            "Chemical products": m_chemicals
+            "Plastics and articles thereof": m_plastics
+            "Wheat and Maize": m_wheat_maize
+            "Diamonds and precious or semi stones": m_diamonds_stones
+            "Gold": m_gold
+            "Paper and paperboards and articles thereof": m_paper
+            "Base metals": m_base_metals
+            "Fertiliser": m_fertiliser
+            "Vehicle and machinery parts": m_vehicle_machinery_parts
+            "Agricultural inputs": m_agricultural_inputs
+            "Food preparations": m_food_preparations
+            "Rubber and articles thereof": m_rubber_articles
+            "Mineral products": m_mineral_products
+            "Unmanufactured tobacco": m_unmanufactured_tobacco
+            "Other intermediate goods": m_other_intermediate
+            "3. Investment goods": m_investment
+            "Machinery and equipment": m_machinery
+            "Building materials": m_building_materials
+            "Transport equipment": m_transport_equipment
+            "Other investment Goods": m_other_investment
+            "4. Unclassified imports": m_unclassified
+            "Total imports": total
+            "Non oil Imports": m_non_oil
+      value: *num
+    - table: imports
+      indicator: { value: trade.imports_usd }
+      melt: { columns: "^[A-Z][a-z]{2,3} ?-\\d{2}\\b" }
+      geo: { root: true }
+      period: *text_month
+      dims: *mcat
+      value: *num
+      status: *prov_b
+    # ── tourism earnings and workers' remittances ──
+    - table: tourism
+      dataset: cbsl-tourism-earnings
+      indicator: { value: tour.earnings_usd }
+      melt: { columns: "\\b\\d{4}\\b" }
+      geo: { root: true }
+      period: &year_month { template: "{melt} | {Month}", regex: "(\\d{4})\\D.*\\| (\\w+)$", replace: "$1 $2", parse: "%Y %B", freq: M }
+      value: *num
+      status: *prov_b
+    - table: remittances
+      dataset: cbsl-workers-remittances
+      indicator: { value: econ.remittances_usd }
+      melt: { columns: "\\b\\d{4}\\b" }
+      geo: { root: true }
+      period: *year_month
+      value: *num
+expect:
+  - { check: no_future }
+  - { dataset: cbsl-merchandise-trade, check: row_count, min: 20000 }
+  - { dataset: cbsl-merchandise-trade, check: range, min: 0, max: 5000 }
+  - { dataset: cbsl-merchandise-trade, check: period_continuity, indicator: trade.exports_usd, severity: warn,
+      note: "Precious-metal exports are blank in a few months (2015-12, 2016-04, 2020-07 ...): no value printed upstream." }
+  - { dataset: cbsl-merchandise-trade, check: period_continuity, indicator: trade.imports_usd }
+  - dataset: cbsl-merchandise-trade
+    check: sql
+    note: "Agricultural + industrial + mineral + unclassified exports = total exports (within 0.5 %, US$ 1 mn)."
+    query: >-
+      SELECT t.period_start FROM stage_obs t
+      JOIN (SELECT period_start, sum(value) s FROM stage_obs WHERE indicator_id = 'trade.exports_usd'
+            AND dims IN ('category=x_agricultural','category=x_industrial','category=x_mineral','category=x_unclassified')
+            GROUP BY period_start) p ON p.period_start = t.period_start
+      WHERE t.indicator_id = 'trade.exports_usd' AND t.dims = 'category=total'
+        AND abs(p.s - t.value) > greatest(1, 0.005 * t.value)
+  - dataset: cbsl-merchandise-trade
+    check: sql
+    note: "Consumer + intermediate + investment + unclassified imports = total imports (within 0.5 %, US$ 1 mn)."
+    query: >-
+      SELECT t.period_start FROM stage_obs t
+      JOIN (SELECT period_start, sum(value) s FROM stage_obs WHERE indicator_id = 'trade.imports_usd'
+            AND dims IN ('category=m_consumer','category=m_intermediate','category=m_investment','category=m_unclassified')
+            GROUP BY period_start) p ON p.period_start = t.period_start
+      WHERE t.indicator_id = 'trade.imports_usd' AND t.dims = 'category=total'
+        AND abs(p.s - t.value) > greatest(1, 0.005 * t.value)
+  - { dataset: cbsl-tourism-earnings, check: row_count, min: 200 }
+  - { dataset: cbsl-tourism-earnings, check: range, min: 0, max: 1000,
+      note: "Zero is printed for April 2020 to November 2020 (borders closed)." }
+  - { dataset: cbsl-tourism-earnings, check: period_continuity }
+  - { dataset: cbsl-workers-remittances, check: row_count, min: 200 }
+  - { dataset: cbsl-workers-remittances, check: range, min: 100, max: 2000 }
+  - { dataset: cbsl-workers-remittances, check: period_continuity }
+  - { dataset: cbsl-workers-remittances, check: max_step_change, pct: 80 }
