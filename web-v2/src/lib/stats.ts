@@ -1,8 +1,10 @@
 // Classification and the statistics behind "Relate layers".
 //
-// In the real system this is `lanka-stats`, one Rust crate compiled natively for the server and to
-// WebAssembly for the browser, so a legend drawn here and one produced by the API share their breaks
-// by construction (10 §2.6, 11 §8). This file is the mockup's stand-in: same functions, plain TypeScript.
+// The real system is `lanka-stats`, one Rust crate compiled natively for the server and to WebAssembly
+// for the browser (./kernel), so a legend drawn here and one produced by the API share their breaks by
+// construction (10 §2.6, 11 §8). Class breaks use the WebAssembly kernel once it has loaded; the plain
+// TypeScript below answers until then, and still drives the sample-data mock analysis.
+import { statsKernel } from './kernel'
 
 /* ---------------- classification ---------------- */
 export type ClassMethod = 'quantile' | 'equal' | 'jenks'
@@ -70,6 +72,14 @@ function jenks(sortedAll: number[], k: number): number[] {
 
 /** k−1 ascending break values; a value belongs to the first class whose break it is below. */
 export function classBreaks(values: ArrayLike<number>, method: ClassMethod, k: number): number[] {
+  // the engine's own kernel once it has loaded (WebAssembly): the same breaks the server would compute
+  const wasm = statsKernel()
+  if (wasm) {
+    const v = Float64Array.from(finite(values))
+    if (v.length === 0) return []
+    const b = wasm.classify(v, method, k).breaks.filter(Number.isFinite)
+    return b.filter((x, i) => i === 0 || x > b[i - 1])
+  }
   const s = finite(values).sort((a, b) => a - b)
   if (s.length === 0) return []
   const [lo, hi] = [s[0], s[s.length - 1]]

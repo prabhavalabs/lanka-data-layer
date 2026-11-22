@@ -1,0 +1,385 @@
+{
+  "$comment": "ldl-map/1 ramp and tone registry (10 §2.6). CC BY 4.0. `ldl.*` ramps and tones have a `light` and a `dark` variant, chosen by the basemap's colour scheme (on a dark basemap sequential ramps run dark → light so that 'more' is always the stronger end); other families have one `stops` list for both. Bivariate palettes are size × size, index = y * size + x, both low → high. Sequential and diverging ramps are checked for colour-vision-deficiency safety by `lanka-mapdoc` tests (lightness monotonic under protan/deutan/tritan simulation).",
+  "spec": "ldl-map/1",
+  "tones": {
+    "ink": {
+      "light": "#14181c",
+      "dark": "#e8edf2"
+    },
+    "grey": {
+      "light": "#687480",
+      "dark": "#8a97a5"
+    },
+    "blue": {
+      "light": "#4685de",
+      "dark": "#5a8fe6"
+    },
+    "teal": {
+      "light": "#2fa191",
+      "dark": "#35aa98"
+    },
+    "green": {
+      "light": "#58a445",
+      "dark": "#5fab51"
+    },
+    "orange": {
+      "light": "#e17926",
+      "dark": "#e07b2a"
+    },
+    "violet": {
+      "light": "#7c61dd",
+      "dark": "#8870e6"
+    },
+    "paper": {
+      "light": "#ffffff",
+      "dark": "#0b0e12"
+    }
+  },
+  "ramps": {
+    "brewer.Blues": {
+      "kind": "seq",
+      "label": "Blues (ColorBrewer)",
+      "stops": [
+        "#f7fbff",
+        "#deebf7",
+        "#c6dbef",
+        "#9ecae1",
+        "#6baed6",
+        "#4292c6",
+        "#2171b5",
+        "#08519c",
+        "#08306b"
+      ]
+    },
+    "brewer.Greens": {
+      "kind": "seq",
+      "label": "Greens (ColorBrewer)",
+      "stops": [
+        "#f7fcf5",
+        "#e5f5e0",
+        "#c7e9c0",
+        "#a1d99b",
+        "#74c476",
+        "#41ab5d",
+        "#238b45",
+        "#006d2c",
+        "#00441b"
+      ]
+    },
+    "brewer.RdBu": {
+      "kind": "div",
+      "label": "Red–blue (ColorBrewer)",
+      "stops": [
+        "#67001f",
+        "#b2182b",
+        "#d6604d",
+        "#f4a582",
+        "#fddbc7",
+        "#f7f7f7",
+        "#d1e5f0",
+        "#92c5de",
+        "#4393c3",
+        "#2166ac",
+        "#053061"
+      ]
+    },
+    "brewer.Set2": {
+      "kind": "cat",
+      "label": "Set2 (ColorBrewer)",
+      "stops": [
+        "#66c2a5",
+        "#fc8d62",
+        "#8da0cb",
+        "#e78ac3",
+        "#a6d854",
+        "#ffd92f",
+        "#e5c494",
+        "#b3b3b3"
+      ]
+    },
+    "brewer.YlOrRd": {
+      "kind": "seq",
+      "label": "Yellow–orange–red (ColorBrewer)",
+      "stops": [
+        "#ffffcc",
+        "#ffeda0",
+        "#fed976",
+        "#feb24c",
+        "#fd8d3c",
+        "#fc4e2a",
+        "#e31a1c",
+        "#bd0026",
+        "#800026"
+      ]
+    },
+    "ldl.biv.blue-orange": {
+      "kind": "biv",
+      "label": "Blue × orange",
+      "size": 3,
+      "light": [
+        "#ecece9",
+        "#9bb4d2",
+        "#4679bb",
+        "#ddb691",
+        "#918b83",
+        "#425e74",
+        "#ce7d35",
+        "#876030",
+        "#3d402a"
+      ],
+      "dark": [
+        "#2b333e",
+        "#3b659d",
+        "#4a94f5",
+        "#92693d",
+        "#9598a6",
+        "#accff6",
+        "#f29a3c",
+        "#e8c7ad",
+        "#f6f6f6"
+      ]
+    },
+    "ldl.biv.green-blue": {
+      "kind": "biv",
+      "label": "Green × blue",
+      "size": 3,
+      "light": [
+        "#ecece9",
+        "#a1bf99",
+        "#538f46",
+        "#9bafd0",
+        "#6a8d89",
+        "#376a3e",
+        "#466fb5",
+        "#305a77",
+        "#194336"
+      ],
+      "dark": [
+        "#2b333e",
+        "#487846",
+        "#62b84e",
+        "#3e619b",
+        "#5fa598",
+        "#82eea8",
+        "#4f8cf0",
+        "#75cfe3",
+        "#a0f6f6"
+      ]
+    },
+    "ldl.biv.teal-violet": {
+      "kind": "biv",
+      "label": "Teal × violet",
+      "size": 3,
+      "light": [
+        "#ecece9",
+        "#91beb6",
+        "#318e81",
+        "#b2a6d4",
+        "#6d86a6",
+        "#256476",
+        "#755dbf",
+        "#484b95",
+        "#18386a"
+      ],
+      "dark": [
+        "#2b333e",
+        "#2d7873",
+        "#2fb8a4",
+        "#62579b",
+        "#619dc4",
+        "#6be6f6",
+        "#9478f0",
+        "#91c0f6",
+        "#a3f6f6"
+      ]
+    },
+    "ldl.cat.default": {
+      "kind": "cat",
+      "label": "Default",
+      "light": [
+        "#6046c0",
+        "#1c8073",
+        "#b9770e",
+        "#2e67c0",
+        "#bf5c15",
+        "#3e8432",
+        "#9a4fc0",
+        "#687480"
+      ],
+      "dark": [
+        "#8870e6",
+        "#35aa98",
+        "#e8a33d",
+        "#5a8fe6",
+        "#e07b2a",
+        "#93cc82",
+        "#c58be0",
+        "#8a97a5"
+      ]
+    },
+    "ldl.div.blue-orange": {
+      "kind": "div",
+      "label": "Blue–orange",
+      "light": [
+        "#2e67c0",
+        "#6f9be0",
+        "#b8cdf0",
+        "#e3e5e6",
+        "#f3c9a0",
+        "#e3904a",
+        "#bf5c15"
+      ],
+      "dark": [
+        "#5a8fe6",
+        "#3f66ac",
+        "#2c3f63",
+        "#2b3038",
+        "#6b4526",
+        "#b0611f",
+        "#e8873a"
+      ]
+    },
+    "ldl.seq.blue": {
+      "kind": "seq",
+      "label": "Blue",
+      "light": [
+        "#e8f2ff",
+        "#c7dcfb",
+        "#9dc2f6",
+        "#6fa4ed",
+        "#4685de",
+        "#2e67c0",
+        "#214b92"
+      ],
+      "dark": [
+        "#11264b",
+        "#19397a",
+        "#2550a6",
+        "#356bce",
+        "#5a8fe6",
+        "#8fb6f2",
+        "#cbdffb"
+      ]
+    },
+    "ldl.seq.green": {
+      "kind": "seq",
+      "label": "Green",
+      "light": [
+        "#ecf6e6",
+        "#cde8c0",
+        "#a8d695",
+        "#7ec069",
+        "#58a445",
+        "#3e8432",
+        "#2c6225"
+      ],
+      "dark": [
+        "#14301a",
+        "#1f4a22",
+        "#2d682c",
+        "#40893a",
+        "#5fab51",
+        "#93cc82",
+        "#cdeac2"
+      ]
+    },
+    "ldl.seq.orange": {
+      "kind": "seq",
+      "label": "Orange",
+      "light": [
+        "#fff0e0",
+        "#fdd8b2",
+        "#f9ba7e",
+        "#f2994b",
+        "#e17926",
+        "#bf5c15",
+        "#914410"
+      ],
+      "dark": [
+        "#3a1d0b",
+        "#5e2e0f",
+        "#884212",
+        "#b75a18",
+        "#e07b2a",
+        "#f3a763",
+        "#fbd7b0"
+      ]
+    },
+    "ldl.seq.teal": {
+      "kind": "seq",
+      "label": "Teal",
+      "light": [
+        "#e3f6f2",
+        "#bce8df",
+        "#8dd5c8",
+        "#59bdae",
+        "#2fa191",
+        "#1c8073",
+        "#125e55"
+      ],
+      "dark": [
+        "#0d2f2b",
+        "#12473f",
+        "#19645a",
+        "#218678",
+        "#35aa98",
+        "#6fcdbd",
+        "#b9ebe1"
+      ]
+    },
+    "ldl.seq.violet": {
+      "kind": "seq",
+      "label": "Violet",
+      "light": [
+        "#efeaff",
+        "#d6ccfb",
+        "#b9a8f5",
+        "#9b84ec",
+        "#7c61dd",
+        "#6046c0",
+        "#463296"
+      ],
+      "dark": [
+        "#241f45",
+        "#34297a",
+        "#4a39a8",
+        "#6650cf",
+        "#8870e6",
+        "#ad9bf2",
+        "#d9d0fb"
+      ]
+    },
+    "viridis.magma": {
+      "kind": "seq",
+      "label": "Magma",
+      "stops": [
+        "#000004",
+        "#180f3d",
+        "#440f76",
+        "#721f81",
+        "#9e2f7f",
+        "#cd4071",
+        "#f1605d",
+        "#fd9668",
+        "#feca8d",
+        "#fcfdbf"
+      ]
+    },
+    "viridis.viridis": {
+      "kind": "seq",
+      "label": "Viridis",
+      "stops": [
+        "#440154",
+        "#482878",
+        "#3e4989",
+        "#31688e",
+        "#26828e",
+        "#1f9e89",
+        "#35b779",
+        "#6ece58",
+        "#b5de2b",
+        "#fde725"
+      ]
+    }
+  }
+}
