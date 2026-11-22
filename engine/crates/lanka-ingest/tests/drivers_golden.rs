@@ -243,9 +243,17 @@ async fn imf_projections_follow_the_edition_year() {
         .replace("(October 2026)", "(April 2027)");
     std::fs::write(dir.join("indicators.json"), cat).expect("write");
     let work = dir.join("work");
-    let r = run(&reg, &p, "imf-data", Some(&dir), &work, &lookup(), usize::MAX)
-        .await
-        .expect("runs");
+    let r = run(
+        &reg,
+        &p,
+        "imf-data",
+        Some(&dir),
+        &work,
+        &lookup(),
+        usize::MAX,
+    )
+    .await
+    .expect("runs");
     let _ = std::fs::remove_dir_all(&dir);
     assert_eq!(basis_of(&r, "2026"), "reported");
     assert_eq!(basis_of(&r, "2027"), "forecast");

@@ -12,8 +12,8 @@
 use std::collections::HashMap;
 
 use anyhow::{Result, bail, ensure};
-use lanka_core::{AdminCodes, Profile};
 use lanka_core::dsv::{MultisetHash, dsv};
+use lanka_core::{AdminCodes, Profile};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
@@ -151,7 +151,12 @@ pub async fn publish_admin_units(
         wrong.is_empty(),
         "{} unit(s) have a parent other than the one their p-code implies: {}",
         wrong.len(),
-        wrong.iter().take(20).cloned().collect::<Vec<_>>().join("; ")
+        wrong
+            .iter()
+            .take(20)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("; ")
     );
     let anc = ancestors(units, usize::from(profile.admin.max_level()))?;
     let scheme = profile.admin_scheme();

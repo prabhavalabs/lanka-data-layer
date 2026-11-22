@@ -1010,7 +1010,8 @@ async fn run_cycle(url: String) {
     .await
     .expect_err("parent must follow the p-code");
     assert!(
-        err.to_string().contains("ZZ12: parent ZZ2, p-code says ZZ1"),
+        err.to_string()
+            .contains("ZZ12: parent ZZ2, p-code says ZZ1"),
         "{err}"
     );
     run.finish(lanka_ingest::run::RunStatus::Failed, "refused")

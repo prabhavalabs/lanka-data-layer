@@ -184,7 +184,9 @@ mod tests {
         // The profile puts every DCS source on the platform stack.
         let dcs = Http::for_source(&profile, reg.source("dcs-agriculture")).expect("clients");
         assert_eq!(
-            dcs.tls_for("https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics"),
+            dcs.tls_for(
+                "https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics"
+            ),
             Tls::Legacy
         );
         assert_eq!(dcs.tls_for("https://api.worldbank.org/v2/"), Tls::Modern);
@@ -195,6 +197,9 @@ mod tests {
         s.access.tls = Some("legacy".into());
         let legacy = Http::for_source(&profile, Some(&s)).expect("clients");
         assert_eq!(legacy.tls_for(&s.access.endpoint), Tls::Legacy);
-        assert_eq!(legacy.tls_for("https://www.statistics.gov.lk/"), Tls::Legacy);
+        assert_eq!(
+            legacy.tls_for("https://www.statistics.gov.lk/"),
+            Tls::Legacy
+        );
     }
 }
