@@ -2227,7 +2227,7 @@ async fn run_frames(url: String) {
     // 5. Errors: unknown indicator / release / dsv → 404; bad parent, too many columns → 400.
     let err = |r: Result<frame::Frame, lanka_core::CoreError>| match r {
         Err(lanka_core::CoreError::NotFound(_)) => "404",
-        Err(lanka_core::CoreError::BadRequest(_)) => "400",
+        Err(lanka_core::CoreError::BadRequest(_) | lanka_core::CoreError::Invalid { .. }) => "400",
         Err(_) => "other",
         Ok(_) => "ok",
     };
@@ -2281,6 +2281,18 @@ async fn run_frames(url: String) {
     );
     assert_eq!(
         err(frame::frame(&pool, &cat, &q(&["2021"], Some("sex=other"))).await),
+        "400"
+    );
+    // codes match without regard to case; the problem names the valid codes
+    match frame::frame(&pool, &cat, &q(&["2021"], Some("sex=other"))).await {
+        Err(lanka_core::CoreError::Invalid { problem, .. }) => {
+            assert_eq!(problem["code"], "DIMS_NO_MATCH");
+            assert!(problem["valid"]["sex"].is_array(), "{problem}");
+        }
+        r => panic!("{:?}", r.map(|_| ())),
+    }
+    assert_eq!(
+        err(frame::frame(&pool, &cat, &q(&["2021"], Some("nosuchdim=x"))).await),
         "400"
     );
     let many: Vec<String> = (1900..1990).map(|y| y.to_string()).collect();

@@ -525,7 +525,7 @@ async fn run(url: &str) {
     assert!(q.features.iter().any(|f| f.id == "way/99"));
     assert!(q.features.iter().all(|f| {
         f.properties
-            .name_en
+            .name
             .as_deref()
             .is_some_and(|n| n.contains("Feature 99"))
     }));
@@ -534,6 +534,10 @@ async fn run(url: &str) {
         .expect("one");
     assert_eq!(one.properties.flags, Flags::UNOFFICIAL_GEOM);
     assert_eq!(one.properties.attrs["lanes"], 4);
+    // flat: fields sit beside the core properties, never under `attrs`
+    let j = serde_json::to_value(&one.properties).expect("json");
+    assert_eq!(j["lanes"], 4);
+    assert!(j.get("attrs").is_none() && j.get("name_en").is_none());
     let near = lanka_core::features::nearest(
         &pool,
         &cat,
