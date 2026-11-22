@@ -1122,17 +1122,35 @@ impl Names {
         Ok(Self { by_level, alias })
     }
 
-    /// `None` when the name is not a unit of `level`.
+    /// `None` when the name is not a unit of `level`. A province (level 1)
+    /// is the text before the word "province" ("Uva province Local Government
+    /// Authorities", "Western Province"), or the name without a trailing "PC".
     #[must_use]
     pub fn resolve(&self, level: i16, name: &str) -> Option<(String, &'static str)> {
         let m = self.by_level.get(&level)?;
-        let n = norm(strip_suffix(name));
+        let n = if level == 1 {
+            norm(province_head(name))
+        } else {
+            norm(strip_suffix(name))
+        };
         if let Some(c) = m.get(&n) {
             return Some((c.clone(), "name_exact"));
         }
         let a = self.alias.get(&(level, n))?;
         m.get(a).map(|c| (c.clone(), "name_alias"))
     }
+}
+
+/// The text before the word "province", else the name without " PC".
+fn province_head(s: &str) -> &str {
+    let t = s.trim();
+    let head = t
+        .to_ascii_lowercase()
+        .find("province")
+        .map_or(t, |i| t[..i].trim_end());
+    head.strip_suffix(" PC")
+        .or_else(|| head.strip_suffix(" pc"))
+        .unwrap_or(head)
 }
 
 fn strip_suffix(s: &str) -> &str {
@@ -1810,6 +1828,41 @@ pub type SharedStd = Arc<StdSpec>;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn province_names_in_labels() {
+        let u = |code: &str, level: i16, name: &str| UnitRef {
+            code: code.into(),
+            level,
+            name_en: name.into(),
+            parent: None,
+        };
+        let units = [
+            u("LK7", 1, "North Central Province"),
+            u("LK9", 1, "Sabaragamuwa Province"),
+            u("LK11", 2, "Colombo District"),
+        ];
+        let n = Names::new(
+            &units,
+            Some("level,alias_norm,target_norm,note\n1,sabaragamuva,sabaragamuwa,x\n"),
+        )
+        .expect("names");
+        let code = |l: i16, s: &str| n.resolve(l, s).map(|(c, _)| c);
+        for s in [
+            "North Central",
+            "North Central Province",
+            "North-Central province Local Government Authorities",
+            "North Central PC",
+        ] {
+            assert_eq!(code(1, s).as_deref(), Some("LK7"), "{s}");
+        }
+        assert_eq!(
+            n.resolve(1, "Sabaragamuva Province"),
+            Some(("LK9".into(), "name_alias"))
+        );
+        assert_eq!(code(1, "Colombo"), None, "provinces only");
+        assert_eq!(code(2, "Colombo District").as_deref(), Some("LK11"));
+    }
 
     #[test]
     fn numbers_and_dates() {
