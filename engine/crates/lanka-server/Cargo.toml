@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 lanka-core.workspace = true
+lanka-analysis.workspace = true
 lanka-app.workspace = true
 lanka-enrich.workspace = true
 lanka-export.workspace = true

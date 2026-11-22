@@ -1,0 +1,398 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/spec/analysis/1/request.schema.json",
+  "title": "ldl-analysis/1 — Lanka Data Layer analysis request",
+  "description": "An analysis request (11-analysis-engine.md §5.1). The engine resolves every \"latest\", \"auto\" and default, echoes the resolved request in the result and identifies the result by a fingerprint of it (an_<16 hex>). Method parameters are validated by the method's own schema (GET /v2/analysis/methods/{id}). Licence: CC BY 4.0.",
+  "type": "object",
+  "additionalProperties": false,
+  "patternProperties": {
+    "^x-": true
+  },
+  "required": [
+    "spec",
+    "method",
+    "variables"
+  ],
+  "properties": {
+    "spec": {
+      "const": "ldl-analysis/1"
+    },
+    "method": {
+      "enum": [
+        "describe",
+        "relate",
+        "regress",
+        "group_compare",
+        "exposure",
+        "zonal",
+        "classify",
+        "autocorr",
+        "local_clusters",
+        "hotspots",
+        "spatial_regress",
+        "change",
+        "composite",
+        "interpolate",
+        "isochrone",
+        "gwr",
+        "isochrone_network"
+      ]
+    },
+    "pin": {
+      "oneOf": [
+        {
+          "const": "latest"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release"
+          ],
+          "properties": {
+            "release": {
+              "type": "string",
+              "pattern": "^[0-9]{8}\\.[0-9]+$"
+            }
+          }
+        }
+      ]
+    },
+    "support": {
+      "oneOf": [
+        {
+          "const": "auto"
+        },
+        {
+          "$ref": "#/$defs/support"
+        }
+      ]
+    },
+    "variables": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "$ref": "#/$defs/variable"
+        },
+        "y": {
+          "$ref": "#/$defs/variable"
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/variable"
+          },
+          "maxItems": 8
+        },
+        "weight": {
+          "$ref": "#/$defs/variable"
+        },
+        "group": {
+          "$ref": "#/$defs/variable"
+        }
+      }
+    },
+    "params": {
+      "type": "object"
+    },
+    "override": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "NOT_CAUSAL",
+          "MIN_N",
+          "SMALL_N",
+          "MAUP",
+          "MAUP_UNSTABLE",
+          "ECOLOGICAL",
+          "RESIDUAL_AUTOCORR",
+          "SIZE_CONFOUND",
+          "SHARED_LINEAGE",
+          "ESTIMATED_INPUT",
+          "MODEL_ON_MODEL",
+          "INPUT_UNCERTAINTY_IGNORED",
+          "PERIOD_MISMATCH",
+          "LOW_COVERAGE",
+          "PSEUDO_REPLICATION",
+          "DISAGGREGATED_INPUT",
+          "INTERP_SOCIO",
+          "OUTLIER_LEVERAGE",
+          "NO_CONTROLS",
+          "MULTICOLLINEAR",
+          "MULTIPLE_TESTING",
+          "SUPPRESSED_CELLS",
+          "SYNTHETIC_INPUT",
+          "COMMUNITY_INPUT",
+          "EXPLORATORY"
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "support": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "level"
+          ],
+          "properties": {
+            "kind": {
+              "const": "admin"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4
+            },
+            "scheme": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "within": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "factor"
+          ],
+          "properties": {
+            "kind": {
+              "const": "grid"
+            },
+            "factor": {
+              "enum": [
+                1,
+                5,
+                10,
+                50
+              ]
+            },
+            "within": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "points"
+            },
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "dataset": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "within": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          }
+        }
+      ]
+    },
+    "variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": true
+      },
+      "properties": {
+        "indicator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "grid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "dataset": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "field": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "dims": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "maxProperties": 8
+        },
+        "period": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "transform": {
+          "enum": [
+            "identity",
+            "log",
+            "log1p",
+            "sqrt",
+            "zscore",
+            "rank"
+          ]
+        },
+        "align": {
+          "$ref": "#/$defs/align"
+        },
+        "label": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "indicator"
+          ]
+        },
+        {
+          "required": [
+            "grid"
+          ]
+        },
+        {
+          "required": [
+            "dataset"
+          ]
+        },
+        {
+          "required": [
+            "source"
+          ]
+        },
+        {
+          "required": [
+            "field"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "indicator"
+                ]
+              },
+              {
+                "required": [
+                  "grid"
+                ]
+              },
+              {
+                "required": [
+                  "dataset"
+                ]
+              },
+              {
+                "required": [
+                  "source"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "align": {
+      "type": "object",
+      "required": [
+        "method"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "identity",
+            "rollup",
+            "grid_zonal",
+            "features_zonal",
+            "point_aggregate",
+            "sample",
+            "crosswalk_rebase",
+            "dasymetric",
+            "inherit",
+            "spatial_interp"
+          ]
+        },
+        "stat": {
+          "enum": [
+            "sum",
+            "mean",
+            "median",
+            "pop_weighted_mean",
+            "share_where",
+            "max",
+            "count",
+            "trimmed_mean"
+          ]
+        },
+        "min_n": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cells": {
+          "enum": [
+            "all",
+            "inside"
+          ]
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "where": {}
+      }
+    }
+  }
+}

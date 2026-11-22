@@ -171,12 +171,12 @@ enum DbCmd {
     /// Run as the database admin role, never as lanka_api / lanka_ingest.
     Migrate {
         /// Also set the application roles' passwords from LANKA_API_PASSWORD,
-        /// LANKA_INGEST_PASSWORD, LANKA_RECIPE_PASSWORD, LANKA_APP_PASSWORD (when set).
+        /// LANKA_INGEST_PASSWORD, LANKA_RECIPE_PASSWORD, LANKA_APP_PASSWORD, LANKA_ANALYSIS_PASSWORD (when set).
         #[arg(long)]
         set_role_passwords: bool,
     },
     /// Set the application roles' passwords from LANKA_API_PASSWORD,
-    /// LANKA_INGEST_PASSWORD, LANKA_RECIPE_PASSWORD and LANKA_APP_PASSWORD.
+    /// LANKA_INGEST_PASSWORD, LANKA_RECIPE_PASSWORD, LANKA_APP_PASSWORD and LANKA_ANALYSIS_PASSWORD.
     SetPasswords,
 }
 
@@ -1175,6 +1175,7 @@ async fn set_role_passwords(pool: &PgPool) -> Result<()> {
         ("lanka_ingest", "LANKA_INGEST_PASSWORD"),
         ("lanka_recipe", "LANKA_RECIPE_PASSWORD"),
         ("lanka_app", "LANKA_APP_PASSWORD"),
+        ("lanka_analysis", "LANKA_ANALYSIS_PASSWORD"),
     ] {
         let Some(pw) = std::env::var(var).ok().filter(|v| !v.is_empty()) else {
             continue;

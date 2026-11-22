@@ -55,14 +55,20 @@ pub async fn connect(url: &str, role: PoolRole) -> Result<PgPool, sqlx::Error> {
 }
 
 /// Applies pending migrations, then re-applies ownership and grants
-/// (`ops.apply_grants`, migration 0004; `app.apply_grants`, migration 0009)
+/// (`ops.apply_grants`, migration 0004; `app.apply_grants`, migration 0009;
+/// `analysis.apply_grants`, migration 0012)
 /// so objects created by any migration belong to `lanka_owner` and are
 /// visible to the application roles.
 /// Run by the migration (admin) role, never by `lanka_api`/`lanka_ingest`.
 pub async fn migrate(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateError> {
     MIGRATOR.run(pool).await?;
-    // The data plane first, then the app plane (migration 0009, WP-28).
-    for f in ["ops.apply_grants()", "app.apply_grants()"] {
+    // The data plane first, then the app plane (migration 0009, WP-28), then
+    // the analysis schema (migration 0012, WP-29).
+    for f in [
+        "ops.apply_grants()",
+        "app.apply_grants()",
+        "analysis.apply_grants()",
+    ] {
         let has: bool = sqlx::query_scalar("SELECT to_regprocedure($1) IS NOT NULL")
             .bind(f)
             .fetch_one(pool)

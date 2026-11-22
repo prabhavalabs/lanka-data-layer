@@ -1,0 +1,378 @@
+{
+  "alignment": [
+    {
+      "coverage": 1.0,
+      "dropped": {},
+      "from": "admin:3",
+      "method": "identity",
+      "params": {},
+      "period": "2021",
+      "role": "x",
+      "to": "admin:3"
+    },
+    {
+      "coverage": 1.0,
+      "dropped": {},
+      "from": "admin:3",
+      "method": "identity",
+      "params": {},
+      "period": "2024",
+      "role": "y",
+      "to": "admin:3"
+    }
+  ],
+  "attribution": [
+    {
+      "licence": "cc-by-4.0",
+      "publisher": "European Space Agency (WorldCover consortium)",
+      "source": "esa-worldcover",
+      "text": "Asian Development Bank, Key Indicators",
+      "title": "ESA WorldCover 10 m 2020/2021",
+      "url": "https://esa-worldcover.org/en/data-access"
+    },
+    {
+      "licence": "cc-by-4.0",
+      "publisher": "Lanka Data Layer",
+      "source": "lanka-data-layer-derived",
+      "text": "Asian Development Bank, Key Indicators",
+      "title": "Lanka Data Layer derived analytics",
+      "url": "https://github.com/prabhavalabs/lanka-data-layer"
+    }
+  ],
+  "basis": "computed",
+  "citation": {
+    "text": "Lanka Data Layer. Analysis an_170052d9a2366a89: relate(lc.class_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.3.",
+    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_170052d9a2366a89"
+  },
+  "estimates": {
+    "headline": "ols",
+    "ols": {
+      "adj_r2": 0.4042671191760273,
+      "coef": [
+        {
+          "b": 5.678728634116141,
+          "ci": [
+            5.564599584603554,
+            5.792857683628728
+          ],
+          "p": 1.467006219246347e-249,
+          "se": 0.0573234913541951,
+          "se_hc3": 0.058021051553804236,
+          "term": "(intercept)"
+        },
+        {
+          "b": 0.06212782455769948,
+          "ci": [
+            0.05272329278992337,
+            0.0715323563254756
+          ],
+          "p": 1.4141400632840155e-31,
+          "se": 0.004093310710931637,
+          "se_hc3": 0.004781086190307284,
+          "term": "x"
+        }
+      ],
+      "diagnostics": {
+        "breusch_pagan": {
+          "lm": 0.00048736532315019065,
+          "p": 0.9823870501490092
+        },
+        "df_resid": 337.0,
+        "max_cooks": 0.19328372880525388,
+        "sigma": 0.9897231745358238
+      },
+      "formula": "log(y) ~ x",
+      "n": 339,
+      "r2": 0.4060296424920745,
+      "reading": "one percentage point more of built-up share is associated with 6.4 % higher population density"
+    },
+    "pearson": {
+      "ci": [
+        0.5693282544001635,
+        0.6964523663309733
+      ],
+      "ci_level": 0.95,
+      "n": 339,
+      "n_effective": 62.208817655813256,
+      "p": 5.140835144361212e-40,
+      "p_adjusted": 1.9761585471159885e-8,
+      "r": 0.6372045531005535
+    },
+    "residual_moran": {
+      "I": 0.6303312602702975,
+      "expected": -0.0029585798816568047,
+      "p_perm": 0.001,
+      "permutations": 999,
+      "weights": "knn6"
+    },
+    "robust": {
+      "coef": [
+        {
+          "b": 5.760934189381428,
+          "term": "(intercept)"
+        },
+        {
+          "b": 0.06048189802171142,
+          "term": "x"
+        }
+      ],
+      "converged": true,
+      "iterations": 17,
+      "method": "huber",
+      "scale": 0.92199161310356,
+      "tuning": 1.345
+    },
+    "scale_sensitivity": [
+      {
+        "level": 2,
+        "n": 25,
+        "pearson_r": 0.6703107256699958
+      },
+      {
+        "level": 3,
+        "n": 339,
+        "pearson_r": 0.6372045531005535
+      }
+    ],
+    "significance": "adjusted",
+    "spearman": {
+      "ci": [
+        0.7870132565816819,
+        0.8574694928285855
+      ],
+      "ci_level": 0.95,
+      "n_effective": 51.33821260225967,
+      "p": 1.0779129164531836e-85,
+      "p_adjusted": 5.3961907033636646e-14,
+      "rho": 0.825429617833414
+    }
+  },
+  "guards": [
+    {
+      "code": "ECOLOGICAL",
+      "message": "Results describe Divisional Secretariat divisions, not individual people, households or properties; what holds for areas need not hold for those inside them.",
+      "severity": "warn"
+    },
+    {
+      "code": "PERIOD_MISMATCH",
+      "detail": {
+        "block_above": 5,
+        "tolerance": 2,
+        "years": 3
+      },
+      "message": "The variables refer to different periods (built-up share 2021, population density 2024), 3 years apart.",
+      "severity": "warn"
+    },
+    {
+      "action": {
+        "label": "fit a spatial model (WP-30)",
+        "method": "spatial_regress"
+      },
+      "code": "RESIDUAL_AUTOCORR",
+      "detail": {
+        "I": 0.6303312602702975,
+        "p_perm": 0.001,
+        "weights": "knn6"
+      },
+      "message": "Residuals are spatially clustered (Moran's I 0.63, permutation p 0.001). Standard errors of the plain regression are too small; use the adjusted figures or a spatial model.",
+      "severity": "warn"
+    },
+    {
+      "code": "NOT_CAUSAL",
+      "message": "This is an association between Divisional Secretariat divisions. It does not show that one variable changes the other.",
+      "severity": "note"
+    },
+    {
+      "code": "MAUP",
+      "message": "Results describe Divisional Secretariat divisions. The strength of an association between areas depends on how the areas are drawn; r is 0.67 at districts, 0.64 at Divisional Secretariat divisions.",
+      "severity": "note"
+    },
+    {
+      "code": "NO_CONTROLS",
+      "message": "No other variables are held constant; candidate controls at this level: any indicator published at this level.",
+      "severity": "note"
+    }
+  ],
+  "id": "an_170052d9a2366a89",
+  "inputs": [
+    {
+      "class": "third_party",
+      "dataset": "worldcover-land-cover",
+      "dsv": "dsv_ca7c1eb4f6867610",
+      "indicator": "lc.class_share",
+      "licence": "cc-by-4.0",
+      "period": "2021",
+      "role": "x",
+      "visibility": "public"
+    },
+    {
+      "class": "derived",
+      "dataset": "derived-per-capita-indicators",
+      "dsv": "dsv_3761902c4276c418",
+      "indicator": "derived.per_km2",
+      "licence": "cc-by-4.0",
+      "period": "2024",
+      "role": "y",
+      "visibility": "public"
+    }
+  ],
+  "interpretation": {
+    "caveats": [
+      "Results describe Divisional Secretariat divisions, not individual people, households or properties; what holds for areas need not hold for those inside them.",
+      "The variables refer to different periods (built-up share 2021, population density 2024), 3 years apart.",
+      "Residuals are spatially clustered (Moran's I 0.63, permutation p 0.001). Standard errors of the plain regression are too small; use the adjusted figures or a spatial model."
+    ],
+    "summary": "Across 339 Divisional Secretariat divisions, a higher built-up share is associated with higher population density (a strong association, r = 0.64, adjusted p < 0.001)."
+  },
+  "licence": {
+    "id": "cc-by-4.0",
+    "redistribution": "bulk"
+  },
+  "method": {
+    "citations": [
+      "Clifford, Richardson & Hémon 1989, Biometrics 45",
+      "Dutilleul 1993, Biometrics 49",
+      "MacKinnon & White 1985, J. Econometrics 29 (HC3)",
+      "Huber 1964, Ann. Math. Statist. 35",
+      "Fieller, Hartley & Pearson 1957, Biometrika 44"
+    ],
+    "id": "relate",
+    "version": "1.0.0"
+  },
+  "n": {
+    "dropped": {},
+    "units": 339,
+    "used": 339
+  },
+  "outputs": [
+    {
+      "columns": [
+        "x",
+        "y",
+        "class",
+        "basis"
+      ],
+      "href": "https://lanka-data-layer.prabhavalabs.com/v2/analyses/an_170052d9a2366a89/outputs/bivariate",
+      "id": "bivariate",
+      "kind": "frame",
+      "suggested_layer": {
+        "name": "built-up share × population density",
+        "style": {
+          "fill": {
+            "bivariate": {
+              "palette": "ldl.bivariate.teal-orange",
+              "x": {
+                "field": "x"
+              },
+              "y": {
+                "field": "y"
+              }
+            }
+          }
+        },
+        "type": "bivariate"
+      }
+    },
+    {
+      "columns": [
+        "fitted",
+        "residual",
+        "cooks",
+        "leverage"
+      ],
+      "href": "https://lanka-data-layer.prabhavalabs.com/v2/analyses/an_170052d9a2366a89/outputs/residuals",
+      "id": "residuals",
+      "kind": "frame",
+      "suggested_layer": {
+        "name": "Residuals",
+        "style": {
+          "fill": {
+            "field": "residual",
+            "scale": {
+              "mid": 0,
+              "type": "diverging"
+            }
+          }
+        },
+        "type": "choropleth"
+      }
+    },
+    {
+      "encoding": "points",
+      "href": "https://lanka-data-layer.prabhavalabs.com/v2/analyses/an_170052d9a2366a89/outputs/scatter",
+      "id": "scatter",
+      "kind": "chart"
+    }
+  ],
+  "provenance": {
+    "computed_at": "",
+    "data_version": "20261122.3",
+    "elapsed_ms": 0,
+    "engine": "lanka 0.1.0",
+    "fingerprint": "170052d9a2366a8967b8809222c14b7d42207c8503f39a5a0ba5811107675937",
+    "git_rev": "",
+    "seed": 1657415757555198601,
+    "stats": "lanka-stats 1.0.0"
+  },
+  "request": {
+    "method": "relate",
+    "params": {
+      "bivariate": {
+        "classes": 3,
+        "method": "quantile"
+      },
+      "correlation": [
+        "pearson",
+        "spearman"
+      ],
+      "effective_n": true,
+      "regression": "ols",
+      "robust": true,
+      "scale_sensitivity": [
+        2
+      ],
+      "spatial": {
+        "local": "none",
+        "permutations": 999,
+        "weights": "knn6"
+      },
+      "uncertainty": "analytic"
+    },
+    "pin": {
+      "release": "20261122.3"
+    },
+    "spec": "ldl-analysis/1",
+    "support": {
+      "kind": "admin",
+      "level": 3
+    },
+    "variables": {
+      "x": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "lc_class": "50"
+        },
+        "indicator": "lc.class_share",
+        "label": "built-up share",
+        "period": "2021",
+        "transform": "identity"
+      },
+      "y": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "source_indicator": "census24.pop_total"
+        },
+        "indicator": "derived.per_km2",
+        "label": "population density",
+        "period": "2024",
+        "transform": "log"
+      }
+    }
+  },
+  "spec": "ldl-analysis-result/1",
+  "state": "ready"
+}

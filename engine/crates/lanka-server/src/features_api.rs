@@ -594,6 +594,7 @@ mod tests {
             store_dir: None,
             app: None,
             grids: Arc::new(RwLock::new(Arc::new(crate::grids::GridSet::default()))),
+            analysis: None,
         };
         let res = crate::router(state)
             .oneshot(
