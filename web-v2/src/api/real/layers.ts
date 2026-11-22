@@ -178,7 +178,7 @@ async function frame(source: Extract<Source, { kind: 'indicator' }>, r: Resolved
     geometry: EMPTY,
     centroids: [],
     fields: metas.length === 1 ? [{ id: 'value', label: metas[0]?.label ?? ids[0], kind: 'number', unit: metas[0]?.unit }] : ids.map((id, k) => ({ id, label: metas[k]?.label ?? id, kind: 'number' as const, unit: metas[k]?.unit })),
-    // the tileset carries a level from its own zoom (`adm3` from z6, `adm4` from z9): nothing is drawn, or fetched, below it
+    // the tileset carries a level from its own zoom (the resolver's `minzoom`: `adm3` from z5, `adm4` from z9): nothing is drawn, or fetched, below it
     tiles: { tiles: [absoluteApiUrl(r.tiles!)], minzoom: r.minzoom ?? 0, maxzoom: r.maxzoom ?? 12, sourceLayer: r.source_layer ?? `adm${level}`, centroidsLayer: r.centroids_layer ?? 'centroids', level, parent: source.parent },
   }
 }

@@ -9,6 +9,7 @@ import { ApiError, apiUrl, getJson, postJson } from '@/api/http'
 import { indicatorMeta, LEVELS } from '@/mocks/layers'
 import type { AnalysisRequest, AnalysisResult as Result, Guard, GroupCompareEstimates, MapDocument, RelateEstimates, Source, Variable } from '@/lib/map-spec'
 import type { CompareResult, RelateData, RelateResult, VarInfo } from '@/mocks/analysis'
+import { noteEngineRevision } from '../engine-revision'
 import { areaNames } from './names'
 
 /* ---------------- request ---------------- */
@@ -161,12 +162,22 @@ async function adaptCompare(result: Result<GroupCompareEstimates>, req: EngineRe
 }
 
 const runs = new Map<string, Promise<RelateResult | CompareResult>>()
+
 /** Runs the request on the engine and adapts the result for the panel; the panel and the map layers share one run. */
 export function runAnalysisOnEngine(req: EngineRequest): Promise<RelateResult | CompareResult> {
   const key = JSON.stringify(req)
   let p = runs.get(key)
   if (!p) {
-    p = runEngine(req).then((result): Promise<RelateResult | CompareResult> => (req.method === 'relate' ? adaptRelate(result as Result<RelateEstimates>, req) : adaptCompare(result as Result<GroupCompareEstimates>, req)))
+    p = runEngine(req).then((result): Promise<RelateResult | CompareResult> => {
+      // a result from another engine revision: drop every run and output cached before it, but this one
+      if (noteEngineRevision(result.provenance?.engine_revision)) {
+        const current = runs.get(key)
+        runs.clear()
+        outputs.clear()
+        if (current) runs.set(key, current)
+      }
+      return req.method === 'relate' ? adaptRelate(result as Result<RelateEstimates>, req) : adaptCompare(result as Result<GroupCompareEstimates>, req)
+    })
     p.catch(() => runs.delete(key))
     runs.set(key, p)
   }

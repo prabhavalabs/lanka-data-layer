@@ -222,7 +222,7 @@ export type GuardCode =
   | 'NOT_CAUSAL' | 'MIN_N' | 'SMALL_N' | 'MAUP' | 'MAUP_UNSTABLE' | 'ECOLOGICAL' | 'RESIDUAL_AUTOCORR' | 'SIZE_CONFOUND' | 'SHARED_LINEAGE' | 'ESTIMATED_INPUT'
   | 'MODEL_ON_MODEL' | 'INPUT_UNCERTAINTY_IGNORED' | 'PERIOD_MISMATCH' | 'LOW_COVERAGE' | 'PSEUDO_REPLICATION' | 'DISAGGREGATED_INPUT' | 'INTERP_SOCIO'
   | 'OUTLIER_LEVERAGE' | 'NO_CONTROLS' | 'MULTICOLLINEAR' | 'MULTIPLE_TESTING' | 'SUPPRESSED_CELLS' | 'SYNTHETIC_INPUT' | 'COMMUNITY_INPUT' | 'EXPLORATORY'
-export type Guard = { code: GuardCode; severity: Severity; message: string; detail?: Record<string, unknown>; action?: { label?: string; request?: Partial<AnalysisRequest> }; overridden?: boolean }
+export type Guard = { code: GuardCode; severity: Severity; message: string; detail?: Record<string, unknown>; action?: { label?: string; request?: Partial<AnalysisRequest>; /** guards the caller may acknowledge and run anyway (also as `request.override`) */ override?: GuardCode[]; method?: string }; overridden?: boolean }
 export type AlignmentStep = { role: string; from: string; to: string; method: string; params?: Record<string, unknown>; coverage: number; quality?: 'A' | 'B' | 'C' | 'D'; dropped?: Record<string, number> }
 export type Interval = [lo: number, hi: number]
 export type FieldInfo = { id: string; label: string; type: 'number' | 'category' | 'string' | 'date'; unit?: string }
@@ -231,9 +231,9 @@ export type AnalysisResult<E = unknown> = {
   spec: 'ldl-analysis-result/1'
   id: string
   state: AnalysisState
-  method: { id: AnalysisRequest['method']; version: string; citations: string[] }
+  method: { id: AnalysisRequest['method']; version: string; /** bumped when the method's output changes for unchanged inputs; part of the id */ revision?: number; citations: string[] }
   request: AnalysisRequest
-  inputs: { role: string; dataset: string; dsv: string; indicator?: string; field?: string; period?: string; class: 'official' | 'third_party' | 'derived' | 'estimated' | 'user'; licence: string; visibility: 'private' | 'unlisted' | 'public'; synthetic?: boolean }[]
+  inputs: { role: string; dataset: string; dsv: string; indicator?: string; field?: string; period?: string; class: 'official' | 'third_party' | 'derived' | 'estimated' | 'user'; licence: string; visibility: 'private' | 'unlisted' | 'public'; synthetic?: boolean; /** terrain, hazard maps, climate normals: its period does not count towards PERIOD_MISMATCH */ time_invariant?: boolean }[]
   alignment: AlignmentStep[]
   n: { units?: number; points?: number; used: number; dropped: Record<string, number> }
   /** null when blocked */
@@ -242,7 +242,7 @@ export type AnalysisResult<E = unknown> = {
   guards: Guard[]
   interpretation: { summary: string; caveats: string[] } | null
   outputs: AnalysisOutput[]
-  provenance: { fingerprint: string; seed: number; engine: string; data_version: string; computed_at: string; elapsed_ms: number }
+  provenance: { fingerprint: string; seed: number; engine: string; /** the engine's shared code revision; part of the id */ engine_revision?: number; data_version: string; computed_at: string; elapsed_ms: number }
   citation: { text: string; url: string }
 }
 export type Coef = { term: string; b: number; se_hc3?: number; ci?: Interval; p_adjusted?: number }

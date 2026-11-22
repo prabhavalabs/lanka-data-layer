@@ -4,8 +4,8 @@
 //
 // Rendering rules are the contract's (ui-contract-explore §6.4): guards above estimates, warnings open,
 // NOT_CAUSAL always visible, a blocked result shows no number, the server's sentences verbatim.
-import { useQuery } from '@tanstack/react-query'
-import { ArrowDownUp, Ban, Check, CircleAlert, Info, Layers2, Play, Plus, Quote } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowDownUp, Ban, Check, CircleAlert, Info, Layers2, Loader2, Play, Plus, Quote } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { ApiError, getJson } from '@/api/http'
 import { analysisQuery, engineRequest, INDICATOR_META, indicatorMeta, LEVELS, planQuery, type CompareResult, type RelateResult } from '@/api/workspace'
@@ -96,8 +96,22 @@ function Stat({ label, value, sub, hint }: { label: string; value: ReactNode; su
   )
 }
 
-/** Guards come before the numbers they qualify: blocks and warnings open, NOT_CAUSAL always shown, other notes one tap away. */
-function Guards({ guards, onAction }: { guards: Guard[]; onAction?: (request: Partial<AnalysisRequest>) => void }) {
+/** The guards a block lets the caller acknowledge and run anyway: the action's `override` (also accepted as `request.override`). */
+const overrideOf = (g: Guard): GuardCode[] | null => {
+  const codes = g.action?.override ?? g.action?.request?.override
+  return g.severity === 'block' && codes?.length ? codes : null
+}
+/** What the acknowledgement says on its button: it names the caveat being accepted, never just "Fix". */
+const OVERRIDE_LABEL: Partial<Record<GuardCode, string>> = { PERIOD_MISMATCH: 'Run anyway — acknowledge period gap' }
+const overrideLabel = (codes: GuardCode[]) => (codes.length === 1 && OVERRIDE_LABEL[codes[0]]) || `Run anyway — acknowledge ${codes.map((c) => (GUARD[c] ?? c).toLowerCase()).join(', ')}`
+/** Adds the acknowledged codes to the request's `override`, keeping any already there. */
+const withOverride = <T extends AnalysisRequest>(req: T, codes: GuardCode[]): T => ({ ...req, override: [...new Set([...(req.override ?? []), ...codes])] })
+
+/**
+ * Guards come before the numbers they qualify: blocks and warnings open, NOT_CAUSAL always shown, other notes one tap away.
+ * A block that can be acknowledged offers it as a secondary button; nothing is ever overridden without that click.
+ */
+function Guards({ guards, onAction, onOverride, overriding }: { guards: Guard[]; onAction?: (request: Partial<AnalysisRequest>) => void; onOverride?: (codes: GuardCode[]) => void; overriding?: boolean }) {
   const [open, setOpen] = useState<string | null>(null)
   const loud = guards.filter((g) => g.severity !== 'note' || g.code === 'NOT_CAUSAL')
   const quiet = guards.filter((g) => g.severity === 'note' && g.code !== 'NOT_CAUSAL')
@@ -111,15 +125,23 @@ function Guards({ guards, onAction }: { guards: Guard[]; onAction?: (request: Pa
             <li key={g.code} className={cn('flex gap-2.5 rounded-xl px-3 py-2.5', g.severity === 'block' ? 'bg-bad-soft' : g.severity === 'warn' ? 'bg-warn-soft' : 'bg-bg3/60')}>
               <Icon className={cn('mt-[1px] size-3.5 shrink-0', g.severity === 'block' ? 'text-bad' : g.severity === 'warn' ? 'text-warn' : 'text-ink3')} />
               <div className="min-w-0">
-                <div className="text-[12.5px] leading-tight font-medium text-ink">{GUARD[g.code] ?? g.code}</div>
+                <div className="flex items-baseline gap-2 text-[12.5px] leading-tight font-medium text-ink">
+                  {GUARD[g.code] ?? g.code}
+                  {g.overridden && <span className="font-mono text-[10px] font-normal tracking-normal text-ink3 uppercase">acknowledged</span>}
+                </div>
                 <p className="mt-1 text-[12px] leading-[1.5] text-ink2">{g.message}</p>
-                {g.action?.request && onAction ? (
+                {overrideOf(g) && onOverride ? (
+                  <Button variant="outline" size="sm" disabled={overriding} onClick={() => onOverride(overrideOf(g)!)} className="mt-2 h-7 gap-1.5 px-2.5 text-[12.5px] max-md:h-9">
+                    {overriding && <Loader2 className="!size-3.5 animate-spin" />}
+                    {overrideLabel(overrideOf(g)!)}
+                  </Button>
+                ) : g.action?.request && !g.action.request.override && onAction ? (
                   <Button variant="outline" size="sm" onClick={() => onAction(g.action!.request!)} className="mt-2 h-7 px-2.5 text-[12.5px] max-md:h-9">
                     {g.action.label ?? 'Fix'}
                   </Button>
                 ) : (
                   // the engine names a method to try instead; the ones that are not served yet are shown, marked as coming
-                  (g.action as { method?: string } | undefined)?.method && (
+                  !overrideOf(g) && (g.action as { method?: string } | undefined)?.method && (
                     <Button variant="outline" size="sm" disabled title={`${(g.action as { method?: string }).method} is not served yet`} className="mt-2 h-7 gap-1.5 px-2.5 text-[12.5px] max-md:h-9">
                       {(g.action?.label ?? (g.action as { method?: string }).method)!.replace(/\s*\(WP-\d+\)$/, '')}
                       <span className="font-mono text-[10px] text-ink3 uppercase">coming</span>
@@ -156,10 +178,14 @@ function Guards({ guards, onAction }: { guards: Guard[]; onAction?: (request: Pa
   )
 }
 
+/** The method's and the engine's revision, as cited: both are part of the result's id. */
+const revisions = (r: RelateResult | CompareResult) => [r.method.revision !== undefined ? `${r.method.id} r${r.method.revision}` : '', r.provenance.engine_revision !== undefined ? `engine r${r.provenance.engine_revision}` : ''].filter(Boolean).join(', ')
+
 /** Inputs with their versions and licences, how each was brought onto the support, the method's sources, and how to cite. */
 function Explain({ result }: { result: RelateResult | CompareResult }) {
   const [open, setOpen] = useState(false)
   const [copied, copy] = useCopy()
+  const rev = revisions(result)
   return (
     <div>
       <div className="flex items-center gap-2">
@@ -167,7 +193,7 @@ function Explain({ result }: { result: RelateResult | CompareResult }) {
           <Info className="!size-3.5" />
           Explain
         </Button>
-        <Button variant="outline" size="sm" onClick={() => copy(`${result.citation.text} ${result.citation.url}`)} className="h-7 gap-1.5 px-2.5 text-[12.5px] max-md:h-9">
+        <Button variant="outline" size="sm" onClick={() => copy(`${result.citation.text}${rev ? ` (${rev})` : ''} ${result.citation.url}`)} className="h-7 gap-1.5 px-2.5 text-[12.5px] max-md:h-9">
           {copied ? <Check className="!size-3.5 text-ok" /> : <Quote className="!size-3.5" />}
           {copied ? 'Copied' : 'Cite'}
         </Button>
@@ -180,11 +206,18 @@ function Explain({ result }: { result: RelateResult | CompareResult }) {
             <ul className="space-y-1.5">
               {result.inputs.map((i, k) => (
                 <li key={k} className="flex gap-2">
-                  <span className="w-12 shrink-0 font-mono text-[10.5px] text-ink3">{i.role}</span>
+                  <span title={i.role} className="w-12 shrink-0 truncate font-mono text-[10.5px] text-ink3">{i.role.replace(/:\d+$/, '')}</span>
                   <span className="min-w-0">
-                    <span className="block truncate text-ink">{i.indicator ?? i.field ?? i.dataset}</span>
+                    <span className="flex min-w-0 items-baseline gap-1.5">
+                      <span className="truncate text-ink">{i.indicator ?? i.field ?? i.dataset}</span>
+                      {i.time_invariant && (
+                        <span title="Terrain, hazard maps and climate normals do not change over the years: their period does not count as a gap" className="shrink-0 rounded-full border border-line2 px-1.5 font-mono text-[9.5px] leading-[15px] text-ink3">
+                          time-invariant
+                        </span>
+                      )}
+                    </span>
                     <span className="block truncate font-mono text-[10.5px] text-ink3">
-                      {i.dataset} · {i.dsv.slice(0, 12)} · {i.licence}
+                      {i.dataset} · {i.period ? `${i.period} · ` : ''}{i.dsv.slice(0, 12)} · {i.licence}
                       {i.synthetic ? ' · synthetic' : ''}
                     </span>
                   </span>
@@ -197,7 +230,7 @@ function Explain({ result }: { result: RelateResult | CompareResult }) {
             <ul className="space-y-1.5">
               {result.alignment.map((a, k) => (
                 <li key={k} className="flex gap-2">
-                  <span className="w-12 shrink-0 font-mono text-[10.5px] text-ink3">{a.role}</span>
+                  <span title={a.role} className="w-12 shrink-0 truncate font-mono text-[10.5px] text-ink3">{a.role.replace(/:\d+$/, '')}</span>
                   <span className="min-w-0">
                     {a.from} → {a.to}: {a.method}
                     <span className="block font-mono text-[10.5px] text-ink3">
@@ -212,7 +245,9 @@ function Explain({ result }: { result: RelateResult | CompareResult }) {
           <div>
             <div className="t-label mb-1.5 tracking-[0.08em] uppercase">Method</div>
             <p>
-              {result.method.id} {result.method.version} · {result.provenance.engine} · seed {result.provenance.seed} · data {result.provenance.data_version}
+              {result.method.id} {result.method.version}
+              {result.method.revision !== undefined ? ` r${result.method.revision}` : ''} · {result.provenance.engine}
+              {result.provenance.engine_revision !== undefined ? ` (engine r${result.provenance.engine_revision})` : ''} · seed {result.provenance.seed} · data {result.provenance.data_version}
             </p>
             {result.method.citations.map((c) => (
               <p key={c} className="mt-1 text-ink3">
@@ -350,7 +385,7 @@ function Setup({ doc, req, write }: { doc: MapDocument; req: RelateRequest; writ
 }
 
 /** What the engine will do with the request, before it runs: units, cost and the guards already known; Run waits for it. */
-function PlanBar({ doc, req, dirty, onRun }: { doc: MapDocument; req: RelateRequest; dirty: boolean; onRun: () => void }) {
+function PlanBar({ doc, req, dirty, onRun, onOverride }: { doc: MapDocument; req: RelateRequest; dirty: boolean; onRun: () => void; onOverride: (codes: GuardCode[]) => void }) {
   const engine = engineRequest(req, doc.sources)
   const plan = useQuery({ ...planQuery(req, doc.sources), enabled: !!engine && dirty })
   const preview = useQuery({ ...previewQuery(req, doc.sources), enabled: !!engine && dirty })
@@ -358,6 +393,8 @@ function PlanBar({ doc, req, dirty, onRun }: { doc: MapDocument; req: RelateRequ
   const err = plan.error instanceof ApiError ? plan.error : null
   const ok = !engine || (!!plan.data && !err)
   const n = plan.data?.support.n_expected
+  // a block the plan already knows: shown before Run, with its acknowledgement when it has one
+  const blocks = (plan.data?.guards ?? []).filter((g) => g.severity === 'block')
   return (
     <section className="border-t border-glass-line px-4 pt-3.5 pb-4">
       {engine && (
@@ -371,6 +408,11 @@ function PlanBar({ doc, req, dirty, onRun }: { doc: MapDocument; req: RelateRequ
               {n !== undefined ? `${n.toLocaleString('en')} ${LEVELS[plan.data.support.level]?.plural ?? 'units'}` : ''} · {plan.data.cost.mode} · about {Math.max(1, Math.round(plan.data.cost.expected_ms))} ms{plan.data.guards.length ? ` · ${plan.data.guards.length} caveat${plan.data.guards.length > 1 ? 's' : ''} known in advance` : ''}
             </span>
           ) : null}
+        </div>
+      )}
+      {blocks.length > 0 && !plan.isFetching && (
+        <div className="mb-3">
+          <Guards guards={blocks} onOverride={onOverride} />
         </div>
       )}
       {preview.data && (
@@ -437,6 +479,21 @@ export function RelatePanel() {
   const zone = useQuery(analysisQuery(zoneReq, doc.sources))
   const [mode, setMode] = useState<'points' | 'hexbin' | null>(null)
   const [hover, setHover] = useState<string | null>(null)
+  const client = useQueryClient()
+  const [ack, setAck] = useState<{ busy: boolean; error?: string }>({ busy: false })
+  /** The user's acknowledgement of a blocked result: the request with `override`, planned, then run (POST). */
+  const acknowledge = async (codes: GuardCode[]) => {
+    if (!committed) return
+    const next = withOverride(committed, codes)
+    setAck({ busy: true })
+    try {
+      if (engineRequest(next, doc.sources)) await client.fetchQuery(planQuery(next, doc.sources))
+      setAck({ busy: false })
+      actions.setAnalysis('rel', next, 'Period gap acknowledged')
+    } catch (err) {
+      setAck({ busy: false, error: err instanceof ApiError ? err.problem?.problems?.map((p) => p.message).join('; ') || err.message : String(err) })
+    }
+  }
 
   if (!req)
     return (
@@ -491,7 +548,7 @@ export function RelatePanel() {
   return (
     <div>
       <Setup doc={doc} req={working!} write={(next) => (engineRequest(next, doc.sources) ? setDraft(next) : actions.setAnalysis('rel', next))} />
-      <PlanBar doc={doc} req={working!} dirty={dirty} onRun={() => draft && actions.setAnalysis('rel', draft, 'Analysis run')} />
+      <PlanBar doc={doc} req={working!} dirty={dirty} onRun={() => draft && actions.setAnalysis('rel', draft, 'Analysis run')} onOverride={(codes) => draft && setDraft(withOverride(draft, codes))} />
       {rel.error ? (
         <section className="border-t border-glass-line px-4 pt-4 pb-5">
           <div className="t-label mb-2.5 tracking-[0.08em] uppercase">Not run</div>
@@ -510,7 +567,8 @@ export function RelatePanel() {
         // a blocked result shows no number: the guard, and the way out of it
         <section className="border-t border-glass-line px-4 pt-4 pb-5">
           <div className="t-label mb-2.5 tracking-[0.08em] uppercase">Not run</div>
-          <Guards guards={r.guards} onAction={(patch) => actions.setAnalysis('rel', { ...req, ...patch } as RelateRequest)} />
+          <Guards guards={r.guards} onAction={(patch) => actions.setAnalysis('rel', { ...req, ...patch } as RelateRequest)} onOverride={acknowledge} overriding={ack.busy} />
+          {ack.error && <p className="mt-2 text-[12px] leading-[1.5] text-bad">{ack.error}</p>}
         </section>
       ) : (
         <div className={cn('transition-opacity duration-200', rel.isPlaceholderData && 'opacity-55')}>
