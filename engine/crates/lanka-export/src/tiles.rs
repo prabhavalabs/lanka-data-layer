@@ -4,9 +4,10 @@
 //!
 //! Tilesets:
 //! - `admin` (built in): one layer per admin level `adm0…adm4` (zoom-gated:
-//!   adm0–adm2 from z0, adm3 from z6, adm4 from z9 — one zoom below the
-//!   `byZoom` switch of 10 §2 so a level is in the tiles before a map asks
-//!   for it), each feature
+//!   adm0–adm2 from z0, adm3 from z5, adm4 from z9 — at least one zoom
+//!   below the `byZoom` switch of 10 §2 so a level is in the tiles before a
+//!   map asks for it; adm3 also covers island views on narrow screens,
+//!   whose fitted zoom is below 6), each feature
 //!   carrying `pcode` (for MapLibre `promoteId`), `level` and the three
 //!   names, plus a `centroids` point layer (point on surface) for labels and
 //!   symbols (10 §2: the frame/value join is by p-code, never by name).
@@ -47,7 +48,10 @@ pub const ADMIN: &str = "admin";
 const ADMIN_MAXZOOM: u8 = 12;
 /// Minimum zoom of each admin level's polygons and of its centroids. The
 /// TileJSON's `vector_layers[].minzoom` states these (10 §3.1).
-pub const ADMIN_ZOOMS: [(i16, u8, u8); 5] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (3, 6, 6), (4, 9, 9)];
+/// adm3 from z5: the island tile then holds every DS division (largest z5
+/// tile 60 KB gzip, z6 81 KB; tippecanoe simplifies per zoom, nothing is
+/// coalesced or dropped).
+pub const ADMIN_ZOOMS: [(i16, u8, u8); 5] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (3, 5, 5), (4, 9, 9)];
 
 #[derive(Debug, Clone, Serialize)]
 pub enum LayerSource {
