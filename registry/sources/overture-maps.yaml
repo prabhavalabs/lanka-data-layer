@@ -25,10 +25,11 @@ datasets:
 - overture-places
 - overture-buildings
 - sltda-registered-establishments
+- overture-workplaces
 priority: P0
 effort: M
-status: planned
-verified_at: '2026-11-21'
-notes: GeoParquet on S3/Azure; query with DuckDB bbox filter. Filter places by source licence as dc does.
+status: active
+verified_at: '2026-11-22'
+notes: GeoParquet on S3/Azure; registry/tools/overture-extract/overture_places.py writes the bbox to GeoJSON with DuckDB, then `lanka ingest run overture-maps --from DIR`. Release 2026-11-18.0 loaded; every place is CDLA-Permissive-2.0 (some also Apache-2.0 or CC0-1.0).
 dc_refs:
 - workplaces

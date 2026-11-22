@@ -1,8 +1,8 @@
 # Overture Places category (top level)
-# Source/authority: Overture Maps Foundation, Places theme category taxonomy (top-level of categories.primary).
-# Note: Verify top-level names against the Overture release in use (taxonomy is versioned).
-# Status: SEED - members below are the confidently known ones; complete the list from the
-#   source extract when the connector is built (every observed code must be listed).
+# Source/authority: Overture Maps Foundation, Places theme taxonomy (first element of taxonomy.hierarchy).
+# Note: Taken from release 2026-11-18.0, which replaced `categories` with `taxonomy`; every top-level value
+#   observed in Sri Lanka is listed. Places without a taxonomy are `other`.
+# Status: COMPLETE for release 2026-11-18.0 (Sri Lanka extract).
 # Labels: English only; si/ta pending native-speaker review (not machine-translated).
 # Order: codes are listed in display order.
 # Used by: overture-places
@@ -10,25 +10,17 @@ id: overture_category
 title: Overture Places category (top level)
 codes:
   - { code: total, label: All places, total: true, sdmx: _T }
-  - { code: eat_and_drink, label: Eat and drink, parent: total }
+  - { code: services_and_business, label: Services and business, parent: total }
   - { code: shopping, label: Shopping, parent: total }
-  - { code: accommodation, label: Accommodation, parent: total }
-  - { code: arts_and_entertainment, label: Arts and entertainment, parent: total }
-  - { code: active_life, label: Active life, parent: total }
-  - { code: beauty_and_spa, label: Beauty and spa, parent: total }
+  - { code: lodging, label: Lodging, parent: total }
   - { code: education, label: Education, parent: total }
-  - { code: health_and_medical, label: Health and medical, parent: total }
-  - { code: financial_service, label: Financial service, parent: total }
-  - { code: public_service_and_government, label: Public service and government, parent: total }
-  - { code: religious_organization, label: Religious organization, parent: total }
-  - { code: automotive, label: Automotive, parent: total }
-  - { code: travel, label: Travel, parent: total }
-  - { code: professional_services, label: Professional services, parent: total }
-  - { code: home_service, label: Home service, parent: total }
-  - { code: real_estate, label: Real estate, parent: total }
-  - { code: mass_media, label: Mass media, parent: total }
-  - { code: pets, label: Pets, parent: total }
-  - { code: business_to_business, label: Business to business, parent: total }
-  - { code: attractions_and_activities, label: Attractions and activities, parent: total }
-  - { code: structure_and_geography, label: Structure and geography, parent: total }
-  - { code: other, label: Other, parent: total }
+  - { code: food_and_drink, label: Food and drink, parent: total }
+  - { code: travel_and_transportation, label: Travel and transportation, parent: total }
+  - { code: lifestyle_services, label: Lifestyle services, parent: total }
+  - { code: cultural_and_historic, label: Cultural and historic, parent: total }
+  - { code: community_and_government, label: Community and government, parent: total }
+  - { code: sports_and_recreation, label: Sports and recreation, parent: total }
+  - { code: health_care, label: Health care, parent: total }
+  - { code: geographic_entities, label: Geographic entities, parent: total }
+  - { code: arts_and_entertainment, label: Arts and entertainment, parent: total }
+  - { code: other, label: Other (no taxonomy), parent: total }
