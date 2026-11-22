@@ -28,6 +28,7 @@ use utoipa::OpenApi;
         super::frame_release,
         super::provenance,
         super::reverse,
+        super::oembed,
     ),
     tags(
         (name = "ops", description = "Health and status: emitted for external monitoring (no alert delivery)"),
@@ -35,6 +36,7 @@ use utoipa::OpenApi;
         (name = "areas", description = "Admin units by p-code; reverse geocoding"),
         (name = "indicators", description = "Series, choropleth data and frames"),
         (name = "provenance", description = "Row-level lineage of every value"),
+        (name = "embeds", description = "oEmbed for map URLs"),
     )
 )]
 pub struct ApiDoc;

@@ -435,3 +435,84 @@ LANKA_TEST_CENSUS_DIR=$PWD/../../lanka-data-layer/foundry/data/raw/census-2024 c
    token, a method and its extract row (`prov`); periods must be canonical for the indicator's frequency
    and geography codes are checked against the country profile. The pipeline handles archive, extracts,
    validation, staging and the publication gate; the worker schedules it and the train releases it.
+
+## App plane I: snapshots, resolve, embed (WP-28)
+
+Design: [12 §2](../docs/architecture-v2/12-enterprise-and-byod.md#2-two-planes), [10 §5–§6](../docs/architecture-v2/10-map-composition.md#5-storage),
+[ADR 0023](../docs/architecture-v2/adr/0023-app-plane-optional-accounts.md). Crate `lanka-app` (mounted by `lanka-server`),
+migration `0009_app_snapshots.sql`.
+
+- **Switch**: `LANKA_APP_PLANE=on|off` (default **off**). Off: no app pool is opened, every `/app/v1` route is the
+  enveloped `/v2` 404, `/v2` responses (bodies and cache headers) are identical to plane-on (unit test), and
+  `/v2/oembed` answers 404 for map URLs. On: pool C (8 connections) as `lanka_app` — `LANKA_APP_DATABASE_URL`, or
+  locally the server's own connection options with `SET ROLE lanka_app`; startup fails unless `current_user` is
+  `lanka_app`. `/v2` handlers never touch pool C.
+- **Schema/role** (0009): schema `app`, `app.map_snapshots` (10 §5; `created_by` gets its FK to `app.users` in
+  WP-31; checks: id = `ms_` + 16 hex of `doc_sha256`, `doc.id = id`, ≤ 262,144 canonical bytes), role `lanka_app`
+  (5 s statements). `app.apply_grants()` — run by `lanka db migrate` after `ops.apply_grants()` — gives `lanka_owner`
+  ownership, `lanka_app` SELECT on `catalog/geo/data/serve` and DML on `app.*` only, and revokes everything on `app`
+  from every other role. `LANKA_APP_PASSWORD` joins `lanka db set-passwords`.
+- **Routes** (`/app/v1/openapi.json`, versioned apart from `/v2`):
+
+| Route | Does | Cache |
+|---|---|---|
+| `POST /app/v1/maps/snapshots` | validate → `ms_<16 hex>` of the RFC 8785 content (no `id`, `meta.updated_at`, nulls) → 201 `{id, url, document, embed, created, bytes}` + `Location`; same content → 200 `created:false` (no rate token); withdrawn content → 410; > 256 KB → 413 with the `TOO_LARGE` problem; invalid → 400 with JSON-pointer problems | no-store |
+| `POST /app/v1/maps/resolve` | the document + `resolved` (`lanka_mapdoc::resolve` on pool C) | no-store |
+| `GET /app/v1/maps/{id}` | the stored document (`id` set); `ETag: "<id>"`; `m_…`/`@seq` → 404 until WP-31 | private, 1 h |
+| `GET /app/v1/maps/{id}/resolved` | resolved document; `ETag: "<id>-<data_version>"`, 304 | private, 300 s (1 d when the pinned release exists) |
+| `GET /app/v1/maps/{id}/package` | Frictionless `datapackage.json` (raw, not enveloped): one CSV resource per frame (+ `ldl:alternates` json/arrow) with licences and publishers; private, `link`/`internal`/restricted, boundary, inline, external and unserved sources go to `ldl:metadata_only` with the reason | as resolved |
+| `GET /v2/oembed?url=&maxwidth=&maxheight=` | oEmbed 1.0 `rich` iframe to `/embed/m/{id}[@seq]` for `/m/…`, `/embed/m/…`, `/id/map/…` URLs of this origin; view-state params `v,t,sel,controls,interactive,lang,theme` carried; `format≠json` → 501 | public, 300 s |
+
+  Errors: the envelope with a `Problem` payload `{type, title, status, detail, problems?, hints?}` (ui-contract §2),
+  `no-store`. Every `/app/` response carries `X-Robots-Tag: noindex`. CORS: GET/POST from any origin, no credentials.
+- **Rate identity** (`lanka_app::rate`): sha256(secret ‖ `YYYY-MM` ‖ address) — `LANKA_IP_HASH_SALT` (random per
+  process if unset), rotated monthly, stored as `created_ip_hash`, never the address. The address is the right-most
+  `X-Forwarded-For` entry when the TCP peer is loopback/private (host nginx), else the peer. Snapshot creation:
+  in-memory token bucket `LANKA_SNAPSHOT_RATE` (default `5/h`) per identity → 429 + `Retry-After`. `Scope` /
+  `Principal` are the stage-0 skeleton (anonymous, `Scope::Public`); `RateIdentity::Key` and `key_prefix` (shape of
+  `ldl_live_…`) exist but no request gets a key identity until WP-31 verifies keys.
+- **Expiry**: a daily task deletes anonymous snapshots unread for 24 months; reads touch `last_read_at` at most daily.
+- **nginx** (`infra/v2/nginx/lanka-v2.conf`): `location ^~ /app/` (zone `lanka_app` 20 r/s burst 40, 429,
+  `client_max_body_size 1m`, `proxy_cache off` + `proxy_no_cache`/`proxy_cache_bypass`) and
+  `location = /app/v1/maps/snapshots` (+ zone `lanka_snap` 10 r/min burst 5); the two `limit_req_zone` lines join the
+  http-level header. `infra/v2/nginx/test/run.sh` runs the real file in `nginx:1.27-alpine` (nginx is not installed
+  on the dev Mac): `nginx -t`, then a stub upstream that marks every response `public, max-age=3600` — `/v2/` is a
+  HIT with the stored body, `/app/` GET/POST get a fresh upstream response every time and no cache file has an
+  `/app/` key, `X-Forwarded-For` ends with the client, the snapshot zone answers 429 past its burst.
+  `UPSTREAM=host.docker.internal:8628` runs the cache checks against a live `lanka serve`. With `proxy_cache lanka`
+  put into `/app/` the script fails (checked).
+
+```bash
+LANKA_APP_PLANE=on lanka serve --bind 127.0.0.1:8601
+curl -s -X POST -H 'content-type: application/json' --data-binary @map.json localhost:8601/app/v1/maps/snapshots | jq .payload
+curl -s localhost:8601/app/v1/maps/ms_c49007f840a3cf19/resolved | jq .payload.resolved
+curl -s localhost:8601/app/v1/maps/ms_c49007f840a3cf19/package | jq '.resources[0].path'
+curl -s 'localhost:8601/v2/oembed?url=https%3A%2F%2Flanka-data-layer.prabhavalabs.com%2Fm%2Fms_c49007f840a3cf19'
+infra/v2/nginx/test/run.sh
+```
+
+Tests: `lanka-app` units (rates, buckets, hashing, forwarded-for trust, key shape, oEmbed URL parsing/escaping,
+snapshot preparation); `lanka-server` units (plane off → every `/app/v1` route 404 and `/v2` byte-identical; plane
+on → validation, 413, ids, OpenAPI, CORS; oEmbed); `crates/lanka-app/tests/app_plane.rs` on a throwaway database
+(`LANKA_TEST_DATABASE_URL`): `lanka_app` gets 42501 for INSERT/UPDATE/DELETE/TRUNCATE on every table of
+`catalog/geo/data/serve/ops` and for DDL, reads them, writes `app.*`; `lanka_api`/`lanka_ingest`/`lanka_recipe` get
+42501 on `app.*` and have no USAGE; grants survive a re-migrate; the 10 §7 example (against a catalogue holding its
+datasets) and the four web-v2 starter maps: same document twice → one id, the stored form hashes to its id, 300 KB →
+413 and nothing stored, 5/h then 429 with Retry-After (re-posting stored content stays free), resolved example has
+attribution and `ESTIMATE`, the package keeps private data metadata-only, withdrawal → 410, expiry.
+
+### Decision note: WP-28 deviations
+
+- *Default off.* 12 §2 makes `off` the mirror profile's default; it is the default everywhere until the compose file
+  and `deploy.sh` provide `LANKA_APP_DATABASE_URL`/`LANKA_APP_PASSWORD` (not changed here), so a deploy of this binary
+  cannot fail on a missing app role.
+- *oEmbed never reads `app.*`*: a `/v2` response may not depend on app-plane state, so the title is generic
+  ("Map — Lanka Data Layer") and an unknown snapshot id still gets an iframe (the embed route shows not-found). Only
+  URLs of the deployment's origin (`LANKA_PUBLIC_URL`, else the profile's `site.base_url`) are answered.
+  Dataset/indicator/area URLs (06 §7) are still 404.
+- *Not here*: `ops.jobs` INSERT for `upload`/`analysis` (WP-29/WP-32 add it with the job kinds), `app.usage_daily`
+  flushing (WP-31), the `/m/…`/`/embed/m/…` pages (web track), `lanka takedown --map` (WP-31; withdraw by
+  `UPDATE app.map_snapshots SET withdrawn = true` meanwhile).
+- *Resolution of the real example*: on a database with only COD-AB, WDI and the census, the 10 §7 example resolves
+  to boundaries + `PRIVATE_DATA` and `NOT_FOUND` problems (its exposure/flood/price datasets are not loaded); its
+  attribution + `ESTIMATE` acceptance is therefore tested with a catalogue that holds them.

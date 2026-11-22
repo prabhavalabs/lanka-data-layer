@@ -5,6 +5,7 @@ members = [
   "crates/lanka-store",
   "crates/lanka-ingest",
   "crates/lanka-mapdoc",
+  "crates/lanka-app",
   "crates/lanka-server",
   "crates/lanka-cli",
 ]
@@ -18,6 +19,7 @@ repository = "https://github.com/prabhavalabs/lanka-data-layer"
 publish = false
 
 [workspace.dependencies]
+lanka-app = { path = "crates/lanka-app" }
 lanka-core = { path = "crates/lanka-core" }
 lanka-ingest = { path = "crates/lanka-ingest" }
 lanka-mapdoc = { path = "crates/lanka-mapdoc" }
