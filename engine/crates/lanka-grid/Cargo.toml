@@ -1,0 +1,26 @@
+[package]
+name = "lanka-grid"
+description = "Lanka Data Layer grid engine: canonical grid arrays, raster resampling, lookups, zonal statistics, COG and PNG output"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+lanka-core.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+hex.workspace = true
+memmap2.workspace = true
+tiff.workspace = true
+png.workspace = true
+flate2.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+
+[lints]
+workspace = true

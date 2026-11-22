@@ -7,6 +7,7 @@ members = [
   "crates/lanka-enrich",
   "crates/lanka-mapdoc",
   "crates/lanka-app",
+  "crates/lanka-grid",
   "crates/lanka-server",
   "crates/lanka-cli",
   "crates/lanka-export",
@@ -27,6 +28,7 @@ lanka-export = { path = "crates/lanka-export" }
 lanka-ingest = { path = "crates/lanka-ingest" }
 lanka-enrich = { path = "crates/lanka-enrich" }
 lanka-mapdoc = { path = "crates/lanka-mapdoc" }
+lanka-grid = { path = "crates/lanka-grid" }
 lanka-store = { path = "crates/lanka-store" }
 lanka-server = { path = "crates/lanka-server" }
 
@@ -58,10 +60,13 @@ calamine = "=0.38.0"
 clap = { version = "=4.6.9", features = ["derive", "env"] }
 nix = { version = "=0.32.0", default-features = false, features = ["fs"] }
 tracing = "=0.1.44"
+memmap2 = "=0.9.12"
+tiff = { version = "=0.11.3", default-features = false, features = ["deflate", "lzw"] }
+png = "=0.18.1"
+flate2 = "=1.1.11"
 tracing-subscriber = { version = "=0.3.23", features = ["env-filter", "json", "fmt"] }
 # WP-04: OSM PBF reading (pure Rust, rust zlib backend) and gzip for PMTiles directories
 osmpbf = { version = "=0.3.8", default-features = false, features = ["rust-zlib"] }
-flate2 = "=1.1.11"
 rayon = "=1.12.0"
 
 [profile.release]
@@ -70,7 +75,8 @@ codegen-units = 1
 strip = "debuginfo"
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# `deny`, not `forbid`: lanka-grid/src/mmap.rs is the one audited exception (ADR 0013).
+unsafe_code = "deny"
 
 [workspace.lints.clippy]
 unwrap_used = "warn"

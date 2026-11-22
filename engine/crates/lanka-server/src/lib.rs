@@ -34,6 +34,7 @@ use utoipa::{IntoParams, OpenApi};
 
 pub mod features_api;
 pub mod frame_codec;
+pub mod grids;
 pub mod openapi;
 
 #[derive(Clone)]
@@ -46,19 +47,45 @@ pub struct AppState {
     /// The app plane (`/app/v1`), when `LANKA_APP_PLANE=on`. `/v2` handlers
     /// only ask whether it is mounted (oEmbed) and never use its pool.
     app: Option<lanka_app::AppPlane>,
+    /// Memory-mapped grid layers (WP-05), swapped with the catalogue.
+    grids: Arc<RwLock<Arc<grids::GridSet>>>,
+}
+
+/// Maps the served grid layers; an empty set when there is no store or profile.
+async fn load_grids(
+    pool: &PgPool,
+    cat: &Catalog,
+    store: Option<&std::path::Path>,
+) -> grids::GridSet {
+    let (Some(dir), Some(p)) = (store, cat.profile.as_deref()) else {
+        return grids::GridSet::default();
+    };
+    match grids::GridSet::load(pool, dir, p.grid).await {
+        Ok(g) => {
+            tracing::info!(mapped = g.mapped_count(), "grid layers mapped");
+            g
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "grid layers not loaded");
+            grids::GridSet::default()
+        }
+    }
 }
 
 impl AppState {
     pub async fn new(pool: PgPool) -> anyhow::Result<Self> {
         let cat = Catalog::load(&pool).await?;
+        let store_dir: Option<std::path::PathBuf> = std::env::var_os("LANKA_STORE_DIR")
+            .or_else(|| std::env::var_os("LANKA_DATA_DIR"))
+            .filter(|v| !v.is_empty())
+            .map(std::path::PathBuf::from);
+        let grids = load_grids(&pool, &cat, store_dir.as_deref()).await;
         Ok(Self {
             pool,
             catalog: Arc::new(RwLock::new(Arc::new(cat))),
             started: std::time::Instant::now(),
-            store_dir: std::env::var_os("LANKA_STORE_DIR")
-                .or_else(|| std::env::var_os("LANKA_DATA_DIR"))
-                .filter(|v| !v.is_empty())
-                .map(std::path::PathBuf::from),
+            store_dir,
+            grids: Arc::new(RwLock::new(Arc::new(grids))),
             app: None,
         })
     }
@@ -77,6 +104,15 @@ impl AppState {
         self
     }
 
+    /// The current grid set (an `Arc` clone).
+    #[must_use]
+    pub fn grids(&self) -> Arc<grids::GridSet> {
+        match self.grids.read() {
+            Ok(g) => Arc::clone(&g),
+            Err(p) => Arc::clone(&p.into_inner()),
+        }
+    }
+
     /// The current snapshot (an `Arc` clone; never blocks on reloads).
     #[must_use]
     pub fn catalog(&self) -> Arc<Catalog> {
@@ -89,6 +125,11 @@ impl AppState {
     pub async fn reload(&self) -> anyhow::Result<()> {
         let fresh = Arc::new(Catalog::load(&self.pool).await?);
         let dv = fresh.data_version.clone();
+        let g = Arc::new(load_grids(&self.pool, &fresh, self.store_dir.as_deref()).await);
+        match self.grids.write() {
+            Ok(mut w) => *w = g,
+            Err(p) => *p.into_inner() = g,
+        }
         match self.catalog.write() {
             Ok(mut g) => *g = fresh,
             Err(p) => *p.into_inner() = fresh,
@@ -334,7 +375,7 @@ async fn health(State(st): State<AppState>, Query(p): Query<HealthParams>) -> Re
         store: status::StoreHealth {
             ok: st.store_dir.as_ref().is_none_or(|d| d.is_dir()),
         },
-        grids_mapped: 0,
+        grids_mapped: u32::try_from(st.grids().mapped_count()).unwrap_or(u32::MAX),
         uptime_s: st.started.elapsed().as_secs(),
         engine_version: lanka_core::ENGINE_VERSION.to_owned(),
         git_rev: lanka_core::git_rev(),
@@ -1042,12 +1083,23 @@ async fn reverse(
             })
     };
     let (lat, lon) = (f(p.lat.as_ref(), "lat")?, f(p.lon.as_ref(), "lon")?);
-    let r = query::reverse(&st.pool, &cat, lat, lon)
-        .await
-        .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
+    // Grid path first (O(1), no database) when the cell lies wholly inside one
+    // unit; otherwise the polygon path (WP-05).
+    let (r, path) = match st.grids().reverse(lat, lon) {
+        Some(r) => (r, "grid"),
+        None => (
+            query::reverse(&st.pool, &cat, lat, lon)
+                .await
+                .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?,
+            "polygon",
+        ),
+    };
     let next = vec![Link::new("area", format!("/v2/areas/{}", r.unit.pcode))];
     let meta = cat.meta_for(with_boundaries(&cat, []), next);
-    respond(&headers, &uri, r, meta)
+    let mut res = respond(&headers, &uri, r, meta)?;
+    res.headers_mut()
+        .insert("x-lanka-reverse", HeaderValue::from_static(path));
+    Ok(res)
 }
 
 #[derive(Debug, Deserialize, IntoParams)]
@@ -1141,6 +1193,11 @@ pub fn router(state: AppState) -> Router {
         .route("/v2/observations/{id}/provenance", get(provenance))
         .route("/v2/reverse", get(reverse))
         .route("/v2/oembed", get(oembed))
+        .route("/v2/point", get(grids::point))
+        .route("/v2/radius", get(grids::radius_handler))
+        .route("/v2/grids", get(grids::list))
+        .route("/v2/grids/{id}", get(grids::detail))
+        .route("/v2/grids/{id}/tiles/{z}/{x}/{y}", get(grids::tile))
         .route("/v2/openapi.json", get(openapi_json))
         .merge(features_api::routes())
         .fallback(fallback)
@@ -1236,6 +1293,7 @@ mod tests {
             started: std::time::Instant::now(),
             store_dir: None,
             app: None,
+            grids: Arc::new(RwLock::new(Arc::new(grids::GridSet::default()))),
         };
         if plane {
             let cfg = lanka_app::AppConfig {

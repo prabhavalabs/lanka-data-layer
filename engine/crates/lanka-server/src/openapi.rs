@@ -29,6 +29,11 @@ use utoipa::OpenApi;
         super::provenance,
         super::reverse,
         super::oembed,
+        super::grids::point,
+        super::grids::radius_handler,
+        super::grids::list,
+        super::grids::detail,
+        super::grids::tile,
     ),
     tags(
         (name = "ops", description = "Health and status: emitted for external monitoring (no alert delivery)"),
@@ -37,6 +42,7 @@ use utoipa::OpenApi;
         (name = "indicators", description = "Series, choropleth data and frames"),
         (name = "provenance", description = "Row-level lineage of every value"),
         (name = "embeds", description = "oEmbed for map URLs"),
+        (name = "grids", description = "Canonical 0.001° grid layers: point values, radius statistics, PNG tiles"),
     )
 )]
 pub struct ApiDoc;

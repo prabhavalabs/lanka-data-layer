@@ -1,0 +1,17 @@
+id: grid-lookups
+title: Canonical grid lookup arrays (gnd_idx, land_mask)
+description: Per-cell lookups of the canonical 0.001 deg grid, built from the reference boundary set - gnd_idx (u16 slot of
+  the GN division holding the cell centre, v1 cell_lookup semantics) and land_mask (whether the cell answers a point query on
+  its own); one layer pair per boundary set.
+source_ids:
+- lanka-data-layer-derived
+kind: grid
+indicators: []
+time_coverage:
+  from: '2022'
+method: Point-in-polygon of every cell centre against the deepest level of the reference boundary set (bucket index, sticky
+  last match, 2 km nearest-boundary fallback for near-shore centres, as v1 cell-lookup); unit boundaries rasterised by grid
+  traversal mark the cells a boundary crosses.
+limits:
+- A cell answers for its centre; cells crossed by a boundary fall back to the polygon path in point queries.
+publication_class: A

@@ -29,6 +29,7 @@ themes:
 - ENVI
 - ECON
 datasets:
+- grid-lookups
 - derived-zonal-population
 - derived-travel-time-facilities
 - derived-facility-coverage

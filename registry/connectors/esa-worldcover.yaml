@@ -1,0 +1,139 @@
+# ESA WorldCover 10 m v200 (2021). 10 m pixels are exactly 1/12000 deg, so every canonical 0.001 deg
+# cell holds 12 x 12 = 144 of them: the class layers count pixels per class (u8, 0-144) and the mode
+# layer keeps the majority class for maps. Tiles are 3 x 3 deg COGs (N03…N09, E078/E081; N03E081 does
+# not exist: open sea). Classes 70 (snow) and 100 (moss) do not occur in Sri Lanka.
+source: esa-worldcover
+driver: raster
+version: 1.0.0
+description: WorldCover 2021 land cover on the canonical grid; class areas and shares per admin unit (ADM1-ADM4).
+dataset: worldcover-land-cover
+discover:
+  files:
+    - { key: N03E078, url: https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N03E078_Map.tif }
+    - { key: N06E078, url: https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N06E078_Map.tif }
+    - { key: N06E081, url: https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N06E081_Map.tif }
+    - { key: N09E078, url: https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N09E078_Map.tif }
+    - { key: N09E081, url: https://esa-worldcover.s3.eu-central-1.amazonaws.com/v200/2021/map/ESA_WorldCover_10m_2021_v200_N09E081_Map.tif }
+layers:
+  - id: worldcover.class
+    period: "2021"
+    resample: class_mode
+    classes: [10, 20, 30, 40, 50, 60, 80, 90, 95]
+    encoding: { dtype: u8, nodata: 0 }
+    unit: "1"
+    zonal: none
+    overview: mode
+    source_res_m: 10
+    serve: true
+    style:
+      classes: { "10": "#006400", "20": "#ffbb22", "30": "#ffff4c", "40": "#f096ff", "50": "#fa0000", "60": "#b4b4b4", "80": "#0064c8", "90": "#0096a0", "95": "#00cf75" }
+  - id: worldcover.c10
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=10
+    resample: class_count
+    class: 10
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c20
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=20
+    resample: class_count
+    class: 20
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c30
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=30
+    resample: class_count
+    class: 30
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c40
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=40
+    resample: class_count
+    class: 40
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c50
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=50
+    resample: class_count
+    class: 50
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c60
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=60
+    resample: class_count
+    class: 60
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c80
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=80
+    resample: class_count
+    class: 80
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c90
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=90
+    resample: class_count
+    class: 90
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+  - id: worldcover.c95
+    period: "2021"
+    indicator: lc.class_area
+    dims: lc_class=95
+    resample: class_count
+    class: 95
+    encoding: { dtype: u8, nodata: 255 }
+    unit: "{pixel}"
+    zonal: class_share
+    overview: mean
+    source_res_m: 10
+zonal:
+  # area = sum over cells of (pixels / 144) x cell area; m2 -> ha.
+  - indicator: lc.class_area
+    stat: area_sum
+    factor: 0.0000006944444444444445
+    layers: { "lc_class=10": worldcover.c10, "lc_class=20": worldcover.c20, "lc_class=30": worldcover.c30, "lc_class=40": worldcover.c40, "lc_class=50": worldcover.c50, "lc_class=60": worldcover.c60, "lc_class=80": worldcover.c80, "lc_class=90": worldcover.c90, "lc_class=95": worldcover.c95 }
+  - indicator: lc.class_share
+    stat: share
+    factor: 100
+    layers: { "lc_class=10": worldcover.c10, "lc_class=20": worldcover.c20, "lc_class=30": worldcover.c30, "lc_class=40": worldcover.c40, "lc_class=50": worldcover.c50, "lc_class=60": worldcover.c60, "lc_class=80": worldcover.c80, "lc_class=90": worldcover.c90, "lc_class=95": worldcover.c95 }
+    of: [worldcover.c10, worldcover.c20, worldcover.c30, worldcover.c40, worldcover.c50, worldcover.c60, worldcover.c80, worldcover.c90, worldcover.c95]

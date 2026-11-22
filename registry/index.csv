@@ -146,6 +146,7 @@ giga-schools,School locations and connectivity,giga-schools,EDUC TECH,point adm1
 gnd-id-crosswalk,DCS GN id <-> COD-AB p-code crosswalk,nuuuwan-gig-data hdx-cod-ab-lka nuuuwan-lk-admin-regions,REGI,adm2,irregular,permission_unclear,P0,M,B
 google-open-buildings,Building footprints and annual building presence (Google),google-open-buildings,REGI,raster adm1 adm2 adm3 adm4,irregular,attribution,P0,M,A
 gpm-imerg-precipitation,"Satellite precipitation, half-hourly to monthly (GPM IMERG)",nasa-earthdata,ENVI,raster adm1 adm2 adm3,daily,open,P2,M,A
+grid-lookups,"Canonical grid lookup arrays (gnd_idx, land_mask)",lanka-data-layer-derived,REGI,raster,monthly,attribution,P0,S,A
 harti-food-prices,Daily food commodity prices (HARTI),harti,AGRI ECON,point,daily,permission_unclear,P1,M,B
 healthsites-facilities,Health facilities (healthsites.io),healthsites,HEAL,point adm1 adm2 adm3 adm4,monthly,attribution,P1,S,A
 heigit-accessibility,Accessibility to health and education (HeiGIT),heigit,HEAL EDUC,adm1 adm2 adm3,irregular,attribution,P2,S,A
