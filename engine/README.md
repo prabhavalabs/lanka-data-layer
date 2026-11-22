@@ -320,6 +320,27 @@ docker compose -f infra/v2/docker-compose.yml --env-file infra/v2/.env up -d --b
 | `LANKA_LOCAL_INPUTS` | — | `source=/dir,…`: `--from` for scheduled runs of sources that read local exports |
 | `LANKA_API_PASSWORD` / `LANKA_INGEST_PASSWORD` / `LANKA_RECIPE_PASSWORD` | — | role passwords set by `lanka db migrate --set-role-passwords` |
 | `LANKA_LOG_JSON` | false | JSON log lines |
+| `LANKA_EXTRACTD_SOCKET` | — | Unix socket of the `tools` sidecar (`lanka-extractd`); every PDF/OCR operation goes through it |
+| `LANKA_EXTRACTD` | — | `require`: refuse to run document tools without the socket (production); unset: local subprocesses under the same limits (development only, logs a warning) |
+| `LANKA_EXTRACTD_{WALL_SECS,CPU_SECS,MEM_MB,FSIZE_MB,MAX_INPUT_MB,MAX_OUTPUT_MB,MAX_RENDER_MPX}` | 60, 60, 1024, 256, 200, 64, 40 | per-call limits of the sandbox |
+| `LANKA_REVIEWERS` | — | comma-separated reviewer handles allowed to approve, reject and sign (unset: any non-empty name) |
+| `LANKA_LLM_PROVIDER` / `LANKA_LLM_ENDPOINT` / `LANKA_LLM_API_KEY` / `LANKA_LLM_MODEL` | `openai` / — | operator-only, `lanka extract propose` (class C); never set on the worker |
+| `LANKA_LLM_USD_PER_MTOK_IN` / `_OUT` | 5 / 25 | prices for the `--max-usd` spend cap |
+| `LANKA_PDF_FIXTURES` | — | directory of real PDFs (`<file key>.pdf`) for `tests/pdf_templates.rs` |
+
+### PDF tables, evidence and review (WP-08)
+
+```sh
+lanka template test dcs-lfs/annual-table-4.1-employment-by-industry LFS2025.pdf --edition 2025
+lanka ingest run dcs-lfs --from DIR          # DIR/<file key>.pdf; leaves the version in_review + evidence sheet
+lanka review open dsv_…                      # evidence sheet on 127.0.0.1:8790 (page renders, cell overlays, crops)
+lanka review approve dsv_… --by NAME         # unchanged
+lanka extract propose <source> --file scan.pdf --url URL --table "Table 4.1a" --readings a.json --readings b.json
+lanka review sign x<id> --row N --decision accept|correct|reject [--text T] --by NAME
+lanka review approve x<id> --by NAME         # refused until every cell < 1.0 and the 10 % sample are signed
+```
+
+Templates live in `registry/templates/<source>/<table>.yaml` (`registry/schema/template.schema.json`); the `tools` sidecar is `infra/v2/tools.Dockerfile` (no network; `cargo test -p lanka-extractd --test sandbox`).
 | `RUST_LOG` | `info,sqlx=warn` | tracing filter |
 
 ## Map documents and frames (WP-26)

@@ -101,7 +101,7 @@ fn num(v: f64) -> String {
         let s = i.abs().to_string();
         let mut out = String::new();
         for (k, ch) in s.chars().enumerate() {
-            if k > 0 && (s.len() - k) % 3 == 0 {
+            if k > 0 && (s.len() - k).is_multiple_of(3) {
                 out.push(',');
             }
             out.push(ch);
@@ -122,6 +122,7 @@ fn png_size(b: &[u8]) -> Result<(u32, u32)> {
     Ok((w, h))
 }
 
+#[allow(clippy::type_complexity)]
 async fn version(pool: &PgPool, dsv: &str) -> Result<Version> {
     let r: (i64, String, String, i32, i32, String, String, Option<String>, Option<i64>, Option<serde_json::Value>, Option<serde_json::Value>) =
         sqlx::query_as(
@@ -248,6 +249,7 @@ fn template_for<'a>(registry: &'a Registry, source: &str, table: &str) -> Option
 }
 
 /// Builds (or rebuilds) the evidence sheet of a review subject.
+#[allow(clippy::type_complexity)]
 #[allow(clippy::too_many_lines)]
 pub async fn build(
     pool: &PgPool,

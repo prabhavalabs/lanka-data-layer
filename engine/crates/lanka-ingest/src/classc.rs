@@ -101,7 +101,7 @@ struct Anchor {
 
 /// Candidate anchors of a token on a page: single words and two-word runs
 /// whose text equals the token exactly (trimmed).
-fn candidates<'w>(words: &[&'w Word], text: &str) -> Vec<(Anchor, f32)> {
+fn candidates(words: &[&Word], text: &str) -> Vec<(Anchor, f32)> {
     let mut out = Vec::new();
     for (i, w) in words.iter().enumerate() {
         if w.text == text {
@@ -341,6 +341,7 @@ pub fn combine(
     }
     for (ri, row) in rows.iter().enumerate() {
         let r = u32::try_from(ri + 1)?;
+        #[allow(clippy::type_complexity)]
         let mine: Vec<(&(usize, usize), &(Proposed, Anchor, f32))> =
             chosen.iter().filter(|((rr, _), _)| *rr == ri).collect();
         if mine.is_empty() {
