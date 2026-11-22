@@ -1,0 +1,26 @@
+# CBSL Real Estate Market Analysis (quarterly, Statistics Department), "Table 1: Asking Price
+# Indices": monthly asking-price indices (2019 = 100) for lands, houses and condominiums in
+# Colombo district. Rows are labelled by month name only (the year and quarter are printed in
+# a separate column between the rows), in calendar order, ending in the last month of the
+# release's quarter. The four 2024 releases print 18 months, later releases six; releases
+# before 2024 print year-on-year changes, not index values.
+id: cbsl-real-estate/asking-price-indices
+title: Asking price indices for lands, houses and condominiums (Colombo district)
+editions:
+  - match: { edition: "2024..2027" }
+    locate:
+      page: { find_text: "Table 1: Asking Price Indices" }
+    columns:
+      - { key: lands, header: "Lands" }
+      - { key: houses, header: "Houses" }
+      - { key: condominiums, header: "Condominiums" }
+    rows: { stop_at: ["During", "The During", "The Asking Price Indices", "Asking price indices for", "Source"] }
+    # In the 2024 releases a figure title is printed on the same line as one table row, right
+    # of the condominium column.
+    number:
+      align: center
+      strip:
+        - "Figure 12: Asking Price Index for Condominiums ‐ Colombo District (2019=100)"
+        - "Figure 12: Asking Price Index for Condominiums - Colombo District (2019=100)"
+    checks:
+      - { row_count: { min: 6, max: 18 } }
