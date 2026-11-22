@@ -1,0 +1,108 @@
+# Quarter hour of the day (end of a 15-minute interval)
+# Source/authority: National System Operator (Pvt) Ltd load curve; HH:MM of the closing stamp of each 15-minute interval.
+# Note: No total.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Code: HHMM of the stamp (0015 = the quarter hour 00:00-00:15).
+# Status: complete (96 quarter hours).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: nso-electricity-generation
+id: quarter_hour
+title: Quarter hour of the day
+codes:
+  - { code: "0000", label: "00:00" }
+  - { code: "0015", label: "00:15" }
+  - { code: "0030", label: "00:30" }
+  - { code: "0045", label: "00:45" }
+  - { code: "0100", label: "01:00" }
+  - { code: "0115", label: "01:15" }
+  - { code: "0130", label: "01:30" }
+  - { code: "0145", label: "01:45" }
+  - { code: "0200", label: "02:00" }
+  - { code: "0215", label: "02:15" }
+  - { code: "0230", label: "02:30" }
+  - { code: "0245", label: "02:45" }
+  - { code: "0300", label: "03:00" }
+  - { code: "0315", label: "03:15" }
+  - { code: "0330", label: "03:30" }
+  - { code: "0345", label: "03:45" }
+  - { code: "0400", label: "04:00" }
+  - { code: "0415", label: "04:15" }
+  - { code: "0430", label: "04:30" }
+  - { code: "0445", label: "04:45" }
+  - { code: "0500", label: "05:00" }
+  - { code: "0515", label: "05:15" }
+  - { code: "0530", label: "05:30" }
+  - { code: "0545", label: "05:45" }
+  - { code: "0600", label: "06:00" }
+  - { code: "0615", label: "06:15" }
+  - { code: "0630", label: "06:30" }
+  - { code: "0645", label: "06:45" }
+  - { code: "0700", label: "07:00" }
+  - { code: "0715", label: "07:15" }
+  - { code: "0730", label: "07:30" }
+  - { code: "0745", label: "07:45" }
+  - { code: "0800", label: "08:00" }
+  - { code: "0815", label: "08:15" }
+  - { code: "0830", label: "08:30" }
+  - { code: "0845", label: "08:45" }
+  - { code: "0900", label: "09:00" }
+  - { code: "0915", label: "09:15" }
+  - { code: "0930", label: "09:30" }
+  - { code: "0945", label: "09:45" }
+  - { code: "1000", label: "10:00" }
+  - { code: "1015", label: "10:15" }
+  - { code: "1030", label: "10:30" }
+  - { code: "1045", label: "10:45" }
+  - { code: "1100", label: "11:00" }
+  - { code: "1115", label: "11:15" }
+  - { code: "1130", label: "11:30" }
+  - { code: "1145", label: "11:45" }
+  - { code: "1200", label: "12:00" }
+  - { code: "1215", label: "12:15" }
+  - { code: "1230", label: "12:30" }
+  - { code: "1245", label: "12:45" }
+  - { code: "1300", label: "13:00" }
+  - { code: "1315", label: "13:15" }
+  - { code: "1330", label: "13:30" }
+  - { code: "1345", label: "13:45" }
+  - { code: "1400", label: "14:00" }
+  - { code: "1415", label: "14:15" }
+  - { code: "1430", label: "14:30" }
+  - { code: "1445", label: "14:45" }
+  - { code: "1500", label: "15:00" }
+  - { code: "1515", label: "15:15" }
+  - { code: "1530", label: "15:30" }
+  - { code: "1545", label: "15:45" }
+  - { code: "1600", label: "16:00" }
+  - { code: "1615", label: "16:15" }
+  - { code: "1630", label: "16:30" }
+  - { code: "1645", label: "16:45" }
+  - { code: "1700", label: "17:00" }
+  - { code: "1715", label: "17:15" }
+  - { code: "1730", label: "17:30" }
+  - { code: "1745", label: "17:45" }
+  - { code: "1800", label: "18:00" }
+  - { code: "1815", label: "18:15" }
+  - { code: "1830", label: "18:30" }
+  - { code: "1845", label: "18:45" }
+  - { code: "1900", label: "19:00" }
+  - { code: "1915", label: "19:15" }
+  - { code: "1930", label: "19:30" }
+  - { code: "1945", label: "19:45" }
+  - { code: "2000", label: "20:00" }
+  - { code: "2015", label: "20:15" }
+  - { code: "2030", label: "20:30" }
+  - { code: "2045", label: "20:45" }
+  - { code: "2100", label: "21:00" }
+  - { code: "2115", label: "21:15" }
+  - { code: "2130", label: "21:30" }
+  - { code: "2145", label: "21:45" }
+  - { code: "2200", label: "22:00" }
+  - { code: "2215", label: "22:15" }
+  - { code: "2230", label: "22:30" }
+  - { code: "2245", label: "22:45" }
+  - { code: "2300", label: "23:00" }
+  - { code: "2315", label: "23:15" }
+  - { code: "2330", label: "23:30" }
+  - { code: "2345", label: "23:45" }

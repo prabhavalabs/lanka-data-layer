@@ -1,0 +1,129 @@
+# National System Operator (NSO) generation summary: the JSON API behind
+# https://edlcare.edl.lk/gensum/details (a single-page app; endpoints read from its bundle,
+# /api/gensum/<endpoint>?date=YYYY-MM-DD, no auth). One request per endpoint and day
+# (discover kind `dates`):
+#   - energy-data: energy per station group for the day (GWh, `energyGWh`), 12 groups;
+#   - load-curve: 15-minute average MW per source, stamped at the end of each quarter hour
+#     ("2026-11-20 00:15:00" … "23:45:00"; the midnight slot is stamped 00:00 of the day);
+#     BESS appears from mid-2026; sources missing on a day are absent (no observation);
+#   - peak-data: night-peak and minimum demand (MW) with their time.
+# Window: the load-curve endpoint keeps about six months (an older date returns its oldest
+# day, 2026-05-23 on 2026-11-22), so `from` is the start of the window dc publishes
+# (2026-09-11) and the dataset grows by one day per run. Backfill of the daily energy to
+# 2023-01-01: lower `dates.from` (about 1,400 days × 3 requests ≈ 70 min at
+# LANKA_FETCH_RPS=1, once), or fetch the days with curl into DIR as `<key>_<YYYY-MM-DD>`
+# and run `lanka ingest run nso-gensum --from DIR`. Requests for a date before the
+# load-curve history answer another day, so the period is read from each row's own stamp,
+# never from the request, and duplicates fail the run (duplicate observation key).
+# Licence permission_unclear: published with attribution and the takedown contact (08 §2).
+source: nso-gensum
+driver: http_json
+version: 1.0.0
+description: NSO daily energy by station group, 15-minute generation by source and daily peak demand (JSON API).
+discover:
+  kind: dates
+  dates: { from: "2026-09-11", lag_days: 1 }
+  files:
+    - { key: energy, url: "https://edlcare.edl.lk/api/gensum/energy-data?date={date}" }
+    - { key: load, url: "https://edlcare.edl.lk/api/gensum/load-curve?date={date}" }
+    - { key: peak, url: "https://edlcare.edl.lk/api/gensum/peak-data?date={date}" }
+extract:
+  format: json
+  tables:
+    - id: energy
+      artifact: ^energy_
+      path: $
+      fields: { group: stationGroupName, display: displayName, energy_gwh: energyGWh, stamp: dateTime }
+    - id: load
+      artifact: ^load_
+      path: $
+      fields:
+        stamp: DateTime
+        Major Hydro: Major Hydro
+        SPP Minihydro: SPP Minihydro
+        Wind: Wind
+        Solar: Solar
+        SPP Biomass: SPP Biomass
+        Thermal-Oil: Thermal-Oil
+        Coal: Coal
+        BESS: BESS
+    - id: peak
+      artifact: ^peak_
+      path: $
+      fields: { group: stationGroupName, mw: activePowerMW, stamp: dateTime }
+standardise:
+  dataset: nso-electricity-generation
+  tables:
+    - { id: energy, source: ^energy$ }
+    - { id: load, source: ^load$ }
+    - { id: peak, source: ^peak$ }
+  outputs:
+    - table: energy
+      method: api
+      indicator: { value: ener.generation_gwh_daily }
+      geo: { root: true }
+      period: { column: stamp, regex: "^(\\d{4}-\\d{2}-\\d{2})", freq: D, parse: "%Y-%m-%d" }
+      dims:
+        station_group:
+          column: group
+          map:
+            Laxapana Complex: laxapana_complex
+            Mahaweli Complex: mahaweli_complex
+            Samanala Complex: samanala_complex
+            CEB Thermal - Coal: ceb_coal
+            CEB Thermal - Oil: ceb_oil
+            IPP Thermal: ipp_oil
+            CEB Wind: ceb_wind
+            IPP Wind: ipp_wind
+            IPP Solar: spp_solar
+            IPP BMP: spp_biomass
+            IPP MHP: spp_minihydro
+            BESS: bess
+      value: { column: energy_gwh }
+    - table: load
+      method: api
+      indicator: { value: ener.generation_mw_15min }
+      melt: { columns: "^(Major Hydro|SPP Minihydro|Wind|Solar|SPP Biomass|Thermal-Oil|Coal|BESS)$" }
+      geo: { root: true }
+      period: { column: stamp, regex: "^(\\d{4}-\\d{2}-\\d{2})", freq: D, parse: "%Y-%m-%d" }
+      dims:
+        source:
+          melt: true
+          map:
+            Major Hydro: major_hydro
+            SPP Minihydro: mini_hydro
+            Wind: wind
+            Solar: solar
+            SPP Biomass: biomass
+            Thermal-Oil: fuel_oil
+            Coal: coal
+            BESS: battery_storage
+        quarter_hour: { column: stamp, regex: " (\\d{2}):(\\d{2}):\\d{2}$", replace: "${1}${2}" }
+      value: {}
+    - table: peak
+      method: api
+      indicator: { value: ener.demand_peak_mw }
+      geo: { root: true }
+      period: { column: stamp, regex: "^(\\d{4}-\\d{2}-\\d{2})", freq: D, parse: "%Y-%m-%d" }
+      dims:
+        peak: { column: group, map: { Night Peak: night_peak, Off Peak: minimum } }
+      value: { column: mw }
+expect:
+  - { check: no_future }
+  - { check: row_count, min: 50000, note: "about 70 days × (12 + 96 × 8 + 2) from 2026-09-11" }
+  - { check: period_continuity, indicator: ener.generation_gwh_daily }
+  - { check: range, indicator: ener.generation_gwh_daily, min: -2, max: 40,
+      note: "one station group in one day: the largest is Mahaweli, about 14 GWh; BESS is net and may be negative" }
+  - { check: range, indicator: ener.generation_mw_15min, min: -200, max: 2500,
+      note: "BESS charges at negative MW; major hydro peaks near 1,400 MW" }
+  - { check: range, indicator: ener.demand_peak_mw, min: 500, max: 3600 }
+  - check: sql
+    note: Total daily energy is 25-75 GWh (Sri Lanka demand, 2026).
+    query: >-
+      SELECT period_start FROM stage_obs WHERE indicator_id = 'ener.generation_gwh_daily'
+      GROUP BY period_start HAVING sum(value) NOT BETWEEN 25 AND 75
+  - check: sql
+    note: Each day's load curve has 95 or 96 quarter hours for coal (the 24:00 stamp belongs to the next day).
+    query: >-
+      SELECT period_start FROM stage_obs WHERE indicator_id = 'ener.generation_mw_15min' AND dims LIKE '%source=coal'
+      GROUP BY period_start HAVING count(*) NOT BETWEEN 94 AND 96
