@@ -1,0 +1,13 @@
+# Daily system demand marker
+# Source/authority: National System Operator (Pvt) Ltd, daily generation summary (peak-data endpoint: Night Peak, Off Peak).
+# Note: No total.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: nso-electricity-generation
+id: demand_peak
+title: Daily system demand marker
+codes:
+  - { code: night_peak, label: Night peak demand }
+  - { code: minimum, label: Minimum (off-peak) demand }

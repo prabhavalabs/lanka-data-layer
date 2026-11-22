@@ -1,0 +1,92 @@
+# Electricity distribution area (area office) of a licensee
+# Source/authority: Public Utilities Commission of Sri Lanka, SAIDI/SAIFI values of distribution licensees (quarterly
+#   workbooks 2024-Q3 to 2026-Q2): the Area column of each licensee sheet.
+# Note: codes are prefixed with the licensee (dl1-dl5): LECO and CEB both have Galle and Kelaniya areas. Printed
+#   spelling variants map to one code (Divlapitiya/Divulapitiya, Ja-Ela/Ja-ela, Avissawella/Awissawella).
+#   Colombo City's areas print as East/North/South/West. Areas are CEB/LECO area offices, not admin units.
+# Status: complete for the workbooks cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: pucsl-supply-reliability
+id: distribution_area
+title: Electricity distribution area
+codes:
+  - { code: total, label: All areas of the licensee, total: true, sdmx: _T }
+  - { code: dl1_anuradhapura, label: "Anuradhapura (CEB DD1)", parent: total }
+  - { code: dl1_chilaw, label: "Chilaw (CEB DD1)", parent: total }
+  - { code: dl1_colombo_city_east, label: "Colombo City East (CEB DD1)", parent: total }
+  - { code: dl1_jaffna, label: "Jaffna (CEB DD1)", parent: total }
+  - { code: dl1_jaffna_east, label: "Jaffna East (CEB DD1)", parent: total }
+  - { code: dl1_kekirawa, label: "Kekirawa (CEB DD1)", parent: total }
+  - { code: dl1_kilinochchi, label: "Kilinochchi (CEB DD1)", parent: total }
+  - { code: dl1_kuliyapitiya, label: "Kuliyapitiya (CEB DD1)", parent: total }
+  - { code: dl1_kurunegala, label: "Kurunegala (CEB DD1)", parent: total }
+  - { code: dl1_maho, label: "Maho (CEB DD1)", parent: total }
+  - { code: dl1_minneriya, label: "Minneriya (CEB DD1)", parent: total }
+  - { code: dl1_narammala, label: "Narammala (CEB DD1)", parent: total }
+  - { code: dl1_colombo_city_north, label: "Colombo City North (CEB DD1)", parent: total }
+  - { code: dl1_puttalam, label: "Puttalam (CEB DD1)", parent: total }
+  - { code: dl1_colombo_city_south, label: "Colombo City South (CEB DD1)", parent: total }
+  - { code: dl1_vavuniya, label: "Vavuniya (CEB DD1)", parent: total }
+  - { code: dl1_wariyapola, label: "Wariyapola (CEB DD1)", parent: total }
+  - { code: dl1_wennappuwa, label: "Wennappuwa (CEB DD1)", parent: total }
+  - { code: dl1_colombo_city_west, label: "Colombo City West (CEB DD1)", parent: total }
+  - { code: dl2_ampara, label: "Ampara (CEB DD2)", parent: total }
+  - { code: dl2_batticaloa, label: "Batticaloa (CEB DD2)", parent: total }
+  - { code: dl2_dambulla, label: "Dambulla (CEB DD2)", parent: total }
+  - { code: dl2_divulapitiya, label: "Divulapitiya (CEB DD2)", parent: total }
+  - { code: dl2_galagedara, label: "Galagedara (CEB DD2)", parent: total }
+  - { code: dl2_gampaha, label: "Gampaha (CEB DD2)", parent: total }
+  - { code: dl2_ginigathhena, label: "Ginigathhena (CEB DD2)", parent: total }
+  - { code: dl2_haguranketha, label: "Haguranketha (CEB DD2)", parent: total }
+  - { code: dl2_hasalaka, label: "Hasalaka (CEB DD2)", parent: total }
+  - { code: dl2_ja_ela, label: "Ja-Ela (CEB DD2)", parent: total }
+  - { code: dl2_kalmunai, label: "Kalmunai (CEB DD2)", parent: total }
+  - { code: dl2_kandy_city, label: "Kandy City (CEB DD2)", parent: total }
+  - { code: dl2_katugasthota, label: "Katugasthota (CEB DD2)", parent: total }
+  - { code: dl2_kegalle, label: "Kegalle (CEB DD2)", parent: total }
+  - { code: dl2_kelaniya, label: "Kelaniya (CEB DD2)", parent: total }
+  - { code: dl2_kirindiwela, label: "Kirindiwela (CEB DD2)", parent: total }
+  - { code: dl2_kundasale, label: "Kundasale (CEB DD2)", parent: total }
+  - { code: dl2_matale, label: "Matale (CEB DD2)", parent: total }
+  - { code: dl2_mawanella, label: "Mawanella (CEB DD2)", parent: total }
+  - { code: dl2_nawalapitiya, label: "Nawalapitiya (CEB DD2)", parent: total }
+  - { code: dl2_negombo, label: "Negombo (CEB DD2)", parent: total }
+  - { code: dl2_nuwaraeliya, label: "Nuwaraeliya (CEB DD2)", parent: total }
+  - { code: dl2_peradeniya, label: "Peradeniya (CEB DD2)", parent: total }
+  - { code: dl2_trincomalee, label: "Trincomalee (CEB DD2)", parent: total }
+  - { code: dl2_valachchenai, label: "Valachchenai (CEB DD2)", parent: total }
+  - { code: dl2_veyangoda, label: "Veyangoda (CEB DD2)", parent: total }
+  - { code: dl3_avissawella, label: "Avissawella (CEB DD3)", parent: total }
+  - { code: dl3_badulla, label: "Badulla (CEB DD3)", parent: total }
+  - { code: dl3_bandaragama, label: "Bandaragama (CEB DD3)", parent: total }
+  - { code: dl3_diyatalawa, label: "Diyatalawa (CEB DD3)", parent: total }
+  - { code: dl3_eheliyagoda, label: "Eheliyagoda (CEB DD3)", parent: total }
+  - { code: dl3_embilipitiya, label: "Embilipitiya (CEB DD3)", parent: total }
+  - { code: dl3_homagama, label: "Homagama (CEB DD3)", parent: total }
+  - { code: dl3_horana, label: "Horana (CEB DD3)", parent: total }
+  - { code: dl3_kahawatta, label: "Kahawatta (CEB DD3)", parent: total }
+  - { code: dl3_mahiyanganaya, label: "Mahiyanganaya (CEB DD3)", parent: total }
+  - { code: dl3_monaragala, label: "Monaragala (CEB DD3)", parent: total }
+  - { code: dl3_ratnapura, label: "Ratnapura (CEB DD3)", parent: total }
+  - { code: dl3_ruwanwella, label: "Ruwanwella (CEB DD3)", parent: total }
+  - { code: dl3_sri_j_pura, label: "Sri J'pura (CEB DD3)", parent: total }
+  - { code: dl3_wellawaya, label: "Wellawaya (CEB DD3)", parent: total }
+  - { code: dl4_akuressa, label: "Akuressa (CEB DD4)", parent: total }
+  - { code: dl4_ambalangoda, label: "Ambalangoda (CEB DD4)", parent: total }
+  - { code: dl4_baddegama, label: "Baddegama (CEB DD4)", parent: total }
+  - { code: dl4_dehiwala, label: "Dehiwala (CEB DD4)", parent: total }
+  - { code: dl4_galle, label: "Galle (CEB DD4)", parent: total }
+  - { code: dl4_hambantota, label: "Hambantota (CEB DD4)", parent: total }
+  - { code: dl4_kaluthara, label: "Kaluthara (CEB DD4)", parent: total }
+  - { code: dl4_matara, label: "Matara (CEB DD4)", parent: total }
+  - { code: dl4_matugama, label: "Matugama (CEB DD4)", parent: total }
+  - { code: dl4_ratmalana, label: "Ratmalana (CEB DD4)", parent: total }
+  - { code: dl4_tangalle, label: "Tangalle (CEB DD4)", parent: total }
+  - { code: dl5_galle, label: "Galle (LECO)", parent: total }
+  - { code: dl5_kalutara, label: "Kalutara (LECO)", parent: total }
+  - { code: dl5_kelaniya, label: "Kelaniya (LECO)", parent: total }
+  - { code: dl5_kotte, label: "Kotte (LECO)", parent: total }
+  - { code: dl5_moratuwa, label: "Moratuwa (LECO)", parent: total }
+  - { code: dl5_negombo, label: "Negombo (LECO)", parent: total }
+  - { code: dl5_nugegoda, label: "Nugegoda (LECO)", parent: total }

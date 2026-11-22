@@ -4,7 +4,7 @@ title: National Environmental (Noise Control) Regulations and environmental zoni
 homepage: https://www.cea.lk/
 access:
   method: pdf
-  endpoint: https://www.cea.lk/web/images/pdf/acts-regulations/
+  endpoint: https://www.cea.lk/web/images/pdf/noise/reg924-12.pdf
   auth: none
 licence:
   id: lk-gov-unstated
@@ -24,8 +24,8 @@ datasets:
 - noise-control-zones
 priority: P3
 effort: S
-status: planned
-verified_at: '2026-11-21'
+status: active
+verified_at: '2026-11-22'
 notes: Gazette 924/12 (1996, amended 1997) defines silent zones (100 m around courts, hospitals, schools, places of worship,
   etc.) and permissible noise levels by zone type; we encode the rule and generate zones from facility points.
 dc_refs:

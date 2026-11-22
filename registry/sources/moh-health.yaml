@@ -27,9 +27,9 @@ datasets:
 - moh-health-institutions
 priority: P1
 effort: M
-status: planned
-verified_at: '2026-11-21'
-notes: Annual Health Bulletin (PDF) has RDHS-level tables and the list of government health institutions.
+status: active
+verified_at: '2026-11-22'
+notes: 'IMMR workbook (xlsx) ingested. Institution register: ''List of Hospitals 2026'' (Word-exported PDF, 60 pages, by RDHS, no coordinates) and the health-institutions directory (admin-ajax.php action=filter_hospitals, POST only, 1,523 entries with name, town, phone) need a code connector (POST form + HTML cards) and name-to-p-code geocoding.'
 dc_refs:
 - inpatient-morbidity-mortality
 - government-health-services

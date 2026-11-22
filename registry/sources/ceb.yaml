@@ -24,7 +24,7 @@ datasets:
 - ceb-statistical-digest
 priority: P1
 effort: M
-status: planned
-verified_at: '2026-11-21'
+status: active
+verified_at: '2026-11-22'
 dc_refs:
 - electricity-customers-sales

@@ -4,8 +4,9 @@
 //! points at a server where the user may CREATE DATABASE.
 //!
 //! `class_c_gate_publish_and_worker_evidence` covers `lanka extract publish`
-//! and the worker's evidence sheets on the real `dcs-lfs` connector and
-//! template (a trimmed copy of the registry, the real country profile):
+//! and the worker's evidence sheets on the `dcs-lfs` connector trimmed to
+//! annual table 4.1 and its template (`tests/fixtures/pg-class-c`), in a
+//! trimmed copy of the registry with the real country profile:
 //!
 //! - an unapproved class-C extract cannot be published, and cannot be
 //!   approved while required cells are unsigned;
@@ -54,7 +55,7 @@ fn copy(from: &Path, to: &Path) {
     std::fs::copy(from, to).unwrap_or_else(|e| panic!("{}: {e}", from.display()));
 }
 
-/// The `dcs-lfs` connector, its template and a trimmed dataset in a registry
+/// The trimmed `dcs-lfs` connector, its template and a trimmed dataset in a registry
 /// of their own (the source paused, so the worker's tick schedules nothing).
 fn registry() -> (PathBuf, Profile) {
     let real = repo_root().join("registry");
@@ -68,12 +69,15 @@ fn registry() -> (PathBuf, Profile) {
         &real.join("codelists/industry.yaml"),
         &dir.join("codelists/industry.yaml"),
     );
+    // The connector and its template come from tests/fixtures/pg-class-c: the
+    // live dcs-lfs connector has grown tables and datasets this registry lacks.
+    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/pg-class-c");
     copy(
-        &real.join("connectors/dcs-lfs.yaml"),
+        &fixture.join("connectors/dcs-lfs.yaml"),
         &dir.join("connectors/dcs-lfs.yaml"),
     );
     let tpl = "templates/dcs-lfs/annual-table-4.1-employment-by-industry.yaml";
-    copy(&real.join(tpl), &dir.join(tpl));
+    copy(&fixture.join(tpl), &dir.join(tpl));
     for d in ["sources", "datasets"] {
         std::fs::create_dir_all(dir.join(d)).expect("mkdir");
     }

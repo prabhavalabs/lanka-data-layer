@@ -1174,6 +1174,14 @@
             },
             "fill_right": {
               "type": "boolean"
+            },
+            "occurrence": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "min_width": {
+              "type": "integer",
+              "minimum": 1
             }
           }
         },
@@ -1230,7 +1238,8 @@
                 "listing_page",
                 "url_pattern",
                 "ckan",
-                "git"
+                "git",
+                "dates"
               ]
             },
             "files": {
@@ -1312,6 +1321,31 @@
                       "json"
                     ]
                   }
+                }
+              }
+            },
+            "dates": {
+              "type": "object",
+              "required": [
+                "from"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "to": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "lag_days": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "step_days": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               }
             },

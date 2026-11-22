@@ -4,7 +4,7 @@ title: Supply reliability (SAIDI/SAIFI) returns
 homepage: https://www.pucsl.gov.lk/
 access:
   method: xlsx
-  endpoint: https://www.pucsl.gov.lk/wp-content/uploads/2026/06/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q1_2026.xls
+  endpoint: https://www.pucsl.gov.lk/supply-quality/
   auth: none
 licence:
   id: lk-gov-unstated
@@ -23,8 +23,8 @@ datasets:
 - pucsl-supply-reliability
 priority: P1
 effort: S
-status: planned
-verified_at: '2026-11-21'
-notes: Quarterly XLS per distribution licensee/area; file names inconsistent (discover via uploads listing).
+status: active
+verified_at: '2026-11-22'
+notes: 'Eight quarterly SAIDI/SAIFI workbooks (2024-Q3 to 2026-Q2) listed on the Supply Quality page; irregular file names and internal headers (see registry/connectors/pucsl.yaml).'
 dc_refs:
 - electricity-supply-reliability

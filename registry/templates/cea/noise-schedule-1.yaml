@@ -1,0 +1,19 @@
+# National Environmental (Noise Control) Regulations No. 1 of 1996 (Gazette 924/12), Schedule I:
+# maximum permissible noise levels at boundaries (LAeq,T, dB(A)) by area type, day and night.
+# The medium-noise day value carries a footnote marker (*: not above 60 dB(A) inside existing
+# houses), stripped from the number.
+id: cea/noise-schedule-1
+title: Maximum permissible noise levels at boundaries (Schedule I)
+editions:
+  - match: { edition: "1996" }
+    locate:
+      page: { find_text: "SCHEDULE I", then_text: "Maximum Permissible Noise Levels" }
+    label: { key: zone, header: "Area", slack: 40 }
+    columns:
+      - { key: day, header: "Day Time" }
+      - { key: night, header: "Night Time" }
+    rows: { stop_at: ["Provided that"] }
+    number: { strip: ["*"] }
+    checks:
+      - { rows_present: ["Low Noise", "Medium Noise", "High Noise", "Silent Zone"] }
+      - { row_count: { min: 4, max: 4 } }

@@ -18,3 +18,17 @@ codes:
   - { code: government, label: Government (GV), parent: total }
   - { code: agriculture, label: Agriculture (AGR), parent: total }
   - { code: street_lighting, label: Street lighting, parent: total }
+  # CEB Statistical Digest 2025 sub-categories (small, medium, large) and bulk supply to LECO
+  - { code: gp1, label: General purpose GP-1 (small), parent: general_purpose }
+  - { code: gp2, label: General purpose GP-2 (medium), parent: general_purpose }
+  - { code: gp3, label: General purpose GP-3 (large), parent: general_purpose }
+  - { code: h1, label: Hotel H-1 (small), parent: hotel }
+  - { code: h2, label: Hotel H-2 (medium), parent: hotel }
+  - { code: h3, label: Hotel H-3 (large), parent: hotel }
+  - { code: i1, label: Industrial I-1 (small), parent: industrial }
+  - { code: i2, label: Industrial I-2 (medium), parent: industrial }
+  - { code: i3, label: Industrial I-3 (large), parent: industrial }
+  - { code: gv1, label: Government GV-1 (small), parent: government }
+  - { code: gv2, label: Government GV-2 (medium), parent: government }
+  - { code: gv3, label: Government GV-3 (large), parent: government }
+  - { code: bulk_leco, label: Bulk supply to LECO, parent: total }

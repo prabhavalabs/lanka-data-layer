@@ -1,0 +1,23 @@
+# NWSDB Annual Report, chapter 1 "Operational" highlights, table 05 (service level improvements):
+# pipe-borne water supply coverage (total, NWSDB, CBO and others), access to safe water,
+# non-revenue water, staff per 1,000 connections and collection efficiency, report year and the
+# year before. The unit column is read so that the column ranges separate; the YOY change is
+# derived and not published.
+id: nwsdb/service-level-improvements
+title: Service level improvements (coverage, NRW, collection efficiency)
+editions:
+  - match: { edition: "2024..2025" }
+    locate:
+      page: { find_text: "Operational", then_text: "Service Level Improvements" }
+    label: { key: measure, header: "Service Level Improvements" }
+    columns:
+      - { key: unit, header: "Unit" }
+      - { key: y_curr, header: "2024" }
+      - { key: y_prev, header: "2023" }
+      - { key: change, header: "YOY Change %" }
+    rows: { stop_at: ["Annual Report"] }
+    number: { thousands: ",", strip: ["%"] }
+    checks:
+      - { rows_present: ["Total Pipe borne Water Supply Coverage", "i. NWSDB", "ii. CBO and Others", "Access to Safe Water Coverage", "Non Revenue Water Reduction", "Total Staff / 1,000 connections", "Collection Efficiency"] }
+      - { sum_rows: ["i. NWSDB", "ii. CBO and Others"], equals_row: "Total Pipe borne Water Supply Coverage", columns: [y_curr, y_prev], tol: 0.11 }
+      - { row_count: { min: 7, max: 7 } }

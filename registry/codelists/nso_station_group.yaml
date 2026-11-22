@@ -1,0 +1,23 @@
+# NSO generation-summary station group
+# Source/authority: National System Operator (Pvt) Ltd, daily generation summary (edlcare.edl.lk/gensum/details),
+#   "Daily Energy Data" table: stationGroupName as published by the API.
+# Status: complete for the groups the API returns (checked 2026-09 to 2026-11).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: nso-electricity-generation
+id: nso_station_group
+title: NSO generation station group
+codes:
+  - { code: total, label: All station groups, total: true, sdmx: _T }
+  - { code: laxapana_complex, label: Laxapana hydro complex (CEB), parent: total }
+  - { code: mahaweli_complex, label: Mahaweli hydro complex (CEB), parent: total }
+  - { code: samanala_complex, label: Samanala hydro complex (CEB), parent: total }
+  - { code: ceb_coal, label: CEB thermal - coal, parent: total }
+  - { code: ceb_oil, label: CEB thermal - oil, parent: total }
+  - { code: ipp_oil, label: IPP thermal - oil, parent: total }
+  - { code: ceb_wind, label: CEB wind (EGL), parent: total }
+  - { code: ipp_wind, label: IPP wind, parent: total }
+  - { code: spp_solar, label: Small power producers - solar, parent: total }
+  - { code: spp_biomass, label: Small power producers - biomass, parent: total }
+  - { code: spp_minihydro, label: Small power producers - mini hydro, parent: total }
+  - { code: bess, label: Battery energy storage (net), parent: total }

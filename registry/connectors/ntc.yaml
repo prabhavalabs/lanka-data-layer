@@ -1,0 +1,103 @@
+# National Transport Commission, National Transport Statistics 2024 (data year 2023), English
+# edition, text-layer PDF (286 pages). Two tables, read through registry/templates/ntc/:
+#   - table 6.2, private bus operational data 2023: intra-provincial by province (names →
+#     ADM1 p-codes) with a printed total, NTC inter-provincial permits and the grand total;
+#   - table 6.1, inter-provincial private buses by type of service, 2015-2023, and buses
+#     operated.
+# Table 6.2's operated-km column does not add up to its printed intra-provincial total
+# (upstream; see the template and the dataset limits): published as printed, class B review.
+# Licence permission_unclear: published with attribution and the takedown contact (08 §2).
+source: ntc
+driver: pdf_table
+version: 1.0.0
+description: >-
+  NTC National Transport Statistics: private bus fleet, capacity and operations by province;
+  inter-provincial fleet by service class. Class B: reviewed against the evidence sheet.
+discover:
+  files:
+    - key: ntc-stat-2024
+      url: https://ntc.gov.lk/corporate/pdf/2024/stat/Stat2024-EN.pdf
+      edition: "2024"
+extract:
+  tables:
+    - { id: t6_2, file: ntc-stat-2024, template: ntc/private-bus-operations-by-province }
+    - { id: t6_1, file: ntc-stat-2024, template: ntc/inter-provincial-fleet-by-service }
+standardise:
+  dataset: ntc-bus-statistics
+  vintage: "National Transport Statistics {edition}"
+  outputs:
+    - table: t6_2
+      indicator: tran.bus_fleet
+      geo: &prov { from_label: { level: 1, root: ["Total", "NTC", "Grand Total"] } }
+      period: &y2023 { fixed: "2023" }
+      columns: { fleet: { operator: private, bus_service_class: total } }
+      rows: &prov_rows
+        "Western": { route_type: intra_provincial }
+        "Southern": { route_type: intra_provincial }
+        "Sabaragamuwa": { route_type: intra_provincial }
+        "North western": { route_type: intra_provincial }
+        "Central": { route_type: intra_provincial }
+        "Uva": { route_type: intra_provincial }
+        "North Central": { route_type: intra_provincial }
+        "Eastern": { route_type: intra_provincial }
+        "Northern": { route_type: intra_provincial }
+        "Total": { route_type: intra_provincial }
+        "NTC": { route_type: inter_provincial }
+        "Grand Total": { route_type: total }
+    - table: t6_2
+      indicator: tran.buses_operated
+      geo: *prov
+      period: *y2023
+      columns: { operated: { operator: private, bus_service_class: total } }
+      rows: *prov_rows
+    - table: t6_2
+      indicator: tran.bus_seating_capacity
+      geo: *prov
+      period: *y2023
+      columns: { seats: { operator: private } }
+      rows: *prov_rows
+    - table: t6_2
+      indicator: tran.bus_km_operated
+      geo: *prov
+      period: *y2023
+      columns: { km: { operator: private } }
+      rows: *prov_rows
+    - table: t6_2
+      indicator: tran.bus_passenger_km
+      geo: *prov
+      period: *y2023
+      columns: { pkm: { operator: private } }
+      rows: *prov_rows
+    # 2023 inter-provincial fleet also printed in table 6.2 (NTC row, 3,152 vs 3,151 here):
+    # table 6.1 rows are keyed by service class, the 6.2 NTC row by bus_service_class total,
+    # so only 6.1's per-class rows are read (its Total row would collide with 6.2's NTC row
+    # in 2023) and its "Operated Buses" row likewise for 2015-2022.
+    - table: t6_1
+      indicator: tran.bus_fleet
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {}, y6: {}, y7: {}, y8: {}, y9: {} }
+      rows:
+        "Super Luxury": { operator: private, route_type: inter_provincial, bus_service_class: super_luxury }
+        "Luxury": { operator: private, route_type: inter_provincial, bus_service_class: luxury }
+        "Semi Luxury": { operator: private, route_type: inter_provincial, bus_service_class: semi_luxury }
+        "Normal": { operator: private, route_type: inter_provincial, bus_service_class: normal }
+    - table: t6_1
+      indicator: tran.bus_fleet
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {}, y6: {}, y7: {}, y8: {} }
+      rows:
+        "Total": { operator: private, route_type: inter_provincial, bus_service_class: total }
+    - table: t6_1
+      indicator: tran.buses_operated
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {}, y6: {}, y7: {}, y8: {} }
+      rows:
+        "Operated Buses": { operator: private, route_type: inter_provincial, bus_service_class: total }
+expect:
+  - { check: row_count, min: 105, max: 120 }
+  - { check: no_future }
+  - { check: completeness, indicator: tran.bus_fleet, level: 1, min_units: 9 }
+  - { check: sum_dims, dim: bus_service_class, tol_pct: 0.1, note: "service classes add up to the inter-provincial total (2015-2022)" }

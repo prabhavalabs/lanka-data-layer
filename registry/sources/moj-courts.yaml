@@ -23,8 +23,8 @@ datasets:
 - courthouses
 priority: P3
 effort: S
-status: planned
-verified_at: '2026-11-21'
+status: blocked
+verified_at: '2026-11-22'
 notes: Court list by judicial zone; geometry from OSM amenity=courthouse matched by name/town. dc lists 'courthouse' as an
   explore layer but has not ingested it. jsc.gov.lk timed out on 2026-11-21 (moj.gov.lk reachable).
 dc_refs:

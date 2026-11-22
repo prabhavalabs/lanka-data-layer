@@ -1,0 +1,14 @@
+# Supply interruption cause
+# Source/authority: Public Utilities Commission of Sri Lanka, SAIDI/SAIFI values of distribution licensees 2024-Q4 (CEB
+#   sheets: planned interruptions, breakdowns, other, total).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: pucsl-supply-reliability
+id: interruption_cause
+title: Supply interruption cause
+codes:
+  - { code: total, label: All interruptions, total: true, sdmx: _T }
+  - { code: planned, label: Planned interruptions, parent: total }
+  - { code: breakdown, label: Breakdowns, parent: total }
+  - { code: other, label: Other, parent: total }

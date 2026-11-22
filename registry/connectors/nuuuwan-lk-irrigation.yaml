@@ -1,0 +1,54 @@
+# nuuuwan/lk_irrigation: the Irrigation Department's river gauging stations, parsed from the
+# department's river-water-level dashboard (ArcGIS FeatureServer gauges_2_view, which keeps
+# only about 7 days of readings). data/static/stations.json holds one record per gauge:
+# name, river, districts the gauge warns (ISO 3166-2, upstream), [lat, lng] and the alert /
+# minor / major flood levels in metres. Each gauge is a point feature keyed by its name
+# (names are unique, 40 gauges on 2026-11-22). The repository commit is the fingerprint.
+# Licence: code MIT, data Irrigation Department (permission_unclear): published with
+# attribution and the takedown contact (08 §2).
+source: nuuuwan-lk-irrigation
+driver: git_files
+version: 1.0.0
+description: Irrigation Department river gauging stations with flood thresholds (nuuuwan/lk_irrigation).
+discover:
+  kind: git
+  repo: nuuuwan/lk_irrigation
+  ref: main
+  files:
+    - { key: stations, path: data/static/stations.json }
+extract:
+  format: json
+  tables:
+    - id: stations
+      artifact: ^stations$
+      path: $
+      fields:
+        name: name
+        river: river_name
+        districts: district_id
+        lat: lat_lng[0]
+        lng: lat_lng[1]
+        alert: alert_level_m
+        minor: minor_flood_level_m
+        major: major_flood_level_m
+standardise:
+  dataset: irrigation-river-water-levels
+  tables:
+    - { id: stations, source: ^stations$ }
+  outputs:
+    - table: stations
+      feature:
+        key: name
+        kind: { value: river_gauge }
+        name: name
+        lon: lng
+        lat: lat
+        attrs:
+          river: river
+          districts_warned: districts
+          alert_level_m: alert
+          minor_flood_level_m: minor
+          major_flood_level_m: major
+expect:
+  - { check: geometry, valid: true, within_bbox: true }
+  - { check: row_count, min: 35, max: 60 }

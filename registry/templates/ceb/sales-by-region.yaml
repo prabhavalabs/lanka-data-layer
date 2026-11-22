@@ -1,0 +1,26 @@
+# CEB Statistical Digest: electricity sales by distribution region, GWh.
+# Rows are CEB distribution regions ("Distribution Provinces as per CEB Classification"),
+# grouped into Distribution Divisions 1-4 with a printed total each, then bulk supply to LECO
+# and the grand total. Two year columns (previous and current year); the % columns are
+# read so that the column ranges separate, and not published (derived).
+id: ceb/sales-by-region
+title: Electricity sales by distribution region (GWh)
+editions:
+  - match: { edition: "2025..2026" }
+    locate:
+      page: { find_text: "ELECTRICITY SALES BY DISTRIBUTION DIVISIONS", then_text: "CEB Classification" }
+    columns:
+      - { key: y_prev, header: "2024", nth: 1 }
+      - { key: y_curr, header: "2025", nth: 1 }
+      - { key: change_pct, header: "2024/25" }
+      - { key: share_pct, header: "2025", nth: 2 }
+      - { key: avg_kwh_per_account, header: "2025", nth: 3 }
+    rows: { start_after: "CEB Classification", stop_at: ["ELECTRICITY SALES BY TARIFF"] }
+    number: { thousands: ",", missing: ["-"] }
+    checks:
+      - { sum_rows: ["Colombo City", "North Western I", "North Western II", "North Central", "Northern"], equals_row: "Division 1 Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["Western North", "Central I", "Central II", "Eastern"], equals_row: "Division 2 Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["Western South II", "Uva", "Sabaragamuwa"], equals_row: "Division 3 Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["Western South I", "Southern I", "Southern II"], equals_row: "Division 4 Total", columns: [y_prev, y_curr], tol: 3 }
+      - { sum_rows: ["Division 1 Total", "Division 2 Total", "Division 3 Total", "Division 4 Total", "Bulk Supply to LECO"], equals_row: "TOTAL", columns: [y_prev, y_curr], tol: 3 }
+      - { row_count: { min: 21, max: 21 } }

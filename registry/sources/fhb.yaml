@@ -3,7 +3,7 @@ publisher: Family Health Bureau, Ministry of Health
 title: FHB maternal and child health statistics
 homepage: https://fhb.health.gov.lk/
 access:
-  method: pdf
+  method: html
   endpoint: https://fhb.health.gov.lk/statistics
   auth: none
 licence:
@@ -23,7 +23,7 @@ datasets:
 - fhb-maternal-child-health
 priority: P2
 effort: M
-status: planned
-verified_at: '2026-11-21'
+status: active
+verified_at: '2026-11-22'
 dc_refs:
 - child-nutrition-annual

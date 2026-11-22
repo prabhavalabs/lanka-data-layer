@@ -1,0 +1,1765 @@
+# Public Utilities Commission of Sri Lanka: SAIDI and SAIFI of the distribution licensees,
+# one workbook per quarter (listed on https://www.pucsl.gov.lk/supply-quality/; file names are
+# irregular, so the eight files are listed). Each licensee sheet (CEB Distribution Divisions
+# 1-4, LECO) stacks two blocks, SAIDI then SAIFI: a header row (Province | Area | SAIDI),
+# a year row, a month row, then one row per area office, CEB "Province" subtotal rows and a
+# division total (CEB: label left of the Area column; LECO: in it).
+# Internal headers conflict with the quarter the file is linked as (LECO 2025-Q1 prints
+# "2024" and "January February September"; two 2025-Q2 sheets print no months; 2025-Q2 uses
+# "Apr"), so months are read by column position within the quarter the file is published as
+# (the link label, kept in the key), and the printed year/month rows are skipped. The header
+# is the anchor row only (`min_width` covers the unlabelled month columns); the SAIFI block is
+# the anchor's second occurrence.
+# 2024-Q4 CEB sheets split each month into planned interruptions / breakdowns / other / total
+# (dimension cause); every other file prints the total only.
+# LECO 2025-Q1 prints SAIDI in hours per consumer per month: converted to minutes (× 60; the
+# verbatim keeps the printed token).
+# Region ("Province") subtotal rows are not published: regions are CEB groupings without a
+# code list yet; area offices and licensee totals are. Class B (irregular workbooks).
+# Licence permission_unclear: published with attribution and the takedown contact (08 §2).
+source: pucsl
+driver: xlsx_table
+version: 1.0.0
+description: PUCSL quarterly SAIDI and SAIFI by distribution licensee and area, monthly values.
+discover:
+  kind: static
+  files:
+    - { key: "2024_q3", file: SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q3_2024.xls, url: "https://www.pucsl.gov.lk/wp-content/uploads/2025/03/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q3_2024.xls" }
+    - { key: "2024_q4", file: SAIDI-SAIFI-values-of-DLs-of-Sri-Lanka-Q4-2024.xlsx, url: "https://www.pucsl.gov.lk/wp-content/uploads/2025/04/SAIDI-SAIFI-values-of-DLs-of-Sri-Lanka-Q4-2024.xlsx" }
+    - { key: "2025_q1", file: SAIDI-SAIFI-values-of-DLs-2025-Q1.xlsx, url: "https://www.pucsl.gov.lk/wp-content/uploads/2025/10/SAIDI-SAIFI-values-of-DLs-2025-Q1.xlsx" }
+    - { key: "2025_q2", file: SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q2_2025.xls, url: "https://www.pucsl.gov.lk/wp-content/uploads/2026/03/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q2_2025.xls" }
+    - { key: "2025_q3", file: SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q3_2025.xls, url: "https://www.pucsl.gov.lk/wp-content/uploads/2026/05/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q3_2025.xls" }
+    - { key: "2025_q4", file: SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q4_2025-2.xls, url: "https://www.pucsl.gov.lk/wp-content/uploads/2026/06/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q4_2025-2.xls" }
+    - { key: "2026_q1", file: SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q1_2026.xls, url: "https://www.pucsl.gov.lk/wp-content/uploads/2026/06/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q1_2026.xls" }
+    - { key: "2026_q2", file: SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q2_2026-FV-1.xls, url: "https://www.pucsl.gov.lk/wp-content/uploads/2026/10/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q2_2026-FV-1.xls" }
+extract:
+  sheets: "(?i)distribution division"
+standardise:
+  dataset: pucsl-supply-reliability
+  tables:
+    - id: dl1_saidi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 1 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl1_saidi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 1 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl1_saifi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 1 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl1_saifi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 1 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl2_saidi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 2 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl2_saidi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 2 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl2_saifi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 2 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl2_saifi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 2 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl3_saidi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 3 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl3_saidi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 3 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl3_saifi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 3 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl3_saifi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 3 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl4_saidi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 4 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl4_saidi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 4 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl4_saifi
+      artifact: "^(2024_q3|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division 4 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl4_saifi_q4_2024
+      artifact: "^(2024_q4)$"
+      source: '(?i)!\s*distribution division 4 of ceb\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 13 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl5_saidi
+      artifact: "^(2024_q3|2024_q4|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division of leco\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl5_saidi_hrs
+      artifact: "^(2025_q1)$"
+      source: '(?i)!\s*distribution division of leco\s*$'
+      header: { anchor: "^Area$", occurrence: 1, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+    - id: dl5_saifi
+      artifact: "^(2024_q3|2024_q4|2025_q1|2025_q2|2025_q3|2025_q4|2026_q1|2026_q2)$"
+      source: '(?i)!\s*distribution division of leco\s*$'
+      header: { anchor: "^Area$", occurrence: 2, min_width: 4 }
+      rows: { until_blank: 2, stop: ["^Area$"], skip: ['^\d{4}$', '^(January|February|March|April|Apr|May|June|July|August|September|October|November|December|Planned.*)$'] }
+  outputs:
+    - table: dl1_saidi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { column: Area, map: {
+            "Anuradhapura": dl1_anuradhapura,
+            "Chilaw": dl1_chilaw,
+            "East": dl1_colombo_city_east,
+            "Jaffna": dl1_jaffna,
+            "Jaffna East": dl1_jaffna_east,
+            "Kekirawa": dl1_kekirawa,
+            "Kilinochchi": dl1_kilinochchi,
+            "Kuliyapitiya": dl1_kuliyapitiya,
+            "Kurunegala": dl1_kurunegala,
+            "Maho": dl1_maho,
+            "Minneriya": dl1_minneriya,
+            "Narammala": dl1_narammala,
+            "North": dl1_colombo_city_north,
+            "Puttalam": dl1_puttalam,
+            "South": dl1_colombo_city_south,
+            "Vavuniya": dl1_vavuniya,
+            "Wariyapola": dl1_wariyapola,
+            "Wennappuwa": dl1_wennappuwa,
+            "West": dl1_colombo_city_west } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl1_saidi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl1_saidi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { column: Area, map: {
+            "Anuradhapura": dl1_anuradhapura,
+            "Chilaw": dl1_chilaw,
+            "East": dl1_colombo_city_east,
+            "Jaffna": dl1_jaffna,
+            "Jaffna East": dl1_jaffna_east,
+            "Kekirawa": dl1_kekirawa,
+            "Kilinochchi": dl1_kilinochchi,
+            "Kuliyapitiya": dl1_kuliyapitiya,
+            "Kurunegala": dl1_kurunegala,
+            "Maho": dl1_maho,
+            "Minneriya": dl1_minneriya,
+            "Narammala": dl1_narammala,
+            "North": dl1_colombo_city_north,
+            "Puttalam": dl1_puttalam,
+            "South": dl1_colombo_city_south,
+            "Vavuniya": dl1_vavuniya,
+            "Wariyapola": dl1_wariyapola,
+            "Wennappuwa": dl1_wennappuwa,
+            "West": dl1_colombo_city_west } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl1_saidi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl1_saifi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { column: Area, map: {
+            "Anuradhapura": dl1_anuradhapura,
+            "Chilaw": dl1_chilaw,
+            "East": dl1_colombo_city_east,
+            "Jaffna": dl1_jaffna,
+            "Jaffna East": dl1_jaffna_east,
+            "Kekirawa": dl1_kekirawa,
+            "Kilinochchi": dl1_kilinochchi,
+            "Kuliyapitiya": dl1_kuliyapitiya,
+            "Kurunegala": dl1_kurunegala,
+            "Maho": dl1_maho,
+            "Minneriya": dl1_minneriya,
+            "Narammala": dl1_narammala,
+            "North": dl1_colombo_city_north,
+            "Puttalam": dl1_puttalam,
+            "South": dl1_colombo_city_south,
+            "Vavuniya": dl1_vavuniya,
+            "Wariyapola": dl1_wariyapola,
+            "Wennappuwa": dl1_wennappuwa,
+            "West": dl1_colombo_city_west } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl1_saifi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl1_saifi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { column: Area, map: {
+            "Anuradhapura": dl1_anuradhapura,
+            "Chilaw": dl1_chilaw,
+            "East": dl1_colombo_city_east,
+            "Jaffna": dl1_jaffna,
+            "Jaffna East": dl1_jaffna_east,
+            "Kekirawa": dl1_kekirawa,
+            "Kilinochchi": dl1_kilinochchi,
+            "Kuliyapitiya": dl1_kuliyapitiya,
+            "Kurunegala": dl1_kurunegala,
+            "Maho": dl1_maho,
+            "Minneriya": dl1_minneriya,
+            "Narammala": dl1_narammala,
+            "North": dl1_colombo_city_north,
+            "Puttalam": dl1_puttalam,
+            "South": dl1_colombo_city_south,
+            "Vavuniya": dl1_vavuniya,
+            "Wariyapola": dl1_wariyapola,
+            "Wennappuwa": dl1_wennappuwa,
+            "West": dl1_colombo_city_west } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl1_saifi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL1 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saidi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { column: Area, map: {
+            "Ampara": dl2_ampara,
+            "Batticaloa": dl2_batticaloa,
+            "Dambulla": dl2_dambulla,
+            "Divlapitiya": dl2_divulapitiya,
+            "Divulapitiya": dl2_divulapitiya,
+            "Galagedara": dl2_galagedara,
+            "Gampaha": dl2_gampaha,
+            "Ginigathhena": dl2_ginigathhena,
+            "Haguranketha": dl2_haguranketha,
+            "Hasalaka (Proposed)": dl2_hasalaka,
+            "Ja-Ela": dl2_ja_ela,
+            "Ja-ela": dl2_ja_ela,
+            "Kalmunai": dl2_kalmunai,
+            "Kandy City": dl2_kandy_city,
+            "Katugasthota": dl2_katugasthota,
+            "Kegalle": dl2_kegalle,
+            "Kelaniya": dl2_kelaniya,
+            "Kirindiwela": dl2_kirindiwela,
+            "Kundasale": dl2_kundasale,
+            "Matale": dl2_matale,
+            "Mawanella": dl2_mawanella,
+            "Nawalapitiya": dl2_nawalapitiya,
+            "Negambo": dl2_negombo,
+            "Nuwaraeliya": dl2_nuwaraeliya,
+            "Peradeniya": dl2_peradeniya,
+            "Trincomalee": dl2_trincomalee,
+            "Valachchenai": dl2_valachchenai,
+            "Veyangoda": dl2_veyangoda } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saidi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saidi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { column: Area, map: {
+            "Ampara": dl2_ampara,
+            "Batticaloa": dl2_batticaloa,
+            "Dambulla": dl2_dambulla,
+            "Divlapitiya": dl2_divulapitiya,
+            "Divulapitiya": dl2_divulapitiya,
+            "Galagedara": dl2_galagedara,
+            "Gampaha": dl2_gampaha,
+            "Ginigathhena": dl2_ginigathhena,
+            "Haguranketha": dl2_haguranketha,
+            "Hasalaka (Proposed)": dl2_hasalaka,
+            "Ja-Ela": dl2_ja_ela,
+            "Ja-ela": dl2_ja_ela,
+            "Kalmunai": dl2_kalmunai,
+            "Kandy City": dl2_kandy_city,
+            "Katugasthota": dl2_katugasthota,
+            "Kegalle": dl2_kegalle,
+            "Kelaniya": dl2_kelaniya,
+            "Kirindiwela": dl2_kirindiwela,
+            "Kundasale": dl2_kundasale,
+            "Matale": dl2_matale,
+            "Mawanella": dl2_mawanella,
+            "Nawalapitiya": dl2_nawalapitiya,
+            "Negambo": dl2_negombo,
+            "Nuwaraeliya": dl2_nuwaraeliya,
+            "Peradeniya": dl2_peradeniya,
+            "Trincomalee": dl2_trincomalee,
+            "Valachchenai": dl2_valachchenai,
+            "Veyangoda": dl2_veyangoda } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saidi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saifi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { column: Area, map: {
+            "Ampara": dl2_ampara,
+            "Batticaloa": dl2_batticaloa,
+            "Dambulla": dl2_dambulla,
+            "Divlapitiya": dl2_divulapitiya,
+            "Divulapitiya": dl2_divulapitiya,
+            "Galagedara": dl2_galagedara,
+            "Gampaha": dl2_gampaha,
+            "Ginigathhena": dl2_ginigathhena,
+            "Haguranketha": dl2_haguranketha,
+            "Hasalaka (Proposed)": dl2_hasalaka,
+            "Ja-Ela": dl2_ja_ela,
+            "Ja-ela": dl2_ja_ela,
+            "Kalmunai": dl2_kalmunai,
+            "Kandy City": dl2_kandy_city,
+            "Katugasthota": dl2_katugasthota,
+            "Kegalle": dl2_kegalle,
+            "Kelaniya": dl2_kelaniya,
+            "Kirindiwela": dl2_kirindiwela,
+            "Kundasale": dl2_kundasale,
+            "Matale": dl2_matale,
+            "Mawanella": dl2_mawanella,
+            "Nawalapitiya": dl2_nawalapitiya,
+            "Negambo": dl2_negombo,
+            "Nuwaraeliya": dl2_nuwaraeliya,
+            "Peradeniya": dl2_peradeniya,
+            "Trincomalee": dl2_trincomalee,
+            "Valachchenai": dl2_valachchenai,
+            "Veyangoda": dl2_veyangoda } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saifi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saifi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { column: Area, map: {
+            "Ampara": dl2_ampara,
+            "Batticaloa": dl2_batticaloa,
+            "Dambulla": dl2_dambulla,
+            "Divlapitiya": dl2_divulapitiya,
+            "Divulapitiya": dl2_divulapitiya,
+            "Galagedara": dl2_galagedara,
+            "Gampaha": dl2_gampaha,
+            "Ginigathhena": dl2_ginigathhena,
+            "Haguranketha": dl2_haguranketha,
+            "Hasalaka (Proposed)": dl2_hasalaka,
+            "Ja-Ela": dl2_ja_ela,
+            "Ja-ela": dl2_ja_ela,
+            "Kalmunai": dl2_kalmunai,
+            "Kandy City": dl2_kandy_city,
+            "Katugasthota": dl2_katugasthota,
+            "Kegalle": dl2_kegalle,
+            "Kelaniya": dl2_kelaniya,
+            "Kirindiwela": dl2_kirindiwela,
+            "Kundasale": dl2_kundasale,
+            "Matale": dl2_matale,
+            "Mawanella": dl2_mawanella,
+            "Nawalapitiya": dl2_nawalapitiya,
+            "Negambo": dl2_negombo,
+            "Nuwaraeliya": dl2_nuwaraeliya,
+            "Peradeniya": dl2_peradeniya,
+            "Trincomalee": dl2_trincomalee,
+            "Valachchenai": dl2_valachchenai,
+            "Veyangoda": dl2_veyangoda } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl2_saifi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL2 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saidi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { column: Area, map: {
+            "Avissawella": dl3_avissawella,
+            "Awissawella": dl3_avissawella,
+            "Badulla": dl3_badulla,
+            "Bandaragama": dl3_bandaragama,
+            "Diyatalawa": dl3_diyatalawa,
+            "Eheliyagoda": dl3_eheliyagoda,
+            "Embilipitiya": dl3_embilipitiya,
+            "Homagama": dl3_homagama,
+            "Horana": dl3_horana,
+            "Kahawatta": dl3_kahawatta,
+            "Mahiyanganaya": dl3_mahiyanganaya,
+            "Monaragala": dl3_monaragala,
+            "Ratnapura": dl3_ratnapura,
+            "Ruwanwella": dl3_ruwanwella,
+            "Sri J'pura": dl3_sri_j_pura,
+            "Wellawaya": dl3_wellawaya } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saidi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saidi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { column: Area, map: {
+            "Avissawella": dl3_avissawella,
+            "Awissawella": dl3_avissawella,
+            "Badulla": dl3_badulla,
+            "Bandaragama": dl3_bandaragama,
+            "Diyatalawa": dl3_diyatalawa,
+            "Eheliyagoda": dl3_eheliyagoda,
+            "Embilipitiya": dl3_embilipitiya,
+            "Homagama": dl3_homagama,
+            "Horana": dl3_horana,
+            "Kahawatta": dl3_kahawatta,
+            "Mahiyanganaya": dl3_mahiyanganaya,
+            "Monaragala": dl3_monaragala,
+            "Ratnapura": dl3_ratnapura,
+            "Ruwanwella": dl3_ruwanwella,
+            "Sri J'pura": dl3_sri_j_pura,
+            "Wellawaya": dl3_wellawaya } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saidi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saifi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { column: Area, map: {
+            "Avissawella": dl3_avissawella,
+            "Awissawella": dl3_avissawella,
+            "Badulla": dl3_badulla,
+            "Bandaragama": dl3_bandaragama,
+            "Diyatalawa": dl3_diyatalawa,
+            "Eheliyagoda": dl3_eheliyagoda,
+            "Embilipitiya": dl3_embilipitiya,
+            "Homagama": dl3_homagama,
+            "Horana": dl3_horana,
+            "Kahawatta": dl3_kahawatta,
+            "Mahiyanganaya": dl3_mahiyanganaya,
+            "Monaragala": dl3_monaragala,
+            "Ratnapura": dl3_ratnapura,
+            "Ruwanwella": dl3_ruwanwella,
+            "Sri J'pura": dl3_sri_j_pura,
+            "Wellawaya": dl3_wellawaya } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saifi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saifi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { column: Area, map: {
+            "Avissawella": dl3_avissawella,
+            "Awissawella": dl3_avissawella,
+            "Badulla": dl3_badulla,
+            "Bandaragama": dl3_bandaragama,
+            "Diyatalawa": dl3_diyatalawa,
+            "Eheliyagoda": dl3_eheliyagoda,
+            "Embilipitiya": dl3_embilipitiya,
+            "Homagama": dl3_homagama,
+            "Horana": dl3_horana,
+            "Kahawatta": dl3_kahawatta,
+            "Mahiyanganaya": dl3_mahiyanganaya,
+            "Monaragala": dl3_monaragala,
+            "Ratnapura": dl3_ratnapura,
+            "Ruwanwella": dl3_ruwanwella,
+            "Sri J'pura": dl3_sri_j_pura,
+            "Wellawaya": dl3_wellawaya } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl3_saifi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL3 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saidi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { column: Area, map: {
+            "Akuressa": dl4_akuressa,
+            "Ambalangoda": dl4_ambalangoda,
+            "Baddegama": dl4_baddegama,
+            "Dehiwala": dl4_dehiwala,
+            "Galle": dl4_galle,
+            "Hambantota": dl4_hambantota,
+            "Kaluthara": dl4_kaluthara,
+            "Matara": dl4_matara,
+            "Matugama": dl4_matugama,
+            "Ratmalana": dl4_ratmalana,
+            "Tangalle": dl4_tangalle } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saidi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIDI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saidi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { column: Area, map: {
+            "Akuressa": dl4_akuressa,
+            "Ambalangoda": dl4_ambalangoda,
+            "Baddegama": dl4_baddegama,
+            "Dehiwala": dl4_dehiwala,
+            "Galle": dl4_galle,
+            "Hambantota": dl4_hambantota,
+            "Kaluthara": dl4_kaluthara,
+            "Matara": dl4_matara,
+            "Matugama": dl4_matugama,
+            "Ratmalana": dl4_ratmalana,
+            "Tangalle": dl4_tangalle } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saidi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIDI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saifi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { column: Area, map: {
+            "Akuressa": dl4_akuressa,
+            "Ambalangoda": dl4_ambalangoda,
+            "Baddegama": dl4_baddegama,
+            "Dehiwala": dl4_dehiwala,
+            "Galle": dl4_galle,
+            "Hambantota": dl4_hambantota,
+            "Kaluthara": dl4_kaluthara,
+            "Matara": dl4_matara,
+            "Matugama": dl4_matugama,
+            "Ratmalana": dl4_ratmalana,
+            "Tangalle": dl4_tangalle } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saifi
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#E": "2024-08"
+            "2024_q3|#F": "2024-09"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#E": "2025-02"
+            "2025_q1|#F": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#E": "2025-05"
+            "2025_q2|#F": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#E": "2025-08"
+            "2025_q3|#F": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#E": "2025-11"
+            "2025_q4|#F": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#E": "2026-02"
+            "2026_q1|#F": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#E": "2026-05"
+            "2026_q2|#F": "2026-06"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { value: total }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saifi_q4_2024
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { column: Area, map: {
+            "Akuressa": dl4_akuressa,
+            "Ambalangoda": dl4_ambalangoda,
+            "Baddegama": dl4_baddegama,
+            "Dehiwala": dl4_dehiwala,
+            "Galle": dl4_galle,
+            "Hambantota": dl4_hambantota,
+            "Kaluthara": dl4_kaluthara,
+            "Matara": dl4_matara,
+            "Matugama": dl4_matugama,
+            "Ratmalana": dl4_ratmalana,
+            "Tangalle": dl4_tangalle } }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl4_saifi_q4_2024
+      filter: [{ column: Area, empty: true }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#E": "2024-10"
+            "2024_q4|#F": "2024-10"
+            "2024_q4|#G": "2024-10"
+            "2024_q4|#H": "2024-11"
+            "2024_q4|#I": "2024-11"
+            "2024_q4|#J": "2024-11"
+            "2024_q4|#K": "2024-11"
+            "2024_q4|#L": "2024-12"
+            "2024_q4|#M": "2024-12"
+            "2024_q4|#N": "2024-12"
+            "2024_q4|#O": "2024-12"
+      dims:
+        licensee: { value: DL4 }
+        distribution_area: { value: total }
+        cause: { melt: true, map: {
+            "#E": breakdown,
+            "#F": other,
+            "#G": total,
+            "#H": planned,
+            "#I": breakdown,
+            "#J": other,
+            "#K": total,
+            "#L": planned,
+            "#M": breakdown,
+            "#N": other,
+            "#O": total,
+            "SAIFI": planned } }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl5_saidi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIDI": "2024-07"
+            "2024_q3|#D": "2024-08"
+            "2024_q3|#E": "2024-09"
+            "2024_q4|SAIDI": "2024-10"
+            "2024_q4|#D": "2024-11"
+            "2024_q4|#E": "2024-12"
+            "2025_q2|SAIDI": "2025-04"
+            "2025_q2|#D": "2025-05"
+            "2025_q2|#E": "2025-06"
+            "2025_q3|SAIDI": "2025-07"
+            "2025_q3|#D": "2025-08"
+            "2025_q3|#E": "2025-09"
+            "2025_q4|SAIDI": "2025-10"
+            "2025_q4|#D": "2025-11"
+            "2025_q4|#E": "2025-12"
+            "2026_q1|SAIDI": "2026-01"
+            "2026_q1|#D": "2026-02"
+            "2026_q1|#E": "2026-03"
+            "2026_q2|SAIDI": "2026-04"
+            "2026_q2|#D": "2026-05"
+            "2026_q2|#E": "2026-06"
+      dims:
+        licensee: { value: DL5 }
+        distribution_area: { column: Area, map: {
+            "Galle": dl5_galle,
+            "Kalutara": dl5_kalutara,
+            "Kelaniya": dl5_kelaniya,
+            "Kotte": dl5_kotte,
+            "Moratuwa": dl5_moratuwa,
+            "Negombo": dl5_negombo,
+            "Nugegoda": dl5_nugegoda,
+            "Distribution Division 5 -Total": total,
+            "Distribution Division of LECO -Total": total,
+            "Distribution Division of LECO-Total": total } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+    - table: dl5_saidi_hrs
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saidi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2025_q1|SAIDI (Hrs/Consumer/Month)": "2025-01"
+            "2025_q1|#D": "2025-02"
+            "2025_q1|#E": "2025-03"
+      dims:
+        licensee: { value: DL5 }
+        distribution_area: { column: Area, map: {
+            "Galle": dl5_galle,
+            "Kalutara": dl5_kalutara,
+            "Kelaniya": dl5_kelaniya,
+            "Kotte": dl5_kotte,
+            "Moratuwa": dl5_moratuwa,
+            "Negombo": dl5_negombo,
+            "Nugegoda": dl5_nugegoda,
+            "Distribution Division 5 -Total": total,
+            "Distribution Division of LECO -Total": total,
+            "Distribution Division of LECO-Total": total } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""], scale: 60 } }
+    - table: dl5_saifi
+      filter: [{ column: Area, not_in: ["Province", "Provincial", "Provincial Total", "Area"] }, { column: Area, empty: false }]
+      indicator: { value: ener.saifi }
+      melt: { columns: "^(SAI|#)" }
+      geo: { root: true }
+      period:
+        freq: M
+        parse: "%Y-%m"
+        template: "{key}|{melt}"
+        map:
+            "2024_q3|SAIFI": "2024-07"
+            "2024_q3|#D": "2024-08"
+            "2024_q3|#E": "2024-09"
+            "2024_q4|SAIFI": "2024-10"
+            "2024_q4|#D": "2024-11"
+            "2024_q4|#E": "2024-12"
+            "2025_q1|SAIFI": "2025-01"
+            "2025_q1|#D": "2025-02"
+            "2025_q1|#E": "2025-03"
+            "2025_q2|SAIFI": "2025-04"
+            "2025_q2|#D": "2025-05"
+            "2025_q2|#E": "2025-06"
+            "2025_q3|SAIFI": "2025-07"
+            "2025_q3|#D": "2025-08"
+            "2025_q3|#E": "2025-09"
+            "2025_q4|SAIFI": "2025-10"
+            "2025_q4|#D": "2025-11"
+            "2025_q4|#E": "2025-12"
+            "2026_q1|SAIFI": "2026-01"
+            "2026_q1|#D": "2026-02"
+            "2026_q1|#E": "2026-03"
+            "2026_q2|SAIFI": "2026-04"
+            "2026_q2|#D": "2026-05"
+            "2026_q2|#E": "2026-06"
+      dims:
+        licensee: { value: DL5 }
+        distribution_area: { column: Area, map: {
+            "Galle": dl5_galle,
+            "Kalutara": dl5_kalutara,
+            "Kelaniya": dl5_kelaniya,
+            "Kotte": dl5_kotte,
+            "Moratuwa": dl5_moratuwa,
+            "Negombo": dl5_negombo,
+            "Nugegoda": dl5_nugegoda,
+            "Distribution Division 5 -Total": total,
+            "Distribution Division of LECO -Total": total,
+            "Distribution Division of LECO-Total": total } }
+        cause: { value: total }
+      value: { number: { missing: ["-", ""] } }
+expect:
+  - { check: row_count, min: 3000 }
+  - { check: no_future }
+  - { check: range, indicator: ener.saidi, min: 0, max: 20000, severity: warn, note: "minutes per customer per month" }
+  - { check: range, indicator: ener.saifi, min: 0, max: 100, severity: warn, note: "interruptions per customer per month" }
+  - check: sql
+    severity: warn
+    note: Every licensee reports both measures for every month it reports.
+    query: >-
+      SELECT period_start, dims FROM stage_obs GROUP BY 1, 2 HAVING count(DISTINCT indicator_id) <> 2
+

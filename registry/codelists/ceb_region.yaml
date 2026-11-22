@@ -1,0 +1,34 @@
+# CEB distribution region ("Distribution Provinces as per CEB Classification")
+# Source/authority: Ceylon Electricity Board, Statistical Digest 2025 (sales, consumer accounts and revenue by
+#   distribution province), grouped into CEB Distribution Divisions 1-4 as printed.
+# Note: CEB regions are not admin provinces (North Western and Central are split in two, Colombo City and the Western
+#   regions cut across districts); no p-code crosswalk is implied.
+# Status: complete for the classification as cited (2024-2025).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ceb-statistical-digest
+id: ceb_region
+title: CEB distribution region
+codes:
+  - { code: total, label: All CEB sales (incl. bulk supply to LECO), total: true, sdmx: _T }
+  - { code: dd1, label: CEB Distribution Division 1, parent: total }
+  - { code: colombo_city, label: Colombo City, parent: dd1 }
+  - { code: north_western_1, label: North Western I, parent: dd1 }
+  - { code: north_western_2, label: North Western II, parent: dd1 }
+  - { code: north_central, label: North Central, parent: dd1 }
+  - { code: northern, label: Northern, parent: dd1 }
+  - { code: dd2, label: CEB Distribution Division 2, parent: total }
+  - { code: western_north, label: Western North, parent: dd2 }
+  - { code: central_1, label: Central I, parent: dd2 }
+  - { code: central_2, label: Central II, parent: dd2 }
+  - { code: eastern, label: Eastern, parent: dd2 }
+  - { code: dd3, label: CEB Distribution Division 3, parent: total }
+  - { code: western_south_2, label: Western South II, parent: dd3 }
+  - { code: uva, label: Uva, parent: dd3 }
+  - { code: sabaragamuwa, label: Sabaragamuwa, parent: dd3 }
+  - { code: dd4, label: CEB Distribution Division 4, parent: total }
+  - { code: western_south_1, label: Western South I, parent: dd4 }
+  - { code: southern_1, label: Southern I, parent: dd4 }
+  - { code: southern_2, label: Southern II, parent: dd4 }
+  - { code: leco_bulk, label: Bulk supply to LECO, parent: total }
+  - { code: street_lighting, label: Street lighting, parent: total }

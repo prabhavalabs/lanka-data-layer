@@ -23,3 +23,4 @@ codes:
   - { code: fuel_oil, label: Fuel oil / diesel (thermal oil plants), parent: petroleum }
   - { code: lng, label: Natural gas / LNG, parent: fossil }
   - { code: other, label: Other, parent: total }
+  - { code: battery_storage, label: Battery energy storage (net output), parent: total }

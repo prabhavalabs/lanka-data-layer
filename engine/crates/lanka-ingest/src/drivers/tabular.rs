@@ -29,6 +29,11 @@
 //! - `url_pattern`: `url` with `{yyyymmdd}`/`{yyyy}`/`{mm}`/`{dd}`; `probe`
 //!   walks back `days` from today in `step_days` and takes the first URL that
 //!   answers a HEAD with 2xx.
+//! - `dates`: every `files[].url` with `{date}` (`YYYY-MM-DD`, also
+//!   `{yyyymmdd}`/`{yyyy}`/`{mm}`/`{dd}`) for each day of `dates`: `from`
+//!   to `to` (default: today − `lag_days`, default 1) in `step_days`. The
+//!   candidate key is `<files[].key>_<YYYY-MM-DD>` (a per-day API: generation
+//!   by day, gauge readings by day); with `--from DIR` each reads `DIR/<key>`.
 //! - `ckan`: `package` (a `package_show` URL); `resources: [{key, name, format}]`
 //!   pick the newest resource whose name matches the regex. The fingerprint
 //!   is the resources' ids and `last_modified` stamps.
@@ -154,6 +159,40 @@ pub enum DiscoverKind {
     UrlPattern,
     Ckan,
     Git,
+    Dates,
+}
+
+/// `discover.kind: dates`: the inclusive day range.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DatesSpec {
+    pub from: chrono::NaiveDate,
+    /// Last day (default: today − `lag_days`).
+    #[serde(default)]
+    pub to: Option<chrono::NaiveDate>,
+    #[serde(default = "one_day")]
+    pub lag_days: u32,
+    #[serde(default = "one_day")]
+    pub step_days: u32,
+}
+
+impl DatesSpec {
+    /// The days, oldest first.
+    pub fn days(&self, today: chrono::NaiveDate) -> Result<Vec<chrono::NaiveDate>> {
+        let to = self
+            .to
+            .unwrap_or_else(|| today - chrono::Duration::days(i64::from(self.lag_days)));
+        ensure!(self.from <= to, "dates: from {} is after {to}", self.from);
+        let step = i64::from(self.step_days.max(1));
+        let mut out = Vec::new();
+        let mut d = self.from;
+        while d <= to {
+            out.push(d);
+            d += chrono::Duration::days(step);
+        }
+        ensure!(out.len() <= 20_000, "dates: {} days is too many", out.len());
+        Ok(out)
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -173,6 +212,8 @@ pub struct DiscoverSpec {
     pub links: Vec<LinkSpec>,
     #[serde(default)]
     pub probe: Option<ProbeSpec>,
+    #[serde(default)]
+    pub dates: Option<DatesSpec>,
     #[serde(default)]
     pub package: Option<String>,
     #[serde(default)]
@@ -538,6 +579,31 @@ impl Tabular {
                 let mut c = mk(&key, url, None);
                 self.local(ctx, &mut c, Some(&key))?;
                 out.push(c);
+            }
+            DiscoverKind::Dates => {
+                let spec = d.dates.as_ref().context("discover.dates")?;
+                ensure!(!d.files.is_empty(), "discover.files is empty");
+                for day in spec.days(chrono::Utc::now().date_naive())? {
+                    let iso_day = day.format("%Y-%m-%d").to_string();
+                    for f in &d.files {
+                        let key = format!("{}_{iso_day}", f.key);
+                        let url = render_vars(
+                            f.url.as_deref().context("discover.files[].url")?,
+                            &|n: &str| match n {
+                                "date" => Some(iso_day.clone()),
+                                "yyyymmdd" => Some(day.format("%Y%m%d").to_string()),
+                                "yyyy" => Some(day.format("%Y").to_string()),
+                                "mm" => Some(day.format("%m").to_string()),
+                                "dd" => Some(day.format("%d").to_string()),
+                                other => base(&key)(other),
+                            },
+                        )?;
+                        let mut c = mk(&key, url, f.media_type.as_ref());
+                        c.edition = Some(iso_day.clone());
+                        self.local(ctx, &mut c, Some(&key))?;
+                        out.push(c);
+                    }
+                }
             }
             DiscoverKind::Ckan => {
                 let pkg =
@@ -1342,6 +1408,29 @@ mod tests {
             ..ExtractSpec::default()
         };
         assert!(csv_records(&bad, Cursor::new(text.as_bytes()), "t", ',', 0, &mut out).is_err());
+    }
+
+    #[test]
+    fn dates_cover_the_inclusive_range() {
+        let d = |s: &str| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").expect("date");
+        let spec: DatesSpec =
+            serde_json::from_value(serde_json::json!({ "from": "2026-11-18" })).expect("ok");
+        let days = spec.days(d("2026-11-21")).expect("ok");
+        assert_eq!(
+            days,
+            vec![d("2026-11-18"), d("2026-11-19"), d("2026-11-20")]
+        );
+        let spec: DatesSpec = serde_json::from_value(serde_json::json!({
+            "from": "2026-01-01", "to": "2026-01-10", "step_days": 4
+        }))
+        .expect("ok");
+        assert_eq!(
+            spec.days(d("2026-11-21")).expect("ok"),
+            vec![d("2026-01-01"), d("2026-01-05"), d("2026-01-09")]
+        );
+        let late: DatesSpec =
+            serde_json::from_value(serde_json::json!({ "from": "2026-12-01" })).expect("ok");
+        assert!(late.days(d("2026-11-21")).is_err(), "from after to");
     }
 
     #[test]
