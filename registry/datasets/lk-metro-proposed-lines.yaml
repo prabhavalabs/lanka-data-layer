@@ -17,7 +17,7 @@ indicators:
   period_type: snapshot
 time_coverage:
   from: '2026'
-method: Repo GeoJSON.
+method: data/stops.json of nuuuwan/lk_metro at the fetched commit — one point per stop with its road; the 8 proposed routes (data/routes.json, stop-name sequences) are not drawn as lines yet.
 limits:
 - A proposal, not an approved project.
 enrichment:
@@ -27,4 +27,8 @@ enrichment:
   aggregations:
   - input to derived-transit-access scenarios
 kind: features
+searchable: true
+fields:
+- {name: road, type: string, label: Road}
+tiles: {minzoom: 9, maxzoom: 14, attrs: [road]}
 publication_class: A
