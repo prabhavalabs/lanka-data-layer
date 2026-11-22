@@ -37,3 +37,5 @@ codes:
   - { code: T, label: "Activities of households as employers; undifferentiated goods- and services-producing activities of households for own use", parent: services }
   - { code: U, label: Activities of extraterritorial organizations and bodies, parent: services }
   - { code: taxes_less_subsidies, label: Taxes less subsidies on products (GDP reconciliation item), parent: total }
+  - { code: DEF, label: "Construction, electricity, gas, steam, air conditioning, water supply, sewerage and waste (sections D-F, LFS group; overlaps D, E, F)" }
+  - { code: LRU, label: "Real estate, arts and recreation, extraterritorial bodies (sections L, R, U, LFS group; overlaps L, R, U)" }

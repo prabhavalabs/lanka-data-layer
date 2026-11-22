@@ -1,0 +1,25 @@
+# Statistical Abstract, chapter 4, table 4.1a: labour force participation of
+# the household population aged 15 and over, one row per year (2016–2024).
+# Trilingual headers; the English phrases resolve the columns.
+id: dcs-statistical-abstract/table-4.1a-labour-force-participation
+title: Labour force participation of the household population, 15 years and over
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 4.1a", then_text: "Labour Force Participation" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: hh_pop,     header: "Household population" }
+      - { key: lf_total,   header: "Total labour force" }
+      - { key: lfpr,       header: "participation rate (%)" }
+      - { key: emp_no,     header: "Number", nth: 1 }
+      - { key: emp_rate,   header: "Rate (% to total", nth: 1 }
+      - { key: unemp_no,   header: "Number", nth: 2 }
+      - { key: unemp_rate, header: "Rate (% to total", nth: 2 }
+      - { key: not_lf,     header: "Not in labour" }
+    rows: { stop_at: ["Note", "provisional"] }
+    number: { thousands: ",", strip: ["*"] }
+    checks:
+      - { sum: [emp_no, unemp_no], equals: lf_total, tol: 1 }
+      - { sum: [lf_total, not_lf], equals: hh_pop, tol: 1 }
+      - { row_count: { min: 8, max: 12 } }

@@ -2,10 +2,10 @@ id: dcs-abstract-transport
 title: 'Transport statistics: roads, vehicles, ports, crashes'
 description: Road length by class and province, new vehicle registrations, port traffic and cargo, and road accidents.
 source_ids:
-- dcs-statistical-abstract
+- dcs-abstract-economy
 indicators:
 - id: tran.road_length_km
-  label: Road length by class
+  label: Length of public roads
   unit: km
   measure_type: sum
   aggregation: sum
@@ -28,18 +28,19 @@ indicators:
   - national
   period_type: year
 - id: tran.port_cargo_tonnes
-  label: Cargo handled by port
+  label: Cargo handled
   unit: t
   measure_type: sum
   aggregation: sum
   class: official
   dims:
   - port
-  - cargo_type
+  - id: flow
+    codelist: port_cargo_flow
   geo_levels:
   - national
-  - point
   period_type: year
+  unit_mult: 3
 - id: tran.road_accidents
   label: Road accidents and fatalities
   unit: '{count}'
@@ -53,12 +54,108 @@ indicators:
   - national
   - adm2
   period_type: year
+- id: tran.port_ship_arrivals
+  label: Ships arrived at port
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - port
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.port_gross_tonnage
+  label: Total gross tonnage of ships arrived
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - port
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: tran.port_net_tonnage
+  label: Total net tonnage of ships arrived
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - port
+  geo_levels:
+  - national
+  period_type: year
+  unit_mult: 3
+- id: tran.port_waiting_time
+  label: Average waiting time per ship (Port of Colombo)
+  unit: h
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - ship_type
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.port_service_time
+  label: Average service time per ship (Port of Colombo)
+  unit: h
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - ship_type
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.port_turnaround_time
+  label: Average turnaround time per ship (Port of Colombo)
+  unit: h
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - ship_type
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.port_tons_per_ship_hour_berth
+  label: Average tons per ship-hour at berth (Port of Colombo)
+  unit: t/h
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - ship_type
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.port_tons_per_ship_hour_port
+  label: Average tons per ship-hour in port (Port of Colombo)
+  unit: t/h
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - ship_type
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
-  from: '2010'
+  from: '2016'
   to: '2024'
-method: Abstract ch.7 tables 7.1-7.15.
+method: 'Statistical Abstract 2025, chapter 7: table 7.1 (A and B road length by province and expressways), 7.12 (ship traffic
+  by port), 7.13 (Port of Colombo cargo by flow), 7.14 (cargo by port; Colombo totals from 7.13) and 7.15 (Colombo port performance).
+  PDF tables read through registry templates; reviewed.'
 limits:
-- Crash counts from police records; under-reporting of minor crashes.
+- Road length covers RDA A and B class roads and expressways only.
+- 'Table 7.14 Colombo 2018: the components sum to 99,151 thousand t but the total prints 100,151 (7.13: 100,152).'
+- 'Table 7.14 prints no Hambantota cargo for 2023-2024 and large Kankesanthurai cargo for the same years while table 7.12
+  shows few ships at Kankesanthurai: possibly misplaced rows upstream; published as printed.'
+- Crash counts (tran.road_accidents) are not produced by this connector.
 enrichment:
   joins:
   - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)

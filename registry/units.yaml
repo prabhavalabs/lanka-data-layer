@@ -81,3 +81,9 @@ units:
   - { code: '{trip}/d', label: 'trips per day', kind: count }
   - { code: '{various}', label: 'series-specific unit', kind: score }
   - { code: '{vote}', label: 'votes', kind: count }
+  - { code: 'h', label: 'hours', kind: physical }
+  - { code: 'L', label: 'litres', kind: physical }
+  - { code: 'g/d', label: 'grams per day', kind: ratio }
+  - { code: 'XDR', label: 'IMF special drawing rights', kind: currency }
+  - { code: 't/h', label: 'tonnes per hour', kind: ratio }
+  - { code: 'USD/d', label: 'US dollars per day', kind: currency }

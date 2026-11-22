@@ -1,0 +1,42 @@
+id: dcs-abstract-economy
+publisher: Department of Census and Statistics, Sri Lanka
+title: Statistical Abstract, economy chapters (labour, transport)
+homepage: https://www.statistics.gov.lk/Publication/Statistical-Abstract
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/abstract{year}/CHAP{n}/{table}.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Statistical Abstract
+cadence:
+  frequency: annual
+  expected_lag_days: 300
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- ECON
+- TRAN
+datasets:
+- dcs-lfs-annual-subnational
+- dcs-abstract-transport
+priority: P1
+effort: M
+status: active
+verified_at: '2026-11-22'
+notes: >-
+  The economy chapters (4 labour, 7 transport) of the Statistical Abstract, one PDF per table
+  (abstract2025/CHAP4/4.1a.pdf …). A separate source id from dcs-statistical-abstract (the
+  population and social chapters) so each has its own pdf_table connector. Text-layer PDFs,
+  trilingual; English headers resolve the template columns. Licence unstated: published with
+  attribution and the takedown contact; it does not block ingestion.
+dc_refs:
+- labour-force
+- employment-by-industry
+- national-road-length
+- port-traffic-cargo
+- colombo-port-performance

@@ -1,0 +1,22 @@
+# Port cargo flow (SLPA)
+# Source/authority: Sri Lanka Ports Authority cargo statistics as printed in the DCS Statistical Abstract, tables 7.13 and 7.14.
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport
+id: port_cargo_flow
+title: "Port cargo flow (SLPA)"
+codes:
+  - { code: total, label: "Total cargo handled", total: true, sdmx: _T }
+  - { code: discharged, label: "Total discharged", parent: total }
+  - { code: loaded, label: "Total loaded", parent: total }
+  - { code: discharged_domestic, label: "Discharged - domestic (imports)", parent: discharged }
+  - { code: discharged_transhipment, label: "Discharged - transhipment", parent: discharged }
+  - { code: discharged_restowing, label: "Discharged - re-stowing", parent: discharged }
+  - { code: loaded_domestic, label: "Loaded - domestic (exports)", parent: loaded }
+  - { code: loaded_transhipment, label: "Loaded - transhipment", parent: loaded }
+  - { code: loaded_restowing, label: "Loaded - re-stowing", parent: loaded }
+  - { code: dry_liquid_discharged, label: "Dry and liquid cargo discharged (table 7.14)" }
+  - { code: dry_loaded, label: "Dry cargo loaded (table 7.14)" }
+  - { code: liquid_discharged, label: "Liquid cargo discharged (table 7.14)" }
+  - { code: liquid_loaded, label: "Liquid cargo loaded (table 7.14)" }

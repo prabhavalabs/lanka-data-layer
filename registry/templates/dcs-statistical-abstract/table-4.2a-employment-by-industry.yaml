@@ -1,0 +1,35 @@
+# Statistical Abstract, chapter 4, table 4.2a: employment by major industry group
+# (ISIC rev. 4 sections grouped into 17 numbered groups), one row per year.
+id: dcs-statistical-abstract/table-4.2a-employment-by-industry
+title: Employment by major industry group
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      # Anchored on the "Industry Group" banner just above the numbered group
+      # headers: the subtitle's "ISIC 4" would otherwise resolve column "4".
+      page: { find_text: "gphpTfs; Industry Group" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: total, header: "Total" }
+      - { key: g01, header: "1" }
+      - { key: g02, header: "2" }
+      - { key: g03, header: "3" }
+      - { key: g04, header: "4" }
+      - { key: g05, header: "5" }
+      - { key: g06, header: "6" }
+      - { key: g07, header: "7" }
+      - { key: g08, header: "8" }
+      - { key: g09, header: "9" }
+      - { key: g10, header: "10" }
+      - { key: g11, header: "11" }
+      - { key: g12, header: "12" }
+      - { key: g13, header: "13" }
+      - { key: g14, header: "14" }
+      - { key: g15, header: "15" }
+      - { key: g16, header: "16" }
+      - { key: g17, header: "17" }
+    rows: { stop_at: ["Provisional"] }
+    number: { thousands: ",", strip: ["*"] }
+    checks:
+      - { sum: [g01, g02, g03, g04, g05, g06, g07, g08, g09, g10, g11, g12, g13, g14, g15, g16, g17], equals: total, tol: 2 }
+      - { row_count: { min: 6, max: 10 } }

@@ -1,0 +1,23 @@
+# Statistical Abstract, chapter 7, table 7.1: length of public (A and B class)
+# roads by province and of expressways, kilometres, five years. The first row is
+# the A and B total, the provinces split it, the last row is expressways.
+id: dcs-statistical-abstract/table-7.1-road-length-by-province
+title: Length of public roads by province (km)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 7.1", then_text: "Length of public roads" }
+    label: { key: province, header: "Province" }
+    columns:
+      - { key: y1, header: "2020" }
+      - { key: y2, header: "2021" }
+      - { key: y3, header: "2022" }
+      - { key: y4, header: "2023" }
+      - { key: y5, header: "2024" }
+    rows: { stop_at: ["Source", "Table 7.2"] }
+    number: { thousands: "," }
+    checks:
+      # Provinces are printed to 0.01 km (2021 to 0.1 km).
+      - { sum_rows: ["Western", "Central", "Southern", "Northern", "Eastern", "North-western", "North-central", "Uva", "Sabaragamuwa"], equals_row: "A and B roads", tol: 1 }
+      - { row_count: { min: 11, max: 11 } }
+      - { rows_present: ["A and B roads", "Western", "Sabaragamuwa", "Expressways"] }

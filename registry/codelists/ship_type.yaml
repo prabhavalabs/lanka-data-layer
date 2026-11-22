@@ -1,0 +1,11 @@
+# Ship type (container / non-container)
+# Source/authority: SLPA port performance statistics, DCS Statistical Abstract table 7.15.
+# Status: complete for the publication as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport
+id: ship_type
+title: "Ship type (container / non-container)"
+codes:
+  - { code: container, label: "Container ships" }
+  - { code: non_container, label: "Non-container ships" }

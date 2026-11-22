@@ -4,8 +4,8 @@ description: Annual unemployment, participation, informal employment and employm
   districts.
 source_ids:
 - dcs-lfs
-- dcs-statistical-abstract
-- dcs-pocketbook
+- dcs-abstract-economy
+- dcs-pocketbook-economy
 indicators:
 - id: lab.unemployment_rate_sub
   label: Unemployment rate
@@ -21,7 +21,7 @@ indicators:
   - adm2
   period_type: year
 - id: lab.informal_share
-  label: Informal sector share of employment
+  label: Informal sector share of non-agricultural employment
   unit: '%'
   measure_type: share
   aggregation: none
@@ -32,7 +32,7 @@ indicators:
   - adm2
   period_type: year
 - id: lab.employment_by_industry
-  label: Employment by industry
+  label: Employment by industry group
   unit: '{person}'
   measure_type: count
   aggregation: sum
@@ -44,7 +44,7 @@ indicators:
   - adm1
   period_type: year
 - id: lab.employment_by_occupation
-  label: Employment by occupation
+  label: Employment by major occupational group (ISCO-08)
   unit: '{person}'
   measure_type: count
   aggregation: sum
@@ -54,12 +54,73 @@ indicators:
   geo_levels:
   - national
   period_type: year
+- id: lab.household_pop_15plus
+  label: Household population aged 15 and over (LFS)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: lab.labour_force_annual
+  label: Labour force (aged 15 and over)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: lab.lfpr_annual
+  label: Labour force participation rate (aged 15 and over)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: lab.employed_annual
+  label: Employed persons (aged 15 and over)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: lab.unemployed_annual
+  label: Unemployed persons (aged 15 and over)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: lab.not_in_labour_force
+  label: Persons not in the labour force (aged 15 and over)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
 time_coverage:
-  from: '2015'
+  from: '2016'
   to: '2025'
-method: Annual report PDF tables + Abstract ch.4.
+method: Statistical Abstract 2025 tables 4.1a (labour force 2016-2024, persons) and 4.2a (employment by the 17 LFS industry
+  groups 2018-2024, persons); Statistical Pocket Book 2026 tables 3.1 and 3.2 for 2025 (thousands, scaled to persons), 3.3
+  (occupation 2021-2025, thousands), 3.6 (informal share by district, 2025) and 3.7 (unemployment rate by province and sex
+  2022-2025; national 2025). PDF tables read through registry templates; reviewed.
 limits:
-- District estimates have large sampling error; flag CV > 20%.
+- District and province estimates have large sampling error; DCS flags the province figures (high CV).
+- 2024 and 2025 are provisional. Pocket Book figures are rounded to thousands; Abstract figures are persons.
+- Industry groups 4 (D, E, F) and 17 (L, R, U) are LFS groupings (codes DEF, LRU), not single ISIC sections.
+- Occupation 0 is printed as 'Armed forces occupations and unidentified occupations'.
+- Informal share is of non-agricultural employment (2025, provisional).
 enrichment:
   joins:
   - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil

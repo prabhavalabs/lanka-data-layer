@@ -18,3 +18,4 @@ codes:
   - { code: C, label: Class C - provincial roads, parent: provincial }
   - { code: D, label: Class D - provincial roads, parent: provincial }
   - { code: other, label: Other / unclassified, parent: total }
+  - { code: AB, label: "Class A and B roads (national; DCS Abstract total, overlaps A and B)" }

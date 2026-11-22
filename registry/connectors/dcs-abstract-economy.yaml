@@ -1,0 +1,208 @@
+# Statistical Abstract 2025, economy chapters: labour (ch. 4) and transport (ch. 7).
+# One PDF per table, text layer, trilingual. Class B: every version is reviewed
+# against its evidence sheet. statistics.gov.lk: the engine's HTTP client cannot
+# negotiate its TLS (see dcs-agriculture); run with `--from DIR` (files named
+# <key>.pdf, fetched with curl) until that is fixed. URLs are the real upstream.
+source: dcs-abstract-economy
+driver: pdf_table
+version: 1.0.0
+description: >-
+  Statistical Abstract 2025 tables 4.1a, 4.2a (labour force, employment by industry),
+  7.1 (road length by province), 7.12-7.15 (ports).
+discover:
+  files:
+    - { key: abstract-2025-4.1a, url: "https://www.statistics.gov.lk/abstract2025/CHAP4/4.1a.pdf", edition: "2025" }
+    - { key: abstract-2025-4.2a, url: "https://www.statistics.gov.lk/abstract2025/CHAP4/4.2a.pdf", edition: "2025" }
+    - { key: abstract-2025-7.1, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.1%207.2.pdf", edition: "2025" }
+    - { key: abstract-2025-7.12, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.12.pdf", edition: "2025" }
+    - { key: abstract-2025-7.13, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.13.pdf", edition: "2025" }
+    - { key: abstract-2025-7.14, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.14.pdf", edition: "2025" }
+    - { key: abstract-2025-7.15, url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.15.pdf", edition: "2025" }
+extract:
+  tables:
+    - { id: t4_1a, file: abstract-2025-4.1a, template: dcs-statistical-abstract/table-4.1a-labour-force-participation }
+    - { id: t4_2a, file: abstract-2025-4.2a, template: dcs-statistical-abstract/table-4.2a-employment-by-industry }
+    - { id: t7_1, file: abstract-2025-7.1, template: dcs-statistical-abstract/table-7.1-road-length-by-province }
+    - { id: t7_12, file: abstract-2025-7.12, template: dcs-statistical-abstract/table-7.12-ship-traffic-by-port }
+    - { id: t7_13, file: abstract-2025-7.13, template: dcs-statistical-abstract/table-7.13-colombo-port-cargo }
+    - { id: t7_14, file: abstract-2025-7.14, template: dcs-statistical-abstract/table-7.14-cargo-by-port }
+    - { id: t7_15, file: abstract-2025-7.15, template: dcs-statistical-abstract/table-7.15-colombo-port-performance }
+standardise:
+  dataset: dcs-lfs-annual-subnational
+  vintage: "Statistical Abstract {edition}"
+  outputs:
+    # ── 4.1a labour force, 2016-2024 (persons) ──
+    - { table: t4_1a, indicator: lab.household_pop_15plus, geo: { fixed: root }, period: { from_label: year },
+        columns: { hh_pop: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.labour_force_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { lf_total: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.lfpr_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { lfpr: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.employed_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { emp_no: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.unemployed_annual, geo: { fixed: root }, period: { from_label: year },
+        columns: { unemp_no: {} }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.unemployment_rate_sub, geo: { fixed: root }, period: { from_label: year },
+        columns: { unemp_rate: { sex: total } }, status: { label_markers: { "*": provisional } } }
+    - { table: t4_1a, indicator: lab.not_in_labour_force, geo: { fixed: root }, period: { from_label: year },
+        columns: { not_lf: {} }, status: { label_markers: { "*": provisional } } }
+    # ── 4.2a employment by the 17 LFS industry groups, 2018-2024 (persons) ──
+    - table: t4_2a
+      indicator: lab.employment_by_industry
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns:
+        total: { industry: total }
+        g01: { industry: A }
+        g02: { industry: B }
+        g03: { industry: C }
+        g04: { industry: DEF }
+        g05: { industry: G }
+        g06: { industry: H }
+        g07: { industry: I }
+        g08: { industry: J }
+        g09: { industry: K }
+        g10: { industry: M }
+        g11: { industry: "N" }
+        g12: { industry: O }
+        g13: { industry: P }
+        g14: { industry: Q }
+        g15: { industry: S }
+        g16: { industry: T }
+        g17: { industry: LRU }
+      status: { label_markers: { "*": provisional } }
+    # ── 7.1 road length (km) ──
+    - dataset: dcs-abstract-transport
+      table: t7_1
+      indicator: tran.road_length_km
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows: { "A and B roads": { road_class: AB }, "Expressways": { road_class: E } }
+      columns: &y5 { y1: {}, y2: {}, y3: {}, y4: {}, y5: {} }
+    - dataset: dcs-abstract-transport
+      table: t7_1
+      indicator: tran.road_length_km
+      geo: { from_label: { level: 1, skip: ["A and B roads", "Expressways"] } }
+      period: { from_header: year }
+      columns: { y1: { road_class: AB }, y2: { road_class: AB }, y3: { road_class: AB }, y4: { road_class: AB }, y5: { road_class: AB } }
+    # ── 7.12 ship traffic by port ('000 t tonnage) ──
+    - dataset: dcs-abstract-transport
+      table: t7_12
+      indicator: tran.port_ship_arrivals
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "No. of ships arrived#1": { port: colombo }
+        "No. of ships arrived#2": { port: trincomalee }
+        "No. of ships arrived#3": { port: galle }
+        "No. of ships arrived#4": { port: hambantota }
+        "No. of ships arrived#5": { port: kankesanthurai }
+      columns: &y7 { y1: {}, y2: {}, y3: {}, y4: {}, y5: {}, y6: {}, y7: {} }
+    - dataset: dcs-abstract-transport
+      table: t7_12
+      indicator: tran.port_gross_tonnage
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Total gross tonnage#1": { port: colombo }
+        "Total gross tonnage#2": { port: trincomalee }
+        "Total gross tonnage#3": { port: galle }
+        "Total gross tonnage#4": { port: hambantota }
+        "Total gross tonnage#5": { port: kankesanthurai }
+      columns: *y7
+    - dataset: dcs-abstract-transport
+      table: t7_12
+      indicator: tran.port_net_tonnage
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Total net tonnage#1": { port: colombo }
+        "Total net tonnage#2": { port: trincomalee }
+        "Total net tonnage#3": { port: galle }
+        "Total net tonnage#4": { port: hambantota }
+        "Total net tonnage#5": { port: kankesanthurai }
+      columns: *y7
+    # ── 7.13 Port of Colombo cargo by flow ('000 t) ──
+    - dataset: dcs-abstract-transport
+      table: t7_13
+      indicator: tran.port_cargo_tonnes
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Domestic#1": { port: colombo, flow: discharged_domestic }
+        "Transhipment#1": { port: colombo, flow: discharged_transhipment }
+        "Re-stowing#1": { port: colombo, flow: discharged_restowing }
+        "Total discharged": { port: colombo, flow: discharged }
+        "Domestic#2": { port: colombo, flow: loaded_domestic }
+        "Transhipment#2": { port: colombo, flow: loaded_transhipment }
+        "Re-stowing#2": { port: colombo, flow: loaded_restowing }
+        "Total loaded": { port: colombo, flow: loaded }
+        "Total handled": { port: colombo, flow: total }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {}, y6: {}, y7: {}, y8: {}, y9: {} }
+    # ── 7.14 cargo by port ('000 t); Colombo totals come from 7.13 ──
+    - dataset: dcs-abstract-transport
+      table: t7_14
+      indicator: tran.port_cargo_tonnes
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows:
+        "Dry and Liquid cargo discharged#1": { port: colombo, flow: dry_liquid_discharged }
+        "Dry cargo loaded#1": { port: colombo, flow: dry_loaded }
+        "Liquid cargo discharged#1": { port: colombo, flow: liquid_discharged }
+        "Liquid cargo loaded#1": { port: colombo, flow: liquid_loaded }
+        "Dry and Liquid cargo discharged#2": { port: trincomalee, flow: dry_liquid_discharged }
+        "Dry cargo loaded#2": { port: trincomalee, flow: dry_loaded }
+        "Total cargo handled#2": { port: trincomalee, flow: total }
+        "Dry and Liquid cargo discharged#3": { port: galle, flow: dry_liquid_discharged }
+        "Dry cargo loaded#3": { port: galle, flow: dry_loaded }
+        "Total cargo handled#3": { port: galle, flow: total }
+        "Dry and Liquid cargo discharged#4": { port: hambantota, flow: dry_liquid_discharged }
+        "Dry cargo loaded#4": { port: hambantota, flow: dry_loaded }
+        "Total cargo handled#4": { port: hambantota, flow: total }
+        "Dry and Liquid cargo discharged#5": { port: kankesanthurai, flow: dry_liquid_discharged }
+        "Dry cargo loaded#5": { port: kankesanthurai, flow: dry_loaded }
+        "Total cargo handled#5": { port: kankesanthurai, flow: total }
+      columns: *y7
+    # ── 7.15 Port of Colombo performance (hours; tons per ship-hour) ──
+    - { dataset: dcs-abstract-transport, table: t7_15, indicator: tran.port_waiting_time, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#1": { ship_type: non_container }, "2 Container ships#1": { ship_type: container } } }
+    - { dataset: dcs-abstract-transport, table: t7_15, indicator: tran.port_service_time, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#2": { ship_type: non_container }, "2 Container ships#2": { ship_type: container } } }
+    - { dataset: dcs-abstract-transport, table: t7_15, indicator: tran.port_turnaround_time, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#3": { ship_type: non_container }, "2 Container ships#3": { ship_type: container } } }
+    - { dataset: dcs-abstract-transport, table: t7_15, indicator: tran.port_tons_per_ship_hour_berth, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#4": { ship_type: non_container }, "2 Container ships#4": { ship_type: container } } }
+    - { dataset: dcs-abstract-transport, table: t7_15, indicator: tran.port_tons_per_ship_hour_port, geo: { fixed: root },
+        period: { from_header: year }, columns: *y7,
+        rows: { "1 Non - container ships#5": { ship_type: non_container }, "2 Container ships#5": { ship_type: container } } }
+expect:
+  - { dataset: dcs-lfs-annual-subnational, check: range, indicator: lab.lfpr_annual, min: 30, max: 80 }
+  - { dataset: dcs-lfs-annual-subnational, check: range, indicator: lab.unemployment_rate_sub, min: 0, max: 30 }
+  - dataset: dcs-lfs-annual-subnational
+    check: sql
+    note: The 17 LFS industry groups sum to the total employed (Abstract persons ±3; Pocket Book thousands ±12 000).
+    query: >-
+      SELECT g.period_start, sum(g.value) AS groups, t.value AS total
+      FROM stage_obs g JOIN stage_obs t ON t.period_start = g.period_start AND t.indicator_id = g.indicator_id
+      AND t.geo_code = g.geo_code AND t.dims = 'industry=total'
+      WHERE g.indicator_id = 'lab.employment_by_industry' AND g.dims <> 'industry=total'
+      GROUP BY g.period_start, t.value HAVING abs(sum(g.value) - t.value) > 12000
+  - dataset: dcs-lfs-annual-subnational
+    check: sql
+    note: Employed + unemployed = labour force (±2 persons).
+    query: >-
+      SELECT e.period_start, e.value + u.value AS sum, l.value AS lf
+      FROM stage_obs e JOIN stage_obs u ON u.period_start = e.period_start AND u.indicator_id = 'lab.unemployed_annual'
+      JOIN stage_obs l ON l.period_start = e.period_start AND l.indicator_id = 'lab.labour_force_annual'
+      WHERE e.indicator_id = 'lab.employed_annual' AND e.geo_code = 'LK' AND u.geo_code = 'LK' AND l.geo_code = 'LK'
+      AND abs(e.value + u.value - l.value) > 2
+  - { dataset: dcs-abstract-transport, check: sum_to_parent, indicator: tran.road_length_km, tol_pct: 0.5,
+      note: "Provinces sum to the A and B road total." }
+  - { dataset: dcs-abstract-transport, check: range, indicator: tran.road_length_km, min: 100, max: 20000 }
+  - { dataset: dcs-abstract-transport, check: range, indicator: tran.port_turnaround_time, min: 0, max: 500 }
+  - { dataset: dcs-abstract-transport, check: row_count, min: 300 }
+  - { check: no_future }

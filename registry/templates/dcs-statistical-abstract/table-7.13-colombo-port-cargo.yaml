@@ -1,0 +1,28 @@
+# Statistical Abstract, chapter 7, table 7.13: cargo handled through the
+# Port of Colombo ('000 t), discharged and loaded by domestic, transhipment
+# and re-stowing, nine years. "Domestic" etc. repeat under Discharged and
+# Loaded, so rows are told apart by occurrence.
+id: dcs-statistical-abstract/table-7.13-colombo-port-cargo
+title: Cargo handled through Port of Colombo ('000 t)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 7.13", then_text: "Cargo handled through Port of Colombo" }
+    label: { key: item, header: "Port & Item" }
+    columns:
+      - { key: y1, header: "2016" }
+      - { key: y2, header: "2017" }
+      - { key: y3, header: "2018" }
+      - { key: y4, header: "2019" }
+      - { key: y5, header: "2020" }
+      - { key: y6, header: "2021" }
+      - { key: y7, header: "2022" }
+      - { key: y8, header: "2023" }
+      - { key: y9, header: "2024" }
+    rows: { stop_at: ["Source"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: ["Domestic#1", "Transhipment#1", "Re-stowing#1"], equals_row: "Total discharged", tol: 2 }
+      - { sum_rows: ["Domestic#2", "Transhipment#2", "Re-stowing#2"], equals_row: "Total loaded", tol: 2 }
+      - { sum_rows: ["Total discharged", "Total loaded"], equals_row: "Total handled", tol: 2 }
+      - { row_count: { min: 9, max: 9 } }
