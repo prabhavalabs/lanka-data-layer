@@ -36,6 +36,7 @@ pub mod features_api;
 pub mod frame_codec;
 pub mod grids;
 pub mod openapi;
+pub mod points;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -1199,6 +1200,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v2/grids", get(grids::list))
         .route("/v2/grids/{id}", get(grids::detail))
         .route("/v2/grids/{id}/tiles/{z}/{x}/{y}", get(grids::tile))
+        .route("/v2/grids/{id}/values/{z}/{x}/{y}", get(grids::values_tile))
         .route("/v2/openapi.json", get(openapi_json))
         .merge(features_api::routes())
         .fallback(fallback)

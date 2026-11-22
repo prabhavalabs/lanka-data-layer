@@ -39,7 +39,7 @@ const CACHE_FILE: &str = "public, max-age=31536000, immutable";
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(features_list, feature_one, nearest, tiles_index, tilejson, tile),
+    paths(features_list, feature_one, nearest, tiles_index, tilejson, tile, crate::points::points),
     tags((name = "features", description = "Points, lines and polygons (OSM, agency GIS) and vector tiles"))
 )]
 pub struct FeaturesDoc;
@@ -47,6 +47,7 @@ pub struct FeaturesDoc;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/v2/features/{dataset}", get(features_list))
+        .route("/v2/features/{dataset}/points", get(crate::points::points))
         .route("/v2/features/{dataset}/{*key}", get(feature_one))
         .route("/v2/nearest", get(nearest))
         .route("/v2/tiles", get(tiles_index))
@@ -318,7 +319,15 @@ async fn tiles_index(State(st): State<AppState>, headers: HeaderMap, uri: Uri) -
         .iter()
         .map(|t| TilesetEntry {
             tilejson: format!("/v2/tiles/{}.json", t.id),
-            tiles: format!("/v2/tiles/{}/{{z}}/{{x}}/{{y}}.mvt", t.id),
+            tiles: format!(
+                "/v2/tiles/{}/{{z}}/{{x}}/{{y}}.{}",
+                t.id,
+                if t.id == lanka_export::dem::DEM {
+                    "png"
+                } else {
+                    "mvt"
+                }
+            ),
             pmtiles: format!("/dl/tiles/{}/{}.pmtiles", t.id, t.sha16),
             tileset: t.clone(),
         })
@@ -355,12 +364,14 @@ async fn tilejson(
     let meta = pm.metadata().unwrap_or_default();
     let h = &pm.header;
     let base = base_url(&headers);
-    let doc = serde_json::json!({
+    let raster = h.tile_type != 1;
+    let ext = if raster { "png" } else { "mvt" };
+    let mut doc = serde_json::json!({
         "tilejson": "3.0.0",
         "name": t.id,
         "version": t.sha16,
         "scheme": "xyz",
-        "tiles": [format!("{base}/v2/tiles/{}/{{z}}/{{x}}/{{y}}.mvt", t.id)],
+        "tiles": [format!("{base}/v2/tiles/{}/{{z}}/{{x}}/{{y}}.{ext}", t.id)],
         "minzoom": h.min_zoom,
         "maxzoom": h.max_zoom,
         "bounds": h.bounds,
@@ -370,6 +381,18 @@ async fn tilejson(
         "pmtiles": format!("{base}/dl/tiles/{}/{}.pmtiles", t.id, t.sha16),
         "lanka": { "layers": t.layers, "datasets": t.dataset_ids, "built_at": t.built_at },
     });
+    if raster {
+        // raster-dem (WP-27 `dem`): MapLibre reads `encoding` and `tileSize`.
+        doc["tileSize"] = serde_json::json!(256);
+        doc["format"] = serde_json::json!("png");
+        doc["encoding"] = meta
+            .get("encoding")
+            .cloned()
+            .unwrap_or(serde_json::json!("terrarium"));
+        if let Some(o) = doc.as_object_mut() {
+            o.remove("vector_layers");
+        }
+    }
     crate::with_cache(axum::Json(doc).into_response(), &etag, CACHE_TILE)
 }
 
@@ -387,6 +410,7 @@ async fn tile(
     let y = y
         .strip_suffix(".mvt")
         .or_else(|| y.strip_suffix(".pbf"))
+        .or_else(|| y.strip_suffix(".png"))
         .unwrap_or(&y);
     let (Ok(z), Ok(x), Ok(y)) = (z.parse::<u8>(), x.parse::<u64>(), y.parse::<u64>()) else {
         return Err(bad("tile coordinates must be integers: /{z}/{x}/{y}.mvt"));
@@ -397,7 +421,35 @@ async fn tile(
         return Ok(r);
     }
     let pm = open_archive(&store_root(&st).join(&t.path))?;
+    // Beyond the archive's zoom range there is never a tile: say so (with the
+    // range) instead of an empty 204, which a client that did not read the
+    // TileJSON takes for "no data here" and draws nothing (WP-27: the empty
+    // admin tiles of the merge smoke test were z13+ requests against a z0–12
+    // tileset). Clients set `minzoom`/`maxzoom` from the TileJSON and over-zoom.
+    if z < pm.header.min_zoom || z > pm.header.max_zoom {
+        let mut e = ApiError::new(
+            StatusCode::NOT_FOUND,
+            format!(
+                "not_found: tileset {tileset} has zooms {}–{}; over-zoom z{} (TileJSON /v2/tiles/{tileset}.json)",
+                pm.header.min_zoom, pm.header.max_zoom, pm.header.max_zoom
+            ),
+        )
+        .into_response();
+        e.headers_mut().insert(
+            "x-tileset-maxzoom",
+            HeaderValue::from(u16::from(pm.header.max_zoom)),
+        );
+        e.headers_mut()
+            .insert(header::CACHE_CONTROL, HeaderValue::from_static(CACHE_TILE));
+        return Ok(e);
+    }
     let enc = pm.header.tile_compression.content_encoding();
+    let content_type = match pm.header.tile_type {
+        2 => "image/png",
+        3 => "image/jpeg",
+        4 => "image/webp",
+        _ => "application/vnd.mapbox-vector-tile",
+    };
     let data = tokio::task::spawn_blocking(move || pm.tile(z, x, y))
         .await
         .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "internal error"))?
@@ -409,10 +461,8 @@ async fn tile(
         None => StatusCode::NO_CONTENT.into_response(),
         Some(b) => {
             let mut r = b.into_response();
-            r.headers_mut().insert(
-                header::CONTENT_TYPE,
-                HeaderValue::from_static("application/vnd.mapbox-vector-tile"),
-            );
+            r.headers_mut()
+                .insert(header::CONTENT_TYPE, HeaderValue::from_static(content_type));
             if let Some(e) = enc {
                 r.headers_mut()
                     .insert(header::CONTENT_ENCODING, HeaderValue::from_static(e));

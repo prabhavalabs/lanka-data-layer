@@ -201,6 +201,15 @@ impl GridSet {
         self.mapped.len()
     }
 
+    /// A mapped layer as a shared handle (value tiles build pyramids off the
+    /// request thread).
+    #[must_use]
+    pub fn layer_arc(&self, id: &str, period: &str) -> Option<(Arc<MappedGrid>, &GridLayerInfo)> {
+        self.mapped
+            .get(&(id.to_owned(), period.to_owned()))
+            .map(|(m, i)| (Arc::clone(m), &self.layers[*i]))
+    }
+
     #[must_use]
     pub fn layer(&self, id: &str, period: &str) -> Option<(&MappedGrid, &GridLayerInfo)> {
         self.mapped
@@ -458,6 +467,8 @@ pub struct GridSummary {
     pub periods: Vec<String>,
     /// Tile URL template (served layers only).
     pub tiles: Option<String>,
+    /// `ldl-v16` value tile URL template (served layers only).
+    pub values: Option<String>,
 }
 
 #[must_use]
@@ -476,11 +487,13 @@ pub fn summaries(gs: &GridSet) -> Vec<GridSummary> {
             serve: false,
             periods: Vec::new(),
             tiles: None,
+            values: None,
         });
         e.periods.push(l.period.clone());
         if l.serve && gs.layer(&l.id, &l.period).is_some() {
             e.serve = true;
             e.tiles = Some(format!("/v2/grids/{}/tiles/{{z}}/{{x}}/{{y}}.png", l.id));
+            e.values = Some(format!("/v2/grids/{}/values/{{z}}/{{x}}/{{y}}.png", l.id));
         }
     }
     m.into_values().collect()
@@ -689,9 +702,18 @@ pub async fn list(State(st): State<AppState>, headers: HeaderMap, uri: Uri) -> A
     crate::respond(&headers, &uri, s, meta)
 }
 
-/// One grid layer: every period with encoding, statistics, style and COG path.
+/// A grid layer-period with its value-tile delivery (served layers).
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct GridLayerDetail {
+    #[serde(flatten)]
+    pub info: GridLayerInfo,
+    /// `ldl-v16` value tiles (served layers only).
+    pub values: Option<ValuesInfo>,
+}
+
+/// One grid layer: every period with encoding, statistics, style, COG path and value tiles.
 #[utoipa::path(get, path = "/v2/grids/{id}", tag = "grids", params(("id" = String, Path)),
-    responses((status = 200, body = lanka_core::Envelope<Vec<GridLayerInfo>>), (status = 404, body = ErrorBody)))]
+    responses((status = 200, body = lanka_core::Envelope<Vec<GridLayerDetail>>), (status = 404, body = ErrorBody)))]
 pub async fn detail(
     State(st): State<AppState>,
     UrlPath(id): UrlPath<String>,
@@ -708,7 +730,14 @@ pub async fn detail(
         ));
     }
     let meta = cat.meta_for(datasets_of(&rows), Vec::new());
-    crate::respond(&headers, &uri, rows, meta)
+    let out: Vec<GridLayerDetail> = rows
+        .into_iter()
+        .map(|l| GridLayerDetail {
+            values: gs.layer(&l.id, &l.period).map(|(m, i)| values_info(m, i)),
+            info: l,
+        })
+        .collect();
+    crate::respond(&headers, &uri, out, meta)
 }
 
 #[derive(Debug, Deserialize, IntoParams)]
@@ -805,6 +834,217 @@ pub async fn tile(
             .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "etag"))?,
     );
     Ok(r)
+}
+
+// ───────────────────────────── value tiles (WP-27) ─────────────────────────
+
+use lanka_grid::values::{self as v16, Pyramid, Quant};
+
+/// How a served layer is delivered as `ldl-v16` value tiles (10 §3.2):
+/// `value = q × scale + offset`, `q = nodata` is no data.
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct ValuesInfo {
+    pub layer: String,
+    pub period: String,
+    /// `{z}/{x}/{y}` template; `v` = the layer's sha16 (immutable URL).
+    pub values: String,
+    pub encoding: &'static str,
+    pub scale: f64,
+    pub offset: f64,
+    pub nodata: u16,
+    pub minzoom: u8,
+    /// Native resolution; the client over-zooms above it.
+    pub maxzoom: u8,
+    /// Largest |decoded − source| at the native zoom (0 = exact).
+    pub max_error: f64,
+    /// Raw stored values pass through (decoding is exact).
+    pub exact: bool,
+    /// Overview reducer of z < native (`sum` layers: mean per valid cell).
+    pub reducer: String,
+    pub unit: String,
+    pub sha16: String,
+    /// `q` → class code, for categorical layers (`overview: mode`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub categories: Option<BTreeMap<u16, String>>,
+}
+
+/// Native zoom of value tiles on a grid: the first zoom whose pixel is no
+/// wider than a cell (z11 on the 0.001° grid; z10 also samples native cells,
+/// one pixel per 1.4 cells).
+#[must_use]
+pub fn native_zoom(g: &Grid) -> u8 {
+    (0..=22u8)
+        .find(|z| 360.0 / (f64::from(1u32 << z) * 256.0) <= g.step)
+        .unwrap_or(22)
+}
+
+/// The quantisation of a mapped layer.
+#[must_use]
+pub fn quant_of(m: &MappedGrid, info: &GridLayerInfo) -> Quant {
+    let stat = |k: &str| {
+        info.stats
+            .as_ref()
+            .and_then(|s| s.get(k))
+            .and_then(serde_json::Value::as_f64)
+    };
+    Quant::for_layer(&m.header.enc, stat("min"), stat("max"))
+}
+
+/// Value-tile metadata of a mapped layer.
+#[must_use]
+pub fn values_info(m: &MappedGrid, info: &GridLayerInfo) -> ValuesInfo {
+    let q = quant_of(m, info);
+    let sha16 = info.sha256[..16.min(info.sha256.len())].to_owned();
+    let categories = (info.overview == "mode").then(|| {
+        info.style
+            .as_ref()
+            .and_then(|s| s.get("classes"))
+            .and_then(serde_json::Value::as_object)
+            .map(|o| {
+                o.keys()
+                    .filter_map(|k| k.parse::<f64>().ok().map(|v| (q.q(v), k.clone())))
+                    .collect()
+            })
+            .unwrap_or_default()
+    });
+    ValuesInfo {
+        layer: info.id.clone(),
+        period: info.period.clone(),
+        values: format!(
+            "/v2/grids/{}/values/{{z}}/{{x}}/{{y}}.png?period={}&v={sha16}",
+            info.id, info.period
+        ),
+        encoding: v16::ENCODING,
+        scale: q.scale,
+        offset: q.offset,
+        nodata: v16::NODATA_Q,
+        minzoom: 5,
+        maxzoom: native_zoom(&m.header.grid),
+        max_error: q.max_error,
+        exact: q.exact,
+        reducer: info.overview.clone(),
+        unit: info.unit.clone(),
+        sha16,
+        categories,
+    }
+}
+
+type PyramidCell = Arc<std::sync::OnceLock<Arc<Pyramid>>>;
+static PYRAMIDS: std::sync::LazyLock<std::sync::Mutex<HashMap<String, PyramidCell>>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(HashMap::new()));
+
+/// The layer's overview pyramid, built once per layer content (sha256) on
+/// first use and kept for the life of the process (≈ 3 bytes per cell / 3).
+pub fn pyramid(m: &MappedGrid, info: &GridLayerInfo) -> Result<Arc<Pyramid>> {
+    let cell = {
+        let mut g = PYRAMIDS
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        Arc::clone(g.entry(info.sha256.clone()).or_default())
+    };
+    let ov = Overview::parse(&info.overview)?;
+    Ok(Arc::clone(cell.get_or_init(|| {
+        let t = std::time::Instant::now();
+        let p = Pyramid::build(m, m.header.grid, quant_of(m, info), ov, v16::MAX_LEVEL);
+        tracing::info!(layer = %info.id, period = %info.period, ms = t.elapsed().as_millis(),
+            bytes = p.bytes(), "value-tile pyramid built");
+        Arc::new(p)
+    })))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct ValuesParams {
+    /// Period (default: the latest mapped).
+    pub period: Option<String>,
+    /// The layer's sha16; when it matches, the tile is `immutable`.
+    pub v: Option<String>,
+}
+
+const CACHE_VALUES_FLOATING: &str = "public, max-age=300, stale-while-revalidate=86400";
+const CACHE_VALUES_PINNED: &str = "public, max-age=31536000, immutable";
+
+/// A 256 × 256 `ldl-v16` value tile of a served layer (10 §3.2): `R·256+G` = q,
+/// value = q·scale + offset (see `/v2/grids/{id}` `values`), q = 65535 no data,
+/// `B` = valid-cell share, `A` = 255. 204 outside the grid.
+#[utoipa::path(get, path = "/v2/grids/{id}/values/{z}/{x}/{y}.png", tag = "grids",
+    params(("id" = String, Path), ("z" = u8, Path), ("x" = u32, Path), ("y" = String, Path, description = "`<y>.png`"), ValuesParams),
+    responses((status = 200, content_type = "image/png", body = Vec<u8>), (status = 204), (status = 404, body = ErrorBody)))]
+pub async fn values_tile(
+    State(st): State<AppState>,
+    UrlPath((id, z, x, y)): UrlPath<(String, u8, u32, String)>,
+    Query(p): Query<ValuesParams>,
+    headers: HeaderMap,
+) -> ApiResult {
+    let y: u32 = y
+        .strip_suffix(".png")
+        .and_then(|s| s.parse().ok())
+        .ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, "not_found: tiles are <y>.png"))?;
+    if z > 16 || x >= (1u32 << z) || y >= (1u32 << z) {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "tile coordinates out of range (z ≤ 16)",
+        ));
+    }
+    let gs = st.grids();
+    let period = match p.period.as_deref().filter(|s| !s.is_empty()) {
+        Some(v) => v.to_owned(),
+        None => gs
+            .periods(&id)
+            .last()
+            .map(|s| (*s).to_owned())
+            .ok_or_else(|| {
+                ApiError::new(
+                    StatusCode::NOT_FOUND,
+                    format!("not_found: grid layer {id} is not served"),
+                )
+            })?,
+    };
+    let (m, info) = gs.layer_arc(&id, &period).ok_or_else(|| {
+        ApiError::new(
+            StatusCode::NOT_FOUND,
+            format!("not_found: grid layer {id} {period} is not served"),
+        )
+    })?;
+    let sha16 = info.sha256[..16.min(info.sha256.len())].to_owned();
+    let cache = if p.v.as_deref() == Some(sha16.as_str()) {
+        CACHE_VALUES_PINNED
+    } else {
+        CACHE_VALUES_FLOATING
+    };
+    let etag = format!("\"v16-{sha16}-{z}-{x}-{y}\"");
+    if let Some(r) = crate::not_modified(&headers, &etag, cache) {
+        return Ok(r);
+    }
+    let g = m.header.grid;
+    if !lanka_grid::tile::intersects(&g, z, x, y) {
+        let mut r = StatusCode::NO_CONTENT.into_response();
+        r.headers_mut().insert(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("public, max-age=86400"),
+        );
+        return Ok(r);
+    }
+    let info = info.clone();
+    let png = tokio::task::spawn_blocking(move || -> Result<Vec<u8>> {
+        let quant = quant_of(&m, &info);
+        let pyr = if v16::level_for_zoom(&g, z, v16::MAX_LEVEL) > 0 {
+            Some(pyramid(&m, &info)?)
+        } else {
+            None
+        };
+        v16::render(m.as_ref(), &g, &quant, pyr.as_deref(), z, x, y)
+    })
+    .await
+    .map_err(|_| ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "internal error"))?
+    .map_err(|e| {
+        tracing::error!(error = %e, layer = %id, "value tile");
+        ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "internal error")
+    })?;
+    let mut r = png.into_response();
+    let h = r.headers_mut();
+    h.insert(header::CONTENT_TYPE, HeaderValue::from_static("image/png"));
+    h.insert("x-lanka-encoding", HeaderValue::from_static(v16::ENCODING));
+    crate::with_cache(r, &etag, cache)
 }
 
 #[cfg(test)]
