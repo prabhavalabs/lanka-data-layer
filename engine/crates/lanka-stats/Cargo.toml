@@ -1,0 +1,20 @@
+[package]
+name = "lanka-stats"
+description = "Lanka Data Layer statistics kernels: no I/O, no async, deterministic; native and wasm32"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+# Pure-Rust transcendental functions: the same code (and bits) on every target,
+# so native and WebAssembly builds agree to the last bit (11 §13).
+libm.workspace = true
+
+[dev-dependencies]
+# correctly rounded parsing: fixture inputs must reach the kernels bit-exact
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+
+[lints]
+workspace = true
