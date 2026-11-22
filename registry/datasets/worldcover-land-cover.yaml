@@ -48,3 +48,17 @@ enrichment:
   - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
     average rates)'
 publication_class: A
+# land-cover-district (dc): the ADM2 rows are the district shares; ADM3 (DS) and ADM4 (GN) come from the same pass.
+expect:
+- {check: range, indicator: lc.class_share, min: 0, max: 100}
+- {check: range, indicator: lc.class_area, min: 0, max: 1000000}
+- {check: completeness, indicator: lc.class_share, level: 1, min_units: 9}
+- {check: completeness, indicator: lc.class_share, level: 2, min_units: 25}
+- {check: completeness, indicator: lc.class_share, level: 3, min_units: 330}
+- {check: sum_to_parent, indicator: lc.class_area, tol_pct: 0.5, severity: warn,
+   note: "Warn only: parents come from geo.admin_units, which records Ampara (LK52) under Uva (LK8); passes on 2026-11-22."}
+- check: sql
+  note: The class shares of every unit add up to 100 %.
+  query: >-
+    SELECT geo_code FROM stage_obs WHERE indicator_id = 'lc.class_share'
+    GROUP BY geo_code, period_start HAVING abs(sum(value) - 100) > 0.01

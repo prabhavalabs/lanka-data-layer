@@ -1,0 +1,49 @@
+id: overture-workplaces
+title: Offices and workplaces (Overture)
+description: Office workplaces from the Overture Maps places theme, island-wide — corporate and business offices,
+  government offices, courts and embassies, professional and legal services offices — with confidence score and sources.
+  The island-wide counterpart of developing-country.org's Colombo "workplaces" layer.
+source_ids:
+- overture-maps
+indicators:
+- id: biz.overture_workplaces
+  label: Office workplaces
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - workplace_type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: 'The overture-places extract (same file and release) filtered to office categories, confidence >= 0.5:
+  corporate_office = basic_category corporate_or_business_office or b2b_office_and_professional_service;
+  government_office = government_office, government_department, courthouse or embassy; professional_office =
+  basic_category professional_service or taxonomy level 2 legal_service. Island-wide, not only Colombo.'
+limits:
+- An office point is a place listing, not an employment count; one building can hold many listings and many offices
+  have none.
+- Commercial/social-media derived; urban bias; duplicates.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - offices per unit by type
+  - destinations for metro-coverage-facilities and travel-time products
+publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: basic_category, type: string, label: Overture basic category}
+- {name: taxonomy_primary, type: string, label: Overture primary taxonomy class}
+- {name: confidence, type: number, label: Overture confidence score}
+- {name: source_datasets, type: string, label: Contributing datasets}
+- {name: release, type: string, label: Overture release}
+tiles: {minzoom: 9, maxzoom: 14, attrs: [basic_category]}

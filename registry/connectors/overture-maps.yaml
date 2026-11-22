@@ -1,0 +1,51 @@
+# Overture Maps places theme, Sri Lanka. Overture publishes GeoParquet on S3 only (no per-country file), so
+# registry/tools/overture-extract/overture_places.py (DuckDB) writes the bbox to one GeoJSON first and the
+# ingest reads it with --from (the url below is the release's places prefix, recorded as provenance).
+# Places with confidence < 0.5 (band `low`) are not published, as in developing-country.org's layer.
+# Licence: places are CDLA-Permissive-2.0 (some sources Apache-2.0 / CC0-1.0, listed per place).
+source: overture-maps
+driver: geo_file
+version: 1.0.0
+description: Overture places 2026-11-18.0 → overture-places (all categories) and overture-workplaces (offices).
+discover:
+  files:
+    - { key: places, url: "https://overturemaps-us-west-2.s3.amazonaws.com/release/2026-11-18.0/theme=places/type=place/",
+        file: overture-places-lka.geojson, edition: "2026-11-18.0" }
+extract:
+  key: id
+standardise:
+  vintage: "2026-11-18.0"
+  outputs:
+    - dataset: overture-places
+      rules:
+        - { match: { taxonomy_top: "*" }, not: { confidence_band: [low] }, geometry: point, kind: "{taxonomy_top}",
+            attrs: { basic_category: basic_category, taxonomy_primary: taxonomy_primary, taxonomy_l2: taxonomy_l2,
+                     confidence: confidence, operating_status: operating_status, source_datasets: source_datasets,
+                     source_licences: source_licences, release: release } }
+        - { match: { id: "*" }, not: { confidence_band: [low] }, geometry: point, kind: other,
+            attrs: { basic_category: basic_category, confidence: confidence, operating_status: operating_status,
+                     source_datasets: source_datasets, source_licences: source_licences, release: release } }
+    - dataset: overture-workplaces
+      rules:
+        - { match: { basic_category: [corporate_or_business_office, b2b_office_and_professional_service] },
+            not: { confidence_band: [low] }, geometry: point, kind: corporate_office,
+            attrs: { basic_category: basic_category, taxonomy_primary: taxonomy_primary, confidence: confidence,
+                     source_datasets: source_datasets, release: release } }
+        - { match: { basic_category: [government_office, government_department, courthouse, embassy] },
+            not: { confidence_band: [low] }, geometry: point, kind: government_office,
+            attrs: { basic_category: basic_category, taxonomy_primary: taxonomy_primary, confidence: confidence,
+                     source_datasets: source_datasets, release: release } }
+        - { match: { basic_category: [professional_service] }, not: { confidence_band: [low] }, geometry: point,
+            kind: professional_office,
+            attrs: { basic_category: basic_category, taxonomy_primary: taxonomy_primary, confidence: confidence,
+                     source_datasets: source_datasets, release: release } }
+        - { match: { taxonomy_l2: [legal_service] }, not: { confidence_band: [low] }, geometry: point,
+            kind: professional_office,
+            attrs: { basic_category: basic_category, taxonomy_primary: taxonomy_primary, confidence: confidence,
+                     source_datasets: source_datasets, release: release } }
+expect:
+  - { dataset: overture-places, check: geometry, valid: true, within_bbox: true }
+  - { dataset: overture-places, check: row_count, min: 60000, max: 200000,
+      note: "89,145 places with confidence >= 0.5 in the 2026-11-18.0 bbox extract (139,698 in all)." }
+  - { dataset: overture-workplaces, check: geometry, valid: true, within_bbox: true }
+  - { dataset: overture-workplaces, check: row_count, min: 3000, max: 15000 }

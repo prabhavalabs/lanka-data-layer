@@ -1,0 +1,17 @@
+# Workplace (office) type
+# Source/authority: Overture Maps Foundation, Places theme taxonomy (release 2026-11-18.0): groups of
+#   `basic_category` / the second taxonomy level that denote office workplaces.
+# Note: corporate_office = corporate_or_business_office, b2b_office_and_professional_service;
+#   government_office = government_office, government_department, courthouse, embassy;
+#   professional_office = basic_category professional_service, taxonomy level 2 legal_service.
+# Status: COMPLETE (the groups the overture-workplaces rules emit).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: overture-workplaces
+id: workplace_type
+title: Workplace (office) type
+codes:
+  - { code: total, label: All workplaces, total: true, sdmx: _T }
+  - { code: corporate_office, label: Corporate or business office, parent: total }
+  - { code: government_office, label: "Government office, court or embassy", parent: total }
+  - { code: professional_office, label: Professional or legal services office, parent: total }

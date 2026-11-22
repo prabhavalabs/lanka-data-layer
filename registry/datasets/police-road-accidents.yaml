@@ -5,6 +5,33 @@ source_ids:
 - police-lk
 - dcs-statistical-abstract
 indicators:
+- id: tran.road_accidents_reported
+  label: Road accidents reported to the police
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.road_accident_deaths
+  label: Deaths due to road accidents
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: tran.road_accident_injured
+  label: Persons injured in road accidents
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: year
 - id: tran.accidents_fatal
   label: Fatal road accidents
   unit: '{count}'
@@ -31,9 +58,10 @@ indicators:
 time_coverage:
   from: '2015'
   to: '2025'
-method: PDF tables; police divisions crosswalked to districts.
+method: PDF tables. Loaded so far - Statistical Abstract table 7.4 (accidents reported to the police, deaths and injured, national, five years; figures from the Department of Police). Police-division tables are crosswalked to districts when added.
 limits:
 - Police divisions do not nest in districts.
+- 'Abstract 2025 prints 4,535 deaths for 2023 in table 7.4 but 2,321 persons killed in table 7.6 (2,363-2,515 in the other years); 4,535 is loaded as printed. Table 7.6 (killed by road user) is not loaded: its PDF rows are misaligned (values for drivers, cyclists and motorcycle riders sit on the wrong lines).'
 enrichment:
   joins:
   - police division -> district crosswalk

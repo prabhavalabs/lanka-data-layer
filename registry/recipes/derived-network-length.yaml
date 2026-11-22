@@ -1,0 +1,44 @@
+id: derived-network-length
+output: derived-network-length
+title: Road, expressway and walkable network length per admin unit
+stability: stable
+inputs:
+  roads: { dataset: osm-road-network }
+  expressways: { dataset: osm-expressways }
+  walk: { dataset: osm-foot-network }
+steps:
+  - id: road_km
+    method: features_zonal@^1
+    with:
+      features: roads
+      measure: length_km
+      attrs: { status: open }
+      dim: { id: highway_class, from: kind, total: total }
+      indicator: derived.road_km
+      period: "2026"
+      levels: [1, 2, 3, 4]
+  - id: expressway_km
+    method: features_zonal@^1
+    with:
+      features: expressways
+      measure: length_km
+      kinds: [motorway, motorway_link]
+      dim: { id: status, from: status, total: total }
+      indicator: derived.expressway_km
+      period: "2026"
+      levels: [0, 1, 2, 3]
+  - id: walk_km
+    method: features_zonal@^1
+    with:
+      features: walk
+      measure: length_km
+      dim: { id: highway_class, from: kind, total: total }
+      indicator: derived.walk_network_km
+      period: "2026"
+      levels: [1, 2, 3, 4]
+emit:
+  - { from: road_km }
+  - { from: expressway_km }
+  - { from: walk_km }
+qa:
+  - { check: non_negative }

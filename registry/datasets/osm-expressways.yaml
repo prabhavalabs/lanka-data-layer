@@ -1,0 +1,58 @@
+id: osm-expressways
+title: Expressways and interchanges (OSM, RDA route numbers)
+description: Expressway carriageways, slip roads and interchanges from OpenStreetMap, with the RDA E-route number
+  (E01, E02, E03, E04, E06 …), name, status (completed = open to traffic, under construction, proposed) and the opening date where it is tagged.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tran.expressway_osm_km
+  label: Expressway length (OSM carriageways)
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: status
+    codelist: project_status
+  geo_levels:
+  - line
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: highway=motorway/motorway_link (status completed, i.e. open), highway=construction + construction=motorway/motorway_link (under
+  construction), highway=proposed + proposed=motorway/motorway_link (proposed) and highway=motorway_junction nodes
+  (interchanges). `ref` is the OSM tag verbatim; `route` is the Road Development Authority E-class number it spells (E001, E01 and E1 all give E01; zero-padding only, ways without an E ref get none);
+  `opening_date` and `start_date` are the OSM tags verbatim. Nothing is added by hand.
+limits:
+- Status and dates are what OSM mappers tagged; RDA's official programme (rda-expressway-programme) is not loaded. No way in the 2026-11-21 extract carries opening_date or start_date, so those fields are empty until mappers add them.
+- Each direction of a dual carriageway is a separate way, so carriageway km are about twice the route km.
+- Proposed alignments are indicative.
+enrichment:
+  joins:
+  - 'line features: each way carries the ADM4 p-code holding its point on surface (and ADM3/ADM2/ADM1 by hierarchy)'
+  aggregations:
+  - km per district by status (whole ways, not clipped at unit boundaries)
+publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: status, type: string, label: Status, enum: [completed, under_construction, proposed]}
+- {name: route, type: string, label: RDA route number, enum: [E01, E02, E03, E04, E06]}
+- {name: ref, type: string, label: Road reference (as tagged)}
+- {name: opening_date, type: string, label: Opening date (as tagged)}
+- {name: start_date, type: string, label: Start date (as tagged)}
+- {name: operator, type: string, label: Operator}
+- {name: lanes, type: integer, label: Lanes, unit: '{count}', measure_type: count}
+- {name: maxspeed, type: string, label: Speed limit (as tagged)}
+- {name: toll, type: string, label: Toll}
+- {name: junction_ref, type: string, label: Interchange number}
+tiles:
+  minzoom: 5
+  maxzoom: 14
+  attrs: [status, route, opening_date]
+  minzoom_by_kind: {motorway: 5, motorway_link: 9, interchange: 9}

@@ -1,0 +1,44 @@
+# Sri Lanka Police road accident statistics as republished in the DCS Statistical Abstract (chapter 7, tables 7.4-7.6
+# on one PDF; the tables name the Department of Police as their source). Table 7.4 is read: accidents reported to the
+# police, deaths and injured, national, five years. statistics.gov.lk is fetched with curl and passed with --from
+# until the engine's HTTP client handles its TLS (03 §2.2). Class B: reviewed against the evidence sheet.
+source: police-lk
+driver: pdf_table
+version: 1.0.0
+description: Road accidents, deaths and injured reported to the police (Statistical Abstract table 7.4).
+discover:
+  files:
+    - key: abstract-2025-7.4-7.6
+      url: "https://www.statistics.gov.lk/abstract2025/CHAP7/7.4%207.5%207.6.pdf"
+      edition: "2025"
+extract:
+  tables:
+    - { id: t7_4, file: abstract-2025-7.4-7.6, template: police-lk/abstract-table-7.4-road-accidents }
+standardise:
+  dataset: police-road-accidents
+  vintage: "Statistical Abstract {edition}, table 7.4"
+  outputs:
+    - table: t7_4
+      indicator: tran.road_accidents_reported
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows: { "Total number of road": {} }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {} }
+    - table: t7_4
+      indicator: tran.road_accident_deaths
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows: { "Number of deaths due to": {} }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {} }
+    - table: t7_4
+      indicator: tran.road_accident_injured
+      geo: { fixed: root }
+      period: { from_header: year }
+      rows: { "Number of Injured due to": {} }
+      columns: { y1: {}, y2: {}, y3: {}, y4: {}, y5: {} }
+expect:
+  - { check: row_count, min: 15, max: 15 }
+  - { check: range, min: 1000, max: 60000 }
+  - { check: no_future }
+  - { check: max_step_change, indicator: tran.road_accident_deaths, pct: 50, severity: warn,
+      note: "2023 deaths print as 4,535 in table 7.4 (2,321 in table 7.6, about 2,400-2,500 in the other years); upstream figure kept as printed." }

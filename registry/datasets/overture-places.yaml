@@ -1,6 +1,7 @@
 id: overture-places
 title: Places of business and services (Overture)
-description: ~200k+ POIs (shops, restaurants, offices, services) with categories and confidence scores.
+description: Points of interest (shops, restaurants, lodging, offices, services, schools, clinics, places of worship) from
+  the Overture Maps places theme, island-wide, with the Overture taxonomy, confidence score and contributing sources.
 source_ids:
 - overture-maps
 indicators:
@@ -33,11 +34,13 @@ indicators:
   - adm4
   period_type: snapshot
 time_coverage:
-  from: '2024'
-  to: '2026'
-method: DuckDB query by bbox + country; keep confidence >= 0.5; licence-filter sources.
+  from: '2026'
+method: 'DuckDB query of the release''s GeoParquet (s3://overturemaps-us-west-2/release/<release>/theme=places/type=place)
+  by bounding box (registry/tools/overture-extract/overture_places.py, written to GeoJSON), then the geo_file driver; kept:
+  confidence >= 0.5, inside Sri Lanka. kind = first level of taxonomy.hierarchy (`other` without one).'
 limits:
-- Commercial/social-media derived; urban bias; duplicates.
+- Commercial/social-media derived (Meta, Microsoft and others; licences listed per place); urban bias; duplicates.
+- Confidence is Overture's existence score, not a verified status; operating_status is mostly empty.
 enrichment:
   joins:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
@@ -48,3 +51,19 @@ enrichment:
     below district)
   - 'derive: commercial activity density as economic proxy'
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: basic_category, type: string, label: Overture basic category}
+- {name: taxonomy_primary, type: string, label: Overture primary taxonomy class}
+- {name: taxonomy_l2, type: string, label: Overture taxonomy level 2}
+- {name: confidence, type: number, label: Overture confidence score}
+- {name: operating_status, type: string, label: Operating status}
+- {name: source_datasets, type: string, label: Contributing datasets}
+- {name: source_licences, type: string, label: Source licences}
+- {name: release, type: string, label: Overture release}
+tiles:
+  minzoom: 10
+  maxzoom: 14
+  attrs: [basic_category, confidence]
+  drop_densest: true

@@ -1,0 +1,21 @@
+# Statistical Abstract (DCS), chapter 7, table 7.4: number of road accidents reported to the police, deaths and
+# injured, five years (source of the figures: Department of Police). Trilingual labels; the English item column is
+# the label column. The three tables 7.4-7.6 share one page.
+id: police-lk/abstract-table-7.4-road-accidents
+title: Number of road accidents, deaths and injured (Police, via Statistical Abstract table 7.4)
+editions:
+  - match: { edition: "2025..2026" }
+    locate:
+      page: { find_text: "Table 7.4", then_text: "Number of road accidents" }
+      span_pages: 1
+    label: { key: item, header: "Item", slack: 6 }
+    columns:
+      - { key: y1, header: "2020" }
+      - { key: y2, header: "2021" }
+      - { key: y3, header: "2022" }
+      - { key: y4, header: "2023" }
+      - { key: y5, header: "2024" }
+    rows: { stop_at: ["Source", "Table 7.5"] }
+    number: { thousands: ",", missing: ["..", "-"] }
+    checks:
+      - { row_count: { min: 3, max: 3 } }

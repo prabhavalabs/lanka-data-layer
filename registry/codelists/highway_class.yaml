@@ -30,3 +30,5 @@ codes:
   - { code: primary_link, label: Primary link, parent: primary }
   - { code: secondary_link, label: Secondary link, parent: secondary }
   - { code: tertiary_link, label: Tertiary link, parent: tertiary }
+  - { code: bridleway, label: Bridleway, parent: total }
+  - { code: corridor, label: Indoor corridor, parent: total }

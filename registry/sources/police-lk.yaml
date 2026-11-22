@@ -24,7 +24,7 @@ datasets:
 - police-road-accidents
 priority: P2
 effort: M
-status: planned
+status: active
 verified_at: '2026-11-21'
 notes: Grave crime abstracts by police division; road accident statistics. nuuuwan/lk_police_press_releases archives press
   releases.
