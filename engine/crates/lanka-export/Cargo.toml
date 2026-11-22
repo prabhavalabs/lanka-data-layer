@@ -11,7 +11,6 @@ publish.workspace = true
 lanka-core.workspace = true
 lanka-store.workspace = true
 lanka-ingest.workspace = true
-lanka-extractd.workspace = true
 chrono.workspace = true
 lanka-grid.workspace = true
 anyhow.workspace = true

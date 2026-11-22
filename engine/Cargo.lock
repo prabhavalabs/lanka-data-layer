@@ -1842,7 +1842,6 @@ dependencies = [
  "futures",
  "hex",
  "lanka-core",
- "lanka-extractd",
  "lanka-grid",
  "lanka-ingest",
  "lanka-store",

@@ -10,6 +10,7 @@ pub mod connectors;
 pub mod copy_bin;
 pub mod derive;
 pub mod drivers;
+pub mod evidence;
 pub mod expect;
 pub mod extract;
 pub mod features;
