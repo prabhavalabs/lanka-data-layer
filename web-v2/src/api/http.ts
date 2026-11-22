@@ -23,7 +23,7 @@ export type Problem = {
   status?: number
   detail?: string
   problems?: { path: string; code: string; message: string }[]
-  hints?: { retry_after_s?: number; valid_values?: string[]; did_you_mean?: string[]; available_levels?: number[]; [k: string]: unknown }
+  hints?: { retry_after_s?: number; valid_values?: string[]; did_you_mean?: string[]; available_levels?: number[]; available_periods?: string[]; [k: string]: unknown }
   /** a parameter the engine could not match (`UNKNOWN_DIM`, `DIMS_NO_MATCH`), with the values it would take */
   problem?: { code: string; param?: string; given?: string | string[]; valid?: Record<string, string[]>; valid_dims?: Record<string, string[]>; [k: string]: unknown }
 }
@@ -39,6 +39,11 @@ export class ApiError extends Error {
   /** seconds to wait before retrying, for a 429 */
   get retryAfter(): number | null {
     return this.problem?.hints?.retry_after_s ?? null
+  }
+  /** periods that do have data, when the request asked for one that doesn't */
+  get availablePeriods(): string[] | null {
+    const v = this.problem?.hints?.available_periods
+    return Array.isArray(v) && v.length ? v : null
   }
 }
 

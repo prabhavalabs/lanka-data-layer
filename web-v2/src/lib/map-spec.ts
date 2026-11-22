@@ -242,7 +242,7 @@ export type AnalysisResult<E = unknown> = {
   guards: Guard[]
   interpretation: { summary: string; caveats: string[] } | null
   outputs: AnalysisOutput[]
-  provenance: { fingerprint: string; seed: number; engine: string; /** the engine's shared code revision; part of the id */ engine_revision?: number; data_version: string; computed_at: string; elapsed_ms: number }
+  provenance: { fingerprint: string; /** decimal string: a u64 that doesn't fit a JS number */ seed: string; engine: string; /** the engine's shared code revision; part of the id */ engine_revision?: number; data_version: string; computed_at: string; elapsed_ms: number }
   citation: { text: string; url: string }
 }
 export type Coef = { term: string; b: number; se_hc3?: number; ci?: Interval; p_adjusted?: number }

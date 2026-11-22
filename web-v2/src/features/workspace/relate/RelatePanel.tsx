@@ -402,7 +402,10 @@ function PlanBar({ doc, req, dirty, onRun, onOverride }: { doc: MapDocument; req
           {plan.isFetching ? (
             <span className="t-label">planning…</span>
           ) : err ? (
-            <span className="text-bad">{err.problem?.problems?.map((p) => `${p.message}`).join('; ') || err.message}</span>
+            <span className="text-bad">
+              {err.problem?.problems?.map((p) => `${p.message}`).join('; ') || err.message}
+              {err.availablePeriods && <span className="t-num ml-1 font-mono text-[11.5px] text-ink2">· has data for {err.availablePeriods.join(', ')}</span>}
+            </span>
           ) : plan.data ? (
             <span className="t-num font-mono text-[11.5px]">
               {n !== undefined ? `${n.toLocaleString('en')} ${LEVELS[plan.data.support.level]?.plural ?? 'units'}` : ''} · {plan.data.cost.mode} · about {Math.max(1, Math.round(plan.data.cost.expected_ms))} ms{plan.data.guards.length ? ` · ${plan.data.guards.length} caveat${plan.data.guards.length > 1 ? 's' : ''} known in advance` : ''}
@@ -553,6 +556,7 @@ export function RelatePanel() {
         <section className="border-t border-glass-line px-4 pt-4 pb-5">
           <div className="t-label mb-2.5 tracking-[0.08em] uppercase">Not run</div>
           <p className="text-[12.5px] leading-[1.5] text-bad">{rel.error instanceof ApiError ? (rel.error.problem?.problems?.map((p) => `${p.path}: ${p.message}`).join('; ') || rel.error.message) : String(rel.error)}</p>
+          {rel.error instanceof ApiError && rel.error.availablePeriods && <p className="t-label mt-1.5">data exists for {rel.error.availablePeriods.join(', ')}; pick one of those periods</p>}
           {rel.error instanceof ApiError && rel.error.retryAfter !== null && <p className="t-label mt-1.5">try again in {rel.error.retryAfter} s</p>}
         </section>
       ) : !r ? (

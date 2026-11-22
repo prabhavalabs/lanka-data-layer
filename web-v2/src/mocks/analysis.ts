@@ -95,7 +95,7 @@ const inputOf = (role: string, v: VarInfo) => {
   const [dataset, dsv, cls, licence] = DSV[v.indicator] ?? [v.indicator, 'dsv_0000000000000000', 'estimated', 'CC-BY-4.0']
   return { role, dataset, dsv, indicator: v.indicator, period: '2026', class: cls, licence, visibility: cls === 'user' ? ('private' as const) : ('public' as const), ...(cls === 'user' ? { synthetic: true } : {}) }
 }
-const provenance = (id: string, t0: number) => ({ fingerprint: id, seed: 11, engine: 'lanka-stats (mock, TypeScript)', data_version: DATA_VERSION, computed_at: '2026-11-22T04:12:00Z', elapsed_ms: Math.round(performance.now() - t0) })
+const provenance = (id: string, t0: number) => ({ fingerprint: id, seed: '11', engine: 'lanka-stats (mock, TypeScript)', data_version: DATA_VERSION, computed_at: '2026-11-22T04:12:00Z', elapsed_ms: Math.round(performance.now() - t0) })
 const outline = { color: 'ldl.tone.paper', width: 0.3 }
 
 async function relate(req: RelateRequest, id: string): Promise<RelateResult> {
