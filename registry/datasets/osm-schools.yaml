@@ -1,0 +1,47 @@
+id: osm-schools
+title: Schools, colleges and universities (OSM)
+description: Schools, colleges and universities mapped in OpenStreetMap, one point each, with operator, operator type,
+  ISCED level, religion and school type where tagged. The same features as the school, college and university kinds of
+  osm-pois-amenities, with the education attributes kept.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: educ.osm_schools
+  label: Schools, colleges and universities (OSM)
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - amenity_type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: amenity=school|college|university (nodes, ways and relations; areas as their interior point), the filter of
+  v1 and of osm-pois-amenities. Counts per unit and per 10,000 people are the school/college/university rows of
+  derived-facility-counts.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+- Absence in OSM is not absence on the ground; the MoE school census (moe-school-census) is not loaded.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - per-unit counts and per-10k rates in derived-facility-counts (amenity_type school, college, university)
+publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: operator, type: string, label: Operator}
+- {name: operator_type, type: string, label: Operator type (as tagged)}
+- {name: isced_level, type: string, label: ISCED level (as tagged)}
+- {name: religion, type: string, label: Religion}
+- {name: school_type, type: string, label: School type (as tagged)}
+- {name: wikidata, type: string, label: Wikidata item}
+tiles: {minzoom: 7, maxzoom: 14, attrs: [operator_type], minzoom_by_kind: {school: 10}}

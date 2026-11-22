@@ -6,9 +6,9 @@
 # Licence: ODbL 1.0 — these datasets hold OSM data only (02 §8 ODbL isolation).
 source: osm-geofabrik
 driver: osm_pbf
-version: 1.0.0
+version: 1.1.0
 description: Geofabrik Sri Lanka PBF → POIs, roads/expressways, rail, water, protected areas, parks,
-  attractions, trails/cycling and BOI zones.
+  attractions, trails/cycling, BOI zones, hospitals, schools, expressways and the walkable network.
 discover:
   url: https://download.geofabrik.de/asia/sri-lanka/sri-lanka-latest.osm.pbf
   file: sri-lanka-latest.osm.pbf
@@ -140,3 +140,77 @@ standardise:
             name_contains: ["industrial park", "industrial zone", "industrial estate", "investment zone", "boi ",
                             "apparel park", "technology park"],
             flags: [UNOFFICIAL_GEOM], attrs: { operator: operator } }
+
+    # ── dedicated hospital and school layers (same filter as the pois kinds, richer attributes) ──
+    - dataset: osm-hospitals
+      rules:
+        - { match: { amenity: [hospital, clinic] }, geometry: point, kind: "{amenity}",
+            attrs: { operator: operator, operator_type: "operator:type", beds: beds, emergency: emergency,
+                     healthcare: healthcare, speciality: "healthcare:speciality", wikidata: wikidata } }
+    - dataset: osm-schools
+      rules:
+        - { match: { amenity: [school, college, university] }, geometry: point, kind: "{amenity}",
+            attrs: { operator: operator, operator_type: "operator:type", isced_level: "isced:level",
+                     religion: religion, school_type: "school:type", wikidata: wikidata } }
+
+    # ── expressways (status from highway=construction/proposed). `ref` is verbatim; `route` is the RDA
+    #    E-number it spells (E001/E01/E1 → E01: zero-padding only; ways without an E ref get no route) ──
+    - dataset: osm-expressways
+      rules:
+        - { match: { highway: [motorway, motorway_link], ref: [E001, E01, E1] }, types: [way], geometry: line,
+            kind: "{highway}", attrs: { status: "=completed", route: "=E01", ref: ref, opening_date: opening_date,
+            start_date: start_date, operator: operator, lanes: lanes, maxspeed: maxspeed, toll: toll } }
+        - { match: { highway: [motorway, motorway_link], ref: [E002, E02, E2] }, types: [way], geometry: line,
+            kind: "{highway}", attrs: { status: "=completed", route: "=E02", ref: ref, opening_date: opening_date,
+            start_date: start_date, operator: operator, lanes: lanes, maxspeed: maxspeed, toll: toll } }
+        - { match: { highway: [motorway, motorway_link], ref: [E003, E03, E3] }, types: [way], geometry: line,
+            kind: "{highway}", attrs: { status: "=completed", route: "=E03", ref: ref, opening_date: opening_date,
+            start_date: start_date, operator: operator, lanes: lanes, maxspeed: maxspeed, toll: toll } }
+        - { match: { highway: [motorway, motorway_link], ref: [E004, E04, E4] }, types: [way], geometry: line,
+            kind: "{highway}", attrs: { status: "=completed", route: "=E04", ref: ref, opening_date: opening_date,
+            start_date: start_date, operator: operator, lanes: lanes, maxspeed: maxspeed, toll: toll } }
+        - { match: { highway: [motorway, motorway_link], ref: [E006, E06, E6] }, types: [way], geometry: line,
+            kind: "{highway}", attrs: { status: "=completed", route: "=E06", ref: ref, opening_date: opening_date,
+            start_date: start_date, operator: operator, lanes: lanes, maxspeed: maxspeed, toll: toll } }
+        - { match: { highway: [motorway, motorway_link] }, types: [way], geometry: line, kind: "{highway}",
+            attrs: { status: "=completed", ref: ref, opening_date: opening_date, start_date: start_date,
+                     operator: operator, lanes: lanes, maxspeed: maxspeed, toll: toll } }
+        - { match: { highway: [construction], construction: [motorway, motorway_link], ref: [E004, E04, E4] },
+            types: [way], geometry: line, kind: "{construction}",
+            attrs: { status: "=under_construction", route: "=E04", ref: ref, opening_date: opening_date,
+                     start_date: start_date, operator: operator, lanes: lanes } }
+        - { match: { highway: [construction], construction: [motorway, motorway_link] }, types: [way],
+            geometry: line, kind: "{construction}",
+            attrs: { status: "=under_construction", ref: ref, opening_date: opening_date, start_date: start_date,
+                     operator: operator, lanes: lanes } }
+        - { match: { highway: [proposed], proposed: [motorway, motorway_link] }, types: [way], geometry: line,
+            kind: "{proposed}", attrs: { status: "=proposed", ref: ref, opening_date: opening_date } }
+        - { match: { highway: [motorway_junction] }, types: [node], geometry: point, kind: interchange,
+            attrs: { junction_ref: ref } }
+
+    # ── walkable network (OSMnx `walk` filter; the graph input for walksheds and travel time) ──
+    - dataset: osm-foot-network
+      rules:
+        - { match: { highway: [trunk, trunk_link, primary, primary_link, secondary, secondary_link, tertiary,
+                               tertiary_link, unclassified, residential, living_street, service, pedestrian, track,
+                               road, footway, path, steps, bridleway, corridor] },
+            not: { area: ["yes"], access: [private], service: [private], foot: ["no"] },
+            types: [way], geometry: line, kind: "{highway}",
+            attrs: { foot: foot, sidewalk: sidewalk, surface: surface, lit: lit, access: access, bridge: bridge,
+                     tunnel: tunnel } }
+        - { match: { highway: [cycleway], foot: ["yes", designated] }, not: { area: ["yes"], access: [private] },
+            types: [way], geometry: line, kind: cycleway,
+            attrs: { foot: foot, sidewalk: sidewalk, surface: surface, lit: lit, access: access, bridge: bridge,
+                     tunnel: tunnel } }
+
+expect:
+  - { dataset: osm-hospitals, check: geometry, valid: true, within_bbox: true }
+  - { dataset: osm-hospitals, check: row_count, min: 1000, max: 3000,
+      note: "1,233 hospitals and clinics on 2026-11-21; dc shows 1,031." }
+  - { dataset: osm-schools, check: geometry, valid: true, within_bbox: true }
+  - { dataset: osm-schools, check: row_count, min: 4500, max: 9000,
+      note: "5,484 schools, colleges and universities on 2026-11-21; dc shows 4,627 schools." }
+  - { dataset: osm-expressways, check: geometry, valid: true, within_bbox: true }
+  - { dataset: osm-expressways, check: row_count, min: 600, max: 3000 }
+  - { dataset: osm-foot-network, check: geometry, valid: true, within_bbox: true }
+  - { dataset: osm-foot-network, check: row_count, min: 200000, max: 1000000 }

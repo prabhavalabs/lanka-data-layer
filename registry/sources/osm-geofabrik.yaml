@@ -47,6 +47,10 @@ datasets:
 - noise-control-zones
 - power-plants
 - rda-expressway-programme
+- osm-hospitals
+- osm-schools
+- osm-expressways
+- osm-foot-network
 priority: P0
 effort: M
 status: active

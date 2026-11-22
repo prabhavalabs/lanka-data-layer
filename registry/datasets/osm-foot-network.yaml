@@ -1,0 +1,50 @@
+id: osm-foot-network
+title: Walkable network (OSM)
+description: Every OpenStreetMap way a pedestrian may use, island-wide, as line features with the tags a walking graph
+  needs (foot access, sidewalk, surface, lighting). The input for walking routes, walksheds and travel-time products.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tran.walk_network_km
+  label: Walkable network length
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - highway_class
+  geo_levels:
+  - line
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: OSMnx's `walk` network filter applied to the Geofabrik extract — every highway=* way except motorways,
+  construction/proposed/abandoned ways, platforms, raceways and bus guideways, minus area=yes, access=private,
+  service=private and foot=no; cycleways only where foot=yes/designated. One feature per OSM way (6 dp
+  coordinates). Graph topology is the shared vertices of the ways (identical coordinates = one OSM node); splitting
+  the ways at shared vertices gives the routable edges.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+- Ways, not edges. A way runs through several intersections; split it at shared vertices to route on it.
+- Sidewalks mapped as separate footways and the road they follow are both present (OSMnx keeps both as well).
+enrichment:
+  joins:
+  - 'line features: each way carries the ADM4 p-code holding its point on surface (and ADM3/ADM2/ADM1 by hierarchy)'
+  aggregations:
+  - km per unit by highway class (whole ways, not clipped at unit boundaries)
+  - 'derive: walking graph for walksheds (derived-transit-access) and travel-time products'
+publication_class: A
+kind: features
+searchable: false
+fields:
+- {name: foot, type: string, label: Foot access (as tagged)}
+- {name: sidewalk, type: string, label: Sidewalk (as tagged)}
+- {name: surface, type: string, label: Surface}
+- {name: lit, type: string, label: Lit}
+- {name: access, type: string, label: Access (as tagged)}
+- {name: bridge, type: string, label: Bridge}
+- {name: tunnel, type: string, label: Tunnel}
