@@ -208,9 +208,6 @@ importers:
       '@fontsource/noto-sans-tamil':
         specifier: 5.3.0
         version: 5.3.0
-      '@mapbox/vector-tile':
-        specifier: 2.0.4
-        version: 2.0.4
       '@react-three/drei':
         specifier: 10.7.9
         version: 10.7.9(@react-three/fiber@9.8.2(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(three@0.187.0))(@types/react@19.2.18)(@types/three@0.187.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(three@0.187.0)
@@ -253,9 +250,6 @@ importers:
       maplibre-gl:
         specifier: 6.3.0
         version: 6.3.0
-      pbf:
-        specifier: 4.0.1
-        version: 4.0.1
       radix-ui:
         specifier: 1.8.1
         version: 1.8.1(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1010,9 +1004,6 @@ packages:
 
   '@mapbox/unitbezier@1.0.0':
     resolution: {integrity: sha512-fqd515fjBmANKGGsQ286E2Wvj/XvDFpGzwJxq4CI6jMQue6Oy04uCKp+JWKF00xRTmk6cEu1jPJ9p3xqH8YWqQ==}
-
-  '@mapbox/vector-tile@2.0.4':
-    resolution: {integrity: sha512-AkOLcbgGTdXScosBWwmmD7cDlvOjkg/DetGva26pIRiZPdeJYjYKarIlb4uxVzi6bwHO6EWH82eZ5Nuv4T5DUg==}
 
   '@mapbox/vector-tile@3.0.0':
     resolution: {integrity: sha512-Qf10S1uIHMk20ri/IVBnpS+esUEkVaR5Hftmz88jTInrpmWgPGJfPe3LVjjlE77trLx8tH6qjTG7uWH9hIq/0Q==}
@@ -3297,10 +3288,6 @@ packages:
   pause-stream@0.0.11:
     resolution: {integrity: sha512-e3FBlXLmN/D1S+zHzanP4E/4Z60oFAa3O051qt1pxa7DEJWKAyil6upYVXCWadEnuoqa4Pkc9oUx9zsxYeRv8A==}
 
-  pbf@4.0.1:
-    resolution: {integrity: sha512-SuLdBvS42z33m8ejRbInMapQe8n0D3vN/Xd5fmWM3tufNgRQFBpaW2YVJxQZV4iPNqb0vEFvssMEo5w9c6BTIA==}
-    hasBin: true
-
   pbf@5.1.2:
     resolution: {integrity: sha512-mnvGdvOrIvJOBGUEdGkrVXjN8E/VkIJCkf2eS1DH2yv82ORUlLttmDt0rWY38yYZmVwciZwBUvHM20qxBZf40w==}
     hasBin: true
@@ -4609,12 +4596,6 @@ snapshots:
   '@mapbox/tiny-sdf@2.2.0': {}
 
   '@mapbox/unitbezier@1.0.0': {}
-
-  '@mapbox/vector-tile@2.0.4':
-    dependencies:
-      '@mapbox/point-geometry': 1.1.0
-      '@types/geojson': 7946.0.16
-      pbf: 4.0.1
 
   '@mapbox/vector-tile@3.0.0':
     dependencies:
@@ -7052,10 +7033,6 @@ snapshots:
   pause-stream@0.0.11:
     dependencies:
       through: 2.3.8
-
-  pbf@4.0.1:
-    dependencies:
-      resolve-protobuf-schema: 2.1.0
 
   pbf@5.1.2:
     dependencies:
