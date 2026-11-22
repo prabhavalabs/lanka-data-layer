@@ -15,6 +15,7 @@
 //! lanka reverse <lat> <lon>
 //! lanka area <pcode>
 //! lanka map validate <file>… | hash <file> | refs <file> | resolve <file> [--freeze] | types
+//! lanka grid lookups | list | parity --v1-dir DIR [--v1-geojson FILE] | reverse-check [--n 100000]
 //! ```
 
 use std::net::SocketAddr;
@@ -33,6 +34,8 @@ use lanka_ingest::{
 use lanka_store::FsStore;
 use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
+
+mod grid_cmd;
 
 #[derive(Parser)]
 #[command(
@@ -118,6 +121,9 @@ enum Cmd {
     /// Map documents (`ldl-map/1`): validate, hash, references, resolve.
     #[command(subcommand)]
     Map(MapCmd),
+    /// Grid engine: lookup arrays, layers, v1 parity, reverse-geocoding check.
+    #[command(subcommand)]
+    Grid(grid_cmd::GridCmd),
     /// HTTP GET a local URL and exit 0 on 200 (container health checks; the
     /// image has no curl). Only plain `http://host:port/path` is supported.
     Probe {
@@ -809,6 +815,23 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Cmd::Probe { url } => probe(&url).await?,
         Cmd::Map(cmd) => map_cmd(g, cmd).await?,
+        Cmd::Grid(cmd) => {
+            let dir = find_registry(g.registry.as_deref())?;
+            let reg = Registry::load(&dir)?;
+            let profile = load_profile(g, &dir)?;
+            let pool = pool(g, PoolRole::Ingest).await?;
+            reg.sync(&pool, &profile)
+                .await
+                .context("syncing registry")?;
+            let store = store(g, &dir);
+            let env = Env {
+                pool: &pool,
+                registry: &reg,
+                profile: &profile,
+                store: &store,
+            };
+            grid_cmd::run(cmd, &env, &profile).await?;
+        }
         Cmd::Area { pcode } => {
             let pool = pool(g, PoolRole::Api).await?;
             let cat = Catalog::load(&pool).await?;

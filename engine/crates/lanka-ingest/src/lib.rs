@@ -9,6 +9,7 @@ pub mod copy_bin;
 pub mod drivers;
 pub mod extract;
 pub mod geo_load;
+pub mod grid;
 pub mod jobs;
 pub mod pipeline;
 pub mod publish;

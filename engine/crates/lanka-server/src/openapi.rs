@@ -28,6 +28,11 @@ use utoipa::OpenApi;
         super::frame_release,
         super::provenance,
         super::reverse,
+        super::grids::point,
+        super::grids::radius_handler,
+        super::grids::list,
+        super::grids::detail,
+        super::grids::tile,
     ),
     tags(
         (name = "ops", description = "Health and status: emitted for external monitoring (no alert delivery)"),
@@ -35,6 +40,7 @@ use utoipa::OpenApi;
         (name = "areas", description = "Admin units by p-code; reverse geocoding"),
         (name = "indicators", description = "Series, choropleth data and frames"),
         (name = "provenance", description = "Row-level lineage of every value"),
+        (name = "grids", description = "Canonical 0.001° grid layers: point values, radius statistics, PNG tiles"),
     )
 )]
 pub struct ApiDoc;

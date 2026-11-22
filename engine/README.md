@@ -435,3 +435,108 @@ LANKA_TEST_CENSUS_DIR=$PWD/../../lanka-data-layer/foundry/data/raw/census-2024 c
    token, a method and its extract row (`prov`); periods must be canonical for the indicator's frequency
    and geography codes are checked against the country profile. The pipeline handles archive, extracts,
    validation, staging and the publication gate; the worker schedules it and the train releases it.
+
+## Grid engine (WP-05)
+
+Design: [05 §8](../docs/architecture-v2/05-storage-and-performance.md#8-grid-store),
+[ADR 0013](../docs/architecture-v2/adr/0013-grid-arrays-and-high-frequency-table.md). Crate `lanka-grid`
+(pure functions over arrays, no database), the `raster` driver + grid stage in `lanka-ingest`
+(`drivers/raster.rs`, `grid.rs`), the grid routes in `lanka-server` (`grids.rs`), migration `0010_grid.sql`.
+
+```
+GeoTIFF (L0) ─► resample to the canonical 0.001° grid ─► grids/<layer>/<period>/<sha16>.bin (LKGRID01) + .tif (COG)
+                split_sum | centre_mean | centre_sample           │  geo.grid_layers (+ serve, overview, style, stats)
+                class_count | class_mode | slope_mean/share        ▼
+grid-lookups: gnd_idx (u16) + land_mask (u8) ─► zonal pass (one scan, per-slot accumulators) ─► roll-up via anc_keys
+                                                 ─► ObsRows ─► the usual validate → stage → gate → approve → train
+```
+
+- **Arrays**: `.bin` = 4 KiB header (`LKGRID01`, dtype, rows, cols, bbox, step, nodata, scale, offset, payload
+  sha256, JSON with layer/period/unit) + little-endian payload at offset 4096. The server maps `serve: true` layers
+  read-only (`lanka-grid/src/mmap.rs`, the one audited `unsafe`; workspace lint `unsafe_code = "deny"`). Every
+  layer also gets a COG (512² deflate tiles, horizontal predictor for integers, overviews by the layer's
+  `overview` rule, EPSG:4326 GeoKeys, `GDAL_NODATA`).
+- **Lookups** (`lanka grid lookups`, built on demand by the first raster run): `grid.gnd_idx` = the deepest-level
+  unit of the reference boundary set holding each cell centre, v1 `cell-lookup` semantics exactly (row-major,
+  sticky last match, 0.03° bucket index with first-inserted-wins, 2 km nearest-boundary fallback), slots →
+  `geo.units.key` in `geo.grid_lookup_units`. `grid.land_mask`: 0 none, 1 interior (centre inside a unit and no
+  unit boundary crosses the cell), 2 boundary cell with centre inside, 3 near-shore (fallback), 4 boundary cell
+  with centre outside. Boundaries are rasterised by grid traversal (6.98 M segments). 20 s for 11.34 M cells.
+- **Zonal**: `lanka_grid::zonal::zonal(gnd_idx, layer, cols, row_areas, slots)` → per-slot `Acc {n, sum, wsum,
+  area, max}`; `rollup(accs, parents)` adds each slot to its unit and every ancestor, so ADM1–ADM3 values are exact
+  aggregates, not averages of averages. Stats: `sum`, area-weighted `mean`, `area_sum` (fraction × cell area),
+  `share` (area over the sum of a set of layers), `max`. Sums use every assigned cell (v1's population roll-up);
+  means and areas use only cells whose centre is inside a unit (`land_mask` 1/2) so near-shore sea is not counted.
+  Each pass checks leaves + unassigned = grid total. Cell area per row on the authalic sphere.
+- **`raster` driver** (`registry/connectors/{worldpop,esa-worldcover,copernicus-dem,worldclim}.yaml`): `discover`
+  lists files (`--from DIR` reads `DIR/<file name>`); the pipeline archives them (L0) and hands them to the grid
+  stage instead of extract → standardise; one `records` extract lists the layers built (id, period, sha256, cells,
+  sum) and every zonal observation's provenance points at its layer row (`method = spatial`, locator
+  `{layer, period, stat, cells}`). Re-runs short-circuit on the fingerprint/artifact set; `--force` rebuilds, and
+  identical content stages as `unchanged`.
+- **Serving**: `/v2/point?lat=&lon=&layers=` (every served layer at the cell + units), `/v2/radius?lat=&lon=&km=&layer=
+  [&period=]` (sum for count layers, else area-weighted mean; ≤ 50 km), `/v2/grids`, `/v2/grids/{id}`,
+  `/v2/grids/{id}/tiles/{z}/{x}/{y}.png?period=` (256² RGBA; ramps from `spec/map/1/ramps.json` or class colours;
+  204 outside the grid; `ETag` = layer sha + tile). `/v2/reverse` answers from `gnd_idx` when `land_mask = 1`
+  (header `x-lanka-reverse: grid`), else the PostGIS polygon path (`polygon`). `/v2/health` `grids_mapped`.
+  Layers are re-mapped on every catalogue reload.
+
+```bash
+lanka ingest run worldpop --from data/v2/inputs/worldpop          # or without --from: downloads (archived once)
+lanka ingest run worldclim | copernicus-dem | esa-worldcover
+lanka grid lookups | list
+lanka grid parity --v1-dir DIR [--v1-geojson foundry/data/raw/cod-ab/lka_admin4.geojson]
+lanka grid reverse-check --n 100000
+curl -s 'localhost:8601/v2/point?lat=7.2906&lon=80.6337' | jq '.payload.values'
+curl -s 'localhost:8601/v2/radius?lat=6.9271&lon=79.8528&km=5&layer=worldpop.population' | jq .payload.value
+curl -s localhost:8601/v2/grids/worldpop.population/tiles/10/739/492.png -o t.png
+```
+
+`DIR` for `parity` holds `cells.csv` / `cell_lookup.csv` exported from the v1 `lanka.sqlite`
+(`sqlite3 -csv lanka.sqlite "select cell_id, printf('%.17g', pop) from cells order by cell_id"`; `cell_id, gnd_pcode`
+from `cell_lookup`). Tests: `lanka-grid` unit + property tests (zonal sum = grid total; COG/mmap/header
+round-trips), `crates/lanka-grid/tests/v1_parity.rs` (set `LANKA_V1_PARITY_DIR` + `LANKA_WORLDPOP_TIF`),
+`crates/lanka-ingest/tests/grid_pg.rs` (throwaway DB: raster run → lookups → zonal → no_change → grid reverse
+= polygon reverse).
+
+### Results (local, 2026-11-22, release build)
+
+| Check | Result |
+|---|---|
+| WorldPop 2025 vs v1 `cells` | 5,468,498 positive cells, all 5,468,498 equal to v1 at f32 storage precision (max rel. diff 5.9e-8 = the f64 → f32 cast); none missing/extra; raster total 23,168,692.0 |
+| `gnd_idx` vs v1 `cell_lookup` (same algorithm on v1's own input, `lka_admin4.geojson`, v1 cell set) | 5,468,498 / 5,468,498 identical (5,467,970 assigned + 528 unassigned) |
+| `gnd_idx` vs v1 `cell_lookup` (production: reference set in PostGIS, loaded from the v1 layer export) | 5,467,811 / 5,467,970 equal; 159 differ (0.003 %) — all from the export's 6-decimal coordinate rounding: the same algorithm on `admin-adm4.geojson` gives the same 159 (centres within 1–4 cm of a boundary, or near-equidistant gap fallbacks) |
+| `/v2/reverse` grid path vs polygon path, 100,000 random land points | 82,407 answered by the grid, all 82,407 equal to the polygon path (unit + ancestors + match); 17,593 fall back; ~1 µs vs ~0.6 ms per point |
+| Zonal population | Σ ADM1 = Σ ADM4 = 23,168,691.79; + 0.21 in 1,179 cells > 2 km from any unit = the grid total 23,168,692.00 (checked every pass; property test over random grids) |
+| Published (ADM1–ADM4, 14,416 units) | `pop.grid_total` 14,416 · `lc.class_area`/`lc.class_share` × 9 classes 259,488 · `terrain.{elevation_mean,slope_mean,steep_share}` 43,248 · `clim.wc_tavg`/`wc_prec` × 12 months + `wc_bio` × 19 619,458 |
+| COGs | 60 / 60 valid (`validate_cloud_optimized_geotiff.py --full-check=yes`, GDAL 3.10.3 in `ghcr.io/osgeo/gdal`); GDAL reads the same values (WorldPop at Colombo 36.1177) |
+| Zonal pass (one layer, 11.34 M cells, one core) | 29–43 ms (WorldPop 29, WorldClim 29–32, WorldCover 39–40, DEM 42–43) |
+| Builds | WorldPop 0.03 s resample; WorldClim 43 layers 0.9 s; DEM 12 tiles (13 M px each, slope) 5.0 s; WorldCover 5 tiles (10 m) 3.7 s; lookups 20 s |
+| Store | 59 layers: 1.23 GB `.bin` (WorldClim 975 MB of it) + 71 MB COG; L0 rasters 577 MB |
+
+### Decision note: WP-05 choices and deviations
+
+- *No GDAL at runtime.* Rasters are decoded in pure Rust (`tiff` crate + a raw reader for palette TIFFs it refuses)
+  and resampled by our own rules, so WorldPop parity is exact and the distroless image needs no libgdal. GDAL (CLI or
+  crate) was not usable here anyway (the Homebrew build fails to load), and is used only to *verify*: the COG
+  validator and spot reads run in `ghcr.io/osgeo/gdal:ubuntu-small-3.10.3`. `lanka-extractd` gdal ops (WP-08) are
+  needed only for formats beyond GeoTIFF (NetCDF/HDF: CHIRPS, ERA5).
+- *Rasters skip Parquet L1*: the canonical array is the extract; the run still writes one `records` extract (the
+  layer list) for provenance. `restandardise` of a raster source is refused with a pointer to `ingest run --force`.
+- *Resampling* is centre-based everywhere (no interpolation): coarse counts split evenly over the cells whose centre
+  the pixel holds (v1), coarse intensive values sampled at the cell centre, fine pixels averaged / counted by the cell
+  holding their centre (WorldCover: exactly 144 pixels per cell). Slope: Horn on 30 m with per-row metric pixel width.
+- *Periods*: WorldPop `2025` (A); WorldCover `2021` (A; 2020 v100 is configurable but not loaded); DEM `2015` (P, end of
+  the 2011–2015 acquisition); WorldClim normals dated by the window start (02 §5 multi-year rule): `1970-01…12` (M) and
+  `1970` (P) for BIO1–19. The doc owner may prefer a climatology-period dimension.
+- *Basis*: WorldPop zonal values are `estimated` (modelled input, 04 §2) without intervals (back-cast is WP-11); the
+  others `computed`. Second runs after a rule change went through the review gate (> 1 % changed) and were approved.
+- *Layers are current, not release-pinned*: `geo.grid_layers` is upserted per run (old `.bin`s stay in the store);
+  release pinning of grids comes with WP-10/WP-27.
+- *`gnd_idx` follows the v2 polygons*, not v1's full-precision file, so the grid path always agrees with the polygon
+  path; exact v1 equality returns once COD-AB is ingested at full precision (ckan driver, WP-07).
+- *WP-06*: `grid_zonal` should wrap `lanka_grid::zonal::{zonal, rollup}` + `Acc::stat` and the `ObsRow` mapping in
+  `lanka_ingest::grid::zonal_rows` (inputs: a grid layer + `gnd_idx`/`land_mask` of the pinned boundary set; params
+  `stat`, `cells: all|inside`, `factor`, `levels`); the raster driver's `zonal:` entries then become recipes.
+- Not done: `postal_idx` (needs GeoNames postal in v2, WP-07), `cell_area_m2` as a stored layer (computed per row),
+  `min_cells`/`SMALL_N`, value tiles (WP-27), STAC.

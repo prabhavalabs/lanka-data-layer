@@ -357,6 +357,13 @@ async fn execute(
         return Ok(r);
     }
 
+    // ── grid (rasters, WP-05): canonical arrays are the L1 of a raster ──
+    if let Some(r) = c.grid() {
+        let mut report = crate::grid::build_and_publish(env, run, c, r, &fetched).await?;
+        report.fetched = downloaded;
+        return Ok(report);
+    }
+
     // ── extract (L1) ──
     let ectx = ExtractCtx {
         registry: env.registry,
@@ -496,7 +503,7 @@ async fn restandardise_inner(
 }
 
 /// Writes an extract to the store (content-addressed Parquet) and indexes it.
-async fn persist_extract(
+pub(crate) async fn persist_extract(
     env: &Env<'_>,
     run: &RunTracker,
     c: &dyn Connector,

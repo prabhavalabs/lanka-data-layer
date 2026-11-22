@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 lanka-core.workspace = true
+lanka-grid.workspace = true
 lanka-store.workspace = true
 async-trait.workspace = true
 arrow-array.workspace = true
@@ -37,3 +38,4 @@ workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
+lanka-server.workspace = true

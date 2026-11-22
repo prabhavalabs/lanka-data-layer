@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 lanka-core.workspace = true
+lanka-grid.workspace = true
+lanka-mapdoc.workspace = true
 arrow-array.workspace = true
 arrow-schema.workspace = true
 arrow-ipc.workspace = true

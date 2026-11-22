@@ -13,11 +13,13 @@ path = "src/main.rs"
 
 [dependencies]
 lanka-core.workspace = true
+lanka-grid.workspace = true
 lanka-ingest.workspace = true
 lanka-mapdoc.workspace = true
 lanka-store.workspace = true
 lanka-server.workspace = true
 anyhow.workspace = true
+futures.workspace = true
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true

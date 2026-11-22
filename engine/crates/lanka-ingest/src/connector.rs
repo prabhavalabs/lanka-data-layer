@@ -404,6 +404,11 @@ pub trait Connector: Send + Sync {
     fn spec_sha256(&self) -> Option<[u8; 32]> {
         None
     }
+    /// Raster sources (WP-05): the pipeline hands their artifacts to the
+    /// grid stage (`crate::grid`) instead of `extract` → `standardise`.
+    fn grid(&self) -> Option<&crate::drivers::raster::Raster> {
+        None
+    }
     async fn discover(&self, ctx: &DiscoverCtx<'_>) -> Result<Discovery>;
     /// Bytes → extract tables. No network, no database.
     async fn extract(&self, ctx: &ExtractCtx<'_>, fetched: &[Fetched]) -> Result<Vec<ExtractOut>>;
