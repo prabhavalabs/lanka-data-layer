@@ -153,6 +153,54 @@ pub enum PeriodParse {
     Quarter,
     /// "2025 H2" or "second half of 2025" → `2025-H2`.
     HalfYear,
+    /// `from_label` only: rows labelled by month name alone, in calendar
+    /// order and ending in the month the file's edition ends (`2026-Q2` →
+    /// June 2026): years are assigned walking up from the last row.
+    RollingMonth,
+}
+
+/// Months of rows labelled by month name only ("October", "November", …),
+/// ending in the last month of `edition` (`YYYY-Qn`, `YYYY-Hn`, `YYYY-MM`).
+pub fn rolling_months(labels: &[&str], edition: &str) -> Result<Vec<String>> {
+    let e = edition.trim();
+    let year: i32 = e
+        .get(..4)
+        .and_then(|y| y.parse().ok())
+        .with_context(|| format!("edition {e:?} has no leading year"))?;
+    let rest = e.get(4..).unwrap_or("").trim_start_matches('-');
+    let end_month: usize = match rest.chars().next() {
+        Some('Q') => rest[1..].parse::<usize>().map(|q| q * 3).ok(),
+        Some('H') => rest[1..].parse::<usize>().map(|h| h * 6).ok(),
+        Some(c) if c.is_ascii_digit() => rest.parse().ok(),
+        _ => None,
+    }
+    .filter(|m| (1..=12).contains(m))
+    .with_context(|| format!("edition {e:?}: expected YYYY-Qn, YYYY-Hn or YYYY-MM"))?;
+    let month_of = |l: &str| {
+        let lower = l.to_ascii_lowercase();
+        lower
+            .split(|c: char| !c.is_ascii_alphabetic())
+            .find_map(|w| MONTHS.iter().position(|m| w.len() >= 3 && w.starts_with(m)))
+            .map(|i| i + 1)
+            .with_context(|| format!("row label {l:?} is not a month"))
+    };
+    let months: Vec<usize> = labels.iter().map(|l| month_of(l)).collect::<Result<_>>()?;
+    let Some(&last) = months.last() else {
+        return Ok(Vec::new());
+    };
+    ensure!(
+        last == end_month,
+        "the last row is month {last}, the edition {e:?} ends in month {end_month}"
+    );
+    let mut out = vec![String::new(); months.len()];
+    let mut y = year;
+    for i in (0..months.len()).rev() {
+        if i + 1 < months.len() && months[i] >= months[i + 1] {
+            y -= 1;
+        }
+        out[i] = format!("{y:04}-{:02}", months[i]);
+    }
+    Ok(out)
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -591,6 +639,11 @@ pub fn parse_period(how: PeriodParse, text: &str) -> Result<String> {
                 .with_context(|| format!("no half-year in {text:?}"))?;
             Ok(format!("{year}-H{half}"))
         }
+        PeriodParse::RollingMonth => {
+            bail!(
+                "rolling_month periods come from the row order (period.from_label: rolling_month), not one text"
+            )
+        }
     }
 }
 
@@ -760,6 +813,18 @@ impl Connector for PdfTable {
                 }
                 let (_, ed) = tpl.edition(edition.as_deref())?;
                 let t = cell_table(cells, &o.table)?;
+                let month_periods = if o.period.from_label == Some(PeriodParse::RollingMonth) {
+                    let e = edition.as_deref().with_context(|| {
+                        format!(
+                            "{}: period.from_label: rolling_month needs a file edition",
+                            o.table
+                        )
+                    })?;
+                    let labels: Vec<&str> = t.rows.iter().map(|r| r.0).collect();
+                    rolling_months(&labels, e).with_context(|| o.table.clone())?
+                } else {
+                    Vec::new()
+                };
                 // Row selection: every row, or the mapped ones (by label + occurrence).
                 let mut picked: Vec<(usize, DimMap)> = Vec::new();
                 match &o.rows {
@@ -857,6 +922,9 @@ impl Connector for PdfTable {
                                 (Some(p), _, _) => parse_period(*p, header)?,
                                 (_, Some(PeriodParse::Month), _) => {
                                     parse_month(label, years[ri].as_deref())?
+                                }
+                                (_, Some(PeriodParse::RollingMonth), _) => {
+                                    month_periods[ri].clone()
                                 }
                                 (_, Some(p), _) => parse_period(*p, label)?,
                                 (_, _, Some(f)) => f.clone(),
@@ -985,5 +1053,25 @@ mod tests {
             "2026-H1"
         );
         assert!(parse_period(PeriodParse::HalfYear, "2025 Total").is_err());
+        assert_eq!(
+            rolling_months(
+                &[
+                    "October", "November", "December", "January", "February", "March"
+                ],
+                "2026-Q1"
+            )
+            .expect("m"),
+            [
+                "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03"
+            ]
+        );
+        let eighteen = [
+            "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+            "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+        ];
+        let m = rolling_months(&eighteen, "2024-Q1").expect("m");
+        assert_eq!((m[0].as_str(), m[17].as_str()), ("2022-10", "2024-03"));
+        assert!(rolling_months(&["January", "February"], "2026-Q1").is_err());
+        assert!(rolling_months(&["Total"], "2026-Q1").is_err());
     }
 }

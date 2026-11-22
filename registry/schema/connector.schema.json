@@ -191,7 +191,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "from_header": { "enum": ["year", "quarter_end", "month", "quarter", "half_year"] },
-                        "from_label": { "enum": ["year", "quarter_end", "month", "quarter", "half_year"] },
+                        "from_label": { "enum": ["year", "quarter_end", "month", "quarter", "half_year", "rolling_month"] },
                         "fixed": { "type": "string" },
                         "from_edition": { "type": "boolean" }
                       }

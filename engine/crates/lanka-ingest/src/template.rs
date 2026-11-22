@@ -75,6 +75,11 @@ pub struct Edition {
     /// (footnote superscripts); 0 disables.
     #[serde(default = "default_superscript")]
     pub superscript_ratio: f32,
+    /// Words starting more than this many points right of the rightmost
+    /// column header are not table cells (running text printed beside the
+    /// table); absent = the last column extends to the page edge.
+    #[serde(default)]
+    pub right_bound: Option<f32>,
     #[serde(default)]
     pub checks: Vec<Check>,
 }
@@ -919,6 +924,9 @@ fn read_at(
             .ok_or_else(|| miss(format!("start_after {sa:?} not found")))?;
         start_y = start_y.max(h.bbox()[3]);
     }
+    let right_limit = e
+        .right_bound
+        .map(|b| headers.iter().map(|h| h.bbox[2]).fold(f32::MIN, f32::max) + b);
     let stops: Vec<Vec<String>> = e.rows.stop_at.iter().map(|s| tokens(s)).collect();
     let min_cells = e.rows.min_cells.unwrap_or(1);
     let span_pages = e.locate.span_pages.max(1);
@@ -955,7 +963,7 @@ fn read_at(
                 .words
                 .iter()
                 .copied()
-                .filter(|w| w.cx() >= first_left)
+                .filter(|w| w.cx() >= first_left && right_limit.is_none_or(|r| w.bbox[0] <= r))
                 .collect();
             if !label_ws.is_empty() && !col_ws.is_empty() {
                 cand.push((p, label_ws, col_ws));
