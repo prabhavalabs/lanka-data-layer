@@ -1412,10 +1412,10 @@ mod tests {
 
     #[test]
     fn dates_cover_the_inclusive_range() {
-        let d = |s: &str| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap();
+        let d = |s: &str| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").expect("date");
         let spec: DatesSpec =
-            serde_json::from_value(serde_json::json!({ "from": "2026-11-18" })).unwrap();
-        let days = spec.days(d("2026-11-21")).unwrap();
+            serde_json::from_value(serde_json::json!({ "from": "2026-11-18" })).expect("ok");
+        let days = spec.days(d("2026-11-21")).expect("ok");
         assert_eq!(
             days,
             vec![d("2026-11-18"), d("2026-11-19"), d("2026-11-20")]
@@ -1423,13 +1423,13 @@ mod tests {
         let spec: DatesSpec = serde_json::from_value(serde_json::json!({
             "from": "2026-01-01", "to": "2026-01-10", "step_days": 4
         }))
-        .unwrap();
+        .expect("ok");
         assert_eq!(
-            spec.days(d("2026-11-21")).unwrap(),
+            spec.days(d("2026-11-21")).expect("ok"),
             vec![d("2026-01-01"), d("2026-01-05"), d("2026-01-09")]
         );
         let late: DatesSpec =
-            serde_json::from_value(serde_json::json!({ "from": "2026-12-01" })).unwrap();
+            serde_json::from_value(serde_json::json!({ "from": "2026-12-01" })).expect("ok");
         assert!(late.days(d("2026-11-21")).is_err(), "from after to");
     }
 

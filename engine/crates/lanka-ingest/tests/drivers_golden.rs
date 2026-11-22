@@ -284,13 +284,19 @@ async fn pucsl_stacked_blocks_xlsx() {
     let (reg, p) = registry();
     let r = test("pucsl", &reg, &p).await.expect("runs");
     let o = &r.outputs[0];
-    assert_eq!((o.dataset.as_str(), o.rows), ("pucsl-supply-reliability", 5314));
+    assert_eq!(
+        (o.dataset.as_str(), o.rows),
+        ("pucsl-supply-reliability", 5314)
+    );
     // 2024-Q4 CEB sheets split each month by cause: Jaffna, October, planned
     let jaffna = find(
         &o.first,
         &[
             ("indicator", "ener.saidi"),
-            ("dims", "cause=planned;distribution_area=dl1_jaffna;licensee=DL1"),
+            (
+                "dims",
+                "cause=planned;distribution_area=dl1_jaffna;licensee=DL1",
+            ),
             ("period", "2024-10"),
         ],
     );
@@ -300,7 +306,10 @@ async fn pucsl_stacked_blocks_xlsx() {
         &o.first,
         &[
             ("indicator", "ener.saifi"),
-            ("dims", "cause=total;distribution_area=dl1_jaffna_east;licensee=DL1"),
+            (
+                "dims",
+                "cause=total;distribution_area=dl1_jaffna_east;licensee=DL1",
+            ),
             ("period", "2024-07"),
         ],
     );
@@ -309,7 +318,10 @@ async fn pucsl_stacked_blocks_xlsx() {
         &o.first,
         &[
             ("indicator", "ener.saidi"),
-            ("dims", "cause=total;distribution_area=dl5_kotte;licensee=DL5"),
+            (
+                "dims",
+                "cause=total;distribution_area=dl5_kotte;licensee=DL5",
+            ),
             ("period", "2025-01"),
         ],
     );
