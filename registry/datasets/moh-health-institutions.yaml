@@ -13,7 +13,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - institution_type
+  - id: institution_type
+    codelist: hospital_type
   geo_levels:
   - point
   - adm1

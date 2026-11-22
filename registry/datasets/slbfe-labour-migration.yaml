@@ -13,8 +13,10 @@ indicators:
   class: official
   dims:
   - sex
-  - skill
-  - destination
+  - id: skill
+    codelist: migrant_skill_level
+  - id: destination
+    codelist: country
   geo_levels:
   - national
   - adm2

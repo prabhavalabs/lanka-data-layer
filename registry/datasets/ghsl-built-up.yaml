@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - use
+  - id: use
+    codelist: building_type
   geo_levels:
   - raster
   - adm1
@@ -26,7 +27,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - use
+  - id: use
+    codelist: building_type
   geo_levels:
   - raster
   - adm1

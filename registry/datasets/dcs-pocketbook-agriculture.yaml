@@ -45,7 +45,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - product
+  - id: product
+    codelist: livestock_product
   geo_levels:
   - national
   period_type: year
@@ -67,7 +68,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - water_source
+  - id: water_source
+    codelist: irrigation_source
   geo_levels:
   - national
   period_type: year

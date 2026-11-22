@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - category
+  - id: category
+    codelist: trade_category
   geo_levels:
   - national
   period_type: month
@@ -24,7 +25,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - category
+  - id: category
+    codelist: trade_category
   geo_levels:
   - national
   period_type: month

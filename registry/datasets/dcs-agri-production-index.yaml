@@ -12,7 +12,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - group
+  - id: group
+    codelist: agri_index_group
   geo_levels:
   - national
   period_type: year

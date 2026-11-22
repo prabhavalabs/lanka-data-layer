@@ -13,7 +13,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - revenue_type
+  - id: revenue_type
+    codelist: lg_revenue_type
   geo_levels:
   - national
   - polygon

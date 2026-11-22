@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - service
+  - id: service
+    codelist: telecom_service
   geo_levels:
   - national
   period_type: quarter

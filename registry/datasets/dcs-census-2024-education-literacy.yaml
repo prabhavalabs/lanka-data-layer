@@ -24,7 +24,8 @@ indicators:
   class: official
   dims:
   - language
-  - skill
+  - id: skill
+    codelist: language_skill
   geo_levels:
   - national
   - adm2

@@ -11,7 +11,8 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - scenario
+  - id: scenario
+    codelist: ipc_projection
   geo_levels:
   - polygon
   - adm2

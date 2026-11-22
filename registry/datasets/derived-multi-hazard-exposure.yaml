@@ -13,7 +13,8 @@ indicators:
   class: derived
   dims:
   - hazard
-  - intensity
+  - id: intensity
+    codelist: hazard_level
   geo_levels:
   - adm2
   - adm3

@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: derived
   dims:
-  - category
+  - id: category
+    codelist: attraction_type
   - designation
   geo_levels:
   - point

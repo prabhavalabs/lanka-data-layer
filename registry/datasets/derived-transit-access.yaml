@@ -13,7 +13,8 @@ indicators:
   class: derived
   dims:
   - mode
-  - walk_minutes
+  - id: walk_minutes
+    codelist: threshold
   geo_levels:
   - adm1
   - adm2

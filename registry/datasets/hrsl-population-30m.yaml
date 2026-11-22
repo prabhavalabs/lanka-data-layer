@@ -25,7 +25,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - group
+  - id: group
+    codelist: demographic_group
   geo_levels:
   - raster
   - adm1

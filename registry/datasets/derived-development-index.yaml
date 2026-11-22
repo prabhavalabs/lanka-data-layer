@@ -22,7 +22,8 @@ indicators:
   aggregation: none
   class: derived
   dims:
-  - domain
+  - id: domain
+    codelist: dev_index_domain
   geo_levels:
   - adm3
   - adm4

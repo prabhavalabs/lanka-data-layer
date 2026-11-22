@@ -11,7 +11,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - material
+  - id: material
+    codelist: building_material
   geo_levels:
   - national
   period_type: year
@@ -22,7 +23,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - sector
+  - id: sector
+    codelist: industry
   geo_levels:
   - national
   period_type: year

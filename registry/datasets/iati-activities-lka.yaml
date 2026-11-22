@@ -13,7 +13,8 @@ indicators:
   class: third_party
   dims:
   - publisher
-  - sector
+  - id: sector
+    codelist: dac_sector
   geo_levels:
   - national
   period_type: year
@@ -25,7 +26,8 @@ indicators:
   class: third_party
   dims:
   - publisher
-  - sector
+  - id: sector
+    codelist: dac_sector
   geo_levels:
   - national
   period_type: year

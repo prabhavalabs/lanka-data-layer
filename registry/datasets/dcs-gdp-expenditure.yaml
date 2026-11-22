@@ -13,7 +13,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - component
+  - id: component
+    codelist: gdp_expenditure_component
   - price_basis
   geo_levels:
   - national

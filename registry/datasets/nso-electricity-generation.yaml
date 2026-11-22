@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - source
+  - id: source
+    codelist: energy_source
   geo_levels:
   - national
   period_type: day

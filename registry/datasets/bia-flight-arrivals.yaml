@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - origin
+  - id: origin
+    codelist: airport
   - airline
   geo_levels:
   - point

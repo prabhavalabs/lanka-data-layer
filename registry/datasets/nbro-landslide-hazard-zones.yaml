@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - hazard_class
+  - id: hazard_class
+    codelist: hazard_level
   geo_levels:
   - polygon
   - adm1

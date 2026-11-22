@@ -23,8 +23,10 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - element
-  - material
+  - id: element
+    codelist: housing_element
+  - id: material
+    codelist: housing_material
   geo_levels:
   - national
   - adm2

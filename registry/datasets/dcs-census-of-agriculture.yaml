@@ -24,7 +24,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - land_use
+  - id: land_use
+    codelist: holding_land_use
   geo_levels:
   - national
   - adm2

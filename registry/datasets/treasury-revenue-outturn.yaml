@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - tax_type
+  - id: tax_type
+    codelist: revenue_type
   geo_levels:
   - national
   period_type: year

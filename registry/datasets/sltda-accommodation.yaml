@@ -23,7 +23,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - region
+  - id: region
+    codelist: resort_region
   geo_levels:
   - national
   - adm2

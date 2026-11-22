@@ -11,8 +11,10 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - sector
-  - component
+  - id: sector
+    codelist: industry
+  - id: component
+    codelist: pmi_component
   geo_levels:
   - national
   period_type: month

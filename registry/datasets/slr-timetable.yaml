@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - line
+  - id: line
+    codelist: rail_line
   geo_levels:
   - point
   period_type: snapshot

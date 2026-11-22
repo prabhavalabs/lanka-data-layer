@@ -12,7 +12,8 @@ indicators:
   aggregation: none
   class: derived
   dims:
-  - indicator
+  - id: indicator
+    codelist: source_indicator
   geo_levels:
   - polygon
   period_type: snapshot

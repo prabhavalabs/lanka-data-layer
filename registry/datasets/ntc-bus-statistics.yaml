@@ -35,7 +35,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - severity
+  - id: severity
+    codelist: accident_severity
   geo_levels:
   - national
   - adm2

@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - status
+  - id: status
+    codelist: prisoner_status
   geo_levels:
   - national
   period_type: day

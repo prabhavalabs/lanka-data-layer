@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - type
+  - id: type
+    codelist: trail_type
   geo_levels:
   - line
   - adm1

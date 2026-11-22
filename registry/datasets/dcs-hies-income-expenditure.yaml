@@ -24,7 +24,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - category
+  - id: category
+    codelist: coicop_group
   geo_levels:
   - national
   - adm2

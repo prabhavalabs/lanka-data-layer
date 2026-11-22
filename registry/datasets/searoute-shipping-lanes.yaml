@@ -11,8 +11,10 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - origin
-  - destination
+  - id: origin
+    codelist: port
+  - id: destination
+    codelist: world_port
   geo_levels:
   - line
   period_type: snapshot

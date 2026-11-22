@@ -13,7 +13,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - sector
+  - id: sector
+    codelist: industry
   geo_levels:
   - adm1
   period_type: year

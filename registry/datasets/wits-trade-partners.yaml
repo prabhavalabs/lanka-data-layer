@@ -12,8 +12,10 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - partner
-  - product
+  - id: partner
+    codelist: country
+  - id: product
+    codelist: hs_section
   - flow
   geo_levels:
   - national

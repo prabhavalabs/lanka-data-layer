@@ -24,7 +24,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - zone_type
+  - id: zone_type
+    codelist: noise_zone
   - time_of_day
   geo_levels:
   - national

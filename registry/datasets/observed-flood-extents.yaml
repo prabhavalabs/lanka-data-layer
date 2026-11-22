@@ -14,7 +14,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - event
+  - id: event
+    codelist: disaster_event
   geo_levels:
   - polygon
   - adm1
@@ -29,7 +30,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - event
+  - id: event
+    codelist: disaster_event
   geo_levels:
   - adm1
   - adm2

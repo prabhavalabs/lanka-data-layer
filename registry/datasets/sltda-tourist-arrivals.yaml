@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - source_country
+  - id: source_country
+    codelist: country
   geo_levels:
   - national
   period_type: month

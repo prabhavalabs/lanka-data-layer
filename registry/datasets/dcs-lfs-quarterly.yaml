@@ -36,7 +36,8 @@ indicators:
   class: official
   dims:
   - sex
-  - sector
+  - id: sector
+    codelist: industry
   geo_levels:
   - national
   period_type: quarter

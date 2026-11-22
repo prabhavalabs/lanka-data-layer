@@ -12,8 +12,10 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - category
-  - status
+  - id: category
+    codelist: whs_category
+  - id: status
+    codelist: whs_status
   geo_levels:
   - point
   - polygon

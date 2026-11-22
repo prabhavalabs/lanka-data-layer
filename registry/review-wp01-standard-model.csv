@@ -1,673 +1,673 @@
-dataset,indicator,field,value,reason
-aboveground-biomass,env.agb_density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-adb-key-indicators-lka,adb.value,unit,"{various}","ambiguous source unit ""various"""
-adb-key-indicators-lka,adb.value,aggregation,"none","unit varies by series: split or declare per series"
-aswesuma-beneficiaries,soc.aswesuma_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-aw3d30-dsm,terrain.aw3d30_elevation,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-bia-flight-arrivals,,kind,"features","inferred from geo_levels / profile boundary dataset"
-black-marble-ntl-daily,ntl.blackmarble_radiance,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-boi-zones,econ.boi_zone_area,class,"official","sources mix public bodies and third parties"
-boi-zones,econ.boi_zone_employment,class,"official","sources mix public bodies and third parties"
-boi-zones,,kind,"features","inferred from geo_levels / profile boundary dataset"
-cbsl-annual-review-tables,cbslar.appendix_value,unit,"{various}","ambiguous source unit ""various"""
-cbsl-annual-review-tables,cbslar.appendix_value,aggregation,"none","unit varies by series: split or declare per series"
-cbsl-bank-branches,fin.branches_per_100k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-cbsl-ess-provincial-indicators,ess.provincial_indicator,unit,"{various}","ambiguous source unit ""various"""
-cbsl-ess-provincial-indicators,ess.provincial_indicator,aggregation,"none","unit varies by series: split or declare per series"
-cbsl-exchange-rates,fx.rate_daily,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-cbsl-exchange-rates,fx.rate_monthly_avg,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-cbsl-exchange-rates,fx.rate_end_month,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-cbsl-fiscal-operations,fisc.overall_balance_gdp,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-cbsl-weekly-indicators,mon.policy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-cbsl-weekly-indicators,mon.tbill_yield,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-cckp-climate-projections,clim.proj_tas_change,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-cckp-climate-projections,clim.proj_pr_change,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-chirps-rainfall,clim.rain_daily,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-chirps-rainfall,clim.rain_monthly,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-chirps-rainfall,clim.rain_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-cod-ab-lka-boundaries,admin.area_km2,class,"official","sources mix public bodies and third parties"
-cod-ab-lka-boundaries,admin.child_count,class,"official","sources mix public bodies and third parties"
-cod-ab-lka-boundaries,,kind,"boundaries","inferred from geo_levels / profile boundary dataset"
-copernicus-dem-terrain,terrain.elevation_mean,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-copernicus-dem-terrain,terrain.slope_mean,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-copernicus-dem-terrain,terrain.steep_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-courthouses,just.courts,class,"official","sources mix public bodies and third parties"
-cyclone-tracks,haz.max_wind_near_lk,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-cyclone-tracks,,kind,"features","inferred from geo_levels / profile boundary dataset"
-dcs-abstract-education-health,educ.pupil_teacher_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-dcs-abstract-education-health,heal.beds_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-dcs-ccpi,econ.cpi.ccpi_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-ccpi,econ.cpi.ccpi_core_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-census-2024-education-literacy,census24.literacy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-census-2024-education-literacy,census24.computer_literacy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-census-2024-education-literacy,census24.digital_literacy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-census-2024-households,census24.avg_household_size,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight"
-dcs-census-2024-population,census24.pop_change_2012,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-census-2024-population,census24.sex_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-dcs-dhs-2016-district,dhs.tfr,class,"official","sources mix public bodies and third parties"
-dcs-dhs-2016-district,dhs.tfr,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-dcs-dhs-2016-district,dhs.stunting_u5,class,"official","sources mix public bodies and third parties"
-dcs-dhs-2016-district,dhs.stunting_u5,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-dhs-2016-district,dhs.wasting_u5,class,"official","sources mix public bodies and third parties"
-dcs-dhs-2016-district,dhs.wasting_u5,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-dhs-2016-district,dhs.anc4_coverage,class,"official","sources mix public bodies and third parties"
-dcs-dhs-2016-district,dhs.anc4_coverage,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-gdp-by-industry,econ.gdp_growth_real,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-hies-income-expenditure,hies.mean_household_income,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight"
-dcs-hies-income-expenditure,hies.mean_household_expenditure,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight"
-dcs-hies-income-expenditure,hies.food_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-hies-poverty,pov.headcount_ratio,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-hies-poverty,pov.poverty_gap,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-hies-poverty,pov.squared_gap,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-lfs-annual-subnational,lab.unemployment_rate_sub,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-lfs-annual-subnational,lab.informal_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-lfs-quarterly,lab.lfpr,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-lfs-quarterly,lab.unemployment_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-mpi,pov.mpi,class,"official","sources mix public bodies and third parties"
-dcs-mpi,pov.mpi_headcount,class,"official","sources mix public bodies and third parties"
-dcs-mpi,pov.mpi_headcount,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-mpi,pov.mpi_indicator_deprivation,class,"official","sources mix public bodies and third parties"
-dcs-mpi,pov.mpi_indicator_deprivation,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-ncpi,econ.cpi.ncpi_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-paddy-statistics,agri.paddy_yield,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-dcs-pocketbook-agriculture,agri.cost_of_production,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-dcs-pocketbook-agriculture,agri.paddy_irrigation_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-pocketbook-agriculture,agri.calorie_availability,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-dcs-pocketbook-prices-wages,econ.building_material_price,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-dcs-pocketbook-social-services,pb.exam_pass_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-provincial-gdp,econ.pgdp_per_capita,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight"
-dcs-provincial-gdp,econ.pgdp_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-dcs-vital-statistics,vital.crude_birth_rate,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-dengue-weekly-cases,heal.dengue_incidence,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-building-density,built.density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-building-density,built.osm_completeness,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-dasymetric-disaggregation,dasy.value,unit,"{various}","ambiguous source unit ""varies"""
-derived-dasymetric-disaggregation,dasy.value,aggregation,"none","unit varies by series: split or declare per series"
-derived-dengue-risk,heal.dengue_incidence_lagged_rain,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-derived-electoral-demographics,elec.pd_profile,unit,"{various}","ambiguous source unit ""various"""
-derived-electoral-demographics,elec.pd_profile,aggregation,"none","unit varies by series: split or declare per series"
-derived-electoral-demographics,,kind,"features","inferred from geo_levels / profile boundary dataset"
-derived-facility-coverage,acc.share_within,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-harmonised-boundary-series,harm.value,unit,"{various}","ambiguous source unit ""varies"""
-derived-harmonised-boundary-series,harm.value,aggregation,"none","unit varies by series: split or declare per series"
-derived-harmonised-boundary-series,harm.allocation_share,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-derived-investment-density,econ.investment_per_capita,unit,"{currency}","ambiguous source unit ""LKR or USD"""
-derived-investment-density,econ.investment_per_capita,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-derived-investment-density,econ.boi_jobs_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-land-cover-zonal,lc.unit_profile_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-market-access,acc.market_minutes,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-derived-nightlights-growth,ntl.growth_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-nightlights-growth,ntl.lights_per_capita,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-nightlights-growth,ntl.modelled_gdp_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-per-capita-indicators,derived.per_capita,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-per-capita-indicators,derived.per_km2,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-rainfall-anomaly,clim.season_rain_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-rainfall-anomaly,clim.drought_months,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-derived-small-area-poverty,pov.sae_headcount,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-small-area-poverty,pov.sae_ci_width,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-terrain-zonal,terrain.unit_profile,unit,"{m_or_deg}","ambiguous source unit ""m or degrees"""
-derived-terrain-zonal,terrain.unit_profile,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-derived-tourism-pressure-index,tour.beds_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-derived-travel-time-facilities,acc.tt_nearest,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-derived-travel-time-facilities,acc.pop_mean_tt,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-derived-urban-growth,urb.builtup_growth,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-derived-urban-growth,urb.land_consumption_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-derived-zonal-population,pop.model_disagreement,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-dynamic-world-annual,lc.dw_class_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-earthquakes-near-lka,,kind,"features","inferred from geo_levels / profile boundary dataset"
-ec-local-authority-results,elec.lg_turnout,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-ec-local-authority-results,,kind,"features","inferred from geo_levels / profile boundary dataset"
-ec-parliamentary-results,elec.parl_turnout,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-ec-presidential-results,elec.pres_turnout,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-ec-presidential-results,elec.pres_vote_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-electoral-boundaries,,kind,"features","inferred from geo_levels / profile boundary dataset"
-epid-notifiable-diseases,heal.notified_rate,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-era5-land-climate,clim.t2m_mean,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-era5-land-climate,clim.t2m_max_days_35,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-era5-land-climate,clim.soil_moisture,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-exam-results-district,educ.ol_pass_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-exam-results-district,educ.al_eligible_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-faostat-food-security,fao.food_security,unit,"{various}","ambiguous source unit ""various"""
-faostat-food-security,fao.food_security,aggregation,"none","unit varies by series: split or declare per series"
-fhb-maternal-child-health,heal.maternal_mortality_ratio,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-fhb-maternal-child-health,heal.low_birth_weight,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-fhb-maternal-child-health,heal.child_underweight,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-gdacs-alerts,,kind,"features","inferred from geo_levels / profile boundary dataset"
-ghcnd-stations,wx.station_prcp,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-ghcnd-stations,wx.station_tmax,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-ghcnd-stations,,kind,"features","inferred from geo_levels / profile boundary dataset"
-ghsl-built-up,built.share_pct,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-ghsl-settlement-model,urban.smod_class_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-giga-schools,educ.schools_connected_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-gnd-id-crosswalk,xwalk.gnd_match_rate,class,"official","sources mix public bodies and third parties"
-gnd-id-crosswalk,xwalk.gnd_match_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-google-open-buildings,built.gob_temporal_presence,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-gpm-imerg-precipitation,clim.imerg_precip_daily,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-harti-food-prices,price.harti_daily,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-harti-food-prices,,kind,"features","inferred from geo_levels / profile boundary dataset"
-heigit-accessibility,acc.heigit_share_within,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-heigit-road-surface,tran.paved_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-hydrosheds-rivers-basins,water.river_discharge,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-hydrosheds-rivers-basins,,kind,"features","inferred from geo_levels / profile boundary dataset"
-ilostat-lka,ilo.value,unit,"{various}","ambiguous source unit ""various"""
-ilostat-lka,ilo.value,aggregation,"none","unit varies by series: split or declare per series"
-imf-portwatch-lka,,kind,"features","inferred from geo_levels / profile boundary dataset"
-imf-weo-lka,imf.weo_value,unit,"{various}","ambiguous source unit ""various"""
-imf-weo-lka,imf.weo_value,aggregation,"none","unit varies by series: split or declare per series"
-irrigation-reservoir-levels,water.reservoir_storage_pct,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-irrigation-reservoir-levels,,kind,"features","inferred from geo_levels / profile boundary dataset"
-irrigation-river-water-levels,water.river_level,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-irrigation-river-water-levels,,kind,"features","inferred from geo_levels / profile boundary dataset"
-jrc-river-flood-hazard,haz.flood_depth,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-jrc-river-flood-hazard,haz.flood_area_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-jrc-surface-water,water.occurrence,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-lk-gtfs-feeds,tran.gtfs_trips_per_day,aggregation,"sum","rate of a count over time: check that children add up"
-lk-metro-proposed-lines,,kind,"features","inferred from geo_levels / profile boundary dataset"
-map-travel-time-surfaces,acc.map_tt_healthcare,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-map-travel-time-surfaces,acc.map_tt_city,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-meteo-climate-normals,wx.normal_rain,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-meteo-climate-normals,wx.normal_temp,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-meteo-climate-normals,,kind,"features","inferred from geo_levels / profile boundary dataset"
-meteo-daily-station-weather,wx.met_rain_24h,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-meteo-daily-station-weather,wx.met_tmax,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-meteo-daily-station-weather,wx.met_rh,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-meteo-daily-station-weather,,kind,"features","inferred from geo_levels / profile boundary dataset"
-moh-health-bulletin-rdhs,heal.mo_per_100k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-moh-health-institutions,heal.gov_institutions,class,"official","sources mix public bodies and third parties"
-nasadem,terrain.nasadem_elevation,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-noise-control-zones,envi.silent_zone_area,class,"official","sources mix public bodies and third parties"
-noise-control-zones,envi.noise_limit_db,class,"official","sources mix public bodies and third parties"
-noise-control-zones,envi.noise_limit_db,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-nso-electricity-generation,ener.renewable_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-nwsdb-water-supply,water.pipe_borne_coverage,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-nwsdb-water-supply,water.non_revenue_water,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-ookla-speed-tiles,tech.ookla_download_mbps,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-open-meteo-forecast,wx.forecast_rain,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-open-meteo-forecast,wx.forecast_tmax,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-openaq-air-quality,env.pm25,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-openaq-air-quality,,kind,"features","inferred from geo_levels / profile boundary dataset"
-osm-parks-greenspace,env.park_area_per_capita,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-osm-pois-amenities,fac.osm_per_10k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-osm-road-network,tran.osm_road_density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-overture-places,biz.places_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-police-road-accidents,tran.fatalities_per_100k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-prisons-daily-population,just.occupancy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-protected-monuments,heritage.protected_monuments,class,"official","sources mix public bodies and third parties"
-pucsl-supply-reliability,ener.saidi,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-pucsl-supply-reliability,ener.saifi,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-rda-expressway-programme,tran.expressway_km,class,"official","sources mix public bodies and third parties"
-rda-expressway-programme,tran.expressway_interchanges,class,"official","sources mix public bodies and third parties"
-rda-national-roads,tran.rda_road_km,class,"official","sources mix public bodies and third parties"
-searoute-shipping-lanes,,kind,"features","inferred from geo_levels / profile boundary dataset"
-slbfe-labour-migration,migr.departures_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-slpa-port-statistics,,kind,"features","inferred from geo_levels / profile boundary dataset"
-slr-timetable,tran.train_services_per_day,class,"official","sources mix public bodies and third parties"
-slr-timetable,tran.train_services_per_day,aggregation,"sum","rate of a count over time: check that children add up"
-slr-timetable,,kind,"features","inferred from geo_levels / profile boundary dataset"
-sltda-accommodation,tour.occupancy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-sltda-registered-establishments,tour.establishments,class,"official","sources mix public bodies and third parties"
-soilgrids-properties,soil.soc,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-soilgrids-properties,soil.ph,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-solar-pv-potential,ener.pvout,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-solar-pv-potential,ener.ghi,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-treasury-fiscal-performance,fisc.outturn_vs_budget,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-treasury-procurement,proc.bids_per_tender,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight"
-treasury-procurement,proc.single_bid_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-treasury-province-transfers,fisc.pc_transfers_per_capita,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight"
-uda-zoning-plans,,kind,"features","inferred from geo_levels / profile boundary dataset"
-ugc-admissions-district,educ.univ_admission_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-un-sdg-lka,sdg.value,unit,"{various}","ambiguous source unit ""various"""
-un-sdg-lka,sdg.value,aggregation,"none","unit varies by series: split or declare per series"
-un-wpp-lka,pop.wpp_tfr,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-un-wpp-lka,pop.wpp_life_expectancy,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-unicef-lka,unicef.value,unit,"{various}","ambiguous source unit ""various"""
-unicef-lka,unicef.value,aggregation,"none","unit varies by series: split or declare per series"
-viirs-nightlights,ntl.radiance_annual,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-viirs-nightlights,ntl.radiance_monthly,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-wb-pip-poverty,pip.headcount,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-wb-sldu-outlook,wbsldu.gdp_growth_forecast,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-wb-sldu-outlook,wbsldu.poverty_nowcast,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-wdi-lka,wdi.ny_gdp_pcap_pp_kd,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight"
-wdi-lka,wdi.si_pov_dday,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-wdi-lka,wdi.sp_dyn_le00_in,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-wdi-lka,wdi.eg_elc_accs_zs,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-wdi-lka,wdi.series,unit,"{various}","ambiguous source unit ""various"""
-wdi-lka,wdi.series,aggregation,"none","unit varies by series: split or declare per series"
-wfp-food-prices,price.wfp_market,aggregation,"none","price/unit value: weighted_mean needs a weight indicator"
-wfp-rainfall-ndvi-subnational,clim.wfp_rainfall_dekad,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-wfp-rainfall-ndvi-subnational,clim.wfp_rainfall_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-wfp-rainfall-ndvi-subnational,env.wfp_ndvi_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-who-gho-lka,who.value,unit,"{various}","ambiguous source unit ""various"""
-who-gho-lka,who.value,aggregation,"none","unit varies by series: split or declare per series"
-wikidata-admin-crosswalk,xwalk.wikidata_qid_coverage,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-wind-power-density,ener.wind_power_density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators"
-worldclim-climate-normals,clim.wc_tavg,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-worldclim-climate-normals,clim.wc_prec,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator"
-worldclim-climate-normals,clim.wc_bio,unit,"{various}","ambiguous source unit ""varies"""
-worldclim-climate-normals,clim.wc_bio,aggregation,"none","unit varies by series: split or declare per series"
-worldcover-land-cover,lc.class_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators"
-worldpop-age-sex,pop.grid_dependency_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators"
-worldpop-births-pregnancies,pop.grid_births,aggregation,"sum","rate of a count over time: check that children add up"
-worldpop-births-pregnancies,pop.grid_pregnancies,aggregation,"sum","rate of a count over time: check that children add up"
-dcs-census-2024-gnd,census24.gnd_age_band,dims,"{id: age_band, codelist: age}",WP-01 codelists: `age_band` is not a codelist id (ambiguous or shared concept); reference the shared codelist `age`
-treasury-procurement,proc.bids_per_tender,dims,agency,WP-01 codelists: unresolved - procuring entities (hundreds): generate from the procurement extract; consider reusing a shared government-entity list with `entity`
-treasury-procurement,proc.single_bid_share,dims,agency,WP-01 codelists: unresolved - procuring entities (hundreds): generate from the procurement extract; consider reusing a shared government-entity list with `entity`
-treasury-procurement,proc.contract_value,dims,agency,WP-01 codelists: unresolved - procuring entities (hundreds): generate from the procurement extract; consider reusing a shared government-entity list with `entity`
-bia-flight-arrivals,air.arrivals_flights,dims,airline,WP-01 codelists: unresolved - IATA airline designators: generate from the BIA schedule extract
-treasury-guarantees,debt.guarantees,dims,"{id: beneficiary, codelist: soe}",WP-01 codelists: `beneficiary` is not a codelist id (ambiguous or shared concept); reference the shared codelist `soe`
-treasury-guarantees,debt.letters_of_comfort,dims,"{id: beneficiary, codelist: soe}",WP-01 codelists: `beneficiary` is not a codelist id (ambiguous or shared concept); reference the shared codelist `soe`
-aswesuma-beneficiaries,soc.aswesuma_families,dims,"{id: category, codelist: aswesuma_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `aswesuma_category`
-cbsl-merchandise-trade,trade.exports_usd,dims,"{id: category, codelist: trade_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `trade_category`
-cbsl-merchandise-trade,trade.imports_usd,dims,"{id: category, codelist: trade_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `trade_category`
-dcs-hies-income-expenditure,hies.mean_household_expenditure,dims,"{id: category, codelist: coicop_group}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `coicop_group`
-derived-attractions-register,tour.attractions,dims,"{id: category, codelist: attraction_type}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `attraction_type`
-overture-places,biz.overture_places,dims,"{id: category, codelist: overture_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `overture_category`
-world-heritage-sites,heritage.whs_sites,dims,"{id: category, codelist: whs_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `whs_category`
-wikidata-places-entities,places.wikidata_items,dims,"{id: class, codelist: wikidata_class}",WP-01 codelists: `class` is not a codelist id (ambiguous or shared concept); reference the shared codelist `wikidata_class`
-cbsl-pmi,econ.pmi,dims,"{id: component, codelist: pmi_component}",WP-01 codelists: `component` is not a codelist id (ambiguous or shared concept); reference the shared codelist `pmi_component`
-dcs-gdp-expenditure,econ.gdp_expenditure,dims,"{id: component, codelist: gdp_expenditure_component}",WP-01 codelists: `component` is not a codelist id (ambiguous or shared concept); reference the shared codelist `gdp_expenditure_component`
-searoute-shipping-lanes,tran.sea_route_km,dims,"{id: destination, codelist: world_port}",WP-01 codelists: `destination` is not a codelist id (ambiguous or shared concept); reference the shared codelist `world_port`
-slbfe-labour-migration,migr.departures,dims,"{id: destination, codelist: country}",WP-01 codelists: `destination` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`
-dcs-census-2024-disability,census24.functional_difficulty,dims,"{id: domain, codelist: functional_domain}",WP-01 codelists: `domain` is not a codelist id (ambiguous or shared concept); reference the shared codelist `functional_domain`
-derived-development-index,dev.domain_index,dims,"{id: domain, codelist: dev_index_domain}",WP-01 codelists: `domain` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dev_index_domain`
-dcs-census-2024-housing,census24.housing_material,dims,"{id: element, codelist: housing_element}",WP-01 codelists: `element` is not a codelist id (ambiguous or shared concept); reference the shared codelist `housing_element`
-faostat-crops-livestock,fao.crop_production,dims,element,"WP-01 codelists: unresolved - FAOSTAT element codes (5312 area harvested, 5510 production, ...): generate from the FAOSTAT API definitions"
-auditor-general-findings,audit.opinion,dims,entity,"WP-01 codelists: unresolved - audited entities (ministries, SOEs, LAs): generate from the NAO report index; reuse `soe` / local-authority p-codes where possible"
-auditor-general-findings,audit.findings_value,dims,entity,"WP-01 codelists: unresolved - audited entities (ministries, SOEs, LAs): generate from the NAO report index; reuse `soe` / local-authority p-codes where possible"
-dmc-situation-report-impacts,dis.affected_persons,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`
-dmc-situation-report-impacts,dis.deaths,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`
-dmc-situation-report-impacts,dis.houses_damaged,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`
-dmc-situation-report-impacts,dis.displaced_in_safe_centres,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`
-observed-flood-extents,dis.flooded_area,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`
-observed-flood-extents,dis.pop_in_observed_flood,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`
-heigit-accessibility,acc.heigit_share_within,dims,"{id: facility, codelist: facility_type}",WP-01 codelists: `facility` is not a codelist id (ambiguous or shared concept); reference the shared codelist `facility_type`
-lk-gtfs-feeds,tran.gtfs_stops,dims,feed,WP-01 codelists: unresolved - GTFS feed ids are not yet known; generate from the feed registry (feed_info.txt / Mobility Database ids)
-lk-gtfs-feeds,tran.gtfs_trips_per_day,dims,feed,WP-01 codelists: unresolved - GTFS feed ids are not yet known; generate from the feed registry (feed_info.txt / Mobility Database ids)
-dcs-census-2024-basic-services,census24.hh_cooking_fuel,dims,"{id: fuel, codelist: cooking_fuel}",WP-01 codelists: `fuel` is not a codelist id (ambiguous or shared concept); reference the shared codelist `cooking_fuel`
-slsea-energy-balance,ener.primary_supply_ktoe,dims,"{id: fuel, codelist: energy_source}",WP-01 codelists: `fuel` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`
-slsea-energy-balance,ener.final_consumption_ktoe,dims,"{id: fuel, codelist: energy_source}",WP-01 codelists: `fuel` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`
-dcs-agri-production-index,agri.production_index,dims,"{id: group, codelist: agri_index_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `agri_index_group`
-dcs-ncpi,econ.cpi.ncpi_index,dims,"{id: group, codelist: coicop_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `coicop_group`
-dcs-ncpi,econ.cpi.ncpi_yoy,dims,"{id: group, codelist: coicop_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `coicop_group`
-hrsl-population-30m,pop.hrsl_group,dims,"{id: group, codelist: demographic_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `demographic_group`
-nbro-landslide-hazard-zones,haz.landslide_zone_area,dims,"{id: hazard_class, codelist: hazard_level}",WP-01 codelists: `hazard_class` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hazard_level`
-budget-estimates-heads,budget.allocation,dims,head,"WP-01 codelists: unresolved - budget expenditure heads (3-digit, ~200): generate from the Budget Estimates of the year"
-budget-estimates-heads,budget.actual_prev_year,dims,head,"WP-01 codelists: unresolved - budget expenditure heads (3-digit, ~200): generate from the Budget Estimates of the year"
-adb-key-indicators-lka,adb.value,dims,indicator,WP-01 codelists: unresolved - ADB KIDB indicator codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series)
-cbsl-ess-provincial-indicators,ess.provincial_indicator,dims,indicator,WP-01 codelists: unresolved - CBSL ESS provincial table rows: generate from the table extract
-dcs-mpi,pov.mpi_indicator_deprivation,dims,indicator,WP-01 codelists: unresolved - DCS national MPI indicator set (2019) not confirmed from the source report; write after reading it
-derived-dasymetric-disaggregation,dasy.value,dims,"{id: indicator, codelist: source_indicator}",WP-01 codelists: `indicator` is not a codelist id (ambiguous or shared concept); reference the shared codelist `source_indicator`
-derived-electoral-demographics,elec.pd_profile,dims,"{id: indicator, codelist: source_indicator}",WP-01 codelists: `indicator` is not a codelist id (ambiguous or shared concept); reference the shared codelist `source_indicator`
-derived-harmonised-boundary-series,harm.value,dims,"{id: indicator, codelist: source_indicator}",WP-01 codelists: `indicator` is not a codelist id (ambiguous or shared concept); reference the shared codelist `source_indicator`
-faostat-food-security,fao.food_security,dims,indicator,WP-01 codelists: unresolved - FAOSTAT food-security item codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series)
-ilostat-lka,ilo.value,dims,indicator,WP-01 codelists: unresolved - ILOSTAT indicator ids: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series)
-unicef-lka,unicef.value,dims,indicator,WP-01 codelists: unresolved - UNICEF SDMX indicator codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series)
-who-gho-lka,who.value,dims,indicator,WP-01 codelists: unresolved - WHO GHO indicator codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series)
-moh-health-institutions,heal.gov_institutions,dims,"{id: institution_type, codelist: hospital_type}",WP-01 codelists: `institution_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hospital_type`
-derived-multi-hazard-exposure,haz.multi_exposed_pop,dims,"{id: intensity, codelist: hazard_level}",WP-01 codelists: `intensity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hazard_level`
-dcs-census-2024-household-assets,census24.hh_assets,dims,"{id: item, codelist: household_asset}",WP-01 codelists: `item` is not a codelist id (ambiguous or shared concept); reference the shared codelist `household_asset`
-faostat-crops-livestock,fao.crop_production,dims,item,WP-01 codelists: unresolved - FAOSTAT item codes: generate from the FAOSTAT API definitions
-faostat-land-inputs,fao.land_use,dims,item,WP-01 codelists: unresolved - FAOSTAT land-use item codes: generate from the FAOSTAT API definitions
-cbsl-land-valuation-indicator,re.lvi,dims,"{id: land_use, codelist: land_value_use}",WP-01 codelists: `land_use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `land_value_use`
-dcs-census-of-agriculture,agri.holding_area,dims,"{id: land_use, codelist: holding_land_use}",WP-01 codelists: `land_use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `holding_land_use`
-dynamic-world-annual,lc.dw_class_share,dims,"{id: lc_class, codelist: dynamic_world_class}",WP-01 codelists: `lc_class` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dynamic_world_class`
-giga-schools,educ.school_points,dims,"{id: level, codelist: school_level}",WP-01 codelists: `level` is not a codelist id (ambiguous or shared concept); reference the shared codelist `school_level`
-lk-metro-proposed-lines,tran.metro_stops,dims,line,WP-01 codelists: unresolved - community-proposal line ids unknown; write from the proposal data
-slr-timetable,tran.train_services_per_day,dims,"{id: line, codelist: rail_line}",WP-01 codelists: `line` is not a codelist id (ambiguous or shared concept); reference the shared codelist `rail_line`
-harti-food-prices,price.harti_daily,dims,market,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-wfp-food-prices,price.wfp_market,dims,market,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-dcs-census-2024-housing,census24.housing_material,dims,"{id: material, codelist: housing_material}",WP-01 codelists: `material` is not a codelist id (ambiguous or shared concept); reference the shared codelist `housing_material`
-dcs-pocketbook-prices-wages,econ.building_material_price,dims,"{id: material, codelist: building_material}",WP-01 codelists: `material` is not a codelist id (ambiguous or shared concept); reference the shared codelist `building_material`
-dcs-census-2024-basic-services,census24.hh_waste_disposal,dims,"{id: method, codelist: waste_disposal}",WP-01 codelists: `method` is not a codelist id (ambiguous or shared concept); reference the shared codelist `waste_disposal`
-bia-flight-arrivals,air.arrivals_flights,dims,"{id: origin, codelist: airport}",WP-01 codelists: `origin` is not a codelist id (ambiguous or shared concept); reference the shared codelist `airport`
-searoute-shipping-lanes,tran.sea_route_km,dims,"{id: origin, codelist: port}",WP-01 codelists: `origin` is not a codelist id (ambiguous or shared concept); reference the shared codelist `port`
-boi-fdi-inflows,econ.boi_fdi_usd,dims,"{id: origin_country, codelist: country}",WP-01 codelists: `origin_country` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`
-erd-foreign-financing,aid.commitments,dims,"{id: partner, codelist: development_partner}",WP-01 codelists: `partner` is not a codelist id (ambiguous or shared concept); reference the shared codelist `development_partner`
-erd-foreign-financing,aid.disbursements,dims,"{id: partner, codelist: development_partner}",WP-01 codelists: `partner` is not a codelist id (ambiguous or shared concept); reference the shared codelist `development_partner`
-wits-trade-partners,trade.bilateral,dims,"{id: partner, codelist: country}",WP-01 codelists: `partner` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`
-cckp-climate-projections,clim.proj_tas_change,dims,"{id: period, codelist: climate_period}",WP-01 codelists: `period` is not a codelist id (ambiguous or shared concept); reference the shared codelist `climate_period`
-cckp-climate-projections,clim.proj_pr_change,dims,"{id: period, codelist: climate_period}",WP-01 codelists: `period` is not a codelist id (ambiguous or shared concept); reference the shared codelist `climate_period`
-ceb-statistical-digest,ener.plant_capacity_mw,dims,plant,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-dcs-pocketbook-agriculture,agri.livestock_production,dims,"{id: product, codelist: livestock_product}",WP-01 codelists: `product` is not a codelist id (ambiguous or shared concept); reference the shared codelist `livestock_product`
-wits-trade-partners,trade.bilateral,dims,"{id: product, codelist: hs_section}",WP-01 codelists: `product` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hs_section`
-budget-capital-projects,budget.project_allocation,dims,project,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-wb-projects-lka,aid.wb_commitment,dims,project,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-iati-activities-lka,aid.iati_commitments,dims,publisher,WP-01 codelists: unresolved - IATI organisation identifiers: generate from the IATI registry publisher list
-iati-activities-lka,aid.iati_disbursements,dims,publisher,WP-01 codelists: unresolved - IATI organisation identifiers: generate from the IATI registry publisher list
-sltda-accommodation,tour.occupancy_rate,dims,"{id: region, codelist: resort_region}",WP-01 codelists: `region` is not a codelist id (ambiguous or shared concept); reference the shared codelist `resort_region`
-irrigation-reservoir-levels,water.reservoir_storage_pct,dims,reservoir,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-dcs-local-government-finance,lgov.revenue,dims,"{id: revenue_type, codelist: lg_revenue_type}",WP-01 codelists: `revenue_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `lg_revenue_type`
-rda-expressway-programme,tran.expressway_km,dims,"{id: route, codelist: expressway}",WP-01 codelists: `route` is not a codelist id (ambiguous or shared concept); reference the shared codelist `expressway`
-cckp-climate-projections,clim.proj_tas_change,dims,"{id: scenario, codelist: ssp_scenario}",WP-01 codelists: `scenario` is not a codelist id (ambiguous or shared concept); reference the shared codelist `ssp_scenario`
-cckp-climate-projections,clim.proj_pr_change,dims,"{id: scenario, codelist: ssp_scenario}",WP-01 codelists: `scenario` is not a codelist id (ambiguous or shared concept); reference the shared codelist `ssp_scenario`
-derived-transit-access,acc.scenario_new_coverage,dims,scenario,WP-01 codelists: unresolved - scenario lines defined by the derived method; write when the method fixes them
-fewsnet-food-insecurity,food.ipc_phase,dims,"{id: scenario, codelist: ipc_projection}",WP-01 codelists: `scenario` is not a codelist id (ambiguous or shared concept); reference the shared codelist `ipc_projection`
-boi-enterprises,econ.boi_enterprises,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`
-boi-fdi-inflows,econ.boi_fdi_usd,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`
-boi-fdi-inflows,econ.boi_projects,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`
-boi-fdi-inflows,econ.boi_employment,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`
-cbsl-pmi,econ.pmi,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`
-climate-trace-emissions,env.ghg_co2e,dims,"{id: sector, codelist: climate_trace_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `climate_trace_sector`
-dcs-lfs-quarterly,lab.employed,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`
-dcs-pocketbook-prices-wages,econ.minimum_wage_index,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`
-dcs-ppi,econ.ppi_index,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`
-dcs-provincial-gdp,econ.pgdp,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`
-erd-foreign-financing,aid.commitments,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`
-erd-foreign-financing,aid.disbursements,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`
-iati-activities-lka,aid.iati_commitments,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`
-iati-activities-lka,aid.iati_disbursements,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`
-lk-major-projects,proj.major_projects,dims,"{id: sector, codelist: project_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_sector`
-slsea-energy-balance,ener.final_consumption_ktoe,dims,"{id: sector, codelist: energy_end_use_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_end_use_sector`
-treasury-soe-finances,soe.profit,dims,"{id: sector, codelist: soe_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `soe_sector`
-wb-projects-lka,aid.wb_commitment,dims,"{id: sector, codelist: wb_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `wb_sector`
-cbsl-condominium-prices,re.condo_asking_index,dims,segment,WP-01 codelists: unresolved - CBSL condominium survey segments not confirmed from the source; write after reading the CBSL release
-cbsl-annual-review-tables,cbslar.appendix_value,dims,series,WP-01 codelists: unresolved - CBSL appendix series: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series)
-imf-weo-lka,imf.weo_value,dims,"{id: series, codelist: weo_subject}",WP-01 codelists: `series` is not a codelist id (ambiguous or shared concept); reference the shared codelist `weo_subject`
-un-sdg-lka,sdg.value,dims,series,WP-01 codelists: unresolved - SDG series codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series)
-dcs-pocketbook-sector-services,pb.telecom_subscriptions,dims,"{id: service, codelist: telecom_service}",WP-01 codelists: `service` is not a codelist id (ambiguous or shared concept); reference the shared codelist `telecom_service`
-dcs-pocketbook-social-services,pb.local_services,dims,service,WP-01 codelists: unresolved - local-authority service list not confirmed from the Pocket Book; write after reading the table
-trcsl-telecom-indicators,tech.subscriptions,dims,"{id: service, codelist: telecom_service}",WP-01 codelists: `service` is not a codelist id (ambiguous or shared concept); reference the shared codelist `telecom_service`
-dcs-abstract-transport,tran.road_accidents,dims,"{id: severity, codelist: accident_severity}",WP-01 codelists: `severity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `accident_severity`
-dcs-census-2024-disability,census24.functional_difficulty,dims,"{id: severity, codelist: difficulty_degree}",WP-01 codelists: `severity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `difficulty_degree`
-ntc-bus-statistics,tran.bus_crashes,dims,"{id: severity, codelist: accident_severity}",WP-01 codelists: `severity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `accident_severity`
-dcs-census-2024-education-literacy,census24.language_ability,dims,"{id: skill, codelist: language_skill}",WP-01 codelists: `skill` is not a codelist id (ambiguous or shared concept); reference the shared codelist `language_skill`
-slbfe-labour-migration,migr.departures,dims,"{id: skill, codelist: migrant_skill_level}",WP-01 codelists: `skill` is not a codelist id (ambiguous or shared concept); reference the shared codelist `migrant_skill_level`
-ceb-statistical-digest,ener.plant_capacity_mw,dims,"{id: source, codelist: energy_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`
-dcs-pocketbook-sector-services,pb.energy_supply,dims,"{id: source, codelist: energy_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`
-derived-land-cover-zonal,lc.unit_profile_share,dims,"{id: source, codelist: land_cover_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `land_cover_source`
-nso-electricity-generation,ener.generation_mwh,dims,"{id: source, codelist: energy_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`
-sltda-tourist-arrivals,tour.arrivals,dims,"{id: source_country, codelist: country}",WP-01 codelists: `source_country` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`
-ghcnd-stations,wx.station_prcp,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-ghcnd-stations,wx.station_tmax,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-irrigation-river-water-levels,water.river_level,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-irrigation-river-water-levels,water.flood_alert_level,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-meteo-climate-normals,wx.normal_rain,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-meteo-climate-normals,wx.normal_temp,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-meteo-daily-station-weather,wx.met_rain_24h,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-meteo-daily-station-weather,wx.met_tmax,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-meteo-daily-station-weather,wx.met_rh,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-openaq-air-quality,env.pm25,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated"
-dcs-abstract-justice,just.prison_admissions,dims,"{id: status, codelist: prisoner_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `prisoner_status`
-lk-major-projects,proj.major_projects,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`
-power-plants,ener.gem_plant_capacity_mw,dims,"{id: status, codelist: gem_plant_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `gem_plant_status`
-power-plants,ener.gem_plant_count,dims,"{id: status, codelist: gem_plant_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `gem_plant_status`
-prisons-daily-population,just.prisoners,dims,"{id: status, codelist: prisoner_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `prisoner_status`
-rda-expressway-programme,tran.expressway_km,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`
-rda-expressway-programme,tran.expressway_interchanges,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`
-treasury-procurement,proc.contract_value,dims,"{id: status, codelist: contract_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `contract_status`
-wb-projects-lka,aid.wb_commitment,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`
-world-heritage-sites,heritage.whs_sites,dims,"{id: status, codelist: whs_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `whs_status`
-cyclone-tracks,haz.max_wind_near_lk,dims,storm,"WP-01 codelists: unresolved - cyclone ids: use IBTrACS SID, generate from the track extract"
-cbsl-annual-review-tables,cbslar.appendix_value,dims,table,WP-01 codelists: unresolved - CBSL Annual Report appendix table ids: generate from the appendix index
-un-sdg-lka,sdg.value,dims,target,WP-01 codelists: unresolved - SDG targets (169): generate from the UN SDG API (codes 1.1 ... 17.19)
-treasury-revenue-outturn,fisc.revenue_outturn,dims,"{id: tax_type, codelist: revenue_type}",WP-01 codelists: `tax_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `revenue_type`
-power-plants,ener.gem_plant_capacity_mw,dims,"{id: technology, codelist: energy_source}",WP-01 codelists: `technology` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`
-power-plants,ener.gem_plant_count,dims,"{id: technology, codelist: energy_source}",WP-01 codelists: `technology` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`
-cabinet-decisions-geotagged,gov.cabinet_decisions,dims,"{id: topic, codelist: cofog_division}",WP-01 codelists: `topic` is not a codelist id (ambiguous or shared concept); reference the shared codelist `cofog_division`
-dcs-pocketbook-social-services,pb.health_institutions,dims,"{id: type, codelist: hospital_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hospital_type`
-osm-tourism-attractions,tour.osm_attractions,dims,"{id: type, codelist: attraction_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `attraction_type`
-osm-trails-cycling,tran.osm_trail_km,dims,"{id: type, codelist: trail_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `trail_type`
-osm-waterways-waterbodies,env.osm_waterway_km,dims,"{id: type, codelist: waterway_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `waterway_type`
-ourairports-lka,air.airports,dims,"{id: type, codelist: airport_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `airport_type`
-protected-monuments,heritage.protected_monuments,dims,"{id: type, codelist: monument_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `monument_type`
-sltda-registered-establishments,tour.establishments,dims,"{id: type, codelist: establishment_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `establishment_type`
-ghsl-built-up,built.surface_m2,dims,"{id: use, codelist: building_type}",WP-01 codelists: `use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `building_type`
-ghsl-built-up,built.volume_m3,dims,"{id: use, codelist: building_type}",WP-01 codelists: `use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `building_type`
-un-wpp-lka,pop.wpp_total,dims,"{id: variant, codelist: wpp_variant}",WP-01 codelists: `variant` is not a codelist id (ambiguous or shared concept); reference the shared codelist `wpp_variant`
-imf-weo-lka,imf.weo_value,dims,"{id: vintage, codelist: edition}",WP-01 codelists: `vintage` is not a codelist id (ambiguous or shared concept); reference the shared codelist `edition`
-derived-transit-access,acc.pop_in_walkshed,dims,"{id: walk_minutes, codelist: threshold}",WP-01 codelists: `walk_minutes` is not a codelist id (ambiguous or shared concept); reference the shared codelist `threshold`
-dcs-census-2024-basic-services,census24.hh_water_source,dims,"{id: water_source, codelist: drinking_water_source}",WP-01 codelists: `water_source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `drinking_water_source`
-dcs-pocketbook-agriculture,agri.paddy_irrigation_share,dims,"{id: water_source, codelist: irrigation_source}",WP-01 codelists: `water_source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `irrigation_source`
-boi-enterprises,econ.boi_enterprises,dims,zone,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated (BOI zones are already a dataset: boi-zones)"
-noise-control-zones,envi.noise_limit_db,dims,"{id: zone_type, codelist: noise_zone}",WP-01 codelists: `zone_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `noise_zone`
-uda-zoning-plans,urb.zone_area,dims,"{id: zone_type, codelist: uda_zone}",WP-01 codelists: `zone_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `uda_zone`
-dcs-census-2024-gnd,*,codelist,age_band,WP-01 codelists: GN-level band edges not confirmed; every band must exist in `age` (A5 bands 0-14/15-59/60-64/65+ and 60+ are there)
-dcs-hies-income-expenditure,*,codelist,category,"WP-01 codelists: HIES expenditure groups are COICOP-like, not COICOP 2018 divisions: add a HIES->COICOP crosswalk or HIES-specific children before ingest"
-dcs-gdp-by-industry,*,codelist,industry,WP-01 codelists: DCS GVA lines are finer than ISIC sections (e.g. growing of tea): add ISIC division children to `industry`
-dcs-pocketbook-prices-wages,*,codelist,sector,WP-01 codelists: minimum wage rate index sectors (agriculture; industry and commerce; services) only approximate ISIC broad sectors: confirm or create a wage-board list
-dcs-lfs-quarterly,*,codelist,sector,WP-01 codelists: LFS 'sector' assumed to be agriculture/industry/services (industry aggregates); confirm it is not employment status or public/private sector
-erd-foreign-financing,*,codelist,sector,WP-01 codelists: ERD sector names need a crosswalk to DAC 3-digit codes
-wb-projects-lka,*,codelist,status,"WP-01 codelists: WB statuses map pipeline->proposed, active->under_construction, closed->completed, dropped->cancelled"
-derived-land-cover-zonal,*,codelist,lc_class,"WP-01 codelists: uses ESA WorldCover codes (40 cropland, 10 tree, 50 built-up, 80 water); 'protected area' is not a land-cover class - split into its own indicator"
-dcs-census-historic,*,codelist,census_year,"WP-01 codelists: census year is the observation period (time_start), not a dimension: drop the dim and use period_type snapshot per census"
-ec-presidential-results,*,codelist,election,WP-01 codelists: election event duplicates period + indicator; keep only if one indicator mixes election types
-worldclim-climate-normals,*,codelist,bio_var,"WP-01 codelists: BIO variables have different units (degC x10/%, mm): split clim.wc_bio into temperature/precipitation indicators or declare per-variable units"
-dcs-census-of-agriculture,*,codelist,holding_size,WP-01 codelists: holding size bands not confirmed against the census table
-dcs-census-2012,*,codelist,amenity,WP-01 codelists: amenity list must be taken from the 2012 GN table headers
-dcs-ncpi,*,codelist,group,WP-01 codelists: food / non-food are the `food` and `nonfood` aggregates of coicop_group
-codelists/accident_severity,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/age,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/agri_index_group,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/agri_index_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/airport,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/airport,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/airport_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/alert_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/amenity,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/amenity,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/amenity_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/asset_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/asset_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/aswesuma_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/attraction_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/bank_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/basin_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/basket,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/bio_var,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/boat_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/boi_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/boi_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/building_material,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/building_material,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/building_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/candidate,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/candidate,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/cargo_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/cause,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/census_year,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/change_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/channel,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/climate_period,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/climate_trace_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/cofog_division,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/coicop_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/commodity,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/commodity,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/company_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/contract_status,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/contract_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/cooking_fuel,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/cooking_fuel,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/country,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/court_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/creditor,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/crime_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/crime_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/crop,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/currency,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/currency,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/dac_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/damage_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/debt_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/demographic_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/designation,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/dev_index_domain,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/development_partner,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/development_partner,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/difficulty_degree,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/direction,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/disaster_event,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/disaster_event,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/disease,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/disease,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/drinking_water_source,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/drinking_water_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/dynamic_world_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/edition,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/education,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/election,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/election,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/elevation,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/energy_end_use_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/energy_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/establishment_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/establishment_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/event_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/exam,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/expenditure_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/expressway,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/expressway,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/facility_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/feature_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/finding_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/finding_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/fishery_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/flow,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/functional_domain,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/funding_source,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/funding_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/gas,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/gdp_expenditure_component,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/gem_plant_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/goal,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/grade_band,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/grant_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/grant_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/hazard,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/hazard_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/highway_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/holding_land_use,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/holding_land_use,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/holding_size,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/holding_size,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/hospital_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/household_asset,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/household_asset,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/housing_element,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/housing_material,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/housing_material,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/hs_section,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/icd_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/industry,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/instrument,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/instrument,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/ipc_projection,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/irrigation_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/iucn_cat,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/la_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/land_cover_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/land_value_use,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/language,*,labels,si/ta,WP-01 codelists: si/ta given for some codes; native-speaker sign-off needed
-codelists/language_skill,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/lc_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/lender_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/lender_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/lg_revenue_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/lg_revenue_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/licensee,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/licensee,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/lighting,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/lighting,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/line_item,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/line_item,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/livestock_product,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/livestock_product,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/migrant_skill_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/mode,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/monument_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/monument_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/movement_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/network_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/noise_zone,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/nutrient,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/object_code,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/object_code,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/occupation,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/operator,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/overture_category,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/overture_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/party,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/party,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/place_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/pmi_component,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/port,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/poverty_line,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/price_basis,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/pricetype,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/prisoner_status,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/prisoner_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/programme,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/programme,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/project_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/project_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/project_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/protect_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/provider,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/provider,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/radio,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/rail_line,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/resort_region,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/return_period,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/revenue_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/road_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/road_user,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/road_user,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/route_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/route_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/school_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/school_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/season,*,labels,si/ta,WP-01 codelists: si/ta given for some codes; native-speaker sign-off needed
-codelists/sector,*,labels,si/ta,WP-01 codelists: si/ta given for some codes; native-speaker sign-off needed
-codelists/sensor,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/size_class,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/size_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/smod_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/soe,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/soe,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/soe_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/soe_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/source_boundary_vintage,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/source_boundary_vintage,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/source_indicator,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/ssp_scenario,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/stage,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/statistic,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/stream,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/structure_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/structure_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/survey_series,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/survey_series,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/tariff_category,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/tariff_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/taxon_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/telecom_service,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/tenor,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/tenure,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/tenure,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/threshold,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/time_of_day,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/toilet_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/toilet_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/town_size,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/trade_category,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/trade_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/trail_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/uda_zone,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/uda_zone,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/vehicle_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/vessel_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/violence_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/waste_disposal,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/waste_disposal,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/waterway_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/wb_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/wb_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/weo_subject,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/weo_subject,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/whs_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/whs_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/wikidata_class,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/wikidata_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/world_port,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest
-codelists/world_port,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
-codelists/wpp_variant,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation)
+dataset,indicator,field,value,reason,status
+aboveground-biomass,env.agb_density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+adb-key-indicators-lka,adb.value,unit,"{various}","ambiguous source unit ""various""",
+adb-key-indicators-lka,adb.value,aggregation,"none","unit varies by series: split or declare per series",
+aswesuma-beneficiaries,soc.aswesuma_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+aw3d30-dsm,terrain.aw3d30_elevation,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+bia-flight-arrivals,,kind,"features","inferred from geo_levels / profile boundary dataset",
+black-marble-ntl-daily,ntl.blackmarble_radiance,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+boi-zones,econ.boi_zone_area,class,"official","sources mix public bodies and third parties",
+boi-zones,econ.boi_zone_employment,class,"official","sources mix public bodies and third parties",
+boi-zones,,kind,"features","inferred from geo_levels / profile boundary dataset",
+cbsl-annual-review-tables,cbslar.appendix_value,unit,"{various}","ambiguous source unit ""various""",
+cbsl-annual-review-tables,cbslar.appendix_value,aggregation,"none","unit varies by series: split or declare per series",
+cbsl-bank-branches,fin.branches_per_100k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+cbsl-ess-provincial-indicators,ess.provincial_indicator,unit,"{various}","ambiguous source unit ""various""",
+cbsl-ess-provincial-indicators,ess.provincial_indicator,aggregation,"none","unit varies by series: split or declare per series",
+cbsl-exchange-rates,fx.rate_daily,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+cbsl-exchange-rates,fx.rate_monthly_avg,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+cbsl-exchange-rates,fx.rate_end_month,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+cbsl-fiscal-operations,fisc.overall_balance_gdp,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+cbsl-weekly-indicators,mon.policy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+cbsl-weekly-indicators,mon.tbill_yield,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+cckp-climate-projections,clim.proj_tas_change,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+cckp-climate-projections,clim.proj_pr_change,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+chirps-rainfall,clim.rain_daily,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+chirps-rainfall,clim.rain_monthly,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+chirps-rainfall,clim.rain_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+cod-ab-lka-boundaries,admin.area_km2,class,"official","sources mix public bodies and third parties",
+cod-ab-lka-boundaries,admin.child_count,class,"official","sources mix public bodies and third parties",
+cod-ab-lka-boundaries,,kind,"boundaries","inferred from geo_levels / profile boundary dataset",
+copernicus-dem-terrain,terrain.elevation_mean,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+copernicus-dem-terrain,terrain.slope_mean,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+copernicus-dem-terrain,terrain.steep_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+courthouses,just.courts,class,"official","sources mix public bodies and third parties",
+cyclone-tracks,haz.max_wind_near_lk,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+cyclone-tracks,,kind,"features","inferred from geo_levels / profile boundary dataset",
+dcs-abstract-education-health,educ.pupil_teacher_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+dcs-abstract-education-health,heal.beds_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+dcs-ccpi,econ.cpi.ccpi_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-ccpi,econ.cpi.ccpi_core_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-census-2024-education-literacy,census24.literacy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-census-2024-education-literacy,census24.computer_literacy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-census-2024-education-literacy,census24.digital_literacy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-census-2024-households,census24.avg_household_size,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight",
+dcs-census-2024-population,census24.pop_change_2012,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-census-2024-population,census24.sex_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+dcs-dhs-2016-district,dhs.tfr,class,"official","sources mix public bodies and third parties",
+dcs-dhs-2016-district,dhs.tfr,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+dcs-dhs-2016-district,dhs.stunting_u5,class,"official","sources mix public bodies and third parties",
+dcs-dhs-2016-district,dhs.stunting_u5,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-dhs-2016-district,dhs.wasting_u5,class,"official","sources mix public bodies and third parties",
+dcs-dhs-2016-district,dhs.wasting_u5,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-dhs-2016-district,dhs.anc4_coverage,class,"official","sources mix public bodies and third parties",
+dcs-dhs-2016-district,dhs.anc4_coverage,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-gdp-by-industry,econ.gdp_growth_real,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-hies-income-expenditure,hies.mean_household_income,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight",
+dcs-hies-income-expenditure,hies.mean_household_expenditure,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight",
+dcs-hies-income-expenditure,hies.food_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-hies-poverty,pov.headcount_ratio,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-hies-poverty,pov.poverty_gap,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-hies-poverty,pov.squared_gap,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-lfs-annual-subnational,lab.unemployment_rate_sub,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-lfs-annual-subnational,lab.informal_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-lfs-quarterly,lab.lfpr,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-lfs-quarterly,lab.unemployment_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-mpi,pov.mpi,class,"official","sources mix public bodies and third parties",
+dcs-mpi,pov.mpi_headcount,class,"official","sources mix public bodies and third parties",
+dcs-mpi,pov.mpi_headcount,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-mpi,pov.mpi_indicator_deprivation,class,"official","sources mix public bodies and third parties",
+dcs-mpi,pov.mpi_indicator_deprivation,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-ncpi,econ.cpi.ncpi_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-paddy-statistics,agri.paddy_yield,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+dcs-pocketbook-agriculture,agri.cost_of_production,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+dcs-pocketbook-agriculture,agri.paddy_irrigation_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-pocketbook-agriculture,agri.calorie_availability,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+dcs-pocketbook-prices-wages,econ.building_material_price,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+dcs-pocketbook-social-services,pb.exam_pass_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-provincial-gdp,econ.pgdp_per_capita,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight",
+dcs-provincial-gdp,econ.pgdp_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+dcs-vital-statistics,vital.crude_birth_rate,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+dengue-weekly-cases,heal.dengue_incidence,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-building-density,built.density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-building-density,built.osm_completeness,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-dasymetric-disaggregation,dasy.value,unit,"{various}","ambiguous source unit ""varies""",
+derived-dasymetric-disaggregation,dasy.value,aggregation,"none","unit varies by series: split or declare per series",
+derived-dengue-risk,heal.dengue_incidence_lagged_rain,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+derived-electoral-demographics,elec.pd_profile,unit,"{various}","ambiguous source unit ""various""",
+derived-electoral-demographics,elec.pd_profile,aggregation,"none","unit varies by series: split or declare per series",
+derived-electoral-demographics,,kind,"features","inferred from geo_levels / profile boundary dataset",
+derived-facility-coverage,acc.share_within,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-harmonised-boundary-series,harm.value,unit,"{various}","ambiguous source unit ""varies""",
+derived-harmonised-boundary-series,harm.value,aggregation,"none","unit varies by series: split or declare per series",
+derived-harmonised-boundary-series,harm.allocation_share,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+derived-investment-density,econ.investment_per_capita,unit,"{currency}","ambiguous source unit ""LKR or USD""",
+derived-investment-density,econ.investment_per_capita,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+derived-investment-density,econ.boi_jobs_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-land-cover-zonal,lc.unit_profile_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-market-access,acc.market_minutes,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+derived-nightlights-growth,ntl.growth_yoy,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-nightlights-growth,ntl.lights_per_capita,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-nightlights-growth,ntl.modelled_gdp_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-per-capita-indicators,derived.per_capita,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-per-capita-indicators,derived.per_km2,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-rainfall-anomaly,clim.season_rain_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-rainfall-anomaly,clim.drought_months,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+derived-small-area-poverty,pov.sae_headcount,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-small-area-poverty,pov.sae_ci_width,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-terrain-zonal,terrain.unit_profile,unit,"{m_or_deg}","ambiguous source unit ""m or degrees""",
+derived-terrain-zonal,terrain.unit_profile,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+derived-tourism-pressure-index,tour.beds_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+derived-travel-time-facilities,acc.tt_nearest,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+derived-travel-time-facilities,acc.pop_mean_tt,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+derived-urban-growth,urb.builtup_growth,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+derived-urban-growth,urb.land_consumption_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+derived-zonal-population,pop.model_disagreement,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+dynamic-world-annual,lc.dw_class_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+earthquakes-near-lka,,kind,"features","inferred from geo_levels / profile boundary dataset",
+ec-local-authority-results,elec.lg_turnout,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+ec-local-authority-results,,kind,"features","inferred from geo_levels / profile boundary dataset",
+ec-parliamentary-results,elec.parl_turnout,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+ec-presidential-results,elec.pres_turnout,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+ec-presidential-results,elec.pres_vote_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+electoral-boundaries,,kind,"features","inferred from geo_levels / profile boundary dataset",
+epid-notifiable-diseases,heal.notified_rate,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+era5-land-climate,clim.t2m_mean,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+era5-land-climate,clim.t2m_max_days_35,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+era5-land-climate,clim.soil_moisture,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+exam-results-district,educ.ol_pass_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+exam-results-district,educ.al_eligible_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+faostat-food-security,fao.food_security,unit,"{various}","ambiguous source unit ""various""",
+faostat-food-security,fao.food_security,aggregation,"none","unit varies by series: split or declare per series",
+fhb-maternal-child-health,heal.maternal_mortality_ratio,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+fhb-maternal-child-health,heal.low_birth_weight,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+fhb-maternal-child-health,heal.child_underweight,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+gdacs-alerts,,kind,"features","inferred from geo_levels / profile boundary dataset",
+ghcnd-stations,wx.station_prcp,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+ghcnd-stations,wx.station_tmax,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+ghcnd-stations,,kind,"features","inferred from geo_levels / profile boundary dataset",
+ghsl-built-up,built.share_pct,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+ghsl-settlement-model,urban.smod_class_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+giga-schools,educ.schools_connected_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+gnd-id-crosswalk,xwalk.gnd_match_rate,class,"official","sources mix public bodies and third parties",
+gnd-id-crosswalk,xwalk.gnd_match_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+google-open-buildings,built.gob_temporal_presence,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+gpm-imerg-precipitation,clim.imerg_precip_daily,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+harti-food-prices,price.harti_daily,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+harti-food-prices,,kind,"features","inferred from geo_levels / profile boundary dataset",
+heigit-accessibility,acc.heigit_share_within,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+heigit-road-surface,tran.paved_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+hydrosheds-rivers-basins,water.river_discharge,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+hydrosheds-rivers-basins,,kind,"features","inferred from geo_levels / profile boundary dataset",
+ilostat-lka,ilo.value,unit,"{various}","ambiguous source unit ""various""",
+ilostat-lka,ilo.value,aggregation,"none","unit varies by series: split or declare per series",
+imf-portwatch-lka,,kind,"features","inferred from geo_levels / profile boundary dataset",
+imf-weo-lka,imf.weo_value,unit,"{various}","ambiguous source unit ""various""",
+imf-weo-lka,imf.weo_value,aggregation,"none","unit varies by series: split or declare per series",
+irrigation-reservoir-levels,water.reservoir_storage_pct,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+irrigation-reservoir-levels,,kind,"features","inferred from geo_levels / profile boundary dataset",
+irrigation-river-water-levels,water.river_level,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+irrigation-river-water-levels,,kind,"features","inferred from geo_levels / profile boundary dataset",
+jrc-river-flood-hazard,haz.flood_depth,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+jrc-river-flood-hazard,haz.flood_area_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+jrc-surface-water,water.occurrence,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+lk-gtfs-feeds,tran.gtfs_trips_per_day,aggregation,"sum","rate of a count over time: check that children add up",
+lk-metro-proposed-lines,,kind,"features","inferred from geo_levels / profile boundary dataset",
+map-travel-time-surfaces,acc.map_tt_healthcare,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+map-travel-time-surfaces,acc.map_tt_city,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+meteo-climate-normals,wx.normal_rain,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+meteo-climate-normals,wx.normal_temp,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+meteo-climate-normals,,kind,"features","inferred from geo_levels / profile boundary dataset",
+meteo-daily-station-weather,wx.met_rain_24h,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+meteo-daily-station-weather,wx.met_tmax,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+meteo-daily-station-weather,wx.met_rh,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+meteo-daily-station-weather,,kind,"features","inferred from geo_levels / profile boundary dataset",
+moh-health-bulletin-rdhs,heal.mo_per_100k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+moh-health-institutions,heal.gov_institutions,class,"official","sources mix public bodies and third parties",
+nasadem,terrain.nasadem_elevation,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+noise-control-zones,envi.silent_zone_area,class,"official","sources mix public bodies and third parties",
+noise-control-zones,envi.noise_limit_db,class,"official","sources mix public bodies and third parties",
+noise-control-zones,envi.noise_limit_db,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+nso-electricity-generation,ener.renewable_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+nwsdb-water-supply,water.pipe_borne_coverage,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+nwsdb-water-supply,water.non_revenue_water,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+ookla-speed-tiles,tech.ookla_download_mbps,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+open-meteo-forecast,wx.forecast_rain,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+open-meteo-forecast,wx.forecast_tmax,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+openaq-air-quality,env.pm25,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+openaq-air-quality,,kind,"features","inferred from geo_levels / profile boundary dataset",
+osm-parks-greenspace,env.park_area_per_capita,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+osm-pois-amenities,fac.osm_per_10k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+osm-road-network,tran.osm_road_density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+overture-places,biz.places_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+police-road-accidents,tran.fatalities_per_100k,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+prisons-daily-population,just.occupancy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+protected-monuments,heritage.protected_monuments,class,"official","sources mix public bodies and third parties",
+pucsl-supply-reliability,ener.saidi,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+pucsl-supply-reliability,ener.saifi,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+rda-expressway-programme,tran.expressway_km,class,"official","sources mix public bodies and third parties",
+rda-expressway-programme,tran.expressway_interchanges,class,"official","sources mix public bodies and third parties",
+rda-national-roads,tran.rda_road_km,class,"official","sources mix public bodies and third parties",
+searoute-shipping-lanes,,kind,"features","inferred from geo_levels / profile boundary dataset",
+slbfe-labour-migration,migr.departures_per_1000,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+slpa-port-statistics,,kind,"features","inferred from geo_levels / profile boundary dataset",
+slr-timetable,tran.train_services_per_day,class,"official","sources mix public bodies and third parties",
+slr-timetable,tran.train_services_per_day,aggregation,"sum","rate of a count over time: check that children add up",
+slr-timetable,,kind,"features","inferred from geo_levels / profile boundary dataset",
+sltda-accommodation,tour.occupancy_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+sltda-registered-establishments,tour.establishments,class,"official","sources mix public bodies and third parties",
+soilgrids-properties,soil.soc,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+soilgrids-properties,soil.ph,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+solar-pv-potential,ener.pvout,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+solar-pv-potential,ener.ghi,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+treasury-fiscal-performance,fisc.outturn_vs_budget,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+treasury-procurement,proc.bids_per_tender,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight",
+treasury-procurement,proc.single_bid_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+treasury-province-transfers,fisc.pc_transfers_per_capita,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight",
+uda-zoning-plans,,kind,"features","inferred from geo_levels / profile boundary dataset",
+ugc-admissions-district,educ.univ_admission_rate,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+un-sdg-lka,sdg.value,unit,"{various}","ambiguous source unit ""various""",
+un-sdg-lka,sdg.value,aggregation,"none","unit varies by series: split or declare per series",
+un-wpp-lka,pop.wpp_tfr,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+un-wpp-lka,pop.wpp_life_expectancy,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+unicef-lka,unicef.value,unit,"{various}","ambiguous source unit ""various""",
+unicef-lka,unicef.value,aggregation,"none","unit varies by series: split or declare per series",
+viirs-nightlights,ntl.radiance_annual,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+viirs-nightlights,ntl.radiance_monthly,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+wb-pip-poverty,pip.headcount,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+wb-sldu-outlook,wbsldu.gdp_growth_forecast,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+wb-sldu-outlook,wbsldu.poverty_nowcast,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+wdi-lka,wdi.ny_gdp_pcap_pp_kd,aggregation,"none","label says per-capita/average: not additive; weighted_mean needs a weight",
+wdi-lka,wdi.si_pov_dday,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+wdi-lka,wdi.sp_dyn_le00_in,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+wdi-lka,wdi.eg_elc_accs_zs,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+wdi-lka,wdi.series,unit,"{various}","ambiguous source unit ""various""",
+wdi-lka,wdi.series,aggregation,"none","unit varies by series: split or declare per series",
+wfp-food-prices,price.wfp_market,aggregation,"none","price/unit value: weighted_mean needs a weight indicator",
+wfp-rainfall-ndvi-subnational,clim.wfp_rainfall_dekad,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+wfp-rainfall-ndvi-subnational,clim.wfp_rainfall_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+wfp-rainfall-ndvi-subnational,env.wfp_ndvi_anomaly,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+who-gho-lka,who.value,unit,"{various}","ambiguous source unit ""various""",
+who-gho-lka,who.value,aggregation,"none","unit varies by series: split or declare per series",
+wikidata-admin-crosswalk,xwalk.wikidata_qid_coverage,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+wind-power-density,ener.wind_power_density,aggregation,"none","rate: ratio_of_sums needs numerator/denominator indicators",
+worldclim-climate-normals,clim.wc_tavg,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+worldclim-climate-normals,clim.wc_prec,aggregation,"none","intensive quantity: weighted_mean needs a weight indicator",
+worldclim-climate-normals,clim.wc_bio,unit,"{various}","ambiguous source unit ""varies""",
+worldclim-climate-normals,clim.wc_bio,aggregation,"none","unit varies by series: split or declare per series",
+worldcover-land-cover,lc.class_share,aggregation,"none","share: ratio_of_sums needs numerator/denominator indicators",
+worldpop-age-sex,pop.grid_dependency_ratio,aggregation,"none","ratio: ratio_of_sums needs numerator/denominator indicators",
+worldpop-births-pregnancies,pop.grid_births,aggregation,"sum","rate of a count over time: check that children add up",
+worldpop-births-pregnancies,pop.grid_pregnancies,aggregation,"sum","rate of a count over time: check that children add up",
+dcs-census-2024-gnd,census24.gnd_age_band,dims,"{id: age_band, codelist: age}",WP-01 codelists: `age_band` is not a codelist id (ambiguous or shared concept); reference the shared codelist `age`,resolved
+treasury-procurement,proc.bids_per_tender,dims,agency,WP-01 codelists: unresolved - procuring entities (hundreds): generate from the procurement extract; consider reusing a shared government-entity list with `entity`,
+treasury-procurement,proc.single_bid_share,dims,agency,WP-01 codelists: unresolved - procuring entities (hundreds): generate from the procurement extract; consider reusing a shared government-entity list with `entity`,
+treasury-procurement,proc.contract_value,dims,agency,WP-01 codelists: unresolved - procuring entities (hundreds): generate from the procurement extract; consider reusing a shared government-entity list with `entity`,
+bia-flight-arrivals,air.arrivals_flights,dims,airline,WP-01 codelists: unresolved - IATA airline designators: generate from the BIA schedule extract,
+treasury-guarantees,debt.guarantees,dims,"{id: beneficiary, codelist: soe}",WP-01 codelists: `beneficiary` is not a codelist id (ambiguous or shared concept); reference the shared codelist `soe`,resolved
+treasury-guarantees,debt.letters_of_comfort,dims,"{id: beneficiary, codelist: soe}",WP-01 codelists: `beneficiary` is not a codelist id (ambiguous or shared concept); reference the shared codelist `soe`,resolved
+aswesuma-beneficiaries,soc.aswesuma_families,dims,"{id: category, codelist: aswesuma_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `aswesuma_category`,resolved
+cbsl-merchandise-trade,trade.exports_usd,dims,"{id: category, codelist: trade_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `trade_category`,resolved
+cbsl-merchandise-trade,trade.imports_usd,dims,"{id: category, codelist: trade_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `trade_category`,resolved
+dcs-hies-income-expenditure,hies.mean_household_expenditure,dims,"{id: category, codelist: coicop_group}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `coicop_group`,resolved
+derived-attractions-register,tour.attractions,dims,"{id: category, codelist: attraction_type}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `attraction_type`,resolved
+overture-places,biz.overture_places,dims,"{id: category, codelist: overture_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `overture_category`,resolved
+world-heritage-sites,heritage.whs_sites,dims,"{id: category, codelist: whs_category}",WP-01 codelists: `category` is not a codelist id (ambiguous or shared concept); reference the shared codelist `whs_category`,resolved
+wikidata-places-entities,places.wikidata_items,dims,"{id: class, codelist: wikidata_class}",WP-01 codelists: `class` is not a codelist id (ambiguous or shared concept); reference the shared codelist `wikidata_class`,resolved
+cbsl-pmi,econ.pmi,dims,"{id: component, codelist: pmi_component}",WP-01 codelists: `component` is not a codelist id (ambiguous or shared concept); reference the shared codelist `pmi_component`,resolved
+dcs-gdp-expenditure,econ.gdp_expenditure,dims,"{id: component, codelist: gdp_expenditure_component}",WP-01 codelists: `component` is not a codelist id (ambiguous or shared concept); reference the shared codelist `gdp_expenditure_component`,resolved
+searoute-shipping-lanes,tran.sea_route_km,dims,"{id: destination, codelist: world_port}",WP-01 codelists: `destination` is not a codelist id (ambiguous or shared concept); reference the shared codelist `world_port`,resolved
+slbfe-labour-migration,migr.departures,dims,"{id: destination, codelist: country}",WP-01 codelists: `destination` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`,resolved
+dcs-census-2024-disability,census24.functional_difficulty,dims,"{id: domain, codelist: functional_domain}",WP-01 codelists: `domain` is not a codelist id (ambiguous or shared concept); reference the shared codelist `functional_domain`,resolved
+derived-development-index,dev.domain_index,dims,"{id: domain, codelist: dev_index_domain}",WP-01 codelists: `domain` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dev_index_domain`,resolved
+dcs-census-2024-housing,census24.housing_material,dims,"{id: element, codelist: housing_element}",WP-01 codelists: `element` is not a codelist id (ambiguous or shared concept); reference the shared codelist `housing_element`,resolved
+faostat-crops-livestock,fao.crop_production,dims,element,"WP-01 codelists: unresolved - FAOSTAT element codes (5312 area harvested, 5510 production, ...): generate from the FAOSTAT API definitions",
+auditor-general-findings,audit.opinion,dims,entity,"WP-01 codelists: unresolved - audited entities (ministries, SOEs, LAs): generate from the NAO report index; reuse `soe` / local-authority p-codes where possible",
+auditor-general-findings,audit.findings_value,dims,entity,"WP-01 codelists: unresolved - audited entities (ministries, SOEs, LAs): generate from the NAO report index; reuse `soe` / local-authority p-codes where possible",
+dmc-situation-report-impacts,dis.affected_persons,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`,resolved
+dmc-situation-report-impacts,dis.deaths,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`,resolved
+dmc-situation-report-impacts,dis.houses_damaged,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`,resolved
+dmc-situation-report-impacts,dis.displaced_in_safe_centres,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`,resolved
+observed-flood-extents,dis.flooded_area,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`,resolved
+observed-flood-extents,dis.pop_in_observed_flood,dims,"{id: event, codelist: disaster_event}",WP-01 codelists: `event` is not a codelist id (ambiguous or shared concept); reference the shared codelist `disaster_event`,resolved
+heigit-accessibility,acc.heigit_share_within,dims,"{id: facility, codelist: facility_type}",WP-01 codelists: `facility` is not a codelist id (ambiguous or shared concept); reference the shared codelist `facility_type`,resolved
+lk-gtfs-feeds,tran.gtfs_stops,dims,feed,WP-01 codelists: unresolved - GTFS feed ids are not yet known; generate from the feed registry (feed_info.txt / Mobility Database ids),
+lk-gtfs-feeds,tran.gtfs_trips_per_day,dims,feed,WP-01 codelists: unresolved - GTFS feed ids are not yet known; generate from the feed registry (feed_info.txt / Mobility Database ids),
+dcs-census-2024-basic-services,census24.hh_cooking_fuel,dims,"{id: fuel, codelist: cooking_fuel}",WP-01 codelists: `fuel` is not a codelist id (ambiguous or shared concept); reference the shared codelist `cooking_fuel`,resolved
+slsea-energy-balance,ener.primary_supply_ktoe,dims,"{id: fuel, codelist: energy_source}",WP-01 codelists: `fuel` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`,resolved
+slsea-energy-balance,ener.final_consumption_ktoe,dims,"{id: fuel, codelist: energy_source}",WP-01 codelists: `fuel` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`,resolved
+dcs-agri-production-index,agri.production_index,dims,"{id: group, codelist: agri_index_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `agri_index_group`,resolved
+dcs-ncpi,econ.cpi.ncpi_index,dims,"{id: group, codelist: coicop_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `coicop_group`,resolved
+dcs-ncpi,econ.cpi.ncpi_yoy,dims,"{id: group, codelist: coicop_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `coicop_group`,resolved
+hrsl-population-30m,pop.hrsl_group,dims,"{id: group, codelist: demographic_group}",WP-01 codelists: `group` is not a codelist id (ambiguous or shared concept); reference the shared codelist `demographic_group`,resolved
+nbro-landslide-hazard-zones,haz.landslide_zone_area,dims,"{id: hazard_class, codelist: hazard_level}",WP-01 codelists: `hazard_class` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hazard_level`,resolved
+budget-estimates-heads,budget.allocation,dims,head,"WP-01 codelists: unresolved - budget expenditure heads (3-digit, ~200): generate from the Budget Estimates of the year",
+budget-estimates-heads,budget.actual_prev_year,dims,head,"WP-01 codelists: unresolved - budget expenditure heads (3-digit, ~200): generate from the Budget Estimates of the year",
+adb-key-indicators-lka,adb.value,dims,indicator,WP-01 codelists: unresolved - ADB KIDB indicator codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series),
+cbsl-ess-provincial-indicators,ess.provincial_indicator,dims,indicator,WP-01 codelists: unresolved - CBSL ESS provincial table rows: generate from the table extract,
+dcs-mpi,pov.mpi_indicator_deprivation,dims,indicator,WP-01 codelists: unresolved - DCS national MPI indicator set (2019) not confirmed from the source report; write after reading it,
+derived-dasymetric-disaggregation,dasy.value,dims,"{id: indicator, codelist: source_indicator}",WP-01 codelists: `indicator` is not a codelist id (ambiguous or shared concept); reference the shared codelist `source_indicator`,resolved
+derived-electoral-demographics,elec.pd_profile,dims,"{id: indicator, codelist: source_indicator}",WP-01 codelists: `indicator` is not a codelist id (ambiguous or shared concept); reference the shared codelist `source_indicator`,resolved
+derived-harmonised-boundary-series,harm.value,dims,"{id: indicator, codelist: source_indicator}",WP-01 codelists: `indicator` is not a codelist id (ambiguous or shared concept); reference the shared codelist `source_indicator`,resolved
+faostat-food-security,fao.food_security,dims,indicator,WP-01 codelists: unresolved - FAOSTAT food-security item codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series),
+ilostat-lka,ilo.value,dims,indicator,WP-01 codelists: unresolved - ILOSTAT indicator ids: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series),
+unicef-lka,unicef.value,dims,indicator,WP-01 codelists: unresolved - UNICEF SDMX indicator codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series),
+who-gho-lka,who.value,dims,indicator,WP-01 codelists: unresolved - WHO GHO indicator codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series),
+moh-health-institutions,heal.gov_institutions,dims,"{id: institution_type, codelist: hospital_type}",WP-01 codelists: `institution_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hospital_type`,resolved
+derived-multi-hazard-exposure,haz.multi_exposed_pop,dims,"{id: intensity, codelist: hazard_level}",WP-01 codelists: `intensity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hazard_level`,resolved
+dcs-census-2024-household-assets,census24.hh_assets,dims,"{id: item, codelist: household_asset}",WP-01 codelists: `item` is not a codelist id (ambiguous or shared concept); reference the shared codelist `household_asset`,resolved
+faostat-crops-livestock,fao.crop_production,dims,item,WP-01 codelists: unresolved - FAOSTAT item codes: generate from the FAOSTAT API definitions,
+faostat-land-inputs,fao.land_use,dims,item,WP-01 codelists: unresolved - FAOSTAT land-use item codes: generate from the FAOSTAT API definitions,
+cbsl-land-valuation-indicator,re.lvi,dims,"{id: land_use, codelist: land_value_use}",WP-01 codelists: `land_use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `land_value_use`,resolved
+dcs-census-of-agriculture,agri.holding_area,dims,"{id: land_use, codelist: holding_land_use}",WP-01 codelists: `land_use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `holding_land_use`,resolved
+dynamic-world-annual,lc.dw_class_share,dims,"{id: lc_class, codelist: dynamic_world_class}",WP-01 codelists: `lc_class` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dynamic_world_class`,resolved
+giga-schools,educ.school_points,dims,"{id: level, codelist: school_level}",WP-01 codelists: `level` is not a codelist id (ambiguous or shared concept); reference the shared codelist `school_level`,resolved
+lk-metro-proposed-lines,tran.metro_stops,dims,line,WP-01 codelists: unresolved - community-proposal line ids unknown; write from the proposal data,
+slr-timetable,tran.train_services_per_day,dims,"{id: line, codelist: rail_line}",WP-01 codelists: `line` is not a codelist id (ambiguous or shared concept); reference the shared codelist `rail_line`,resolved
+harti-food-prices,price.harti_daily,dims,market,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+wfp-food-prices,price.wfp_market,dims,market,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+dcs-census-2024-housing,census24.housing_material,dims,"{id: material, codelist: housing_material}",WP-01 codelists: `material` is not a codelist id (ambiguous or shared concept); reference the shared codelist `housing_material`,resolved
+dcs-pocketbook-prices-wages,econ.building_material_price,dims,"{id: material, codelist: building_material}",WP-01 codelists: `material` is not a codelist id (ambiguous or shared concept); reference the shared codelist `building_material`,resolved
+dcs-census-2024-basic-services,census24.hh_waste_disposal,dims,"{id: method, codelist: waste_disposal}",WP-01 codelists: `method` is not a codelist id (ambiguous or shared concept); reference the shared codelist `waste_disposal`,resolved
+bia-flight-arrivals,air.arrivals_flights,dims,"{id: origin, codelist: airport}",WP-01 codelists: `origin` is not a codelist id (ambiguous or shared concept); reference the shared codelist `airport`,resolved
+searoute-shipping-lanes,tran.sea_route_km,dims,"{id: origin, codelist: port}",WP-01 codelists: `origin` is not a codelist id (ambiguous or shared concept); reference the shared codelist `port`,resolved
+boi-fdi-inflows,econ.boi_fdi_usd,dims,"{id: origin_country, codelist: country}",WP-01 codelists: `origin_country` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`,resolved
+erd-foreign-financing,aid.commitments,dims,"{id: partner, codelist: development_partner}",WP-01 codelists: `partner` is not a codelist id (ambiguous or shared concept); reference the shared codelist `development_partner`,resolved
+erd-foreign-financing,aid.disbursements,dims,"{id: partner, codelist: development_partner}",WP-01 codelists: `partner` is not a codelist id (ambiguous or shared concept); reference the shared codelist `development_partner`,resolved
+wits-trade-partners,trade.bilateral,dims,"{id: partner, codelist: country}",WP-01 codelists: `partner` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`,resolved
+cckp-climate-projections,clim.proj_tas_change,dims,"{id: period, codelist: climate_period}",WP-01 codelists: `period` is not a codelist id (ambiguous or shared concept); reference the shared codelist `climate_period`,resolved
+cckp-climate-projections,clim.proj_pr_change,dims,"{id: period, codelist: climate_period}",WP-01 codelists: `period` is not a codelist id (ambiguous or shared concept); reference the shared codelist `climate_period`,resolved
+ceb-statistical-digest,ener.plant_capacity_mw,dims,plant,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+dcs-pocketbook-agriculture,agri.livestock_production,dims,"{id: product, codelist: livestock_product}",WP-01 codelists: `product` is not a codelist id (ambiguous or shared concept); reference the shared codelist `livestock_product`,resolved
+wits-trade-partners,trade.bilateral,dims,"{id: product, codelist: hs_section}",WP-01 codelists: `product` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hs_section`,resolved
+budget-capital-projects,budget.project_allocation,dims,project,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+wb-projects-lka,aid.wb_commitment,dims,project,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+iati-activities-lka,aid.iati_commitments,dims,publisher,WP-01 codelists: unresolved - IATI organisation identifiers: generate from the IATI registry publisher list,
+iati-activities-lka,aid.iati_disbursements,dims,publisher,WP-01 codelists: unresolved - IATI organisation identifiers: generate from the IATI registry publisher list,
+sltda-accommodation,tour.occupancy_rate,dims,"{id: region, codelist: resort_region}",WP-01 codelists: `region` is not a codelist id (ambiguous or shared concept); reference the shared codelist `resort_region`,resolved
+irrigation-reservoir-levels,water.reservoir_storage_pct,dims,reservoir,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+dcs-local-government-finance,lgov.revenue,dims,"{id: revenue_type, codelist: lg_revenue_type}",WP-01 codelists: `revenue_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `lg_revenue_type`,resolved
+rda-expressway-programme,tran.expressway_km,dims,"{id: route, codelist: expressway}",WP-01 codelists: `route` is not a codelist id (ambiguous or shared concept); reference the shared codelist `expressway`,resolved
+cckp-climate-projections,clim.proj_tas_change,dims,"{id: scenario, codelist: ssp_scenario}",WP-01 codelists: `scenario` is not a codelist id (ambiguous or shared concept); reference the shared codelist `ssp_scenario`,resolved
+cckp-climate-projections,clim.proj_pr_change,dims,"{id: scenario, codelist: ssp_scenario}",WP-01 codelists: `scenario` is not a codelist id (ambiguous or shared concept); reference the shared codelist `ssp_scenario`,resolved
+derived-transit-access,acc.scenario_new_coverage,dims,scenario,WP-01 codelists: unresolved - scenario lines defined by the derived method; write when the method fixes them,
+fewsnet-food-insecurity,food.ipc_phase,dims,"{id: scenario, codelist: ipc_projection}",WP-01 codelists: `scenario` is not a codelist id (ambiguous or shared concept); reference the shared codelist `ipc_projection`,resolved
+boi-enterprises,econ.boi_enterprises,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`,resolved
+boi-fdi-inflows,econ.boi_fdi_usd,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`,resolved
+boi-fdi-inflows,econ.boi_projects,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`,resolved
+boi-fdi-inflows,econ.boi_employment,dims,"{id: sector, codelist: boi_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `boi_sector`,resolved
+cbsl-pmi,econ.pmi,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`,resolved
+climate-trace-emissions,env.ghg_co2e,dims,"{id: sector, codelist: climate_trace_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `climate_trace_sector`,resolved
+dcs-lfs-quarterly,lab.employed,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`,resolved
+dcs-pocketbook-prices-wages,econ.minimum_wage_index,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`,resolved
+dcs-ppi,econ.ppi_index,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`,resolved
+dcs-provincial-gdp,econ.pgdp,dims,"{id: sector, codelist: industry}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `industry`,resolved
+erd-foreign-financing,aid.commitments,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`,resolved
+erd-foreign-financing,aid.disbursements,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`,resolved
+iati-activities-lka,aid.iati_commitments,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`,resolved
+iati-activities-lka,aid.iati_disbursements,dims,"{id: sector, codelist: dac_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `dac_sector`,resolved
+lk-major-projects,proj.major_projects,dims,"{id: sector, codelist: project_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_sector`,resolved
+slsea-energy-balance,ener.final_consumption_ktoe,dims,"{id: sector, codelist: energy_end_use_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_end_use_sector`,resolved
+treasury-soe-finances,soe.profit,dims,"{id: sector, codelist: soe_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `soe_sector`,resolved
+wb-projects-lka,aid.wb_commitment,dims,"{id: sector, codelist: wb_sector}",WP-01 codelists: `sector` is not a codelist id (ambiguous or shared concept); reference the shared codelist `wb_sector`,resolved
+cbsl-condominium-prices,re.condo_asking_index,dims,segment,WP-01 codelists: unresolved - CBSL condominium survey segments not confirmed from the source; write after reading the CBSL release,
+cbsl-annual-review-tables,cbslar.appendix_value,dims,series,WP-01 codelists: unresolved - CBSL appendix series: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series),
+imf-weo-lka,imf.weo_value,dims,"{id: series, codelist: weo_subject}",WP-01 codelists: `series` is not a codelist id (ambiguous or shared concept); reference the shared codelist `weo_subject`,resolved
+un-sdg-lka,sdg.value,dims,series,WP-01 codelists: unresolved - SDG series codes: source-defined code list with hundreds of members: generate registry/codelists/<id>.yaml from the source API/extract when the connector is built (as wdi-series),
+dcs-pocketbook-sector-services,pb.telecom_subscriptions,dims,"{id: service, codelist: telecom_service}",WP-01 codelists: `service` is not a codelist id (ambiguous or shared concept); reference the shared codelist `telecom_service`,resolved
+dcs-pocketbook-social-services,pb.local_services,dims,service,WP-01 codelists: unresolved - local-authority service list not confirmed from the Pocket Book; write after reading the table,
+trcsl-telecom-indicators,tech.subscriptions,dims,"{id: service, codelist: telecom_service}",WP-01 codelists: `service` is not a codelist id (ambiguous or shared concept); reference the shared codelist `telecom_service`,resolved
+dcs-abstract-transport,tran.road_accidents,dims,"{id: severity, codelist: accident_severity}",WP-01 codelists: `severity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `accident_severity`,resolved
+dcs-census-2024-disability,census24.functional_difficulty,dims,"{id: severity, codelist: difficulty_degree}",WP-01 codelists: `severity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `difficulty_degree`,resolved
+ntc-bus-statistics,tran.bus_crashes,dims,"{id: severity, codelist: accident_severity}",WP-01 codelists: `severity` is not a codelist id (ambiguous or shared concept); reference the shared codelist `accident_severity`,resolved
+dcs-census-2024-education-literacy,census24.language_ability,dims,"{id: skill, codelist: language_skill}",WP-01 codelists: `skill` is not a codelist id (ambiguous or shared concept); reference the shared codelist `language_skill`,resolved
+slbfe-labour-migration,migr.departures,dims,"{id: skill, codelist: migrant_skill_level}",WP-01 codelists: `skill` is not a codelist id (ambiguous or shared concept); reference the shared codelist `migrant_skill_level`,resolved
+ceb-statistical-digest,ener.plant_capacity_mw,dims,"{id: source, codelist: energy_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`,resolved
+dcs-pocketbook-sector-services,pb.energy_supply,dims,"{id: source, codelist: energy_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`,resolved
+derived-land-cover-zonal,lc.unit_profile_share,dims,"{id: source, codelist: land_cover_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `land_cover_source`,resolved
+nso-electricity-generation,ener.generation_mwh,dims,"{id: source, codelist: energy_source}",WP-01 codelists: `source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`,resolved
+sltda-tourist-arrivals,tour.arrivals,dims,"{id: source_country, codelist: country}",WP-01 codelists: `source_country` is not a codelist id (ambiguous or shared concept); reference the shared codelist `country`,resolved
+ghcnd-stations,wx.station_prcp,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+ghcnd-stations,wx.station_tmax,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+irrigation-river-water-levels,water.river_level,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+irrigation-river-water-levels,water.flood_alert_level,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+meteo-climate-normals,wx.normal_rain,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+meteo-climate-normals,wx.normal_temp,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+meteo-daily-station-weather,wx.met_rain_24h,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+meteo-daily-station-weather,wx.met_tmax,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+meteo-daily-station-weather,wx.met_rh,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+openaq-air-quality,env.pm25,dims,station,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated",
+dcs-abstract-justice,just.prison_admissions,dims,"{id: status, codelist: prisoner_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `prisoner_status`,resolved
+lk-major-projects,proj.major_projects,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`,resolved
+power-plants,ener.gem_plant_capacity_mw,dims,"{id: status, codelist: gem_plant_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `gem_plant_status`,resolved
+power-plants,ener.gem_plant_count,dims,"{id: status, codelist: gem_plant_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `gem_plant_status`,resolved
+prisons-daily-population,just.prisoners,dims,"{id: status, codelist: prisoner_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `prisoner_status`,resolved
+rda-expressway-programme,tran.expressway_km,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`,resolved
+rda-expressway-programme,tran.expressway_interchanges,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`,resolved
+treasury-procurement,proc.contract_value,dims,"{id: status, codelist: contract_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `contract_status`,resolved
+wb-projects-lka,aid.wb_commitment,dims,"{id: status, codelist: project_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `project_status`,resolved
+world-heritage-sites,heritage.whs_sites,dims,"{id: status, codelist: whs_status}",WP-01 codelists: `status` is not a codelist id (ambiguous or shared concept); reference the shared codelist `whs_status`,resolved
+cyclone-tracks,haz.max_wind_near_lk,dims,storm,"WP-01 codelists: unresolved - cyclone ids: use IBTrACS SID, generate from the track extract",
+cbsl-annual-review-tables,cbslar.appendix_value,dims,table,WP-01 codelists: unresolved - CBSL Annual Report appendix table ids: generate from the appendix index,
+un-sdg-lka,sdg.value,dims,target,WP-01 codelists: unresolved - SDG targets (169): generate from the UN SDG API (codes 1.1 ... 17.19),
+treasury-revenue-outturn,fisc.revenue_outturn,dims,"{id: tax_type, codelist: revenue_type}",WP-01 codelists: `tax_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `revenue_type`,resolved
+power-plants,ener.gem_plant_capacity_mw,dims,"{id: technology, codelist: energy_source}",WP-01 codelists: `technology` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`,resolved
+power-plants,ener.gem_plant_count,dims,"{id: technology, codelist: energy_source}",WP-01 codelists: `technology` is not a codelist id (ambiguous or shared concept); reference the shared codelist `energy_source`,resolved
+cabinet-decisions-geotagged,gov.cabinet_decisions,dims,"{id: topic, codelist: cofog_division}",WP-01 codelists: `topic` is not a codelist id (ambiguous or shared concept); reference the shared codelist `cofog_division`,resolved
+dcs-pocketbook-social-services,pb.health_institutions,dims,"{id: type, codelist: hospital_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `hospital_type`,resolved
+osm-tourism-attractions,tour.osm_attractions,dims,"{id: type, codelist: attraction_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `attraction_type`,resolved
+osm-trails-cycling,tran.osm_trail_km,dims,"{id: type, codelist: trail_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `trail_type`,resolved
+osm-waterways-waterbodies,env.osm_waterway_km,dims,"{id: type, codelist: waterway_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `waterway_type`,resolved
+ourairports-lka,air.airports,dims,"{id: type, codelist: airport_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `airport_type`,resolved
+protected-monuments,heritage.protected_monuments,dims,"{id: type, codelist: monument_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `monument_type`,resolved
+sltda-registered-establishments,tour.establishments,dims,"{id: type, codelist: establishment_type}",WP-01 codelists: `type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `establishment_type`,resolved
+ghsl-built-up,built.surface_m2,dims,"{id: use, codelist: building_type}",WP-01 codelists: `use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `building_type`,resolved
+ghsl-built-up,built.volume_m3,dims,"{id: use, codelist: building_type}",WP-01 codelists: `use` is not a codelist id (ambiguous or shared concept); reference the shared codelist `building_type`,resolved
+un-wpp-lka,pop.wpp_total,dims,"{id: variant, codelist: wpp_variant}",WP-01 codelists: `variant` is not a codelist id (ambiguous or shared concept); reference the shared codelist `wpp_variant`,resolved
+imf-weo-lka,imf.weo_value,dims,"{id: vintage, codelist: edition}",WP-01 codelists: `vintage` is not a codelist id (ambiguous or shared concept); reference the shared codelist `edition`,resolved
+derived-transit-access,acc.pop_in_walkshed,dims,"{id: walk_minutes, codelist: threshold}",WP-01 codelists: `walk_minutes` is not a codelist id (ambiguous or shared concept); reference the shared codelist `threshold`,resolved
+dcs-census-2024-basic-services,census24.hh_water_source,dims,"{id: water_source, codelist: drinking_water_source}",WP-01 codelists: `water_source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `drinking_water_source`,resolved
+dcs-pocketbook-agriculture,agri.paddy_irrigation_share,dims,"{id: water_source, codelist: irrigation_source}",WP-01 codelists: `water_source` is not a codelist id (ambiguous or shared concept); reference the shared codelist `irrigation_source`,resolved
+boi-enterprises,econ.boi_enterprises,dims,zone,"WP-01 codelists: unresolved - entity with a location: model as a geography (geo scheme `<scheme>:<id>`, geo_level point) or generate the codelist from the source extract; not hand-curated (BOI zones are already a dataset: boi-zones)",
+noise-control-zones,envi.noise_limit_db,dims,"{id: zone_type, codelist: noise_zone}",WP-01 codelists: `zone_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `noise_zone`,resolved
+uda-zoning-plans,urb.zone_area,dims,"{id: zone_type, codelist: uda_zone}",WP-01 codelists: `zone_type` is not a codelist id (ambiguous or shared concept); reference the shared codelist `uda_zone`,resolved
+dcs-census-2024-gnd,*,codelist,age_band,WP-01 codelists: GN-level band edges not confirmed; every band must exist in `age` (A5 bands 0-14/15-59/60-64/65+ and 60+ are there),
+dcs-hies-income-expenditure,*,codelist,category,"WP-01 codelists: HIES expenditure groups are COICOP-like, not COICOP 2018 divisions: add a HIES->COICOP crosswalk or HIES-specific children before ingest",
+dcs-gdp-by-industry,*,codelist,industry,WP-01 codelists: DCS GVA lines are finer than ISIC sections (e.g. growing of tea): add ISIC division children to `industry`,
+dcs-pocketbook-prices-wages,*,codelist,sector,WP-01 codelists: minimum wage rate index sectors (agriculture; industry and commerce; services) only approximate ISIC broad sectors: confirm or create a wage-board list,
+dcs-lfs-quarterly,*,codelist,sector,WP-01 codelists: LFS 'sector' assumed to be agriculture/industry/services (industry aggregates); confirm it is not employment status or public/private sector,
+erd-foreign-financing,*,codelist,sector,WP-01 codelists: ERD sector names need a crosswalk to DAC 3-digit codes,
+wb-projects-lka,*,codelist,status,"WP-01 codelists: WB statuses map pipeline->proposed, active->under_construction, closed->completed, dropped->cancelled",
+derived-land-cover-zonal,*,codelist,lc_class,"WP-01 codelists: uses ESA WorldCover codes (40 cropland, 10 tree, 50 built-up, 80 water); 'protected area' is not a land-cover class - split into its own indicator",
+dcs-census-historic,*,codelist,census_year,"WP-01 codelists: census year is the observation period (time_start), not a dimension: drop the dim and use period_type snapshot per census",
+ec-presidential-results,*,codelist,election,WP-01 codelists: election event duplicates period + indicator; keep only if one indicator mixes election types,
+worldclim-climate-normals,*,codelist,bio_var,"WP-01 codelists: BIO variables have different units (degC x10/%, mm): split clim.wc_bio into temperature/precipitation indicators or declare per-variable units",
+dcs-census-of-agriculture,*,codelist,holding_size,WP-01 codelists: holding size bands not confirmed against the census table,
+dcs-census-2012,*,codelist,amenity,WP-01 codelists: amenity list must be taken from the 2012 GN table headers,
+dcs-ncpi,*,codelist,group,WP-01 codelists: food / non-food are the `food` and `nonfood` aggregates of coicop_group,
+codelists/accident_severity,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/age,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/agri_index_group,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/agri_index_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/airport,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/airport,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/airport_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/alert_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/amenity,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/amenity,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/amenity_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/asset_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/asset_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/aswesuma_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/attraction_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/bank_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/basin_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/basket,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/bio_var,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/boat_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/boi_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/boi_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/building_material,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/building_material,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/building_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/candidate,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/candidate,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/cargo_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/cause,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/census_year,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/change_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/channel,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/climate_period,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/climate_trace_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/cofog_division,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/coicop_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/commodity,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/commodity,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/company_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/contract_status,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/contract_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/cooking_fuel,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/cooking_fuel,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/country,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/court_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/creditor,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/crime_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/crime_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/crop,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/currency,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/currency,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/dac_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/damage_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/debt_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/demographic_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/designation,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/dev_index_domain,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/development_partner,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/development_partner,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/difficulty_degree,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/direction,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/disaster_event,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/disaster_event,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/disease,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/disease,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/drinking_water_source,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/drinking_water_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/dynamic_world_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/edition,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/education,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/election,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/election,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/elevation,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/energy_end_use_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/energy_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/establishment_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/establishment_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/event_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/exam,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/expenditure_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/expressway,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/expressway,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/facility_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/feature_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/finding_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/finding_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/fishery_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/flow,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/functional_domain,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/funding_source,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/funding_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/gas,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/gdp_expenditure_component,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/gem_plant_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/goal,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/grade_band,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/grant_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/grant_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/hazard,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/hazard_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/highway_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/holding_land_use,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/holding_land_use,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/holding_size,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/holding_size,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/hospital_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/household_asset,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/household_asset,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/housing_element,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/housing_material,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/housing_material,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/hs_section,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/icd_group,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/industry,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/instrument,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/instrument,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/ipc_projection,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/irrigation_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/iucn_cat,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/la_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/land_cover_source,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/land_value_use,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/language,*,labels,si/ta,WP-01 codelists: si/ta given for some codes; native-speaker sign-off needed,
+codelists/language_skill,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/lc_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/lender_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/lender_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/lg_revenue_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/lg_revenue_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/licensee,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/licensee,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/lighting,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/lighting,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/line_item,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/line_item,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/livestock_product,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/livestock_product,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/migrant_skill_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/mode,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/monument_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/monument_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/movement_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/network_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/noise_zone,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/nutrient,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/object_code,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/object_code,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/occupation,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/operator,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/overture_category,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/overture_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/party,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/party,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/place_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/pmi_component,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/port,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/poverty_line,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/price_basis,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/pricetype,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/prisoner_status,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/prisoner_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/programme,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/programme,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/project_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/project_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/project_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/protect_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/provider,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/provider,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/radio,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/rail_line,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/resort_region,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/return_period,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/revenue_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/road_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/road_user,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/road_user,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/route_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/route_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/school_level,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/school_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/season,*,labels,si/ta,WP-01 codelists: si/ta given for some codes; native-speaker sign-off needed,
+codelists/sector,*,labels,si/ta,WP-01 codelists: si/ta given for some codes; native-speaker sign-off needed,
+codelists/sensor,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/size_class,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/size_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/smod_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/soe,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/soe,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/soe_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/soe_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/source_boundary_vintage,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/source_boundary_vintage,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/source_indicator,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/ssp_scenario,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/stage,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/statistic,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/stream,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/structure_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/structure_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/survey_series,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/survey_series,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/tariff_category,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/tariff_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/taxon_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/telecom_service,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/tenor,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/tenure,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/tenure,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/threshold,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/time_of_day,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/toilet_type,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/toilet_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/town_size,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/trade_category,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/trade_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/trail_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/uda_zone,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/uda_zone,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/vehicle_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/vessel_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/violence_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/waste_disposal,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/waste_disposal,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/waterway_type,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/wb_sector,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/wb_sector,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/weo_subject,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/weo_subject,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/whs_category,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/whs_status,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/wikidata_class,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/wikidata_class,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/world_port,*,codelist,seed,WP-01 codelists: seed list - complete the members from the source extract before ingest,
+codelists/world_port,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),
+codelists/wpp_variant,*,labels,si/ta,WP-01 codelists: si/ta empty - native-speaker translation needed (no machine translation),

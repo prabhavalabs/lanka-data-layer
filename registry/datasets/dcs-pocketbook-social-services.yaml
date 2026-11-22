@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - type
+  - id: type
+    codelist: hospital_type
   geo_levels:
   - national
   period_type: year

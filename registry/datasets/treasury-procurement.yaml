@@ -35,7 +35,8 @@ indicators:
   class: official
   dims:
   - agency
-  - status
+  - id: status
+    codelist: contract_status
   geo_levels:
   - national
   period_type: year

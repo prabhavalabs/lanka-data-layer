@@ -11,7 +11,8 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - facility
+  - id: facility
+    codelist: facility_type
   - threshold
   geo_levels:
   - adm1

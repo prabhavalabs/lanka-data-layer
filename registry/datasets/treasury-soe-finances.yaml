@@ -13,7 +13,8 @@ indicators:
   class: official
   dims:
   - soe
-  - sector
+  - id: sector
+    codelist: soe_sector
   geo_levels:
   - national
   period_type: year

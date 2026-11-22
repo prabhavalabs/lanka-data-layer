@@ -13,7 +13,8 @@ indicators:
   dims:
   - sex
   - age_group
-  - variant
+  - id: variant
+    codelist: wpp_variant
   geo_levels:
   - national
   period_type: year

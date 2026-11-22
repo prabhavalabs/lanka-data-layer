@@ -12,8 +12,10 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - technology
-  - status
+  - id: technology
+    codelist: energy_source
+  - id: status
+    codelist: gem_plant_status
   geo_levels:
   - point
   - adm1
@@ -27,8 +29,10 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - technology
-  - status
+  - id: technology
+    codelist: energy_source
+  - id: status
+    codelist: gem_plant_status
   geo_levels:
   - point
   - adm1

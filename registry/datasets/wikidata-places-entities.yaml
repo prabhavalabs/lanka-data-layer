@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - class
+  - id: class
+    codelist: wikidata_class
   geo_levels:
   - adm1
   - adm2

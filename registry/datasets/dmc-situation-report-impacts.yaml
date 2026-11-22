@@ -15,7 +15,8 @@ indicators:
   class: official
   dims:
   - hazard
-  - event
+  - id: event
+    codelist: disaster_event
   geo_levels:
   - national
   - adm2
@@ -29,7 +30,8 @@ indicators:
   class: official
   dims:
   - hazard
-  - event
+  - id: event
+    codelist: disaster_event
   geo_levels:
   - national
   - adm2
@@ -43,7 +45,8 @@ indicators:
   class: official
   dims:
   - damage_level
-  - event
+  - id: event
+    codelist: disaster_event
   geo_levels:
   - national
   - adm2
@@ -56,7 +59,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - event
+  - id: event
+    codelist: disaster_event
   geo_levels:
   - national
   - adm2

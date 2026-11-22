@@ -23,7 +23,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - age_band
+  - id: age_band
+    codelist: age
   geo_levels:
   - adm4
   period_type: snapshot

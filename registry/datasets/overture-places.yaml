@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - category
+  - id: category
+    codelist: overture_category
   geo_levels:
   - point
   - adm1

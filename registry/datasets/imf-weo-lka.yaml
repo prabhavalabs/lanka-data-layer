@@ -11,8 +11,10 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - series
-  - vintage
+  - id: series
+    codelist: weo_subject
+  - id: vintage
+    codelist: edition
   geo_levels:
   - national
   period_type: year

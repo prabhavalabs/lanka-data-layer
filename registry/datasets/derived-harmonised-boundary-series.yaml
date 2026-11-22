@@ -12,7 +12,8 @@ indicators:
   aggregation: none
   class: derived
   dims:
-  - indicator
+  - id: indicator
+    codelist: source_indicator
   - source_boundary_vintage
   geo_levels:
   - adm2

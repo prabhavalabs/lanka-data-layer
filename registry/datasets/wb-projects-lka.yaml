@@ -12,8 +12,10 @@ indicators:
   class: third_party
   dims:
   - project
-  - sector
-  - status
+  - id: sector
+    codelist: wb_sector
+  - id: status
+    codelist: project_status
   geo_levels:
   - national
   - point

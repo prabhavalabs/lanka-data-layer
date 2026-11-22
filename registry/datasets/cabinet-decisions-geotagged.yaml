@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - topic
+  - id: topic
+    codelist: cofog_division
   geo_levels:
   - national
   - adm2

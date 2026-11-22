@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - level
+  - id: level
+    codelist: school_level
   geo_levels:
   - point
   - adm1

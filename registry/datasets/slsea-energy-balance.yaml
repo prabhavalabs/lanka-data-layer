@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - fuel
+  - id: fuel
+    codelist: energy_source
   geo_levels:
   - national
   period_type: year
@@ -22,8 +23,10 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - sector
-  - fuel
+  - id: sector
+    codelist: energy_end_use_sector
+  - id: fuel
+    codelist: energy_source
   geo_levels:
   - national
   period_type: year

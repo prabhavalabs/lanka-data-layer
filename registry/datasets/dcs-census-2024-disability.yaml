@@ -11,8 +11,10 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - domain
-  - severity
+  - id: domain
+    codelist: functional_domain
+  - id: severity
+    codelist: difficulty_degree
   - sex
   geo_levels:
   - national

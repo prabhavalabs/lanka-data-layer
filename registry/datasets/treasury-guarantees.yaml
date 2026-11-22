@@ -12,7 +12,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - beneficiary
+  - id: beneficiary
+    codelist: soe
   geo_levels:
   - national
   period_type: quarter
@@ -24,7 +25,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - beneficiary
+  - id: beneficiary
+    codelist: soe
   geo_levels:
   - national
   period_type: quarter

@@ -11,7 +11,8 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - lc_class
+  - id: lc_class
+    codelist: dynamic_world_class
   geo_levels:
   - raster
   - adm1

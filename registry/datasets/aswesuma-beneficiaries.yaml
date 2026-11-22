@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - category
+  - id: category
+    codelist: aswesuma_category
   geo_levels:
   - national
   - adm2

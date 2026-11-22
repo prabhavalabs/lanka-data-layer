@@ -13,8 +13,10 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - status
-  - route
+  - id: status
+    codelist: project_status
+  - id: route
+    codelist: expressway
   geo_levels:
   - line
   - national
@@ -27,7 +29,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - status
+  - id: status
+    codelist: project_status
   geo_levels:
   - point
   - adm2

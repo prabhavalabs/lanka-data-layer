@@ -11,8 +11,10 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - scenario
-  - period
+  - id: scenario
+    codelist: ssp_scenario
+  - id: period
+    codelist: climate_period
   geo_levels:
   - national
   - adm1
@@ -24,8 +26,10 @@ indicators:
   aggregation: none
   class: third_party
   dims:
-  - scenario
-  - period
+  - id: scenario
+    codelist: ssp_scenario
+  - id: period
+    codelist: climate_period
   geo_levels:
   - national
   - adm1

@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: third_party
   dims:
-  - sector
+  - id: sector
+    codelist: climate_trace_sector
   - gas
   geo_levels:
   - national

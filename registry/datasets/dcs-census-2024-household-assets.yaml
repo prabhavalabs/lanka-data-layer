@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - item
+  - id: item
+    codelist: household_asset
   geo_levels:
   - national
   - adm2

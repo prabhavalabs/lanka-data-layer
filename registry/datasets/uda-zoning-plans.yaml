@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - zone_type
+  - id: zone_type
+    codelist: uda_zone
   geo_levels:
   - polygon
   period_type: snapshot

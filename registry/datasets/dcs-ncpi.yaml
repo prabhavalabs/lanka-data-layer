@@ -12,7 +12,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - group
+  - id: group
+    codelist: coicop_group
   geo_levels:
   - national
   period_type: month
@@ -23,7 +24,8 @@ indicators:
   aggregation: none
   class: official
   dims:
-  - group
+  - id: group
+    codelist: coicop_group
   geo_levels:
   - national
   period_type: month

@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - sector
+  - id: sector
+    codelist: boi_sector
   - zone
   geo_levels:
   - point

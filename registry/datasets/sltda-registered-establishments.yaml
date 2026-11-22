@@ -13,7 +13,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - type
+  - id: type
+    codelist: establishment_type
   geo_levels:
   - point
   - adm1

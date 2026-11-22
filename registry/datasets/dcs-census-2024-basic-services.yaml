@@ -11,7 +11,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - water_source
+  - id: water_source
+    codelist: drinking_water_source
   geo_levels:
   - national
   - adm2
@@ -47,7 +48,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - fuel
+  - id: fuel
+    codelist: cooking_fuel
   geo_levels:
   - national
   - adm2
@@ -59,7 +61,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - method
+  - id: method
+    codelist: waste_disposal
   geo_levels:
   - national
   period_type: snapshot

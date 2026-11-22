@@ -16,8 +16,10 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - sector
-  - status
+  - id: sector
+    codelist: project_sector
+  - id: status
+    codelist: project_status
   geo_levels:
   - point
   - polygon

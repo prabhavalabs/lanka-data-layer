@@ -13,8 +13,10 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - sector
-  - origin_country
+  - id: sector
+    codelist: boi_sector
+  - id: origin_country
+    codelist: country
   geo_levels:
   - national
   period_type: quarter
@@ -26,7 +28,8 @@ indicators:
   class: official
   dims:
   - stage
-  - sector
+  - id: sector
+    codelist: boi_sector
   geo_levels:
   - national
   - adm2
@@ -38,7 +41,8 @@ indicators:
   aggregation: sum
   class: official
   dims:
-  - sector
+  - id: sector
+    codelist: boi_sector
   geo_levels:
   - national
   - polygon

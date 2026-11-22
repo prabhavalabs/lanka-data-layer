@@ -36,7 +36,8 @@ indicators:
   class: official
   dims:
   - plant
-  - source
+  - id: source
+    codelist: energy_source
   geo_levels:
   - national
   - point
