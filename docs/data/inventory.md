@@ -1,6 +1,6 @@
 # Data inventory and gap to developing-country.org
 
-Status as of 2026-11-21. Companion files: [`dc-parity.csv`](dc-parity.csv) (one row per dc dataset or layer, with costing), [`value-added.md`](value-added.md) (products beyond dc), [`../../registry/coverage-vs-dc.md`](../../registry/coverage-vs-dc.md) (dataset mapping).
+Status as of 2026-11-22 (counts in (a) v2 and (b) updated after the six ingestion waves were loaded into the main database, release `20261122.8`). Companion files: [`dc-parity.csv`](dc-parity.csv) (one row per dc dataset or layer, with costing), [`value-added.md`](value-added.md) (products beyond dc), [`../../registry/coverage-vs-dc.md`](../../registry/coverage-vs-dc.md) (dataset mapping).
 
 **Reference platform checked live on 2026-11-21.** `developing-country.org/sitemap.xml` lists the same 140 `/data` slugs as the 2026-11-21 crawl. Nothing has been added or removed. `explore.developing-country.org/api/catalog` (generated 2026-08-31) lists **160 layers**. 146 of them hang off the 140 datasets; for example, `demographics` alone backs the `province`, `dsd`, `gnd` and `demographics` layers. The other **14 are explore-only** (no `/data` page): `roads`, `water`, `terrain`, `climate`, `sun`, `stepper`, `clinic_moh`, `courthouse`, `silent_zone`, `noise_ordinance`, `prospects`, `analyses`, `data_views` and `regions`. dc marks `clinic_moh` and `courthouse` as "not ingested". The last four are their users' saved state, not data. `dc-parity.csv` therefore has **154 rows**: 140 datasets plus 14 explore-only layers. The `dc_layers` column lists every explore layer behind each dataset, so all 160 layers are accounted for.
 
@@ -30,17 +30,19 @@ Status as of 2026-11-21. Companion files: [`dc-parity.csv`](dc-parity.csv) (one 
 
 ### v2 (local Postgres, published release)
 
-- `catalog.*` holds the registry mirror (244 datasets before the additions in this change).
-- **4 published dataset versions holding 9,963 observations:**
-  - `wdi-lka`: 1,203 national observations, 1960-2025.
-  - `dcs-census-2024-population`: 2,920 observations at ADM0/2/3, covering total, coarse age x sex and sex ratio.
-  - `dcs-census-2024-ethnicity-religion`: 5,840 observations at ADM0/2/3.
-  - `cod-ab-lka-boundaries`: geometry only. 14,417 rows in `geo.admin_units` and 364 rows in `geo.crosswalks`.
-- `geo.features` and `geo.grid_layers` are still empty, so no point, line or grid layer has been loaded into v2 yet.
+Current release **`20261122.8`** (2026-11-22), cut after the six ingestion waves (PRs #15-#23) were loaded into the main database.
+
+- `catalog.*` holds the registry mirror: **181 sources, 277 datasets, 641 indicators** (46 sources have a connector).
+- **51 datasets published** (one current version each):
+  - 31 indicator datasets, 1,368,049 rows: WDI, IMF WEO, ILOSTAT, WHO GHO, UN SDG, FAOSTAT (crops/livestock, food security), WFP food prices, CBSL (exchange rates, NEER/REER, fiscal operations, merchandise trade, tourism earnings, workers' remittances, bank branches), DCS CCPI and agricultural production index, NSO electricity generation, MoH IMMR, COD-PS population, Census 2024 population and ethnicity/religion, irrigation river water levels, the raster layers (Copernicus DEM terrain, JRC river flood hazard, WorldClim normals, WorldCover 2021, WorldPop grid) and four derived recipes (`derived-admin-metrics`, `derived-census-2024-rollups`, `derived-facility-counts`, `derived-per-capita-indicators`).
+  - 19 feature datasets, 753,035 features: OSM (POIs, hospitals, schools, roads, expressways, foot network, rail, waterways, protected areas, parks, attractions, trails/cycling, BOI zones), Overture places and workplaces, OurAirports, GeoNames postal codes, proposed metro lines.
+  - `cod-ab-lka-boundaries`: 14,417 units (Ampara LK52 now under Eastern LK5).
+- **44 dataset versions in review** (class B, plus three derived recipes whose first or changed output needs sign-off), 1,419,576 rows: CBSL real estate (condominium prices, land valuation), CEB statistical digest, Census 2024 report and tables (basic services, disability, education/literacy, household assets, households, housing, housing tenure, waste), DCS Abstract and Pocket Book tables (transport, building construction, GDP by industry and expenditure, HIES income/expenditure and poverty, LFS annual and quarterly, local-government finance, mid-year population, NCPI, paddy, agriculture, prices/wages, sector services, social services, trade indices, vital statistics), DMT vehicle registrations, FHB maternal and child health, CEA noise control zones, NTC bus statistics, NWSDB water supply, Police road accidents, PUCSL supply reliability, SLBFE labour migration, Treasury (public debt, provincial debt, province transfers), World Bank SLDU outlook, and `derived-business-places`, `derived-census-2024-rollups` (new version), `derived-network-length`.
+- Tilesets: admin, DEM and 15 feature tilesets (new: OSM hospitals, schools, expressways; Overture places and workplaces; proposed metro lines). `serve.area_latest` holds 919,984 rows.
 
 ### Registry (planned)
 
-The registry now holds **174 sources, 263 datasets and 512 indicators**, after adding 7 sources and 19 datasets in this change. `lanka registry validate` passes, and so does `cargo test -p lanka-ingest --lib registry`.
+The registry holds **181 sources, 277 datasets and 641 indicators**. 3 sources are `blocked` (`moj-courts`, `nbro`, `survey-dept-lk`), 31 are `active` and 147 are `planned`.
 
 ---
 
@@ -50,12 +52,14 @@ Counts come from `dc-parity.csv`. "Have" means data is already served from v1 or
 
 | Status | Rows | Meaning |
 |---|---|---|
-| `have_v1` | 6 | parks, hospitals, schools, expressways (geometry only), roads tile, water tile |
-| `have_v2` | 7 | Census 2024 age-sex, ethnicity, religion, population change x2, demographics (DS only), admin-unit counts |
-| `planned_registry` | 134 | upstream, method and joins are registered; no connector built yet. 4 of these were added today (`climate`, `courthouse`, `silent_zone`, `noise_ordinance`); before today they were `missing` |
+| `have_v2` | 42 | published in the v2 release `20261122.8` (at least one of `our_dataset_id` is published; parity is still partial for most rows) |
+| `in_review_v2` | 77 | ingested into v2; the class B dataset version waits for human review (`lanka review approve`) and is not served yet |
+| `planned_registry` | 28 | upstream, method and joins are registered; no connector built yet, or the connector does not yet produce this table (Treasury guarantees, SOE finances, revenue outturn, fiscal performance, procurement, MSME finance; metro coverage analyses; sea routes; development projects; IATI funding; weather stations; MoH clinics; courthouses). Known blockers are in `blockers` |
 | `missing` | 7 | `lk-initiative-events` (excluded by design: built on copyrighted news text; replaced by IATI/WB/ERD/budget/Cabinet sources), plus 6 platform/runtime layers that are not data (`sun`, `stepper`, `prospects`, `analyses`, `data_views`, `regions`) |
 
-**Real coverage today: 13 of 148 data rows (9%) are served, all at partial parity.** The other 135 data rows are registered but not built.
+The 6 former `have_v1` rows (parks, hospitals, schools, expressways, roads tile, water tile) are now `have_v2`. No connector failed while loading the waves; the rows that remain planned have no connector output yet, or are blocked upstream (`courthouse`: jsc.gov.lk unreachable; `clinic_moh`: MoH publishes no GIS; `weather-station-observations`: meteo host unreachable from outside LK).
+
+**Coverage today: 119 of 148 data rows (80%) are ingested in v2: 42 published (28%) and 77 waiting for review.** The other 29 data rows are registered but not built, or excluded.
 
 ### Themes
 
