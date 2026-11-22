@@ -19,6 +19,7 @@ indicators:
   - adm3
   - adm4
   period_type: snapshot
+  time_invariant: true
 - id: haz.flood_area_share
   label: Share of area flooded
   unit: '%'
@@ -33,6 +34,7 @@ indicators:
   - adm3
   - adm4
   period_type: snapshot
+  time_invariant: true
 time_coverage:
   from: '2024'
 method: 'JRC/CEMS v2.1.2 GeoTIFF tiles per return period (3 arc-sec), resampled to the canonical grid (deepest pixel per cell; wet share per cell); area share = area-weighted mean wet share over cells inside the unit.'

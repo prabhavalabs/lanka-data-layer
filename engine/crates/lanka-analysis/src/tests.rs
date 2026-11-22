@@ -873,3 +873,89 @@ fn fingerprint_tracks_inputs_and_implementation_not_the_release() {
         "relate@1.0.0+r2"
     );
 }
+
+#[test]
+fn time_invariant_inputs_warn_but_never_block_on_the_period_gap() {
+    // negative: a time-varying input 10 years off still blocks, and the
+    // block says how to acknowledge it
+    let mut c = Case::relate(60);
+    c.col("x").input.period = "2014".into();
+    let d = c.run();
+    assert_eq!(d["state"], "blocked");
+    let g = guard(&d, "PERIOD_MISMATCH").expect("pm");
+    assert_eq!(g["severity"], "block");
+    assert_eq!(
+        g["action"]["request"]["override"],
+        json!(["PERIOD_MISMATCH"])
+    );
+    // positive: elevation (2015, time-invariant) against 2024 data runs,
+    // the gap is still reported as a warn
+    let mut c = Case::relate(60);
+    c.col("x").input.period = "2015".into();
+    c.col("x").input.time_invariant = true;
+    c.col("x").input.label = "mean elevation".into();
+    let d = c.run();
+    assert_eq!(d["state"], "ready", "{}", d["guards"]);
+    assert!(d["estimates"]["pearson"].is_object());
+    let g = guard(&d, "PERIOD_MISMATCH").expect("pm reported");
+    assert_eq!(g["severity"], "warn");
+    assert!(g.get("action").is_none());
+    assert_eq!(g["detail"]["years"], 9);
+    assert_eq!(g["detail"]["years_time_varying"], 0);
+    assert_eq!(g["detail"]["time_invariant"], json!(["mean elevation"]));
+    assert!(
+        g["message"]
+            .as_str()
+            .expect("msg")
+            .contains("mean elevation 2015 (time-invariant)")
+    );
+    let x = d["inputs"]
+        .as_array()
+        .expect("inputs")
+        .iter()
+        .find(|i| i["role"] == "x")
+        .expect("x");
+    assert_eq!(x["time_invariant"], json!(true));
+    // a time-invariant control does not lift the block between x and y
+    let mut c = Case::relate(60);
+    let (cx, _) = xy(60, 11);
+    c.frame.columns.push({
+        let mut k = column("control:0", cx);
+        k.input.period = "1970".into();
+        k.input.time_invariant = true;
+        k
+    });
+    c.col("x").input.period = "2012".into();
+    let d = c.run();
+    assert_eq!(d["state"], "blocked", "{}", d["guards"]);
+    assert_eq!(
+        guard(&d, "PERIOD_MISMATCH").expect("pm")["detail"]["years_time_varying"],
+        12
+    );
+    // the same control with x and y in period: runs, the 54-year gap to the
+    // climate normal is a warn
+    let mut c = Case::relate(60);
+    let (cx, _) = xy(60, 11);
+    c.frame.columns.push({
+        let mut k = column("control:0", cx);
+        k.input.period = "1970".into();
+        k.input.time_invariant = true;
+        k
+    });
+    let d = c.run();
+    assert_eq!(d["state"], "ready", "{}", d["guards"]);
+    assert_eq!(
+        guard(&d, "PERIOD_MISMATCH").expect("pm")["severity"],
+        "warn"
+    );
+    // time-invariant flags enter the fingerprint
+    let mut a = Case::relate(60);
+    a.col("x").input.period = "2015".into();
+    let mut b = Case::relate(60);
+    b.col("x").input.period = "2015".into();
+    b.col("x").input.time_invariant = true;
+    assert_ne!(
+        crate::result::id_of(&crate::result::fingerprint(&a.resolved())),
+        crate::result::id_of(&crate::result::fingerprint(&b.resolved()))
+    );
+}

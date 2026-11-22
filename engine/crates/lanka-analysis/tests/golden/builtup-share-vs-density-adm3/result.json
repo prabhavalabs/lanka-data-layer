@@ -41,8 +41,8 @@
   ],
   "basis": "computed",
   "citation": {
-    "text": "Lanka Data Layer. Analysis an_7cc9e39d9b1a89cd: relate(lc.class_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.5.",
-    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_7cc9e39d9b1a89cd"
+    "text": "Lanka Data Layer. Analysis an_868a0208aaadccac: relate(lc.class_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.5.",
+    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_868a0208aaadccac"
   },
   "estimates": {
     "headline": "ols",
@@ -193,7 +193,7 @@
       "severity": "note"
     }
   ],
-  "id": "an_7cc9e39d9b1a89cd",
+  "id": "an_868a0208aaadccac",
   "inputs": [
     {
       "class": "third_party",
@@ -254,7 +254,7 @@
         "class",
         "basis"
       ],
-      "href": "/v2/analyses/an_7cc9e39d9b1a89cd/outputs/bivariate",
+      "href": "/v2/analyses/an_868a0208aaadccac/outputs/bivariate",
       "id": "bivariate",
       "kind": "frame",
       "suggested_layer": {
@@ -298,7 +298,7 @@
         "cooks",
         "leverage"
       ],
-      "href": "/v2/analyses/an_7cc9e39d9b1a89cd/outputs/residuals",
+      "href": "/v2/analyses/an_868a0208aaadccac/outputs/residuals",
       "id": "residuals",
       "kind": "frame",
       "suggested_layer": {
@@ -319,7 +319,7 @@
     },
     {
       "encoding": "points",
-      "href": "/v2/analyses/an_7cc9e39d9b1a89cd/outputs/scatter",
+      "href": "/v2/analyses/an_868a0208aaadccac/outputs/scatter",
       "id": "scatter",
       "kind": "chart"
     }
@@ -329,10 +329,10 @@
     "data_version": "20261122.5",
     "elapsed_ms": 0,
     "engine": "lanka 0.1.0",
-    "engine_revision": 1,
-    "fingerprint": "7cc9e39d9b1a89cdda86047219fd89034a00cfff0cffff46ca596d5ca9eec160",
+    "engine_revision": 2,
+    "fingerprint": "868a0208aaadccacf337b438c55433e971cd90d255d7083441b177cfbba96dc4",
     "git_rev": "",
-    "seed": 8991968397073484237,
+    "seed": 9694563384114924716,
     "stats": "lanka-stats 1.0.0"
   },
   "request": {

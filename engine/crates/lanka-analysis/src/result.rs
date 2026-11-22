@@ -45,12 +45,19 @@ pub fn fingerprint(r: &Resolved) -> [u8; 32] {
         .vars
         .iter()
         .map(|v| {
+            // the period semantics of an input decide its guards: a change
+            // of `time_invariant` in the registry is a new result
             format!(
-                "{}|{}|{}|{}",
+                "{}|{}|{}|{}{}",
                 v.role,
                 v.version.dataset_id,
                 v.version.dsv,
-                v.input.grid_sha256.as_deref().unwrap_or("")
+                v.input.grid_sha256.as_deref().unwrap_or(""),
+                if v.input.time_invariant {
+                    "|static"
+                } else {
+                    ""
+                }
             )
         })
         .collect();
@@ -118,18 +125,45 @@ pub fn plan_guards(r: &Resolved, noun: &str, boundary_dataset: Option<&str>) -> 
     {
         g.push(Raised::new("MODEL_ON_MODEL"));
     }
-    // periods
-    let periods: Vec<(String, i32)> = main
+    // periods: time-invariant inputs (terrain, static hazard maps,
+    // climate normals) are compared too, but their gap only warns; the
+    // block applies to the gap among the inputs that change over time
+    let periods: Vec<(String, i32, bool)> = main
         .iter()
         .filter_map(|v| {
-            year_of(&v.input.period).map(|y| (format!("{} {}", v.input.label, v.input.period), y))
+            year_of(&v.input.period).map(|y| {
+                let ti = v.input.time_invariant;
+                let label = format!(
+                    "{} {}{}",
+                    v.input.label,
+                    v.input.period,
+                    if ti { " (time-invariant)" } else { "" }
+                );
+                (label, y, ti)
+            })
         })
         .collect();
     if periods.len() > 1 {
-        let lo = periods.iter().map(|p| p.1).min().unwrap_or(0);
-        let hi = periods.iter().map(|p| p.1).max().unwrap_or(0);
-        let years = hi - lo;
+        let span = |it: &mut dyn Iterator<Item = i32>| {
+            let ys: Vec<i32> = it.collect();
+            match (ys.iter().min(), ys.iter().max()) {
+                (Some(lo), Some(hi)) => hi - lo,
+                _ => 0,
+            }
+        };
+        let years = span(&mut periods.iter().map(|p| p.1));
+        let varying = span(&mut periods.iter().filter(|p| !p.2).map(|p| p.1));
         if years > 2 {
+            let invariant: Vec<&str> = main
+                .iter()
+                .filter(|v| v.input.time_invariant)
+                .map(|v| v.input.label.as_str())
+                .collect();
+            let mut detail = json!({"years": years, "tolerance": 2, "block_above": 5});
+            if !invariant.is_empty() {
+                detail["time_invariant"] = json!(invariant);
+                detail["years_time_varying"] = json!(varying);
+            }
             let mut p = Raised::new("PERIOD_MISMATCH")
                 .var(
                     "periods",
@@ -140,9 +174,12 @@ pub fn plan_guards(r: &Resolved, noun: &str, boundary_dataset: Option<&str>) -> 
                         .join(", "),
                 )
                 .var("years", years.to_string())
-                .detail(json!({"years": years, "tolerance": 2, "block_above": 5}));
-            if years > 5 {
-                p = p.block();
+                .detail(detail);
+            if varying > 5 {
+                p = p.block().action(json!({
+                    "label": "acknowledge the period gap and run anyway",
+                    "request": {"override": ["PERIOD_MISMATCH"]},
+                }));
             }
             g.push(p);
         }
@@ -324,6 +361,9 @@ pub fn document(p: &Present<'_>, out: Option<&MethodOutput>, raised: &[Raised]) 
             }
             if v.input.synthetic {
                 i["synthetic"] = json!(true);
+            }
+            if v.input.time_invariant {
+                i["time_invariant"] = json!(true);
             }
             i
         })

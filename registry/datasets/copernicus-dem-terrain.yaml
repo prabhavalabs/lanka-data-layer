@@ -17,6 +17,7 @@ indicators:
   - adm3
   - adm4
   period_type: snapshot
+  time_invariant: true
 - id: terrain.slope_mean
   label: Mean slope
   unit: deg
@@ -30,6 +31,7 @@ indicators:
   - adm3
   - adm4
   period_type: snapshot
+  time_invariant: true
 - id: terrain.steep_share
   label: Share of area with slope > 30 deg
   unit: '%'
@@ -42,6 +44,7 @@ indicators:
   - adm3
   - adm4
   period_type: snapshot
+  time_invariant: true
 time_coverage:
   from: '2011'
   to: '2015'

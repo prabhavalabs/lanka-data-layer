@@ -16,6 +16,7 @@ indicators:
   geo_levels:
   - point
   period_type: month
+  time_invariant: true
 - id: wx.normal_temp
   label: Normal monthly mean temperature
   unit: Cel
@@ -27,6 +28,7 @@ indicators:
   geo_levels:
   - point
   period_type: month
+  time_invariant: true
 time_coverage:
   from: '1991'
   to: '2020'

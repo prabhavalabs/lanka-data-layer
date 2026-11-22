@@ -348,6 +348,11 @@ pub struct IndicatorSpec {
     /// id where it has none, keeping `basis` (computed) and provenance.
     #[serde(default)]
     pub completes: Option<String>,
+    /// The value does not change on the time scale of the analyses
+    /// (terrain, static hazard maps, climate normals): its period never
+    /// blocks an analysis (11 §6 `PERIOD_MISMATCH`, migration 0014).
+    #[serde(default)]
+    pub time_invariant: bool,
     #[serde(default)]
     pub ci_level: Option<f32>,
     #[serde(default)]
@@ -1279,10 +1284,10 @@ impl Registry {
                 // UPDATE first, INSERT only when missing: an ON CONFLICT upsert would
                 // burn an identity value (the surrogate key) on every sync.
                 sqlx::query(
-                    "WITH upd AS (UPDATE catalog.indicators SET dataset_id = $2, label = $3, label_si = $4, label_ta = $5, definition = $6, unit_code = $7, unit_mult = $8, decimals = $9, measure_type = $10, aggregation = $11, numerator_id = $12, denominator_id = $13, weight_id = $14, class = $15, ci_level = $16, direction = $17, sdg = $18, base_period = $19, dims = $20, dim_defs = $21, geo_levels = $22, period_type = $23, freq = $24::text::\"char\", sort = $25, completes = $26
+                    "WITH upd AS (UPDATE catalog.indicators SET dataset_id = $2, label = $3, label_si = $4, label_ta = $5, definition = $6, unit_code = $7, unit_mult = $8, decimals = $9, measure_type = $10, aggregation = $11, numerator_id = $12, denominator_id = $13, weight_id = $14, class = $15, ci_level = $16, direction = $17, sdg = $18, base_period = $19, dims = $20, dim_defs = $21, geo_levels = $22, period_type = $23, freq = $24::text::\"char\", sort = $25, completes = $26, time_invariant = $27
                               WHERE id = $1 RETURNING 1)
-                 INSERT INTO catalog.indicators (id, dataset_id, label, label_si, label_ta, definition, unit_code, unit_mult, decimals, measure_type, aggregation, numerator_id, denominator_id, weight_id, class, ci_level, direction, sdg, base_period, dims, dim_defs, geo_levels, period_type, freq, sort, completes)
-                 SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::text::\"char\", $25, $26 WHERE NOT EXISTS (SELECT 1 FROM upd)",
+                 INSERT INTO catalog.indicators (id, dataset_id, label, label_si, label_ta, definition, unit_code, unit_mult, decimals, measure_type, aggregation, numerator_id, denominator_id, weight_id, class, ci_level, direction, sdg, base_period, dims, dim_defs, geo_levels, period_type, freq, sort, completes, time_invariant)
+                 SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24::text::\"char\", $25, $26, $27 WHERE NOT EXISTS (SELECT 1 FROM upd)",
                 )
                 .bind(&i.id)
                 .bind(&d.id)
@@ -1310,6 +1315,7 @@ impl Registry {
                 .bind(freq.as_char().to_string())
                 .bind(i32::try_from(sort).unwrap_or(i32::MAX))
                 .bind(&i.completes)
+                .bind(i.time_invariant)
                 .execute(&mut *tx)
                 .await?;
                 report.indicators += 1;

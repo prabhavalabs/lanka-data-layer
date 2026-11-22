@@ -267,7 +267,7 @@ Guards are data: a registry (`lanka-analysis/src/guards.rs`) of `{code, severity
 | `ESTIMATED_INPUT` | any column with `basis ∈ {estimated, forecast}` | note; result `basis = estimated` |
 | `MODEL_ON_MODEL` | both sides estimated | warn |
 | `INPUT_UNCERTAINTY_IGNORED` | inputs have intervals and `uncertainty = analytic` | note; action: rerun with `mc` |
-| `PERIOD_MISMATCH` | aligned periods differ by more than the request's tolerance (default 2 years) | warn; > 5 years block unless overridden |
+| `PERIOD_MISMATCH` | aligned periods differ by more than the request's tolerance (default 2 years) | warn; > 5 years between time-varying inputs block unless overridden (the block's `action` carries `{"override": ["PERIOD_MISMATCH"]}`). Inputs whose indicator the registry declares `time_invariant` (terrain, static hazard maps, climate normals) count towards the reported gap but never block: elevation dated 2015 against 2024 data is a warn |
 | `LOW_COVERAGE` | complete cases < 80 % of the support | warn; < 30 % block. The result lists what was dropped and, for units, how the dropped set differs (urban share, population) |
 | `PSEUDO_REPLICATION` | a column aligned by `inherit` | warn; effective n is the number of parent units |
 | `DISAGGREGATED_INPUT` | a column aligned by `dasymetric` | warn; quality class shown |

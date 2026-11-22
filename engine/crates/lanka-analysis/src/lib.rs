@@ -35,7 +35,9 @@ pub use engine::{Engine, EngineError, Ran};
 /// bumped whenever a change outside a method alters result documents for
 /// unchanged inputs. It enters every fingerprint (11 §9) beside the
 /// method's own revision and the `lanka-stats` version.
-pub const ENGINE_REVISION: u32 = 1;
+/// r2: time-invariant inputs never block `PERIOD_MISMATCH`; its block
+/// carries the override action.
+pub const ENGINE_REVISION: u32 = 2;
 pub use request::Request;
 
 #[cfg(test)]

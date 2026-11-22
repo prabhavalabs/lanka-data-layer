@@ -373,6 +373,7 @@
           "jrc-flood-hazard"
         ],
         "synthetic": false,
+        "time_invariant": true,
         "unit": "%",
         "upstream": [
           "jrc-river-flood-hazard"

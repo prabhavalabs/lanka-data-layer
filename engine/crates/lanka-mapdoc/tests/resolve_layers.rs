@@ -69,6 +69,7 @@ fn catalog() -> Catalog {
             aggregation: "none".into(),
             class: "third_party".into(),
             completes: None,
+            time_invariant: false,
         },
     );
     c

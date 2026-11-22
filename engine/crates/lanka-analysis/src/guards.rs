@@ -146,7 +146,7 @@ pub static REGISTRY: &[GuardSpec] = &[
         severity: Severity::Warn,
         overridable: true,
         since: "WP-29",
-        trigger: "aligned periods differ by more than the tolerance (2 years); > 5 years blocks",
+        trigger: "aligned periods differ by more than the tolerance (2 years); > 5 years among time-varying inputs blocks (time-invariant inputs only warn)",
         template: "The variables refer to different periods ({periods}), {years} years apart.",
     },
     GuardSpec {

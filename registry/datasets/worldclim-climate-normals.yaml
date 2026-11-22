@@ -18,6 +18,7 @@ indicators:
   - adm3
   - adm4
   period_type: month
+  time_invariant: true
 - id: clim.wc_prec
   label: Precipitation (normal)
   unit: mm
@@ -31,6 +32,7 @@ indicators:
   - adm3
   - adm4
   period_type: month
+  time_invariant: true
 - id: clim.wc_bio
   label: Bioclimatic variable
   unit: '{various}'
@@ -46,6 +48,7 @@ indicators:
   - adm3
   - adm4
   period_type: snapshot
+  time_invariant: true
 time_coverage:
   from: 1970
   to: 2000

@@ -16,6 +16,7 @@ indicators:
   - adm2
   - adm3
   period_type: snapshot
+  time_invariant: true
 time_coverage:
   from: '2006'
   to: '2011'

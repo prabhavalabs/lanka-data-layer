@@ -397,6 +397,11 @@
           "$ref": "#/$defs/indicatorId",
           "description": "A roll-up that completes this indicator at levels its source does not print (04 §8.1); readers serve its rows under that id where the indicator has none, basis and provenance unchanged."
         },
+        "time_invariant": {
+          "type": "boolean",
+          "default": false,
+          "description": "The value does not change on the time scale of analyses (terrain, static hazard maps, climate normals): its period is when the data was made. Analyses never block on its period gap (11 §6 PERIOD_MISMATCH); the gap is reported as a warn."
+        },
         "ci_level": {
           "type": "number",
           "exclusiveMinimum": 0,

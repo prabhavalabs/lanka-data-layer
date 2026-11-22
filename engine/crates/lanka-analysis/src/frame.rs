@@ -55,6 +55,10 @@ pub struct InputRef {
     pub about_people: bool,
     pub synthetic: bool,
     pub community: bool,
+    /// Terrain, static hazard maps, climate normals (registry
+    /// `time_invariant`): its period never blocks (`PERIOD_MISMATCH`).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub time_invariant: bool,
     /// Every dataset upstream of this input in the recipe graph, itself
     /// included (SHARED_LINEAGE).
     pub upstream: BTreeSet<String>,

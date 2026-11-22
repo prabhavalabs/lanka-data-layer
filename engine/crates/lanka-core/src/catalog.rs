@@ -71,6 +71,11 @@ pub struct IndicatorInfo {
     /// print (04 §8.1, migration 0013).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub completes: Option<String>,
+    /// Terrain, static hazard maps, climate normals: the period is when the
+    /// data was made, not a state that changes (migration 0014). Analyses
+    /// never block on its period gap.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub time_invariant: bool,
 }
 
 impl IndicatorInfo {
@@ -305,7 +310,7 @@ impl Catalog {
         let indicators: Vec<IndicatorInfo> = sqlx::query_as(
             "SELECT i.id, i.key, i.dataset_id, i.label, i.unit_code AS unit, u.label_en AS unit_label,
                     i.unit_mult, i.dims, i.geo_levels, i.period_type, i.freq::text AS freq,
-                    i.measure_type, i.aggregation, i.class, i.completes
+                    i.measure_type, i.aggregation, i.class, i.completes, i.time_invariant
              FROM catalog.indicators i LEFT JOIN catalog.units_of_measure u ON u.code = i.unit_code
              ORDER BY i.dataset_id, i.sort, i.id",
         )

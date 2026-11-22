@@ -139,6 +139,10 @@
           },
           "synthetic": {
             "type": "boolean"
+          },
+          "time_invariant": {
+            "type": "boolean",
+            "description": "Terrain, static hazard map or climate normal: its period gap warns, never blocks (PERIOD_MISMATCH)."
           }
         }
       }

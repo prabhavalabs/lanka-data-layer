@@ -1101,8 +1101,8 @@ lanka db migrate
 lanka serve --bind 127.0.0.1:8601            # "analysis engine on (/v2/analyses, role lanka_analysis)"
 curl -s -X POST -H 'content-type: application/json' --data-binary @crates/lanka-analysis/tests/golden/builtup-share-vs-density-adm3/request.json \
      -o /dev/null -w '%{redirect_url}\n' localhost:8601/v2/analyses
-curl -s localhost:8601/v2/analyses/an_7cc9e39d9b1a89cd | jq '.payload | {guards: [.guards[].code], r: .estimates.pearson}'
-curl -s 'localhost:8601/v2/analyses/an_7cc9e39d9b1a89cd/outputs/bivariate?format=arrow' -o biv.arrow
+curl -s localhost:8601/v2/analyses/an_868a0208aaadccac | jq '.payload | {guards: [.guards[].code], r: .estimates.pearson}'
+curl -s 'localhost:8601/v2/analyses/an_868a0208aaadccac/outputs/bivariate?format=arrow' -o biv.arrow
 crates/lanka-stats-wasm/build.sh             # WASM + size + parity fixture
 ```
 
@@ -1113,8 +1113,8 @@ crates/lanka-stats-wasm/build.sh             # WASM + size + parity fixture
 | Reference fixtures | **Python** reference (R is not installed): numpy 2.5.5, scipy 1.18.1, statsmodels 0.15.0; `lanka-stats/tests/fixtures/gen_reference.py` → `reference.json`. 1e-8 (relative + 1e-12 abs) for special functions, describe, Pearson/Spearman (Anscombe I–IV, a tied 339-row set), OLS/HC3/leverage/Cook/VIF/BP/Huber (Stack loss, Anscombe I, a 400-row t₃ set; Longley at 1e-5 — condition number ~5e9), Welch/Mann–Whitney/HL/Cohen's d, class breaks (independent Jenks DP), Dutilleul M̂ against the explicit n×n matrices; **bit-exact**: seeded bootstrap (2 intervals) and Moran's I + 499 permutations against the ported RNG stream |
 | Same id + bytes twice, after an unrelated release; new id after an input change | `tests/pg_analysis.rs` (throwaway DB, engine as `lanka_analysis`): twice → one id, identical bytes, second from the store; after a release of an unrelated dataset → same id, same bytes, and a store-bypassing recomputation gives the same id and numbers; a new version of x → new id, the old result still served |
 | Guards | `src/tests.rs`: a positive and a negative fixture for each of the 21 codes active in WP-29 (a meta-test fails when a code has none); vocabulary scan of the registry and of every rendered message, summary and reading |
-| Blocked → no estimates | MIN_N, PERIOD_MISMATCH > 5 y, LOW_COVERAGE < 30 %: `state: blocked`, `estimates`/`interpretation` null, no outputs, no `"p":` anywhere; override of PERIOD_MISMATCH recorded and cited; live: `relate` at ADM1 (9 provinces) blocked |
-| Golden (substitute pair) | ESA WorldCover built-up share (`lc.class_share{lc_class=50}`, 2021) vs census population density (`derived.per_km2`, 2024, log), ADM3, island: `an_7cc9e39d9b1a89cd`, r = 0.637 [0.569, 0.696], n_eff 62.2, p_adj 2.0e-8; ρ = 0.825; OLS log(y) ~ x b = 0.0621 [0.0527, 0.0715] (6.4 % per percentage point), R² 0.41; residual Moran's I 0.63 (p 0.001); guards ECOLOGICAL, PERIOD_MISMATCH (3 y), RESIDUAL_AUTOCORR, NOT_CAUSAL, MAUP (r 0.67 at districts), NO_CONTROLS. `tests/golden.rs`: `_offline` always (committed frames), `_live` with `LANKA_GOLDEN_DATABASE_URL`; **flood pair** (after the WP-27 merge, release 20261122.4): JRC `haz.flood_area_share{return_period=rp100}` vs the same density, ADM3, island: `an_903392970f3c4ff9`, n 339, r = 0.159 [0.053, 0.261], n_eff 77.9, p_adj 0.16; ρ = 0.040 (p_adj 0.76); OLS b = 0.0151 (1.5 % per percentage point), R² 0.025; residual Moran's I 0.67 (p 0.001); r 0.03 at districts; guards ECOLOGICAL, RESIDUAL_AUTOCORR, NOT_CAUSAL, MAUP, NO_CONTROLS — a weak association that does not survive the spatial adjustment. Live comparisons ignore the recorded release (`pin`, `data_version`, citation), which the id leaves out |
+| Blocked → no estimates | MIN_N, PERIOD_MISMATCH > 5 y between time-varying inputs, LOW_COVERAGE < 30 %: `state: blocked`, `estimates`/`interpretation` null, no outputs, no `"p":` anywhere; override of PERIOD_MISMATCH recorded and cited; live: `relate` at ADM1 (9 provinces) blocked |
+| Golden (substitute pair) | ESA WorldCover built-up share (`lc.class_share{lc_class=50}`, 2021) vs census population density (`derived.per_km2`, 2024, log), ADM3, island: `an_868a0208aaadccac`, r = 0.637 [0.569, 0.696], n_eff 62.2, p_adj 2.0e-8; ρ = 0.825; OLS log(y) ~ x b = 0.0621 [0.0527, 0.0715] (6.4 % per percentage point), R² 0.41; residual Moran's I 0.63 (p 0.001); guards ECOLOGICAL, PERIOD_MISMATCH (3 y), RESIDUAL_AUTOCORR, NOT_CAUSAL, MAUP (r 0.67 at districts), NO_CONTROLS. `tests/golden.rs`: `_offline` always (committed frames), `_live` with `LANKA_GOLDEN_DATABASE_URL`; **flood pair** (after the WP-27 merge, release 20261122.4): JRC `haz.flood_area_share{return_period=rp100}` vs the same density, ADM3, island: `an_61a6a1eac4e04ed3`, n 339, r = 0.159 [0.053, 0.261], n_eff 77.9, p_adj 0.16; ρ = 0.040 (p_adj 0.76); OLS b = 0.0151 (1.5 % per percentage point), R² 0.025; residual Moran's I 0.67 (p 0.001); r 0.03 at districts; guards ECOLOGICAL, RESIDUAL_AUTOCORR, NOT_CAUSAL, MAUP, NO_CONTROLS — a weak association that does not survive the spatial adjustment. Live comparisons ignore the recorded release (`pin`, `data_version`, citation), which the id leaves out |
 | Native ≡ WASM | `classify`, `bivariate`, `correlate`, `regress`, `preview`, `hexbin`, `describe` on the fixtures: 962 values, identical bits (node 24 vs aarch64-apple-darwin) |
 | WASM size | `lanka_stats_wasm.wasm` 133,418 bytes, **51,026 bytes gzip -9** (target ≤ 500 KB compressed) |
 
@@ -1137,6 +1137,15 @@ Timings (release build, laptop shared with other builds; `provenance.elapsed_ms`
   uses the request minus `pin` plus the input dsvs, so an unrelated release keeps the id (11 §9's rule as
   intended). `provenance.data_version` is the release of the first computation; identical requests are served the
   stored bytes.
+- *Time-invariant inputs* (migration `0014_indicator_time_invariant.sql`): the registry flag
+  `indicators[].time_invariant` (`catalog.indicators.time_invariant`, `/v2` indicator metadata) marks terrain
+  (Copernicus DEM, NASADEM, AW3D30, terrain zonal profiles), the JRC flood hazard maps and climate normals (WorldClim,
+  station normals); a grid layer without an indicator inherits it when all of its dataset's indicators carry it.
+  `PERIOD_MISMATCH` lists such inputs as `(time-invariant)`, reports the full gap (`detail.years`,
+  `detail.time_invariant`, `detail.years_time_varying`) and blocks only when the time-varying inputs alone are more
+  than 5 years apart; that block carries the action `{"request": {"override": ["PERIOD_MISMATCH"]}}` (the documented
+  acknowledgement — no separate `params.allow_period_gap`). Results list `inputs[].time_invariant`; the flag enters
+  the fingerprint (`|static`) and `ENGINE_REVISION` is 2.
 - *Revisions in the fingerprint* (after the partial-correlation change was served from results stored by the
   previous code): `MethodInfo.revision` (`relate` r2: `estimates.partial`; `group_compare` r2: effective-n
   significance; the others r1) and `lanka_analysis::ENGINE_REVISION` (shared alignment/guards/presentation) enter the
@@ -1146,7 +1155,7 @@ Timings (release build, laptop shared with other builds; `provenance.elapsed_ms`
   before the catalogue reload after a release still fingerprints against the new release. `tests/pg_analysis.rs`:
   release that changes an input → new id (also before the reload); unrelated release → same id and bytes; method
   revision bump → new id, recomputed. Golden ids changed with the fingerprint (estimates, n and guards unchanged):
-  `an_7cc9e39d9b1a89cd` (built-up), `an_903392970f3c4ff9` (flood).
+  `an_868a0208aaadccac` (built-up), `an_61a6a1eac4e04ed3` (flood).
 - *Exact bytes in the store*: `analysis/<id>/result.json` is what `GET` returns (jsonb would renormalise numbers);
   the row is the publication point.
 - *Sync only*: no async lane yet; requests estimated ≤ 30 s run inline on the 2 + 8 pool, above → 422. The

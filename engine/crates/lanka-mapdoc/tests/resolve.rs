@@ -63,6 +63,7 @@ fn catalog() -> Catalog {
         aggregation: "sum".into(),
         class: class.into(),
         completes: None,
+        time_invariant: false,
     };
     c.indicators
         .insert("pop.total".into(), ind("pop.total", "pop", "official"));

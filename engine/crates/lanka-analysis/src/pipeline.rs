@@ -541,6 +541,7 @@ pub async fn resolve(env: &Env, req: &Request) -> Result<Resolved> {
             let levels = levels_of(&env.pool, &version, ind.key).await?;
             let mut input = input_ref(cat, &graph, &role, &ind.dataset_id, &version.dsv);
             input.indicator = Some(id.clone());
+            input.time_invariant = ind.time_invariant;
             input.class = ind.class.clone();
             input.measure_type = ind.measure_type.clone();
             input.unit = ind.unit.clone();
@@ -590,6 +591,19 @@ pub async fn resolve(env: &Env, req: &Request) -> Result<Resolved> {
             input.grid = Some(layer.clone());
             input.grid_sha256 = Some(pick.4.clone());
             let ind = pick.2.as_ref().and_then(|i| cat.indicators.get(i));
+            // a layer without an indicator is time-invariant when its
+            // dataset's indicators all are (the JRC flood fractions)
+            input.time_invariant = ind.map_or_else(
+                || {
+                    cat.datasets.get(&pick.1).is_some_and(|d| {
+                        !d.indicator_ids.is_empty()
+                            && d.indicator_ids
+                                .iter()
+                                .all(|i| cat.indicators.get(i).is_some_and(|i| i.time_invariant))
+                    })
+                },
+                |i| i.time_invariant,
+            );
             input.class = ind.map_or_else(|| "third_party".to_owned(), |i| i.class.clone());
             input.measure_type = if pick.3 == "sum" {
                 "count".to_owned()

@@ -41,8 +41,8 @@
   ],
   "basis": "computed",
   "citation": {
-    "text": "Lanka Data Layer. Analysis an_903392970f3c4ff9: relate(haz.flood_area_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.5.",
-    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_903392970f3c4ff9"
+    "text": "Lanka Data Layer. Analysis an_61a6a1eac4e04ed3: relate(haz.flood_area_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.5.",
+    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_61a6a1eac4e04ed3"
   },
   "estimates": {
     "headline": "ols",
@@ -183,7 +183,7 @@
       "severity": "note"
     }
   ],
-  "id": "an_903392970f3c4ff9",
+  "id": "an_61a6a1eac4e04ed3",
   "inputs": [
     {
       "class": "third_party",
@@ -193,6 +193,7 @@
       "licence": "cc-by-4.0",
       "period": "2024",
       "role": "x",
+      "time_invariant": true,
       "visibility": "public"
     },
     {
@@ -243,7 +244,7 @@
         "class",
         "basis"
       ],
-      "href": "/v2/analyses/an_903392970f3c4ff9/outputs/bivariate",
+      "href": "/v2/analyses/an_61a6a1eac4e04ed3/outputs/bivariate",
       "id": "bivariate",
       "kind": "frame",
       "suggested_layer": {
@@ -287,7 +288,7 @@
         "cooks",
         "leverage"
       ],
-      "href": "/v2/analyses/an_903392970f3c4ff9/outputs/residuals",
+      "href": "/v2/analyses/an_61a6a1eac4e04ed3/outputs/residuals",
       "id": "residuals",
       "kind": "frame",
       "suggested_layer": {
@@ -308,7 +309,7 @@
     },
     {
       "encoding": "points",
-      "href": "/v2/analyses/an_903392970f3c4ff9/outputs/scatter",
+      "href": "/v2/analyses/an_61a6a1eac4e04ed3/outputs/scatter",
       "id": "scatter",
       "kind": "chart"
     }
@@ -318,10 +319,10 @@
     "data_version": "20261122.5",
     "elapsed_ms": 0,
     "engine": "lanka 0.1.0",
-    "engine_revision": 1,
-    "fingerprint": "903392970f3c4ff924b884d873e3c68c5755c981f295973c6a7e5c6f5f0f90fa",
+    "engine_revision": 2,
+    "fingerprint": "61a6a1eac4e04ed3611155780f0042dfb430422a0d9cb84484e284e03a2a00ab",
     "git_rev": "",
-    "seed": 10390809942767194105,
+    "seed": 7036489497510432467,
     "stats": "lanka-stats 1.0.0"
   },
   "request": {

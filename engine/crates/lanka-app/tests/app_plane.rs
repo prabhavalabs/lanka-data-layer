@@ -315,6 +315,7 @@ fn example_catalog() -> Catalog {
         aggregation: "mean".into(),
         class: class.into(),
         completes: None,
+        time_invariant: false,
     };
     c.indicators.insert(
         "exp.flood_pop_share".into(),
