@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadata.org/schema/connector.schema.json",
+  "title": "Declarative connector (registry/connectors/<source>.yaml)",
+  "description": "Configures a generic driver for one source (docs/architecture-v2/03-ingestion.md §2.2). The envelope is common; each driver defines its own sections.",
+  "type": "object",
+  "required": ["source", "driver", "version"],
+  "properties": {
+    "source": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "driver": {
+      "enum": ["http_json", "sdmx", "ckan", "csv", "xlsx_table", "html_table", "pdf_table", "geo_file", "osm_pbf", "raster", "gtfs", "git_files"]
+    },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "description": { "type": "string" },
+    "discover": { "type": "object" },
+    "extract": { "type": "object" },
+    "standardise": { "type": "object" },
+    "expect": { "type": "array", "items": { "type": "object" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "driver": { "const": "http_json" } } },
+      "then": {
+        "required": ["discover", "extract", "standardise"],
+        "properties": {
+          "discover": {
+            "type": "object",
+            "required": ["url"],
+            "additionalProperties": false,
+            "properties": {
+              "url": { "type": "string", "pattern": "^https?://" },
+              "media_type": { "type": "string" },
+              "keys": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "list": { "type": "array", "items": { "type": "string" } },
+                  "from_dataset": {
+                    "type": "object",
+                    "required": ["dataset"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "dataset": { "type": "string" },
+                      "exclude": { "type": "array", "items": { "type": "string" } },
+                      "code": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "strip_prefix": { "type": "string" },
+                          "replace": { "type": "array", "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 } },
+                          "case": { "enum": ["upper", "lower"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "fingerprint": {
+                "type": "object",
+                "required": ["url", "select"],
+                "additionalProperties": false,
+                "properties": {
+                  "url": { "type": "string" },
+                  "select": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+                }
+              }
+            }
+          },
+          "extract": {
+            "type": "object",
+            "required": ["records"],
+            "additionalProperties": false,
+            "properties": {
+              "meta": { "$ref": "#/$defs/table" },
+              "records": { "$ref": "#/$defs/table" },
+              "single_page": {
+                "type": "object",
+                "required": ["page", "pages"],
+                "additionalProperties": false,
+                "properties": { "page": { "type": "string" }, "pages": { "type": "string" } }
+              }
+            }
+          },
+          "standardise": {
+            "type": "object",
+            "required": ["dataset", "indicator", "geo", "period", "value", "method"],
+            "additionalProperties": false,
+            "properties": {
+              "dataset": { "type": "string" },
+              "vintage": { "type": "string" },
+              "indicator": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "by_key": { "type": "boolean" },
+                  "fixed": { "type": "string" },
+                  "generic": {
+                    "type": "object",
+                    "required": ["indicator", "dim"],
+                    "additionalProperties": false,
+                    "properties": { "indicator": { "type": "string" }, "dim": { "type": "string" } }
+                  }
+                }
+              },
+              "geo": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": { "root": { "type": "boolean" }, "field": { "type": "string" }, "fixed": { "type": "string" } }
+              },
+              "period": {
+                "type": "object",
+                "required": ["field", "format"],
+                "additionalProperties": false,
+                "properties": { "field": { "type": "string" }, "format": { "enum": ["year", "as_is"] } }
+              },
+              "value": {
+                "type": "object",
+                "required": ["field"],
+                "additionalProperties": false,
+                "properties": { "field": { "type": "string" } }
+              },
+              "status": {
+                "type": "object",
+                "required": ["field", "default"],
+                "additionalProperties": false,
+                "properties": {
+                  "field": { "type": "string" },
+                  "map": { "type": "object", "additionalProperties": { "$ref": "#/$defs/basis_status" } },
+                  "default": { "$ref": "#/$defs/basis_status" }
+                }
+              },
+              "locator": { "type": "object", "additionalProperties": { "type": "string" } },
+              "verbatim": { "type": "string" },
+              "method": { "enum": ["api", "sheet_cell", "csv_row", "pdf_text", "pdf_reviewed", "ocr", "llm_dual", "manual", "feature", "spatial", "derived"] },
+              "warn_empty": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "table": {
+      "type": "object",
+      "required": ["path"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "pattern": "^\\$" },
+        "fields": { "type": "object", "additionalProperties": { "type": "string" } },
+        "require": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "basis_status": {
+      "type": "array",
+      "prefixItems": [
+        { "enum": ["reported", "computed", "estimated", "forecast"] },
+        { "enum": ["normal", "provisional", "break", "low_reliability", "missing", "nil", "suppressed"] }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    }
+  }
+}

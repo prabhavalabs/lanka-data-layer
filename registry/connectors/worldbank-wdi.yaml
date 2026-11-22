@@ -1,0 +1,90 @@
+# World Bank Indicators API v2 — national series for the profile's country.
+# Replaces the hand-written connectors/world_bank.rs (WP-02): one request per
+# series (every named indicator of wdi-lka plus the headline list below);
+# series without a named indicator go to the generic wdi.series with
+# dims series_code=<CODE>. Each response is archived as its own artifact and
+# every value keeps the JSON path of its record and the number exactly as
+# serialised by the API.
+source: worldbank-wdi
+driver: http_json
+version: 1.0.0
+description: World Development Indicators, one series per request, national values only.
+discover:
+  url: https://api.worldbank.org/v2/country/{alpha3}/indicator/{key}?format=json&per_page=500
+  media_type: application/json
+  keys:
+    list:
+      - SP.POP.TOTL
+      - SP.POP.GROW
+      - SP.URB.TOTL.IN.ZS
+      - SP.DYN.LE00.IN
+      - SP.DYN.TFRT.IN
+      - SH.DYN.MORT
+      - NY.GDP.MKTP.CD
+      - NY.GDP.MKTP.KD.ZG
+      - NY.GDP.PCAP.CD
+      - NY.GDP.PCAP.PP.CD
+      - FP.CPI.TOTL.ZG
+      - SI.POV.DDAY
+      - SI.POV.NAHC
+      - SI.POV.GINI
+      - SL.UEM.TOTL.ZS
+      - SL.TLF.CACT.ZS
+      - EG.ELC.ACCS.ZS
+      - IT.NET.USER.ZS
+      - SE.ADT.LITR.ZS
+      - SH.XPD.CHEX.GD.ZS
+      - NE.EXP.GNFS.ZS
+      - BX.TRF.PWKR.DT.GD.ZS
+      - DT.DOD.DECT.CD
+      - GC.DOD.TOTL.GD.ZS
+      - EN.GHG.CO2.PC.CE.AR5
+      - AG.LND.FRST.ZS
+    from_dataset:
+      dataset: wdi-lka
+      exclude: [wdi.series]
+      code: { strip_prefix: "wdi.", replace: [["_", "."]], case: upper }
+  # WDI's database-wide "last updated" stamp: unchanged stamp + same series
+  # list = nothing to fetch.
+  fingerprint:
+    url: https://api.worldbank.org/v2/sources/2?format=json
+    select: ["$[1][0].lastupdated"]
+extract:
+  # Shape: [ {page meta}, [records…] | null ]  or  [ {"message": [...]} ] on error.
+  meta:
+    path: "$[0]"
+    fields: { page: page, pages: pages, lastupdated: lastupdated }
+    require: [page, pages]
+  single_page: { page: page, pages: pages }
+  records:
+    path: "$[1]"
+    fields: { date: date, value: value, obs_status: obs_status, label: indicator.value }
+standardise:
+  dataset: wdi-lka
+  vintage: "WDI lastupdated {max:meta.lastupdated}"
+  indicator:
+    by_key: true
+    generic: { indicator: wdi.series, dim: series_code }
+  geo: { root: true }
+  period: { field: date, format: year }
+  value: { field: value }
+  # WB obs_status: E estimate, F forecast, P provisional (WDI is a
+  # third-party source, so estimates are allowed when it says so).
+  status:
+    field: obs_status
+    map:
+      E: [estimated, normal]
+      e: [estimated, normal]
+      F: [forecast, normal]
+      f: [forecast, normal]
+      P: [reported, provisional]
+      p: [reported, provisional]
+    default: [reported, normal]
+  locator:
+    url: "{url}"
+    path: "{path}.value"
+    series: "{key}"
+    series_label: "{field.label}"
+  verbatim: "{field.value}"
+  method: api
+  warn_empty: true
