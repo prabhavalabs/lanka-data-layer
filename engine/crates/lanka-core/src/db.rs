@@ -19,15 +19,27 @@ pub enum PoolRole {
 /// Connects a pool tuned for `role`. Prepared statements are cached per
 /// connection by sqlx (every query in this crate uses bind parameters).
 pub async fn connect(url: &str, role: PoolRole) -> Result<PgPool, sqlx::Error> {
-    let (app, max, timeout, slow) = match role {
-        PoolRole::Api => ("lanka-api", 32, "5s", Duration::from_millis(250)),
-        PoolRole::Ingest => ("lanka-ingest", 8, "0", Duration::from_secs(300)),
+    // The API binds dataset keys as constants; a custom plan per execution
+    // keeps partition pruning at plan time (05 §7).
+    let (app, max, timeout, plans, slow) = match role {
+        PoolRole::Api => (
+            "lanka-api",
+            32,
+            "5s",
+            "force_custom_plan",
+            Duration::from_millis(250),
+        ),
+        PoolRole::Ingest => ("lanka-ingest", 8, "0", "auto", Duration::from_secs(300)),
     };
     let opts: PgConnectOptions = url
         .parse::<PgConnectOptions>()?
         .application_name(app)
         .statement_cache_capacity(256)
-        .options([("statement_timeout", timeout), ("timezone", "UTC")])
+        .options([
+            ("statement_timeout", timeout),
+            ("timezone", "UTC"),
+            ("plan_cache_mode", plans),
+        ])
         .log_slow_statements(tracing::log::LevelFilter::Warn, slow);
     PgPoolOptions::new()
         .max_connections(max)

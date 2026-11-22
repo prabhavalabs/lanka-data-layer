@@ -1,4 +1,9 @@
-//! Canonical Sri Lanka grid — the single spatial convention of the platform.
+//! The canonical grid — the single spatial convention of the platform.
+//!
+//! The free functions implement the v1 contract grid (the constants below);
+//! [`Grid`] carries the same formula with parameters from the country
+//! profile, and the profile loader refuses a profile whose parameters differ
+//! from the compiled contract for the deployment's v1 data.
 //!
 //! Contract: `docs/architecture.md` §1. The same constants and formulas exist
 //! in `shared/src/grid.ts` and `foundry/src/grid.ts`; all copies are pinned
@@ -74,5 +79,80 @@ pub const fn row_col(id: u32) -> Option<(u32, u32)> {
         None
     } else {
         Some((id / COLS, id % COLS))
+    }
+}
+
+/// Grid parameters (from the country profile). Same formula as the free
+/// functions, which are [`Grid::CANONICAL`].
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Grid {
+    pub lat_max: f64,
+    pub lon_min: f64,
+    pub step: f64,
+    pub rows: u32,
+    pub cols: u32,
+}
+
+impl Grid {
+    /// The v1 contract grid (`docs/architecture.md` §1).
+    pub const CANONICAL: Self = Self {
+        lat_max: LAT_MAX,
+        lon_min: LON_MIN,
+        step: STEP,
+        rows: ROWS,
+        cols: COLS,
+    };
+
+    pub fn from_spec(s: &crate::profile::GridSpec) -> Result<Self, crate::profile::ProfileError> {
+        let g = Self {
+            lat_max: s.lat_max,
+            lon_min: s.lon_min,
+            step: s.step_deg,
+            rows: s.rows,
+            cols: s.cols,
+        };
+        let ok = g.step > 0.0
+            && g.step.is_finite()
+            && g.rows > 0
+            && g.cols > 0
+            && u64::from(g.rows) * u64::from(g.cols) <= u64::from(u32::MAX);
+        if ok {
+            Ok(g)
+        } else {
+            Err(crate::profile::ProfileError::Invalid(format!(
+                "grid parameters out of range: {s:?}"
+            )))
+        }
+    }
+
+    #[must_use]
+    pub fn lat_min(&self) -> f64 {
+        self.lat_max - f64::from(self.rows) * self.step
+    }
+
+    #[must_use]
+    pub fn lon_max(&self) -> f64 {
+        self.lon_min + f64::from(self.cols) * self.step
+    }
+
+    /// Cell id for a WGS84 coordinate. For [`Grid::CANONICAL`] this is
+    /// bit-identical to [`cell_id`].
+    #[must_use]
+    pub fn cell_id(&self, lat: f64, lon: f64) -> Option<u32> {
+        if *self == Self::CANONICAL {
+            return cell_id(lat, lon);
+        }
+        if !lat.is_finite() || !lon.is_finite() {
+            return None;
+        }
+        let inv = 1.0 / self.step;
+        let row = ((self.lat_max - lat) * inv).floor();
+        let col = ((lon - self.lon_min) * inv).floor();
+        if row < 0.0 || row >= f64::from(self.rows) || col < 0.0 || col >= f64::from(self.cols) {
+            return None;
+        }
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let (row, col) = (row as u32, col as u32);
+        Some(row * self.cols + col)
     }
 }

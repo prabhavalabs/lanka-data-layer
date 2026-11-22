@@ -110,7 +110,7 @@ mod tests {
     fn ok_envelope_shape() {
         let mut meta = Meta::bare(Some("20261121.1".into()));
         meta.next
-            .push(Link::new("series", "/v2/indicators/x/series?geo=LK"));
+            .push(Link::new("series", "/v2/indicators/x/series?geo=ZZ"));
         let v = serde_json::to_value(Envelope::ok(serde_json::json!({"a": 1}), meta))
             .expect("serializes");
         assert_eq!(v["success"], true);

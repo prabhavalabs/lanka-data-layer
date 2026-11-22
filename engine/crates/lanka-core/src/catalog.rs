@@ -3,8 +3,12 @@
 //! The catalog is small (hundreds of rows), read on every request and only
 //! changes on registry sync or release publish, so transports hold one
 //! immutable snapshot behind an `Arc` and swap it on `NOTIFY lanka_release`.
+//! It also carries the surrogate-key maps (dataset, indicator, dims set) and
+//! the country profile, so queries bind integers and render codes without a
+//! database round trip.
 
 use std::collections::{BTreeSet, HashMap};
+use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
 use serde::Serialize;
@@ -12,7 +16,9 @@ use sqlx::{FromRow, PgPool};
 use utoipa::ToSchema;
 
 use crate::envelope::{DatasetVersionRef, LicenceRef, Link, Meta, SourceRef};
-use crate::error::CoreResult;
+use crate::error::{CoreError, CoreResult};
+use crate::period::Freq;
+use crate::profile::Profile;
 
 #[derive(Debug, Clone, FromRow, Serialize, ToSchema)]
 pub struct LicenceInfo {
@@ -20,6 +26,9 @@ pub struct LicenceInfo {
     pub status: String,
     pub url: Option<String>,
     pub attribution: Option<String>,
+    pub spdx: Option<String>,
+    /// bulk | api | link | internal
+    pub redistribution: String,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, ToSchema)]
@@ -38,18 +47,45 @@ pub struct SourceInfo {
 #[derive(Debug, Clone, FromRow, Serialize, ToSchema)]
 pub struct IndicatorInfo {
     pub id: String,
+    #[serde(skip)]
+    pub key: i32,
     pub dataset_id: String,
     pub label: String,
-    pub unit: String,
+    /// UCUM code (ISO 4217 for money), `catalog.units_of_measure`.
+    pub unit: Option<String>,
+    pub unit_label: Option<String>,
+    /// Power of ten applied to values (SDMX `UNIT_MULT`).
+    pub unit_mult: i16,
     pub dims: Vec<String>,
     pub geo_levels: Vec<String>,
     pub period_type: String,
+    /// SDMX frequency code (A, F, H, S, Q, M, W, D, P).
+    pub freq: String,
+    pub measure_type: String,
+    pub aggregation: String,
+    /// official | third_party | derived | estimated
+    pub class: String,
+}
+
+impl IndicatorInfo {
+    /// The indicator's frequency.
+    pub fn frequency(&self) -> CoreResult<Freq> {
+        self.freq
+            .chars()
+            .next()
+            .and_then(Freq::from_char)
+            .ok_or_else(|| {
+                CoreError::bad_request(format!("indicator {} has no frequency", self.id))
+            })
+    }
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, ToSchema)]
 pub struct CurrentVersion {
     #[serde(skip)]
     pub version_id: i64,
+    /// Dataset-local sequence number of the version (`vfrom`/`vto` range unit).
+    pub seq: i32,
     pub dsv: String,
     pub vintage: Option<String>,
     pub row_count: i64,
@@ -59,6 +95,8 @@ pub struct CurrentVersion {
 #[derive(Debug, Clone, FromRow)]
 struct DatasetRow {
     id: String,
+    key: i32,
+    kind: String,
     title: String,
     description: String,
     method: String,
@@ -71,6 +109,10 @@ struct DatasetRow {
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct DatasetInfo {
     pub id: String,
+    #[serde(skip)]
+    pub key: i32,
+    /// indicators | features | boundaries | grid | crosswalk | codelist
+    pub kind: String,
     pub title: String,
     pub description: String,
     pub method: String,
@@ -83,6 +125,35 @@ pub struct DatasetInfo {
     pub current: Option<CurrentVersion>,
 }
 
+/// Interned dimension combinations (`catalog.dim_sets`).
+#[derive(Debug, Clone, Default)]
+pub struct DimSets {
+    by_key: HashMap<i32, String>,
+    by_text: HashMap<String, i32>,
+}
+
+impl DimSets {
+    #[must_use]
+    pub fn text(&self, key: i32) -> Option<&str> {
+        self.by_key.get(&key).map(String::as_str)
+    }
+
+    #[must_use]
+    pub fn key(&self, canonical: &str) -> Option<i32> {
+        self.by_text.get(canonical).copied()
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.by_key.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.by_key.is_empty()
+    }
+}
+
 /// Immutable snapshot; cheap to share, rebuilt on change.
 #[derive(Debug, Clone, Default)]
 pub struct Catalog {
@@ -93,6 +164,24 @@ pub struct Catalog {
     pub licences: HashMap<String, LicenceInfo>,
     /// Datasets in stable (id) order, for listings.
     pub dataset_order: Vec<String>,
+    pub dataset_by_key: HashMap<i32, String>,
+    pub indicator_by_key: HashMap<i32, String>,
+    pub dims: DimSets,
+    /// The synced country profile (`catalog.profile`); `None` before the first sync.
+    pub profile: Option<Arc<Profile>>,
+    /// Reference boundary set of the admin scheme.
+    pub reference_set: Option<String>,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct CurrentVersionRow {
+    dataset_id: String,
+    version_id: i64,
+    seq: i32,
+    dsv: String,
+    vintage: Option<String>,
+    row_count: i64,
+    published_at: Option<DateTime<Utc>>,
 }
 
 impl Catalog {
@@ -104,8 +193,30 @@ impl Catalog {
             .execute(&mut *tx)
             .await?;
 
+        let profile: Option<(serde_json::Value, Vec<u8>)> =
+            sqlx::query_as("SELECT spec, spec_sha256 FROM catalog.profile")
+                .fetch_optional(&mut *tx)
+                .await?;
+        let profile = profile
+            .map(|(spec, sha)| {
+                let sha: [u8; 32] = sha.try_into().unwrap_or([0; 32]);
+                Profile::from_json(spec, sha).map(Arc::new)
+            })
+            .transpose()
+            .map_err(|e| CoreError::bad_request(format!("catalog.profile: {e}")))?;
+        let reference_set: Option<String> = match &profile {
+            Some(p) => {
+                sqlx::query_scalar(
+                    "SELECT id FROM geo.boundary_sets WHERE is_reference AND scheme_id = $1",
+                )
+                .bind(p.admin_scheme())
+                .fetch_optional(&mut *tx)
+                .await?
+            }
+            None => None,
+        };
         let licences: Vec<LicenceInfo> = sqlx::query_as(
-            "SELECT id, status::text AS status, url, attribution FROM catalog.licences",
+            "SELECT id, status::text AS status, url, attribution, spdx, redistribution FROM catalog.licences",
         )
         .fetch_all(&mut *tx)
         .await?;
@@ -116,8 +227,8 @@ impl Catalog {
         .fetch_all(&mut *tx)
         .await?;
         let rows: Vec<DatasetRow> = sqlx::query_as(
-            "SELECT id, title, description, method, limits, publication_class::text AS publication_class,
-                    time_from, time_to
+            "SELECT id, key, kind, title, description, method, limits,
+                    publication_class::text AS publication_class, time_from, time_to
              FROM catalog.datasets ORDER BY id",
         )
         .fetch_all(&mut *tx)
@@ -128,26 +239,33 @@ impl Catalog {
         .fetch_all(&mut *tx)
         .await?;
         let indicators: Vec<IndicatorInfo> = sqlx::query_as(
-            "SELECT id, dataset_id, label, unit, dims, geo_levels, period_type
-             FROM catalog.indicators ORDER BY dataset_id, sort, id",
+            "SELECT i.id, i.key, i.dataset_id, i.label, i.unit_code AS unit, u.label_en AS unit_label,
+                    i.unit_mult, i.dims, i.geo_levels, i.period_type, i.freq::text AS freq,
+                    i.measure_type, i.aggregation, i.class
+             FROM catalog.indicators i LEFT JOIN catalog.units_of_measure u ON u.code = i.unit_code
+             ORDER BY i.dataset_id, i.sort, i.id",
         )
         .fetch_all(&mut *tx)
         .await?;
+        let dims: Vec<(i32, String)> = sqlx::query_as("SELECT key, dims FROM catalog.dim_sets")
+            .fetch_all(&mut *tx)
+            .await?;
         let data_version: Option<String> =
             sqlx::query_scalar("SELECT data_version FROM data.current_release")
                 .fetch_optional(&mut *tx)
                 .await?;
-        let current: Vec<(String, CurrentVersionRow)> = sqlx::query_as::<_, CurrentVersionRow>(
-            "SELECT dataset_id, version_id, dsv, vintage, row_count, published_at FROM data.current_versions",
+        let current: Vec<CurrentVersionRow> = sqlx::query_as(
+            "SELECT dataset_id, version_id, seq, dsv, vintage, row_count, published_at
+             FROM data.current_versions",
         )
         .fetch_all(&mut *tx)
-        .await?
-        .into_iter()
-        .map(|r| (r.dataset_id.clone(), r))
-        .collect();
+        .await?;
         tx.commit().await?;
 
-        let mut current: HashMap<String, CurrentVersionRow> = current.into_iter().collect();
+        let mut current: HashMap<String, CurrentVersionRow> = current
+            .into_iter()
+            .map(|r| (r.dataset_id.clone(), r))
+            .collect();
         let mut source_ids: HashMap<String, Vec<String>> = HashMap::new();
         for (d, s) in links {
             source_ids.entry(d).or_default().push(s);
@@ -161,11 +279,13 @@ impl Catalog {
         }
 
         let dataset_order = rows.iter().map(|r| r.id.clone()).collect();
+        let dataset_by_key = rows.iter().map(|r| (r.key, r.id.clone())).collect();
         let datasets = rows
             .into_iter()
             .map(|r| {
                 let cur = current.remove(&r.id).map(|c| CurrentVersion {
                     version_id: c.version_id,
+                    seq: c.seq,
                     dsv: c.dsv,
                     vintage: c.vintage,
                     row_count: c.row_count,
@@ -175,6 +295,8 @@ impl Catalog {
                     source_ids: source_ids.remove(&r.id).unwrap_or_default(),
                     indicator_ids: indicator_ids.remove(&r.id).unwrap_or_default(),
                     current: cur,
+                    key: r.key,
+                    kind: r.kind,
                     id: r.id,
                     title: r.title,
                     description: r.description,
@@ -188,6 +310,11 @@ impl Catalog {
             })
             .collect();
 
+        let indicator_by_key = indicators.iter().map(|i| (i.key, i.id.clone())).collect();
+        let dims = DimSets {
+            by_text: dims.iter().map(|(k, d)| (d.clone(), *k)).collect(),
+            by_key: dims.into_iter().collect(),
+        };
         Ok(Self {
             data_version,
             datasets,
@@ -195,16 +322,38 @@ impl Catalog {
             sources: sources.into_iter().map(|s| (s.id.clone(), s)).collect(),
             licences: licences.into_iter().map(|l| (l.id.clone(), l)).collect(),
             dataset_order,
+            dataset_by_key,
+            indicator_by_key,
+            dims,
+            profile,
+            reference_set,
         })
     }
 
-    /// Version ids of every dataset in the current release.
+    /// The country profile; requests needing codes fail cleanly before the
+    /// first `lanka registry sync`.
+    pub fn profile(&self) -> CoreResult<&Profile> {
+        self.profile
+            .as_deref()
+            .ok_or_else(|| CoreError::not_found("country profile (run `lanka registry sync`)"))
+    }
+
+    /// The dataset whose boundaries every area response cites.
     #[must_use]
-    pub fn current_version_ids(&self) -> Vec<i64> {
-        self.datasets
+    pub fn boundary_dataset(&self) -> Option<&str> {
+        self.profile.as_deref().map(Profile::boundary_dataset)
+    }
+
+    /// `(dataset_key, current seq)` of every dataset in the current release.
+    #[must_use]
+    pub fn current_seqs(&self) -> Vec<(i32, i32)> {
+        let mut v: Vec<(i32, i32)> = self
+            .datasets
             .values()
-            .filter_map(|d| d.current.as_ref().map(|c| c.version_id))
-            .collect()
+            .filter_map(|d| d.current.as_ref().map(|c| (d.key, c.seq)))
+            .collect();
+        v.sort_unstable();
+        v
     }
 
     /// Builds response meta (versions, sources, licences) for the datasets touched.
@@ -253,14 +402,4 @@ impl Catalog {
         meta.next = next;
         meta
     }
-}
-
-#[derive(Debug, Clone, FromRow)]
-struct CurrentVersionRow {
-    dataset_id: String,
-    version_id: i64,
-    dsv: String,
-    vintage: Option<String>,
-    row_count: i64,
-    published_at: Option<DateTime<Utc>>,
 }

@@ -1439,8 +1439,12 @@ name = "lanka-core"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "hex",
+ "ryu",
  "serde",
  "serde_json",
+ "serde_yaml_ng",
+ "sha2",
  "sqlx",
  "thiserror",
  "tokio",

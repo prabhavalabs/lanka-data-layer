@@ -32,6 +32,7 @@ utoipa = { version = "=6.0.0", features = ["axum_extras", "chrono"] }
 reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "gzip", "json"] }
 sha2 = "=0.11.1"
 hex = "=0.4.3"
+ryu = "=1.0.23"
 calamine = "=0.38.0"
 clap = { version = "=4.6.9", features = ["derive", "env"] }
 tracing = "=0.1.44"
