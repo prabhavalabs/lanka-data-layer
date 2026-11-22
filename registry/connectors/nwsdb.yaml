@@ -1,0 +1,61 @@
+# National Water Supply and Drainage Board, Annual Report 2024 (88 MB, 142 pages), hosted on
+# Google Drive and linked from waterboard.lk (which answers 403 to scripted clients). Only
+# table 05 (service level improvements, two years) is in the text layer and read here; the
+# connection, production and regional tables are images (OCR, class C: not done).
+# Licence permission_unclear: published with attribution and the takedown contact (08 §2).
+source: nwsdb
+driver: pdf_table
+version: 1.0.0
+description: >-
+  NWSDB Annual Report: national water supply coverage, NRW, staffing ratio and collection efficiency.
+  Class B: reviewed against the evidence sheet.
+discover:
+  files:
+    - key: nwsdb-ar-2024
+      url: https://drive.google.com/uc?export=download&id=1WV-EGoscAYLqNtk9obb48-RRz2dcllIB
+      edition: "2024"
+extract:
+  tables:
+    - { id: t05, file: nwsdb-ar-2024, template: nwsdb/service-level-improvements }
+standardise:
+  dataset: nwsdb-water-supply
+  vintage: "NWSDB Annual Report {edition}"
+  outputs:
+    - table: t05
+      indicator: water.pipe_borne_coverage
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_curr: {}, y_prev: {} }
+      rows:
+        "Total Pipe borne Water Supply Coverage": { supplier: total }
+        "i. NWSDB": { supplier: nwsdb }
+        "ii. CBO and Others": { supplier: cbo_others }
+    - table: t05
+      indicator: water.safe_water_access
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_curr: {}, y_prev: {} }
+      rows: { "Access to Safe Water Coverage": {} }
+    - table: t05
+      indicator: water.non_revenue_water
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_curr: {}, y_prev: {} }
+      rows: { "Non Revenue Water Reduction": {} }
+    - table: t05
+      indicator: water.staff_per_1000_connections
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_curr: {}, y_prev: {} }
+      rows: { "Total Staff / 1,000 connections": {} }
+    - table: t05
+      indicator: water.collection_efficiency
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: { y_curr: {}, y_prev: {} }
+      rows: { "Collection Efficiency": {} }
+expect:
+  - { check: row_count, min: 14, max: 14 }
+  - { check: no_future }
+  - { check: range, indicator: water.pipe_borne_coverage, min: 0, max: 100 }
+  - { check: sum_dims, dim: supplier, tol_pct: 0.5 }

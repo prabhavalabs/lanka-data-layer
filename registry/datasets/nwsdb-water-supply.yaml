@@ -1,30 +1,30 @@
 id: nwsdb-water-supply
-title: Piped water connections, coverage and performance
-description: Water connections, pipe-borne coverage by district/province, non-revenue water and operating performance.
+title: Water supply coverage and utility performance (NWSDB)
+description: National pipe-borne water supply coverage (NWSDB and community schemes), access to safe drinking water,
+  non-revenue water, staff per 1,000 connections and collection efficiency from the NWSDB annual report.
 source_ids:
 - nwsdb
 indicators:
-- id: water.connections
-  label: Water supply connections
-  unit: '{count}'
-  measure_type: count
-  aggregation: sum
+- id: water.pipe_borne_coverage
+  label: Population served by pipe-borne water supply
+  unit: '%'
+  measure_type: share
+  aggregation: none
   class: official
+  dims:
+  - id: supplier
+    codelist: water_supplier
   geo_levels:
   - national
-  - adm1
-  - adm2
   period_type: year
-- id: water.pipe_borne_coverage
-  label: Pipe-borne water coverage
+- id: water.safe_water_access
+  label: Population with access to safe drinking water
   unit: '%'
   measure_type: share
   aggregation: none
   class: official
   geo_levels:
   - national
-  - adm1
-  - adm2
   period_type: year
 - id: water.non_revenue_water
   label: Non-revenue water
@@ -34,19 +34,37 @@ indicators:
   class: official
   geo_levels:
   - national
-  - adm1
+  period_type: year
+- id: water.staff_per_1000_connections
+  label: NWSDB staff per 1,000 connections
+  unit: '/10*3'
+  measure_type: ratio
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: year
+- id: water.collection_efficiency
+  label: Billing collection efficiency
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
   period_type: year
 time_coverage:
-  from: '2015'
+  from: '2023'
   to: '2024'
-method: PDF tables reviewed.
+method: 'Text-layer PDF of the NWSDB Annual Report 2024 (Google Drive link from waterboard.lk) read through the registry
+  template nwsdb/service-level-improvements (table 05: report year and previous year). Class B.'
 limits:
-- NWSDB schemes only; community water supply excluded.
+- National figures only in the text layer; the report's connection counts, production and regional tables (14, 15, 32)
+  are printed as images and need OCR (class C), not done yet.
+- The staff ratio is printed with a % unit in the report; it is staff per 1,000 connections.
 enrichment:
   joins:
-  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
-    spellings, renamed units)'
-  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  - 'national series: no spatial join'
   aggregations:
-  - 'cross-source: compare with dcs-census-2024-basic-services water source'
+  - 'time series derivations: year-on-year change'
 publication_class: B

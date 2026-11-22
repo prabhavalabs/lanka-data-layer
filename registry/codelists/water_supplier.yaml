@@ -1,0 +1,13 @@
+# Pipe-borne water supplier
+# Source/authority: National Water Supply and Drainage Board, Annual Report 2024, table 05 (pipe-borne water supply
+#   coverage: NWSDB; CBO and others = community-based organisations and local authority schemes).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: nwsdb-water-supply
+id: water_supplier
+title: Pipe-borne water supplier
+codes:
+  - { code: total, label: All pipe-borne supply, total: true, sdmx: _T }
+  - { code: nwsdb, label: National Water Supply and Drainage Board, parent: total }
+  - { code: cbo_others, label: Community-based organisations and others, parent: total }
