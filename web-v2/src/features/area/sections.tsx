@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AreaProfile } from '@/api/types'
+import { isSample, type AreaProfile } from '@/api/types'
 import { Legend } from '@/components/charts/chartKit'
 import { ClimateBars } from '@/components/charts/ClimateBars'
 import { LineChart } from '@/components/charts/LineChart'
@@ -44,7 +44,9 @@ export function PeopleSection({ profile }: { profile: AreaProfile }) {
     >
       <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="min-w-0">
-          <ChartTitle sub="Share of all residents in each five-year band">Age structure by sex</ChartTitle>
+          <ChartTitle sample={isSample(profile.sample, 'pyramid')} sub="Share of all residents in each five-year band">
+            Age structure by sex
+          </ChartTitle>
           {view === 'chart' ? (
             <>
               <Legend
@@ -66,7 +68,7 @@ export function PeopleSection({ profile }: { profile: AreaProfile }) {
           )}
         </div>
         <div className="min-w-0">
-          <ChartTitle sub={`${fmtSigned(growth)}% over ${last.year - first.year} years`}>
+          <ChartTitle sample={isSample(profile.sample, 'popSeries')} sub={`${fmtSigned(growth)}% over ${last.year - first.year} years`}>
             Residents, {first.year}–{last.year}
           </ChartTitle>
           <LineChart
@@ -105,6 +107,7 @@ export function AccessSection({ profile }: { profile: AreaProfile }) {
       lead={`${h.within30.toFixed(0)}% of residents can reach one within half an hour by road.`}
       source={`Source: Lanka Data Layer travel-time model on OSM roads, Ministry of Health facility list · 2026 · ${profile.meta.data_version}`}
       href={`/explore?indicator=access.hospital.drive_min&area=${profile.area.pcode}`}
+      sample={isSample(profile.sample, 'access')}
     >
       <Legend
         className="mb-4"
@@ -143,7 +146,9 @@ export function LandSection({ profile }: { profile: AreaProfile }) {
     >
       <div className="grid grid-cols-1 gap-x-10 gap-y-9 lg:grid-cols-2">
         <div className="min-w-0">
-          <ChartTitle sub="Share of land area, 2025">Land cover</ChartTitle>
+          <ChartTitle sample={isSample(profile.sample, 'land')} sub={profile.real && !isSample(profile.sample, 'land') ? 'Share of land area, ESA WorldCover 2021' : 'Share of land area, 2025'}>
+            Land cover
+          </ChartTitle>
           <StackBar segments={segs} ariaLabel={`Land cover shares: ${segs.map((s) => `${s.label} ${s.share.toFixed(0)}%`).join(', ')}`} />
           <ul className="mt-5 text-[13px]">
             {segs.map((s) => (
@@ -156,7 +161,9 @@ export function LandSection({ profile }: { profile: AreaProfile }) {
           </ul>
         </div>
         <div className="min-w-0">
-          <ChartTitle sub={`From ${pct(b75.share)} in ${b75.year} to ${pct(b25.share)} in ${b25.year}`}>Built-up share of land</ChartTitle>
+          <ChartTitle sample={isSample(profile.sample, 'built')} sub={`From ${pct(b75.share)} in ${b75.year} to ${pct(b25.share)} in ${b25.year}`}>
+            Built-up share of land
+          </ChartTitle>
           <Legend
             className="mb-2"
             items={[
@@ -193,16 +200,19 @@ export function ClimateSection({ profile }: { profile: AreaProfile }) {
   const total = sum(c.map((d) => d.rain))
   const normal = sum(c.map((d) => (d.lo + d.hi) / 2))
   const outside = c.filter((d) => d.rain < d.lo || d.rain > d.hi).length
+  // live data ships monthly normals only: no observed year, so no normal range to compare against
+  const normals = c.every((d) => d.lo === d.hi)
   return (
     <SectionCard
       id="climate"
       n="04"
       kicker="Climate"
       title={`${wet.month} is the wettest month at ${fmtInt(wet.rain)} mm; ${dry.month} the driest at ${fmtInt(dry.rain)} mm`}
-      lead={outside ? `${outside} of 12 months fell outside the 1991–2020 normal range.` : 'Every month fell inside the 1991–2020 normal range.'}
+      lead={normals ? `${fmtInt(total)} mm of rain in a typical year, with a mean temperature of ${(sum(c.map((d) => d.temp)) / 12).toFixed(1)} °C.` : outside ? `${outside} of 12 months fell outside the 1991–2020 normal range.` : 'Every month fell inside the 1991–2020 normal range.'}
       actions={<ViewToggle value={view} onChange={setView} label="Climate" />}
-      source={`Source: CHIRPS v2.0 rainfall, ERA5-Land 2 m temperature · 2025 against 1991–2020 normals · ${profile.meta.data_version}`}
+      source={normals ? `Source: WorldClim 2.1 monthly climate normals, 1970–2000 · ${profile.meta.data_version}` : `Source: CHIRPS v2.0 rainfall, ERA5-Land 2 m temperature · 2025 against 1991–2020 normals · ${profile.meta.data_version}`}
       href={`/explore?indicator=rain.annual&area=${profile.area.pcode}`}
+      sample={isSample(profile.sample, 'climate')}
     >
       <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div className="min-w-0">
@@ -211,8 +221,8 @@ export function ClimateSection({ profile }: { profile: AreaProfile }) {
               <Legend
                 className="mb-3"
                 items={[
-                  { label: 'Rainfall 2025', color: w[4] },
-                  { label: 'Normal range 1991–2020', color: 'var(--ink3)', kind: 'band' },
+                  { label: normals ? 'Monthly normal rainfall' : 'Rainfall 2025', color: w[4] },
+                  ...(normals ? [] : [{ label: 'Normal range 1991–2020', color: 'var(--ink3)', kind: 'band' as const }]),
                   { label: 'Mean temperature', color: warm, kind: 'line' },
                 ]}
               />
@@ -227,7 +237,7 @@ export function ClimateSection({ profile }: { profile: AreaProfile }) {
           )}
         </div>
         <dl className="grid grid-cols-3 content-start gap-x-4 gap-y-6 border-line max-lg:border-t max-lg:pt-5 lg:grid-cols-1 lg:border-l lg:pl-7">
-          <Fact label="Annual rainfall" value={`${fmtInt(total)} mm`} note={`${fmtSigned(((total - normal) / normal) * 100)}% vs normal`} />
+          <Fact label="Annual rainfall" value={`${fmtInt(total)} mm`} note={normals ? 'normal year' : `${fmtSigned(((total - normal) / normal) * 100)}% vs normal`} />
           <Fact label="Wettest month" value={wet.month} note={`${fmtInt(wet.rain)} mm`} />
           <Fact label="Mean temp" value={`${(sum(c.map((d) => d.temp)) / 12).toFixed(1)} °C`} note={`${Math.min(...c.map((d) => d.temp)).toFixed(1)}–${Math.max(...c.map((d) => d.temp)).toFixed(1)} °C`} />
         </dl>
@@ -253,6 +263,7 @@ export function ElectionsSection({ profile }: { profile: AreaProfile }) {
       source={`Source: Election Commission of Sri Lanka · Parliamentary election 2024, results by polling division · ${profile.meta.data_version}`}
       href="/data?theme=elections"
       hrefLabel="See election datasets"
+      sample={isSample(profile.sample, 'elections')}
     >
       <div className="grid grid-cols-1 gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_190px]">
         <div className="min-w-0">

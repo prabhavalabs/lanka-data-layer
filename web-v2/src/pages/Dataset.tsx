@@ -3,8 +3,8 @@ import { ArrowUpRight, Check, ChevronRight, Copy, Download, Minus, Plus, Triangl
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { datasetQuery, themesQuery } from '@/api/queries'
-import type { DatasetDetail } from '@/api/types'
-import { FreshnessDot, LicenceLight } from '@/components/common/bits'
+import { isSample, type DatasetDetail } from '@/api/types'
+import { FreshnessDot, LicenceLight, SampleMark } from '@/components/common/bits'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,7 +30,7 @@ function snippets(d: DatasetDetail) {
   return {
     api: `$ curl "${API}/datasets/${d.id}"\n$ curl "${API}/query" \\\n    -d '{"dataset":"${d.id}","filter":{"level":2},"limit":25}'`,
     mcp: `{\n  "method": "tools/call",\n  "params": {\n    "name": "describe_dataset",\n    "arguments": { "dataset_id": "${d.id}" }\n  }\n}`,
-    cli: `$ lanka pull core\n$ lanka export ${d.id} --format parquet --where "level = 2"\n$ lanka diff ${d.versions[1].dsv} ${d.versions[0].dsv} --dataset ${d.id}`,
+    cli: `$ lanka pull core\n$ lanka export ${d.id} --format parquet --where "level = 2"\n$ lanka diff ${(d.versions[1] ?? d.versions[0])?.dsv ?? ''} ${d.versions[0]?.dsv ?? ''} --dataset ${d.id}`,
     sql: `select *\nfrom '${DOWNLOADS}/${d.id}.parquet'\nlimit 10;`,
   }
 }
@@ -74,7 +74,7 @@ export default function DatasetPage() {
     ['Vintage', d.vintage],
     ['Refresh', d.cadence],
     ['Updated', d.updated],
-    ['Bundle size', `${d.sizeMb.toFixed(1)} MB`],
+    ['Bundle size', <span key="size" className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">{`${d.sizeMb.toFixed(1)} MB`}{isSample(d.sample, 'sizeMb') && <SampleMark />}</span>],
   ]
 
   return (
@@ -100,6 +100,7 @@ export default function DatasetPage() {
             <FreshnessDot state={d.freshness} />
             <span className="text-line2">·</span>
             <span>{d.publisher}</span>
+            {isSample(d.sample, '*') && <SampleMark title="Every value on this page is illustrative: the live API is not reachable or does not hold this dataset" />}
           </div>
         </div>
         <div className="flex flex-wrap gap-2.5">
@@ -134,16 +135,19 @@ export default function DatasetPage() {
                   <TabsTrigger value="preview">Preview</TabsTrigger>
                   <TabsTrigger value="schema">Columns</TabsTrigger>
                 </TabsList>
-                <span className="t-label">first 10 of {fmtInt(d.rows)} rows · Colombo district</span>
+                <span className="t-label inline-flex flex-wrap items-center gap-2">
+                  {d.previewNote ?? `first 10 of ${fmtInt(d.rows)} rows · Colombo district`}
+                  {isSample(d.sample, 'preview') && <SampleMark />}
+                </span>
               </div>
               <TabsContent value="preview">
                 <div className="scroll-thin overflow-x-auto rounded-xl border border-line bg-bg2">
                   <table className="w-full min-w-[720px] border-collapse text-[12.5px]">
                     <thead>
                       <tr className="border-b border-line">
-                        {d.columns.map((c) => (
-                          <th key={c.name} className="px-3.5 py-2.5 text-left font-mono text-[11px] font-normal whitespace-nowrap text-ink3">
-                            {c.name}
+                        {(d.previewColumns ?? d.columns.map((c) => c.name)).map((name) => (
+                          <th key={name} className="px-3.5 py-2.5 text-left font-mono text-[11px] font-normal whitespace-nowrap text-ink3">
+                            {name}
                           </th>
                         ))}
                       </tr>
@@ -227,9 +231,9 @@ export default function DatasetPage() {
                     <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12.5px] text-ink2">
                       <span>{src.publisher}</span>
                       <LicenceLight status={src.status} label={src.licence} />
-                      <span className="text-ink3">retrieved {src.retrieved}</span>
+                      {src.retrieved && <span className="text-ink3">retrieved {src.retrieved}</span>}
                     </div>
-                    <div className="mt-2 truncate font-mono text-[11px] text-ink3">sha256 {src.sha256}</div>
+                    {src.sha256 && <div className="mt-2 truncate font-mono text-[11px] text-ink3">sha256 {src.sha256}</div>}
                   </div>
                 </li>
               ))}
@@ -268,7 +272,10 @@ export default function DatasetPage() {
           <div id="downloads" className="surface scroll-mt-28 overflow-hidden">
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <h2 className="text-[14px] font-semibold">Downloads</h2>
-              <span className="t-label">v 20261118.1</span>
+              <span className="t-label inline-flex items-center gap-2">
+                {isSample(d.sample, 'downloads') && <SampleMark title="File names and sizes are placeholders: downloads are not served by the live API yet" />}
+                v {d.dataVersion ?? '20261118.1'}
+              </span>
             </div>
             <ul>
               {d.downloads.map((f) => (

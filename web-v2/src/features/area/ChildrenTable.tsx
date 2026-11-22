@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import type { AreaProfile, ChildRow } from '@/api/types'
 import { Sparkline } from '@/components/charts/Sparkline'
-import { Eyebrow, PcodePlate, Reveal } from '@/components/common/bits'
+import { isSample } from '@/api/types'
+import { Eyebrow, PcodePlate, Reveal, SampleMark } from '@/components/common/bits'
 import { fmt1, fmtInt, fmtSigned } from '@/lib/format'
 import { useTheme } from '@/lib/hooks'
 import { ramp } from '@/lib/palettes'
@@ -32,7 +33,9 @@ export function ChildrenTable({ profile }: { profile: AreaProfile }) {
     })
   }, [children, sort])
   const maxDensity = Math.max(...children.map((c) => c.density))
-  const navigable = area.level < 2
+  const navigable = area.level < 2 || !!profile.real
+  // change, hospital time and trend have no live source yet; population and density are live unless the child level lacks them
+  const sampleCol = (key: string) => (key === 'change' || key === 'hospitalMin' ? isSample(profile.sample, 'children') : key === 'population' || key === 'density' ? isSample(profile.sample, 'children.values') : false)
   const kind = CHILD_LEVEL[area.level]
   const fill = ramp('people', theme)[3]
 
@@ -74,6 +77,7 @@ export function ChildrenTable({ profile }: { profile: AreaProfile }) {
                           {c.label}
                           {c.unit && <span className="ml-1.5 font-normal text-ink3">{c.unit}</span>}
                         </span>
+                        {sampleCol(c.key) && <SampleMark />}
                         <Icon className={cn('size-3 shrink-0', on ? 'text-ink' : 'text-ink3')} aria-hidden />
                       </button>
                     </th>
@@ -81,6 +85,7 @@ export function ChildrenTable({ profile }: { profile: AreaProfile }) {
                 })}
                 <th scope="col" className="sticky top-0 z-10 border-b border-line2 bg-bg3 px-4 text-right text-[12px] font-medium whitespace-nowrap text-ink2">
                   Trend <span className="ml-1 font-normal text-ink3">2012–24</span>
+                  {isSample(profile.sample, 'children') && <SampleMark className="ml-1.5" />}
                 </th>
               </tr>
             </thead>

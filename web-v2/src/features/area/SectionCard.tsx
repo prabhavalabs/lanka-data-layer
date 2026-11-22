@@ -1,7 +1,7 @@
 import { ArrowRight, BarChart3, Table2 } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { Eyebrow, Reveal } from '@/components/common/bits'
+import { Eyebrow, Reveal, SampleMark } from '@/components/common/bits'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
 
@@ -34,6 +34,7 @@ export function SectionCard({
   source,
   href,
   hrefLabel = 'See indicator',
+  sample = false,
 }: {
   id: string
   n: string
@@ -45,6 +46,8 @@ export function SectionCard({
   source: ReactNode
   href: string
   hrefLabel?: string
+  /** the whole section still shows bundled sample values */
+  sample?: boolean
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24">
@@ -52,7 +55,10 @@ export function SectionCard({
         <div className="surface overflow-hidden shadow-[var(--shadow-sm)]">
           <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4 px-5 pt-5 sm:px-7 sm:pt-6">
             <div className="max-w-[660px] min-w-0">
-              <Eyebrow n={n}>{kicker}</Eyebrow>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <Eyebrow n={n}>{kicker}</Eyebrow>
+                {sample && <SampleMark />}
+              </div>
               <h2 id={`${id}-title`} className="t-h3 mt-3">
                 {title}
               </h2>
@@ -74,10 +80,13 @@ export function SectionCard({
   )
 }
 
-export function ChartTitle({ children, sub, className }: { children: ReactNode; sub?: ReactNode; className?: string }) {
+export function ChartTitle({ children, sub, className, sample = false }: { children: ReactNode; sub?: ReactNode; className?: string; sample?: boolean }) {
   return (
     <div className={cn('mb-3', className)}>
-      <h3 className="text-[13px] font-medium tracking-[-0.005em] text-ink">{children}</h3>
+      <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-medium tracking-[-0.005em] text-ink">
+        {children}
+        {sample && <SampleMark />}
+      </h3>
       {sub && <p className="mt-0.5 text-[12px] text-ink3">{sub}</p>}
     </div>
   )

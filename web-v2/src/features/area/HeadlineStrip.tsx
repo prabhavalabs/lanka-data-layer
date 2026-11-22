@@ -2,6 +2,8 @@ import { FileSearch } from 'lucide-react'
 import { useState } from 'react'
 import type { AreaProfile, Headline } from '@/api/types'
 import { Sparkline } from '@/components/charts/Sparkline'
+import { isSample } from '@/api/types'
+import { SampleMark } from '@/components/common/bits'
 import { ProvenanceDrawer } from '@/components/common/ProvenanceDrawer'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { fmtInt, fmtSigned } from '@/lib/format'
@@ -60,7 +62,12 @@ export function HeadlineStrip({ profile }: { profile: AreaProfile }) {
                   <StatusMark status={h.status} />
                 </span>
               </span>
-              {h.id === 'pop.total' && <Sparkline data={profile.popSeries.map((p) => p.value)} width={76} height={26} className="max-sm:hidden" />}
+              {h.id === 'pop.total' && (
+                <span className="flex flex-col items-end gap-1 max-sm:hidden">
+                  <Sparkline data={profile.popSeries.map((p) => p.value)} width={76} height={26} />
+                  {isSample(profile.sample, 'popSeries') && <SampleMark />}
+                </span>
+              )}
             </dd>
           </div>
         ))}

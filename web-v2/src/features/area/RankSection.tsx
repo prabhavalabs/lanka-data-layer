@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router'
 import type { AreaProfile, RankItem } from '@/api/types'
 import { Legend } from '@/components/charts/chartKit'
 import { RankStrip } from '@/components/charts/RankStrip'
-import { Eyebrow, Reveal } from '@/components/common/bits'
+import { isSample } from '@/api/types'
+import { Eyebrow, Reveal, SampleMark } from '@/components/common/bits'
 import { fmt1, fmtInt } from '@/lib/format'
 import { LEVEL } from './AreaHeader'
 
@@ -46,7 +47,10 @@ export function RankSection({ profile }: { profile: AreaProfile }) {
       <Reveal>
         <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
           <div>
-            <Eyebrow>Standing</Eyebrow>
+            <div className="flex flex-wrap items-center gap-3">
+              <Eyebrow>Standing</Eyebrow>
+              {isSample(profile.sample, 'ranks') && <SampleMark />}
+            </div>
             <h2 id="ranks-title" className="t-h3 mt-3">
               {area.level === 0 ? 'How the provinces spread around the national figure' : `How ${area.name.en} sits among ${profile.ranks[0]?.of ?? ''} ${sib}s`}
             </h2>

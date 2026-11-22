@@ -105,3 +105,12 @@ export function Eyebrow({ children, n, className }: { children: ReactNode; n?: s
 export function Kbd({ children, className }: { children: ReactNode; className?: string }) {
   return <kbd className={cn('inline-grid h-5 min-w-5 place-items-center rounded-[5px] border border-line2 bg-bg3 px-1 font-mono text-[10.5px] text-ink2', className)}>{children}</kbd>
 }
+
+/** Marks values that are bundled sample data, not (yet) served by the live API. Quiet by design: dashed outline, mono, muted. */
+export function SampleMark({ className, title = 'Illustrative values: the live API does not serve this yet' }: { className?: string; title?: string }) {
+  return (
+    <span title={title} className={cn('inline-flex h-[18px] items-center rounded-full border border-dashed border-line2 px-1.5 align-middle font-mono text-[10px] leading-none font-normal tracking-[0.02em] whitespace-nowrap text-ink3', className)}>
+      sample data
+    </span>
+  )
+}

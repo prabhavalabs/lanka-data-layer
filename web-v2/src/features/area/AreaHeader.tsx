@@ -7,8 +7,8 @@ import { PcodePlate } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { fmtCoord, fmtInt } from '@/lib/format'
 
-export const LEVEL = ['Country', 'Province', 'District', 'DS division'] as const
-export const CHILD_LEVEL = ['Provinces', 'Districts', 'DS divisions', 'GN divisions'] as const
+export const LEVEL = ['Country', 'Province', 'District', 'DS division', 'GN division'] as const
+export const CHILD_LEVEL = ['Provinces', 'Districts', 'DS divisions', 'GN divisions', 'Sub-units'] as const
 
 function download(name: string, mime: string, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: mime }))

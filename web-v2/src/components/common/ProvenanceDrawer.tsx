@@ -13,7 +13,7 @@ export function PageCrop({ p, className }: { p: Pick<Provenance, 'crop' | 'locat
     <figure className={cn('overflow-hidden rounded-lg border border-line2 bg-[#f4f1ea] text-[#2a2620] shadow-[inset_0_0_40px_rgba(120,100,60,0.12)]', className)}>
       <div className="flex items-center justify-between border-b border-black/10 px-3 py-1.5 font-mono text-[10px] text-black/45">
         <span>{p.locator.table} · Population by district and sex</span>
-        <span>p. {p.locator.page}</span>
+        <span>{p.locator.page ? `p. ${p.locator.page}` : p.locator.table}</span>
       </div>
       <table className="w-full border-collapse font-serif text-[12.5px] leading-tight">
         <thead>
@@ -91,7 +91,7 @@ export function ProvenanceDrawer({ observationId, onClose, title }: { observatio
               <div className="py-4">
                 <PageCrop p={p} />
                 <p className="mt-2 text-xs text-ink3">
-                  Rendered crop of page {p.locator.page}. Row “{p.locator.row}”, column “{p.locator.column}”.
+                  {p.locator.page ? `Rendered crop of page ${p.locator.page}.` : 'Source table.'} Row “{p.locator.row}”, column “{p.locator.column}”.
                 </p>
               </div>
               <Row icon={FileText} label="Source document">
@@ -99,12 +99,12 @@ export function ProvenanceDrawer({ observationId, onClose, title }: { observatio
                   {p.document.title} <ArrowUpRight className="mt-0.5 size-3.5 shrink-0" />
                 </a>
                 <div className="mt-0.5 text-ink2">
-                  {p.document.publisher} · published {p.document.published} · {p.document.pages} pages
+                  {p.document.publisher} · published {p.document.published} {p.document.pages ? `· ${p.document.pages} pages` : ''}
                 </div>
               </Row>
               <Row icon={ScanSearch} label="Locator">
                 <span className="font-mono text-[12.5px]">
-                  page {p.locator.page} › {p.locator.table} › row “{p.locator.row}” › col “{p.locator.column}”
+                  {p.locator.page ? `page ${p.locator.page} › ` : ''}{p.locator.table} › row “{p.locator.row}” › col “{p.locator.column}”
                 </span>
               </Row>
               <Row icon={Fingerprint} label="File hash (SHA-256)">

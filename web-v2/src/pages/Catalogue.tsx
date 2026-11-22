@@ -3,9 +3,9 @@ import { ArrowUpRight, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { datasetsQuery, themesQuery } from '@/api/queries'
-import type { Dataset, LicenceStatus } from '@/api/types'
+import { isSample, type Dataset, type LicenceStatus } from '@/api/types'
 import { Sparkline } from '@/components/charts/Sparkline'
-import { Eyebrow, FreshnessDot, LicenceLight } from '@/components/common/bits'
+import { Eyebrow, FreshnessDot, LicenceLight, SampleMark } from '@/components/common/bits'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,7 +22,13 @@ const LICENCE_LABEL: Record<LicenceStatus, string> = { open: 'Open', attribution
 const PUBLISHER_LABEL: Record<Dataset['publisherType'], string> = { government: 'Government', multilateral: 'Multilateral', community: 'Community', research: 'Research', derived: 'Derived by us' }
 const LEVELS = ['ADM0', 'ADM1', 'ADM2', 'ADM3', 'ADM4', 'Grid', 'Point', 'Line', 'Polygon']
 
-const levelsOf = (d: Dataset) => LEVELS.filter((l) => d.levels.some((x) => x.startsWith(l) || (x.startsWith('ADM0–') && l.startsWith('ADM'))))
+/** 'ADM1–ADM3' covers ADM1, ADM2 and ADM3; 'Grid 100 m' covers Grid. */
+const covers = (x: string, l: string) => {
+  const r = /^ADM(\d)–ADM(\d)$/.exec(x)
+  const n = /^ADM(\d)$/.exec(l)
+  return r && n ? Number(n[1]) >= Number(r[1]) && Number(n[1]) <= Number(r[2]) : x.startsWith(l)
+}
+const levelsOf = (d: Dataset) => LEVELS.filter((l) => d.levels.some((x) => covers(x, l)))
 const facetValues = (d: Dataset): Filters => ({ theme: [d.theme], licence: [d.licence.status], level: levelsOf(d), publisher: [d.publisherType], format: d.formats })
 const matches = (d: Dataset, f: Filters, skip?: FacetKey) => {
   const v = facetValues(d)
@@ -167,6 +173,11 @@ export default function Catalogue() {
             <span className="t-num mr-1 text-[13px] text-ink2">
               {isPending ? 'Loading…' : `${rows.length} of ${data.length} datasets`}
             </span>
+            {data.some((d) => isSample(d.sample, 'spark')) && (
+              <span className="order-last ml-auto inline-flex items-center gap-1.5 text-[12px] text-ink3">
+                Sparklines <SampleMark title="Trend sparklines are illustrative: per-dataset API read counts are not served yet" />
+              </span>
+            )}
             {active.map(([k, v]) => (
               <button key={k + v} type="button" onClick={() => toggle(k, v)} className="pressable inline-flex h-6 items-center gap-1 rounded-full border border-line2 bg-bg3 pr-1.5 pl-2.5 text-[12px] text-ink hover:border-ink3" aria-label={`Remove filter ${v}`}>
                 {k === 'theme' ? themeLabel(v) : k === 'licence' ? LICENCE_LABEL[v as LicenceStatus] : k === 'publisher' ? PUBLISHER_LABEL[v as Dataset['publisherType']] : v}

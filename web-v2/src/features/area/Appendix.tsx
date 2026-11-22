@@ -2,7 +2,8 @@ import { ArrowUpRight, Info } from 'lucide-react'
 import { Link } from 'react-router'
 import type { AreaProfile } from '@/api/types'
 import { CodeBlock } from '@/components/common/CodeBlock'
-import { Eyebrow, LicenceLight, PcodePlate, Reveal } from '@/components/common/bits'
+import { isSample } from '@/api/types'
+import { Eyebrow, LicenceLight, PcodePlate, Reveal, SampleMark } from '@/components/common/bits'
 import { API, SITE } from '@/lib/site'
 import { LEVEL } from './AreaHeader'
 
@@ -11,7 +12,10 @@ export function PostalAndNeighbours({ profile }: { profile: AreaProfile }) {
   return (
     <Reveal className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-2">
       <section aria-labelledby="postal-title">
-        <Eyebrow>Postal codes</Eyebrow>
+        <div className="flex flex-wrap items-center gap-3">
+          <Eyebrow>Postal codes</Eyebrow>
+          {isSample(profile.sample, 'postal') && <SampleMark />}
+        </div>
         <h2 id="postal-title" className="mt-3 text-[15px] font-semibold text-ink">
           Main post offices in {area.name.en}
         </h2>
@@ -25,7 +29,10 @@ export function PostalAndNeighbours({ profile }: { profile: AreaProfile }) {
         </ul>
       </section>
       <section aria-labelledby="neighbours-title">
-        <Eyebrow>Neighbours</Eyebrow>
+        <div className="flex flex-wrap items-center gap-3">
+          <Eyebrow>Neighbours</Eyebrow>
+          {isSample(profile.sample, 'neighbours') && <SampleMark title="Units from the same parent, not ranked by distance" />}
+        </div>
         <h2 id="neighbours-title" className="mt-3 text-[15px] font-semibold text-ink">
           Nearest {area.level === 0 ? 'provinces' : `${LEVEL[area.level].toLowerCase()}s`}
         </h2>

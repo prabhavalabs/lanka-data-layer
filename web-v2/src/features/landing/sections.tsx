@@ -3,9 +3,10 @@ import { ArrowRight, ArrowUpRight, Bot, Braces, CircleHelp, Download, FileSearch
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { areaProfileQuery, datasetsQuery, provenanceQuery, statsQuery, themesQuery } from '@/api/queries'
+import { isSample } from '@/api/types'
 import { LocatorMap } from '@/components/charts/LocatorMap'
 import { Sparkline } from '@/components/charts/Sparkline'
-import { Eyebrow, FreshnessDot, LicenceLight, PcodePlate, Reveal } from '@/components/common/bits'
+import { Eyebrow, FreshnessDot, LicenceLight, PcodePlate, Reveal, SampleMark } from '@/components/common/bits'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { PageCrop, ProvenanceDrawer } from '@/components/common/ProvenanceDrawer'
 import { Button } from '@/components/ui/button'
@@ -60,10 +61,10 @@ function CountUp({ to, format = fmtInt }: { to: number; format?: (n: number) => 
 export function StatsStrip() {
   const { data: s } = useQuery(statsQuery())
   const items = [
-    { label: 'Datasets', value: s?.datasets ?? 0, note: 'each with licence status and limits' },
-    { label: 'Areas with a p-code', value: s?.areas ?? 0, note: 'province to GN division' },
-    { label: 'Grid cells, 100 m', value: s?.cells ?? 0, note: 'one canonical grid for every raster' },
-    { label: 'Source documents', value: s?.sources ?? 0, note: 'stored by SHA-256, watched on a schedule' },
+    { key: 'datasets', label: 'Datasets', value: s?.datasets ?? 0, note: 'each with licence status and limits' },
+    { key: 'areas', label: 'Areas with a p-code', value: s?.areas ?? 0, note: 'province to GN division' },
+    { key: 'cells', label: 'Grid cells, 100 m', value: s?.cells ?? 0, note: 'one canonical grid for every raster' },
+    { key: 'sources', label: 'Source documents', value: s?.sources ?? 0, note: 'stored by SHA-256, watched on a schedule' },
   ]
   return (
     <div className="border-y border-line bg-bg2/40">
@@ -73,6 +74,7 @@ export function StatsStrip() {
             <div className="text-[clamp(1.7rem,1.1rem+2.2vw,2.75rem)] leading-none font-semibold tracking-[-0.04em] text-ink">{s ? <CountUp to={it.value} /> : <span className="skeleton inline-block h-9 w-28 align-bottom" />}</div>
             <div className="mt-2.5 text-[13.5px] font-medium text-ink">{it.label}</div>
             <div className="mt-0.5 text-[12.5px] text-ink3">{it.note}</div>
+            {isSample(s?.sample, it.key) && <SampleMark className="mt-2" />}
           </div>
         ))}
       </div>
@@ -410,6 +412,7 @@ export function AreaTeaser() {
             <div className="flex items-center justify-between gap-4 border-t border-line px-6 py-3.5 sm:px-7">
               <div className="flex items-center gap-3 text-[12.5px] text-ink2">
                 Residents, 2012 to 2024
+                {isSample(a?.sample, 'popSeries') && <SampleMark />}
                 {a && <Sparkline data={a.popSeries.map((d) => d.value)} width={110} height={24} color="var(--ink2)" />}
               </div>
               <span className="inline-flex items-center gap-1 text-[13px] font-medium text-ink">
@@ -426,7 +429,9 @@ export function AreaTeaser() {
 /* ---------------- catalogue teaser ---------------- */
 export function CatalogueTeaser() {
   const { data = [] } = useQuery(datasetsQuery())
-  const rows = data.filter((d) => ['census-2024', 'admin-boundaries', 'pop-grid-100m', 'access-health', 'rain-chirps', 'elections-results'].includes(d.id))
+  const FEATURED = ['dcs-census-2024-population', 'cod-ab-lka-boundaries', 'worldpop-pop-grid', 'worldcover-land-cover', 'worldclim-climate-normals', 'jrc-river-flood-hazard', 'census-2024', 'admin-boundaries', 'pop-grid-100m', 'access-health', 'rain-chirps', 'elections-results']
+  const featured = data.filter((d) => FEATURED.includes(d.id)).sort((a, b) => FEATURED.indexOf(a.id) - FEATURED.indexOf(b.id))
+  const rows = featured.length >= 6 ? featured.slice(0, 6) : data.slice(0, 6)
   return (
     <div className="border-y border-line bg-bg2/40">
       <Section>
@@ -447,7 +452,10 @@ export function CatalogueTeaser() {
             <span>Licence</span>
             <span className="text-right">Rows</span>
             <span>Freshness</span>
-            <span className="text-right">API reads</span>
+            <span className="flex flex-col items-end gap-1 text-right">
+              API reads
+              {rows.some((d) => isSample(d.sample, 'spark')) && <SampleMark title="Illustrative: per-dataset API read counts are not served yet" />}
+            </span>
           </div>
           <ul className="divide-y divide-line">
             {(rows.length ? rows : Array.from({ length: 6 }, () => null)).map((d, i) =>
