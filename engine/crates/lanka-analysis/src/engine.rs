@@ -30,6 +30,17 @@ use crate::result::{self, Present};
 
 pub type CatalogFn = Arc<dyn Fn() -> Arc<Catalog> + Send + Sync>;
 
+/// A grid layer the host already holds memory-mapped (the server's served
+/// layers): the cells and the dataset that owns them.
+#[derive(Clone)]
+pub struct MappedLayer {
+    pub grid: Arc<lanka_grid::MappedGrid>,
+    pub dataset_id: String,
+}
+
+/// Looks up a mapped layer by `(id, period)`; `None` → read it from the store.
+pub type MappedGridFn = Arc<dyn Fn(&str, &str) -> Option<MappedLayer> + Send + Sync>;
+
 /// Wall-time budget of the synchronous path (11 §8: ≤ 2 s expected →
 /// sync). WP-29 has no async lane yet, so up to this estimate is run
 /// inline; above it the request is refused.
@@ -107,6 +118,8 @@ pub struct Engine {
     pub base_url: String,
     pub engine: String,
     pub git_rev: String,
+    /// The host's memory-mapped grid layers (`exposure` reads them in place).
+    pub mapped: Option<MappedGridFn>,
     sem: Arc<Semaphore>,
     waiting: AtomicUsize,
 }
@@ -155,9 +168,17 @@ impl Engine {
             base_url: base_url.trim_end_matches('/').to_owned(),
             engine: format!("lanka {}", env!("CARGO_PKG_VERSION")),
             git_rev,
+            mapped: None,
             sem: Arc::new(Semaphore::new(WORKERS)),
             waiting: AtomicUsize::new(0),
         }
+    }
+
+    /// Reads grid layers from the host's memory-mapped set when it has them.
+    #[must_use]
+    pub fn with_mapped_grids(mut self, f: MappedGridFn) -> Self {
+        self.mapped = Some(f);
+        self
     }
 
     fn env(&self) -> Env {
@@ -166,6 +187,7 @@ impl Engine {
             catalog: (self.catalog)(),
             store_root: self.store_root.clone(),
             methods: self.methods.clone(),
+            mapped: self.mapped.clone(),
         }
     }
 

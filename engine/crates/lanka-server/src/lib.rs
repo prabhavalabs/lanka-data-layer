@@ -118,13 +118,23 @@ impl AppState {
             .unwrap_or_default();
         let rev = std::env::var("LANKA_GIT_REV").unwrap_or_else(|_| "unknown".to_owned());
         let cat = self.catalog_fn();
+        let st = self.clone();
+        let mapped: lanka_analysis::engine::MappedGridFn = Arc::new(move |id, period| {
+            let gs = st.grids();
+            gs.layer_arc(id, period)
+                .map(|(grid, info)| lanka_analysis::engine::MappedLayer {
+                    grid,
+                    dataset_id: info.dataset_id.clone(),
+                })
+        });
         Ok(lanka_analysis::Engine::new(
             pool,
             Arc::new(move || cat()),
             self.store_dir.clone(),
             base,
             rev,
-        ))
+        )
+        .with_mapped_grids(mapped))
     }
 
     /// A catalogue accessor for the app plane (the same swapped snapshot).

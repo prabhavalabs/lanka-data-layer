@@ -1050,6 +1050,9 @@ POST /v2/analyses (ldl-analysis/1) ─► schema ─► RESOLVE pin → release,
   `bundle` (reproducible zip). `engine::evaluate` is the pure GUARD → COMPUTE → PRESENT step.
 - **`lanka-grid::exposure`**: `exposure_overlay` — hazard ≥ threshold mask × exposed layer per unit, one pass
   over `gnd_idx`, exact roll-up (shares of sums, never averages of shares).
+  In `lanka serve` the engine reads the hazard and exposed layers from the server's memory-mapped grid set
+  (`Engine::with_mapped_grids`, served layers of the pinned dataset); others, and the CLI/tests, read the store
+  file. Mapped cells are rounded to `f32` as the store path does, so the result is the same either way.
 - **Migration 0012**: schema `analysis` (`results` — id checked against the fingerprint —, `result_inputs`,
   `aligned`, `spatial_weights`), role `lanka_analysis` (30 s statements; SELECT on catalog/geo/data/serve, DML on
   `analysis.*` only), `lanka_api` SELECT on `analysis.*`; `analysis.apply_grants()` runs after the other grant
@@ -1100,7 +1103,7 @@ Timings (release build, laptop shared with other builds; `provenance.elapsed_ms`
 | `relate` at ADM4, one province (LK1), 999 permutations | 2,496 | 0.5–1 s | 0.42 s | sync |
 | `relate` at ADM4, island, 999 permutations | 14,043 | 4–8 s | 7.5 s | sync (async lane WP-30) |
 | `group_compare` on 50,000 points with rings | 50,000 | 0.3 s | kernels 85 ms; + 999 bootstrap medians 0.75 s (point support WP-27/33) | — |
-| `exposure` for one district (LK21, slope ≥ 20° × WorldPop) | 20 | 50 ms | 0.62–0.70 s (two island layers read from the store per request) | sync |
+| `exposure` for one district (LK21, slope ≥ 20° × WorldPop) | 20 | 50 ms | 0.62–0.70 s with both island layers read from the store per request; served layers are now read from the server's memory-mapped set (see below) | sync |
 | stored result `GET /v2/analyses/{id}` | — | — | 8 ms | — |
 | `hotspots`, `interpolate`, `gwr` | | | WP-30/33/37 | |
 

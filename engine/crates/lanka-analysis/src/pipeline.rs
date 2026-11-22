@@ -157,6 +157,8 @@ pub struct Env {
     pub catalog: Arc<Catalog>,
     pub store_root: Option<PathBuf>,
     pub methods: Registry,
+    /// The host's memory-mapped grid layers, when it has any.
+    pub mapped: Option<crate::engine::MappedGridFn>,
 }
 
 /// Recipe graph: output dataset → input datasets.
@@ -1513,6 +1515,54 @@ pub async fn align(
     Ok((main, scale, exposure))
 }
 
+/// A mapped layer read as the store path reads it (physical value rounded
+/// to `f32`), so a result does not depend on where the cells came from.
+struct MappedF32(Arc<lanka_grid::MappedGrid>);
+
+impl lanka_grid::CellValues for MappedF32 {
+    fn len(&self) -> usize {
+        lanka_grid::CellValues::len(&*self.0)
+    }
+    fn value(&self, i: usize) -> Option<f64> {
+        #[allow(clippy::cast_possible_truncation)]
+        let v = self.0.value(i)? as f32;
+        v.is_finite().then_some(f64::from(v))
+    }
+}
+
+/// The cells of an `exposure` layer: the host's memory-mapped copy when it
+/// holds the layer for the pinned dataset, else the store file.
+async fn exposure_cells(
+    env: &Env,
+    inputs: &AnalysisInputs,
+    port: &str,
+    layer: &str,
+    period: &str,
+    version: &Version,
+    cells: usize,
+) -> Result<Arc<dyn lanka_grid::CellValues + Send + Sync>> {
+    if let Some(m) = env.mapped.as_ref().and_then(|f| f(layer, period))
+        && m.dataset_id == version.dataset_id
+        && lanka_grid::CellValues::len(&*m.grid) == cells
+    {
+        return Ok(Arc::new(MappedF32(m.grid)));
+    }
+    let g = inputs.grid_layer(port, layer, Some(period)).await?;
+    Ok(Arc::new(StoreF32(g.values.clone())))
+}
+
+/// Cells read from the store (`NaN` = nodata).
+struct StoreF32(Arc<[f32]>);
+
+impl lanka_grid::CellValues for StoreF32 {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+    fn value(&self, i: usize) -> Option<f64> {
+        self.0.value(i)
+    }
+}
+
 async fn exposure_frame(
     env: &Env,
     r: &Resolved,
@@ -1554,10 +1604,29 @@ async fn exposure_frame(
         ],
     )
     .await?;
-    let h = inputs.grid_layer("hazard", hl, Some(hp)).await?;
-    let e = inputs.grid_layer("exposed", el, Some(ep)).await?;
-    let n_units = h.units.len();
-    let slots: Vec<u16> = h
+    let lk = inputs.pg.lookup().await?;
+    let h = exposure_cells(
+        env,
+        &inputs,
+        "hazard",
+        hl,
+        hp,
+        &hz.version,
+        lk.unit_idx.len(),
+    )
+    .await?;
+    let e = exposure_cells(
+        env,
+        &inputs,
+        "exposed",
+        el,
+        ep,
+        &ex.version,
+        lk.unit_idx.len(),
+    )
+    .await?;
+    let n_units = lk.units.len();
+    let slots: Vec<u16> = lk
         .unit_idx
         .iter()
         .map(|&u| {
@@ -1568,19 +1637,14 @@ async fn exposure_frame(
             }
         })
         .collect();
-    let (hv, evv, cols, area) = (
-        h.values.clone(),
-        e.values.clone(),
-        h.cols,
-        h.row_area.clone(),
-    );
+    let (cols, area) = (lk.cols, lk.row_area.clone());
     let accs = tokio::task::spawn_blocking(move || {
-        lanka_grid::exposure::exposure_overlay(&slots, &*hv, threshold, &*evv, cols, &area, n_units)
+        lanka_grid::exposure::exposure_overlay(&slots, &*h, threshold, &*e, cols, &area, n_units)
     })
     .await?;
     let level = f.support.level;
     let parents: Vec<Vec<String>> = std::iter::once(Vec::new())
-        .chain(h.units.iter().map(|c| {
+        .chain(lk.units.iter().map(|c| {
             units
                 .ancestor_at(c, level)
                 .map(|u| vec![u.code.clone()])
@@ -1613,4 +1677,74 @@ async fn exposure_frame(
             .map(|c| up.get(c).map_or(0, |a| a.cells))
             .collect(),
     })
+}
+
+#[cfg(test)]
+mod mapped_tests {
+    use super::{MappedF32, StoreF32};
+    use lanka_core::grid::Grid;
+    use lanka_grid::{CellValues, Dtype, GridArray, LayerEncoding, MappedGrid};
+    use std::sync::Arc;
+
+    /// `exposure` must give the same cells whether a layer comes from the
+    /// server's mapped set or from the store file.
+    #[test]
+    fn mapped_cells_equal_store_cells() {
+        let g = Grid {
+            lat_max: 10.0,
+            lon_min: 79.4,
+            step: 0.001,
+            rows: 6,
+            cols: 9,
+        };
+        #[allow(clippy::cast_precision_loss)]
+        let vals: Vec<f32> = (0..54)
+            .map(|i| {
+                if i % 7 == 3 {
+                    f32::NAN
+                } else {
+                    i as f32 * 0.013
+                }
+            })
+            .collect();
+        let dir = std::env::temp_dir().join(format!("lanka-analysis-mm-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("dir");
+        for (k, enc) in [
+            LayerEncoding {
+                dtype: Dtype::U16,
+                scale: 0.01,
+                offset: 0.0,
+                nodata: Some(65_535.0),
+            },
+            LayerEncoding {
+                dtype: Dtype::F32,
+                scale: 1.0,
+                offset: 0.0,
+                nodata: None,
+            },
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let a = GridArray::quantise(g, enc, &vals).expect("quantise");
+            let p = dir.join(format!("l{k}.bin"));
+            a.write_bin(&p, serde_json::Value::Null).expect("write");
+            let (read, _) = GridArray::read_bin(&p).expect("read");
+            #[allow(clippy::cast_possible_truncation)]
+            let store: Arc<[f32]> = (0..read.len())
+                .map(|i| read.value(i).map_or(f32::NAN, |v| v as f32))
+                .collect();
+            let store = StoreF32(store);
+            let mapped = MappedF32(Arc::new(MappedGrid::open(&p).expect("map")));
+            assert_eq!(mapped.len(), store.len());
+            for i in 0..store.len() {
+                assert_eq!(
+                    mapped.value(i).map(f64::to_bits),
+                    store.value(i).map(f64::to_bits),
+                    "{enc:?} cell {i}"
+                );
+            }
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

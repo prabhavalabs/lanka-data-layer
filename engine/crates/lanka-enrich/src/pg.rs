@@ -26,12 +26,12 @@ const LAND_MASK: &str = "grid.land_mask";
 type GridKey = (String, String, Option<String>);
 
 /// `gnd_idx` of the reference set as unit indices (`u32::MAX` = no unit).
-struct GridLookup {
-    unit_idx: Arc<[u32]>,
-    unit_idx_inside: Arc<[u32]>,
-    units: Arc<[String]>,
-    cols: u32,
-    row_area: Arc<[f64]>,
+pub struct GridLookup {
+    pub unit_idx: Arc<[u32]>,
+    pub unit_idx_inside: Arc<[u32]>,
+    pub units: Arc<[String]>,
+    pub cols: u32,
+    pub row_area: Arc<[f64]>,
 }
 
 /// One input port bound to a dataset version.
@@ -176,7 +176,10 @@ impl PgInputs {
     }
 
     /// `gnd_idx` + `land_mask` of the reference set and their slot table.
-    async fn lookup(&self) -> Result<Arc<GridLookup>> {
+    /// The reference set's cell → unit lookup (read once per `PgInputs`).
+    /// Lets a caller that already holds a layer's cells (the server's mapped
+    /// grids) align them without reading the layer from the store.
+    pub async fn lookup(&self) -> Result<Arc<GridLookup>> {
         let mut cache = self.lookup.lock().await;
         if let Some(l) = cache.as_ref() {
             return Ok(l.clone());
