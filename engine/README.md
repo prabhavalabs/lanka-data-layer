@@ -472,9 +472,13 @@ Design: [03 §2.2, §5.2](../docs/architecture-v2/03-ingestion.md#22-declarative
   fixture files, keyed by file stem), extract, a Parquet round trip and standardise in memory, prints the
   first rows and every expectation, and exits 1 on an error. `lanka connector list` lists drivers.
 - **Fetching**: the user agent follows the crawler convention (`Mozilla/5.0 (compatible; lanka-data-layer-ingest/…)`)
-  — CBSL's firewall rejects anything else. `statistics.gov.lk` offers only TLS 1.2 CBC suites, which rustls
-  does not implement (the image has no OpenSSL), so DCS documents are fetched over HTTP; artifacts are
-  still content-addressed.
+  — CBSL's firewall rejects anything else. TLS is rustls, except for hosts the country profile lists under
+  `fetch.legacy_tls_hosts` (or every host of a source with `access.tls: legacy`): those use the platform stack
+  (OpenSSL in the image, Security.framework on macOS), chosen per request by host (`lanka_ingest::http`).
+  `www.statistics.gov.lk` (IIS 8.5) offers only TLS 1.2 CBC suites (`ECDHE-RSA-AES256-SHA384`), which rustls
+  does not implement; it answers a ClientHello without them with a TCP reset, which is why the failure
+  shows as "Connection reset by peer" during connect rather than a TLS alert (headers and HTTP version
+  play no part).
 
 Sources on YAML: `worldbank-wdi` (WP-02), `dcs-agriculture` (HTML + 8 XLSX), `cbsl-exchange-rates`,
 `imf-data`, `who-gho`, `un-sdg`, `ilostat`, `hdx-cod-ps-lka`, `wfp-vam`, `ourairports`, `geonames`,

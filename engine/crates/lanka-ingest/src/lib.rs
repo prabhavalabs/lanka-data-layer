@@ -16,6 +16,7 @@ pub mod features;
 pub mod geo_load;
 pub mod geom;
 pub mod grid;
+pub mod http;
 pub mod jobs;
 pub mod pipeline;
 pub mod publish;

@@ -111,7 +111,7 @@ pub async fn run(
             ensure!(!fetched.is_empty(), "{} has no files", dir.display());
         }
         None => {
-            let http = crate::pipeline::http_client()?;
+            let http = crate::http::Http::for_source(profile, registry.source(source))?;
             let opts = RunOptions {
                 trigger: "test".into(),
                 ..RunOptions::default()

@@ -59,7 +59,9 @@ chrono = { version = "=0.4.45", default-features = false, features = ["std", "cl
 axum = { version = "=0.8.9", features = ["macros"] }
 tower-http = { version = "=0.7.1", features = ["compression-gzip", "compression-br", "trace", "cors", "timeout"] }
 utoipa = { version = "=6.0.0", features = ["axum_extras", "chrono"] }
-reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "gzip", "json", "stream"] }
+# native-tls: platform TLS (OpenSSL / Security.framework) for profile `fetch.legacy_tls_hosts` only;
+# every client selects its backend explicitly (lanka_ingest::http).
+reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "native-tls", "gzip", "json", "stream"] }
 sha2 = "=0.11.1"
 hex = "=0.4.3"
 ryu = "=1.0.23"

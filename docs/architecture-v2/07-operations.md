@@ -28,7 +28,7 @@ Two images:
 
 | Image | Base | Contains |
 |---|---|---|
-| `lanka` | `gcr.io/distroless/cc-debian13` | the `lanka` binary (static-ish, rustls, no OpenSSL), CA certificates, tzdata |
+| `lanka` | `gcr.io/distroless/cc-debian13` | the `lanka` binary (static-ish; rustls, plus the image's libssl3 for the profile's `fetch.legacy_tls_hosts`), CA certificates, tzdata |
 | `lanka-tools` | `debian:trixie-slim` | `lanka-extractd`, `poppler-utils`, `tesseract-ocr` + `-sin` + `-tam`, `gdal-bin`, `tippecanoe`, `pmtiles`; versions pinned and printed by `lanka-extractd --versions` (recorded in every extract/derivation) |
 
 How the worker starts Valhalla without the Docker socket: it does not. Routing recipes are `schedule: monthly|manual`; the operator (or a host systemd timer calling `infra/v2/run-batch.sh`) brings the `batch` profile up, the worker sees the service healthy and runs the queued routing jobs, the script brings it down. The worker never controls containers.

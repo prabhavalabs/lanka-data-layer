@@ -227,6 +227,7 @@ impl Llm {
     /// One call; (text, input tokens, output tokens).
     async fn call(&self, prompt: &str) -> Result<(String, u64, u64)> {
         let http = reqwest::Client::builder()
+            .tls_backend_rustls()
             .timeout(Duration::from_secs(300))
             .build()?;
         let (req, anthropic) = match self.provider.as_str() {

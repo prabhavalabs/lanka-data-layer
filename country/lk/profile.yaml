@@ -49,3 +49,8 @@ schemes:
   - { id: basin, title: River basin }
   - { id: station, title: Observation station }
 suppression: { min_count_adm4: 10 }
+# Connector transport. www.statistics.gov.lk (IIS 8.5) offers only TLS 1.2 CBC suites
+# (ECDHE-RSA-AES256-SHA384, checked 2026-11-22), which rustls does not implement; the
+# server resets the connection instead of alerting. Those hosts use the platform stack.
+fetch:
+  legacy_tls_hosts: [www.statistics.gov.lk]

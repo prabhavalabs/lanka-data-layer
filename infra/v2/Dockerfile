@@ -5,13 +5,20 @@
 #
 #   docker build -f infra/v2/Dockerfile -t lanka:dev --build-arg GIT_REV=$(git rev-parse --short HEAD) engine
 #
-# Runtime: distroless cc (glibc, CA certificates, tzdata; no shell, no
-# package manager), uid 10001. rustls only — no OpenSSL in the image.
+# Runtime: distroless cc (glibc, libssl3, CA certificates, tzdata; no shell,
+# no package manager), uid 10001. TLS is rustls, except for the hosts the
+# country profile lists under fetch.legacy_tls_hosts (servers offering only
+# TLS 1.2 CBC suites): those use OpenSSL, linked dynamically against the
+# libssl3 the distroless cc image already ships. Nothing is added to it.
 
 ARG RUST_IMAGE=rust:1.94-slim-trixie
 ARG RUNTIME_IMAGE=gcr.io/distroless/cc-debian13:nonroot
 
 FROM ${RUST_IMAGE} AS build
+# openssl-sys (reqwest native-tls) links the system libssl3 at build time.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends pkg-config libssl-dev \
+ && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY . .
 # Registry and target caches survive between builds; the binary is copied

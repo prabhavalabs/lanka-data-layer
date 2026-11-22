@@ -78,24 +78,11 @@ impl RunReport {
     }
 }
 
-/// User agent of every fetch: the crawler convention `Mozilla/5.0
-/// (compatible; <bot>/<version>; +<url>)`. It identifies the project; some
-/// government web application firewalls (CBSL) refuse agents without the
-/// `Mozilla/5.0 (compatible; …)` prefix.
-pub const USER_AGENT: &str = concat!(
-    "Mozilla/5.0 (compatible; lanka-data-layer-ingest/",
-    env!("CARGO_PKG_VERSION"),
-    "; +https://github.com/prabhavalabs/lanka-data-layer)"
-);
+pub use crate::http::USER_AGENT;
 
-/// HTTP client used by connectors: identifies the project, follows redirects,
-/// decompresses, and times out.
+/// The rustls connector client (see [`crate::http`] for the legacy hosts).
 pub fn http_client() -> Result<reqwest::Client> {
-    Ok(reqwest::Client::builder()
-        .user_agent(USER_AGENT)
-        .connect_timeout(Duration::from_secs(15))
-        .timeout(Duration::from_secs(300))
-        .build()?)
+    crate::http::client(crate::http::Tls::Modern)
 }
 
 /// Everything a run needs.
@@ -260,7 +247,7 @@ async fn execute(
     opts: &RunOptions,
 ) -> Result<RunReport> {
     let source_id = c.source_id().to_owned();
-    let http = http_client()?;
+    let http = crate::http::Http::for_source(env.profile, env.registry.source(&source_id))?;
     let config = config_hash(env, c);
     let (prev_fp, prev_input) = last_change_keys(env.pool, &source_id).await?;
 
@@ -928,7 +915,7 @@ struct HostGate {
 struct Fetcher<'a> {
     env: &'a Env<'a>,
     run: &'a RunTracker,
-    http: &'a reqwest::Client,
+    http: &'a crate::http::Http,
     source_id: &'a str,
     hosts: std::sync::Mutex<HashMap<String, Arc<HostGate>>>,
     interval: Duration,
@@ -938,7 +925,7 @@ impl<'a> Fetcher<'a> {
     fn new(
         env: &'a Env<'a>,
         run: &'a RunTracker,
-        http: &'a reqwest::Client,
+        http: &'a crate::http::Http,
         source_id: &'a str,
     ) -> Self {
         let rps: f64 = std::env::var("LANKA_FETCH_RPS")
