@@ -11,6 +11,8 @@ export type WorkspaceCtx = {
   engine: RefObject<MapEngine | null>
   /** what each layer's source resolved to; undefined while loading or while the layer is hidden */
   data: Map<string, LayerData | undefined>
+  /** why a layer could not be drawn, in the engine's words (a dim it does not have, a value it has none for) */
+  failed: Map<string, string>
   /** the colour scheme of the map (its basemap), which data colours follow; not necessarily the app theme */
   scheme: Theme
   /** bumps whenever the engine recompiled a layer: legends and problems may have changed */
@@ -114,6 +116,10 @@ export function useLayerData(doc: MapDocument, selected: string | null, solo: st
   const values = plan.at.map((i) => results[i]?.data)
   if (ids.length !== last.current.ids.length || ids.some((id, i) => id !== last.current.ids[i]) || values.some((v, i) => v !== last.current.values[i]))
     last.current = { ids, values, map: new Map(ids.map((id, i) => [id, values[i]])) }
+  const errors = plan.at.map((i) => (results[i]?.error ? results[i].error!.message : undefined))
+  const failedRef = useRef<{ key: string; map: Map<string, string> }>({ key: '', map: new Map() })
+  const failedKey = errors.map((e, i) => (e ? `${ids[i]}:${e}` : '')).join('|')
+  if (failedKey !== failedRef.current.key) failedRef.current = { key: failedKey, map: new Map(ids.flatMap((id, i) => (errors[i] ? [[id, errors[i]!] as [string, string]] : []))) }
   const loading = resolution.resolved === undefined || layers.some((l, i) => shown.has(l.id) && results[plan.at[i]]?.isFetching)
 
   // the terrain model's shading, once per exaggeration in use
@@ -132,7 +138,7 @@ export function useLayerData(doc: MapDocument, selected: string | null, solo: st
   const reliefRef = useRef<{ key: string; map: Map<number, Grid> }>({ key: '', map: new Map() })
   const key = reliefs.map((z, i) => `${z}:${reliefResults[i].data ? 1 : 0}`).join()
   if (key !== reliefRef.current.key) reliefRef.current = { key, map: new Map(reliefs.flatMap((z, i) => (reliefResults[i].data ? [[z, reliefResults[i].data!] as [number, Grid]] : []))) }
-  return { data: last.current.map, relief: reliefRef.current.map, loading, shown, resolved: resolution.resolved }
+  return { data: last.current.map, failed: failedRef.current.map, relief: reliefRef.current.map, loading, shown, resolved: resolution.resolved }
 }
 
 /** A function that runs at most once per frame with the latest arguments: for slider drags that drive the map. */

@@ -50,7 +50,8 @@ type RawFrame = {
   columns: { indicator: string; dims: Record<string, string> | null; period: string; unit: string; values: (number | null)[] }[]
 }
 type Obs = { obs_id: number; dims: string; value: number | null; basis: string; status: string }
-type AreaInd = { indicator_id: string; label: string; unit: string; dataset_id: string; period: string; values: Obs[] }
+/** `completed_from`: a value the engine completed from another indicator (ADM1 census counts summed from the districts) */
+type AreaInd = { indicator_id: string; label: string; unit: string; dataset_id: string; period: string; values: Obs[]; class?: string; completed_from?: string }
 type RawRef = { pcode: string; level: number; name_en: string; name_si: string | null; name_ta: string | null }
 type RawArea = RawRef & { area_km2: number | null; centroid: [number, number]; ancestors: RawRef[]; children: RawRef[]; indicators: AreaInd[] }
 
@@ -164,7 +165,7 @@ export async function datasets(): Promise<Dataset[]> {
 }
 
 /* ------------------------------ dataset page ------------------------------ */
-type FeatureCollection = { features: { properties: { key: string; kind: string | null; name_en: string | null; unit: string | null } }[] }
+type FeatureCollection = { features: { properties: { key: string; kind: string | null; name: string | null; unit: string | null } }[] }
 
 async function preview(raw: RawDataset, d: Dataset): Promise<Pick<DatasetDetail, 'columns' | 'preview' | 'previewColumns' | 'previewNote'> | null> {
   if (raw.kind === 'indicators' && raw.indicators.length) {
@@ -195,12 +196,12 @@ async function preview(raw: RawDataset, d: Dataset): Promise<Pick<DatasetDetail,
       columns: [
         { name: 'key', type: 'text', note: 'Stable feature id' },
         { name: 'kind', type: 'text', note: 'Source classification' },
-        { name: 'name_en', type: 'text', note: 'Name as published' },
+        { name: 'name', type: 'text', note: 'Name as published (name_si, name_ta where mapped)' },
         { name: 'unit', type: 'text', note: 'Containing p-code (join key)' },
-        { name: 'attrs', type: 'json', note: 'Source attributes' },
+        { name: '…fields', type: 'mixed', note: 'Source attributes, one property each' },
       ],
-      previewColumns: ['key', 'kind', 'name_en', 'unit'],
-      preview: fc.features.map((f) => [f.properties.key, f.properties.kind ?? '', f.properties.name_en ?? '', f.properties.unit ?? '']),
+      previewColumns: ['key', 'kind', 'name', 'unit'],
+      preview: fc.features.map((f) => [f.properties.key, f.properties.kind ?? '', f.properties.name ?? '', f.properties.unit ?? '']),
       previewNote: `first ${fc.features.length} of ${fmtN(d.rows)} features`,
     }
   }
@@ -255,10 +256,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0)
 const num = (v: number | null | undefined): v is number => typeof v === 'number' && Number.isFinite(v)
 
-/** The indicator, or its province-level rollup twin (ADM1 carries `rollup.census24.*`). */
-const pick = (a: RawArea, id: string) => a.indicators.find((i) => i.indicator_id === id) ?? a.indicators.find((i) => i.indicator_id === `rollup.${id}`)
+const pick = (a: RawArea, id: string) => a.indicators.find((i) => i.indicator_id === id)
 const obsOf = (i: AreaInd | undefined, dims = '') => i?.values.find((v) => v.dims === dims)
-const rollupPrefix = (level: number) => (level === 1 ? 'rollup.' : '')
+/** A figure the engine completed from the units below (ADM1 census counts from the districts) says so, quietly. */
+const basisOf = (i: AreaInd | undefined): Headline['basis'] => (i?.completed_from ? { label: 'computed', hint: 'Summed from the districts: the census publishes this table by district and DS division' } : undefined)
 
 const tri = (r: RawRef, fb?: Area): Area['name'] => ({ en: r.name_en, si: r.name_si ?? fb?.name.si ?? '', ta: r.name_ta ?? fb?.name.ta ?? '' })
 
@@ -272,11 +273,10 @@ const vec = (f: RawFrame | null, pickCol: (c: RawFrame['columns'][number]) => bo
 async function ranksFor(a: RawArea, names: (code: string) => string): Promise<RankItem[] | null> {
   const L = a.level === 0 ? 1 : a.level
   if (L > 3) return null
-  const pre = rollupPrefix(L)
   const [fArea, fDen, fAge, fLc, fRain, fFlood] = await Promise.all([
     orNull(frame('admin.area_km2', L)),
     orNull(frame('derived.per_km2', L)),
-    orNull(frame(`${pre}census24.pop_age_sex`, L)),
+    orNull(frame('census24.pop_age_sex', L)),
     orNull(frame('lc.class_share', L)),
     orNull(frame('clim.wc_bio', L, { dims: 'bio_var=BIO12' })),
     orNull(frame('haz.flood_area_share', L, { dims: 'return_period=rp100' })),
@@ -350,10 +350,9 @@ async function childStats(a: RawArea): Promise<ChildStats | null> {
   const kid = a.children[0]
   if (!kid) return null
   const parent = a.level === 0 ? undefined : a.pcode
-  const pre = rollupPrefix(kid.level)
   const [fTot, fAge, fDen] = await Promise.all([
-    orNull(frame(`${pre}census24.pop_total`, kid.level, { parent, dims: 'sex=total' })),
-    orNull(frame(`${pre}census24.pop_age_sex`, kid.level, { parent })),
+    orNull(frame('census24.pop_total', kid.level, { parent, dims: 'sex=total' })),
+    orNull(frame('census24.pop_age_sex', kid.level, { parent })),
     orNull(frame('derived.per_km2', kid.level, { parent })),
   ])
   const pop = new Map<string, number>()
@@ -413,24 +412,12 @@ function calibratePyramid(rows: PyramidRow[], groups: { g0: number; g15: number;
   return out
 }
 
-async function metaFor(a: RawArea, env: ApiMeta | undefined): Promise<Meta> {
-  const ids = [...new Set(a.indicators.map((i) => i.dataset_id))]
-  const details = (await Promise.all(ids.map((id) => orNull(detail(id))))).flatMap((d) => (d ? [d.payload] : []))
-  const sources = new Map<string, { publisher: string; title: string; url: string }>()
-  const lics = new Map<string, { id: string; status: LicenceStatus; publishers: Set<string> }>()
-  for (const d of details)
-    for (const s of d.sources) {
-      sources.set(s.id, { publisher: s.publisher, title: s.title, url: s.homepage ?? SITE })
-      const l = d.licences.find((x) => x.id === s.licence_id)
-      if (!l) continue
-      const e = lics.get(l.id) ?? { id: l.id, status: licStatus(l.status), publishers: new Set<string>() }
-      e.publishers.add(s.publisher)
-      lics.set(l.id, e)
-    }
+/** Sources and licences as the envelope names them: each source with its licence, each licence with the attribution it requires. */
+function metaFor(env: ApiMeta | undefined): Meta {
   return {
     data_version: env?.data_version ?? db.DATA_VERSION,
-    source: [...sources.values()],
-    licences: [...lics.values()].map((l) => ({ id: l.id, status: l.status, attribution: [...l.publishers].join('; ') })),
+    source: (env?.source ?? []).map((s) => ({ publisher: s.publisher, title: s.title, url: s.url || SITE })),
+    licences: (env?.licences ?? []).map((l) => ({ id: l.id, status: licStatus(l.status), attribution: l.attribution })),
     completeness: { status: 'complete' },
   }
 }
@@ -441,7 +428,7 @@ export async function areaProfile(pcodeRaw: string): Promise<AreaProfile> {
   const names = (code: string) => mock.byCode.get(code)?.name.en ?? code
   const chain = [...a.ancestors].reverse().map((r) => r.pcode)
   const baseCode = [a.pcode, ...chain].find((c) => mock.byCode.has(c)) ?? 'LK'
-  const [base, ranks, climate, kids, meta] = await Promise.all([db.areaProfile(baseCode), orNull(ranksFor(a, names)), orNull(climateFor(a)), orNull(childStats(a)), metaFor(a, env)])
+  const [base, ranks, climate, kids, meta] = await Promise.all([db.areaProfile(baseCode), orNull(ranksFor(a, names)), orNull(climateFor(a)), orNull(childStats(a)), metaFor(env)])
   const sample: SampleKeys = ['access', 'elections', 'postal', 'pyramid', 'popSeries', 'built']
 
   /* ---- area ---- */
@@ -464,16 +451,19 @@ export async function areaProfile(pcodeRaw: string): Promise<AreaProfile> {
   const ageObs = ['0-14', '15-59', '60-64', '65+'].map(age)
   const popObs = obsOf(popInd, 'sex=total')
   const popValue = popObs?.value ?? (ageObs.every((o) => num(o?.value)) ? sum(ageObs.map((o) => o!.value as number)) : null)
-  const denObs = a.indicators.find((i) => i.indicator_id === 'derived.per_km2')?.values.find((v) => v.dims.endsWith('census24.pop_total'))
+  // density from the census where it counts the unit; a GN division has no census count, so its density is WorldPop's model
+  const censusDen = a.indicators.find((i) => i.indicator_id === 'derived.per_km2')?.values.find((v) => v.dims.endsWith('census24.pop_total'))
+  const denObs = censusDen ?? obsOf(pick(a, 'pop.grid_density'))
+  const denBasis: Headline['basis'] = !censusDen && denObs ? { label: 'modelled (WorldPop)', hint: 'WorldPop 2025, 100 m constrained population grid, summed over the unit and divided by its area' } : undefined
   const areaObs = obsOf(pick(a, 'admin.area_km2'))
   const sexObs = obsOf(pick(a, 'census24.sex_ratio'))
   const status = (o: Obs): Headline['status'] => (o.status === 'normal' ? 'final' : 'provisional')
   const headline: Headline[] = []
   const year = (i: AreaInd | undefined) => Number.parseInt(i?.period ?? '', 10) || 2024
-  if (num(popValue)) headline.push({ id: 'pop.total', label: 'Population', value: popValue, unit: 'people', year: year(popInd ?? ageInd), status: popObs ? status(popObs) : 'provisional', observationId: String((popObs ?? ageObs.find(Boolean))?.obs_id ?? '') })
-  if (denObs && num(denObs.value)) headline.push({ id: 'pop.density', label: 'Density', value: denObs.value, unit: 'per km²', year: 2024, status: status(denObs), observationId: String(denObs.obs_id) })
+  if (num(popValue)) headline.push({ id: 'pop.total', label: 'Population', value: popValue, unit: 'people', year: year(popInd ?? ageInd), status: popObs ? status(popObs) : 'provisional', observationId: String((popObs ?? ageObs.find(Boolean))?.obs_id ?? ''), basis: basisOf(popInd ?? ageInd) })
+  if (denObs && num(denObs.value)) headline.push({ id: 'pop.density', label: 'Density', value: denObs.value, unit: 'per km²', year: censusDen ? 2024 : year(pick(a, 'pop.grid_density')), status: status(denObs), observationId: String(denObs.obs_id), basis: denBasis })
   if (areaObs && num(areaObs.value)) headline.push({ id: 'area.land', label: 'Land area', value: areaObs.value, unit: 'km²', year: 2024, status: status(areaObs), observationId: String(areaObs.obs_id) })
-  if (sexObs && num(sexObs.value)) headline.push({ id: 'sex.ratio', label: 'Sex ratio', value: sexObs.value, unit: 'men per 100 women', year: 2024, status: status(sexObs), observationId: String(sexObs.obs_id) })
+  if (sexObs && num(sexObs.value)) headline.push({ id: 'sex.ratio', label: 'Sex ratio', value: sexObs.value, unit: 'men per 100 women', year: 2024, status: status(sexObs), observationId: String(sexObs.obs_id), basis: basisOf(pick(a, 'census24.sex_ratio')) })
   if (!headline.length) throw new Error('profile has no headline data')
 
   /* ---- people ---- */
@@ -564,7 +554,7 @@ type RawProvenance = {
 export async function provenance(id: string): Promise<Provenance> {
   const { payload: p, meta } = await getEnvelope<RawProvenance>(`/v2/observations/${id}/provenance`)
   const src = meta?.source?.[0]
-  const lic = meta?.licences?.[0]
+  const lic = meta?.licences?.find((l) => l.id === src?.licence) ?? meta?.licences?.[0]
   const loc = p.locator ?? {}
   const value = p.value === null ? '—' : p.value.toLocaleString('en', { maximumFractionDigits: 2 })
   const cell = loc.cell ? `${loc.sheet ?? loc.table ?? ''}!${loc.cell}` : (loc.table ?? loc.sheet ?? p.method)

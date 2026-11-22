@@ -734,7 +734,7 @@ export function Inspector({ onRelate }: { onRelate: () => void }) {
   const selected = useWs((s) => s.selected)
   const node = useNode(selected)
   const doc = useDoc()
-  const { data, scheme: mapScheme, engine, tick } = useWorkspace()
+  const { data, failed, scheme: mapScheme, engine, tick } = useWorkspace()
   void tick
   if (!node || !doc)
     return (
@@ -747,7 +747,8 @@ export function Inspector({ onRelate }: { onRelate: () => void }) {
   const source = doc.sources[node.source]
   const d = data.get(node.id)
   const scheme = layerScheme(node.blend, mapScheme)
-  const problem = engine.current?.problem(node.id)
+  // the engine's refusal first: a layer it could not resolve draws nothing at all
+  const problem = failed.get(node.id) ?? engine.current?.problem(node.id)
   const p: P = { layer: node, source, data: d, scheme }
   const id = source?.kind === 'indicator' ? source.indicator : source?.kind === 'grid' ? source.grid : source?.kind === 'features' ? source.dataset : source?.kind === 'analysis' ? `${source.ref}.${source.output}` : source ? `adm${source.level}` : '—'
   return (

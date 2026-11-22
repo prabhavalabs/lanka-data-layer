@@ -24,6 +24,8 @@ type RowProps = {
   row: Row
   /** drawn from the bundled sample data, not the engine */
   sample?: boolean
+  /** the engine's reason the layer could not be drawn */
+  failed?: string
   selected: boolean
   solo: boolean
   /** another node is soloed and this one is not part of it */
@@ -107,7 +109,7 @@ function RowMenu({ node, kit, onRename, onZoom }: { node: LayerNode; kit: ItemKi
 const DROPDOWN: ItemKit = { Item: DropdownMenuItem, Separator: DropdownMenuSeparator }
 const CONTEXT: ItemKit = { Item: ContextMenuItem, Separator: ContextMenuSeparator }
 
-const LayerRow = memo(function LayerRow({ row, sample, selected, solo, muted, renaming, dragging, into, focusable, scheme, touch, onRename, onZoom }: RowProps) {
+const LayerRow = memo(function LayerRow({ row, sample, failed, selected, solo, muted, renaming, dragging, into, focusable, scheme, touch, onRename, onZoom }: RowProps) {
   const { node, depth, hidden, lockedBy } = row
   const group = isGroup(node)
   const blend = !group && node.blend !== 'normal' ? BLEND_MODES.find((b) => b.id === node.blend)?.tag : null
@@ -171,7 +173,12 @@ const LayerRow = memo(function LayerRow({ row, sample, selected, solo, muted, re
           )}
           {!renaming && (
             <>
-              {sample && (
+              {failed && (
+                <span title={failed} className="shrink-0 rounded-[4px] border border-bad/50 px-1 font-mono text-[9px] leading-[14px] tracking-[0.04em] text-bad">
+                  FAILED
+                </span>
+              )}
+              {sample && !failed && (
                 <span title="Sample data: the engine does not serve this source" className="shrink-0 rounded-[4px] border border-dashed border-line2 px-1 font-mono text-[9px] leading-[14px] tracking-[0.04em] text-ink3">
                   SAMPLE
                 </span>
@@ -234,7 +241,7 @@ function LayerTree({ onAdd }: { onAdd: () => void }) {
   const layers = useWs((s) => s.doc!.layers)
   const selected = useWs((s) => s.selected)
   const solo = useWs((s) => s.solo)
-  const { scheme, engine, desktop, data } = useWorkspace()
+  const { scheme, engine, desktop, data, failed } = useWorkspace()
   const rows = useMemo(() => rowsOf(layers), [layers])
   const [renaming, setRenaming] = useState<string | null>(null)
   const [drag, setDrag] = useState<{ id: string; into: string | null } | null>(null)
@@ -470,6 +477,7 @@ function LayerTree({ onAdd }: { onAdd: () => void }) {
           key={row.node.id}
           row={row}
           sample={data.get(row.node.id)?.origin === 'sample'}
+          failed={failed.get(row.node.id)}
           selected={row.node.id === selected}
           solo={row.node.id === solo}
           muted={!inSolo(row)}

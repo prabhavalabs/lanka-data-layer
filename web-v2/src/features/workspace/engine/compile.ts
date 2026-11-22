@@ -263,16 +263,9 @@ function frameTiled(layer: Layer, data: FramePayload, t: AdminTiles, env: Env, c
       layout: { 'line-join': 'round' },
       opacity: { 'line-opacity': w < 0.45 ? (env.scheme === 'dark' ? 0.5 : 0.7) : env.scheme === 'dark' ? 0.8 : 0.6 },
     })
-  // below the zoom the tiles carry this level from, the same fill draws from shapes decoded out of deeper tiles
+  // the source's zoom range is the tileset's for this level: no tile is asked for below the level's minzoom or above the maxzoom
   const sources: MlSource[] = [{ id: src, kind: 'vector', tiles: t.tiles, minzoom: t.minzoom, maxzoom: t.maxzoom, promoteId: 'pcode' }]
   const states = [{ source: src, sourceLayer: t.sourceLayer }]
-  if (data.geometry.features.length && t.gate) {
-    const low = sid(layer.id, 'low')
-    sources.push({ id: low, kind: 'geojson', data: data.geometry, options: { promoteId: 'pcode' } })
-    layers[0] = { ...layers[0], minzoom: t.gate }
-    layers.unshift({ ...layers[0], id: sid(layer.id, 'fill-low'), source: low, sourceLayer: undefined, minzoom: undefined, maxzoom: t.gate })
-    states.push({ source: low, sourceLayer: '' })
-  }
   layers.push(...outlineLayers(layer, src, t.sourceLayer, env, base))
   if (layer.style.label && env.glyphs) layers.push(...labelLayer(layer, src, env, undefined, 0, { sourceLayer: t.centroidsLayer, filter: all(['==', ['get', 'level'], t.level], base) }))
   // the key only has to change when a state does

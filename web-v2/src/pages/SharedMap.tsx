@@ -79,8 +79,8 @@ function Embedded({ doc }: { doc: MapDocument }) {
   }, [doc])
   const loaded = useWs((s) => s.doc === doc)
   const { scheme, style } = useBasemap(doc, theme)
-  const { data, relief, resolved } = useLayerData(doc, null, null)
-  const ctx = useMemo<WorkspaceCtx>(() => ({ engine, data, scheme, tick, desktop }), [data, scheme, tick, desktop])
+  const { data, failed, relief, resolved } = useLayerData(doc, null, null)
+  const ctx = useMemo<WorkspaceCtx>(() => ({ engine, data, failed, scheme, tick, desktop }), [data, failed, scheme, tick, desktop])
   useEffect(() => {
     const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
     engine.current?.setAttribution([...(resolved?.notices ?? []).map((n) => `<strong>${esc(n.code)}:</strong> ${esc(n.text)}`), ...[...new Set((resolved?.attribution ?? []).map((a) => a.text))].map(esc), `<a href="/m/${esc(doc.id ?? '')}" target="_blank" rel="noopener">Lanka Data Layer</a>`])

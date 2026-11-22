@@ -5,10 +5,9 @@
 // bundled sample data for that one source.
 import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import { absoluteApiUrl, ApiError, apiAvailable, getBytes, getEnvelope, postJson, type Attribution } from '@/api/http'
-import { featureMeta, gridMeta, indicatorMeta, type DataClass, type FeaturesPayload, type FieldMeta, type FrameColumn, type FramePayload, type LayerData } from '@/mocks/layers'
+import { featureMeta, gridMeta, indicatorMeta, type AdminTiles, type DataClass, type FeaturesPayload, type FieldMeta, type FrameColumn, type FramePayload, type LayerData } from '@/mocks/layers'
 import type { MapDocument, Source } from '@/lib/map-spec'
-import { adminShapes, SHAPE_GATE } from './adminShapes'
-import { POINT_KINDS } from './registry'
+import { POINT_KINDS, REAL_FEATURES, REAL_GRIDS, REAL_INDICATORS } from './registry'
 import { overviewSample } from './valueTiles'
 
 export type FieldInfo = { id: string; label: string | { en: string }; type: 'number' | 'category' | 'string' | 'date'; unit?: string; measure_type?: string }
@@ -46,11 +45,20 @@ export type ResolvedSource = {
   count?: number
   source_layers?: string[]
   fields?: FieldInfo[]
+  /** (client) why the engine could not resolve this source, from the resolved document's `problems` */
+  problem?: string
 }
 export type Notice = { code: string; text: string }
 export type ResolveProblem = { path: string; code: string; hint?: Record<string, unknown> }
 export type Resolved = { data_version: string | null; sources: Record<string, ResolvedSource>; attribution: Attribution[]; notices: Notice[]; problems: ResolveProblem[] }
 
+/** Is this a source the engine serves (as opposed to the bundled sample data)? Its problems are then the user's to fix. */
+export function engineSource(s: Source): boolean {
+  if (s.kind === 'indicator') return REAL_INDICATORS.some((m) => m.indicator === s.indicator)
+  if (s.kind === 'grid') return s.grid === 'dem' || REAL_GRIDS.some((m) => m.id === s.grid)
+  if (s.kind === 'features') return REAL_FEATURES.some((m) => m.id === s.dataset)
+  return s.kind === 'boundaries'
+}
 /** Does this resolved source carry data the client can draw? */
 export const servable = (r: ResolvedSource | undefined): r is ResolvedSource => !!r && r.access !== 'denied' && r.shape !== 'unavailable' && r.shape !== 'inline' && r.shape !== 'external'
 
@@ -71,9 +79,21 @@ function resolvable(sources: Record<string, Source>, pin: MapDocument['pin']) {
   return { doc, ids: keep.map(([id]) => id) }
 }
 const EMPTY_RESOLVED: Resolved = { data_version: null, sources: {}, attribution: [], notices: [], problems: [] }
+/** A problem in words: the engine's reason, and the values it would have taken. */
+function problemText(p: ResolveProblem): string {
+  const h = (p.hint ?? {}) as { reason?: string; valid?: unknown }
+  const valid = Array.isArray(h.valid) ? h.valid.join(', ') : ''
+  return `${h.reason ?? p.code.toLowerCase().replace(/_/g, ' ')}${valid ? `; valid: ${valid}` : ''}`
+}
 async function post(doc: unknown): Promise<Resolved> {
   const { payload } = await postJson<{ resolved: Resolved }>('/app/v1/maps/resolve', doc)
-  return payload.resolved
+  const r = payload.resolved
+  // `/sources/{id}/…` names the source a problem belongs to
+  for (const p of r.problems) {
+    const id = /^\/sources\/([^/]+)/.exec(p.path)?.[1]
+    if (id && r.sources[id]) r.sources[id] = { ...r.sources[id], problem: r.sources[id].problem ?? problemText(p) }
+  }
+  return r
 }
 /**
  * Resolves the document's sources; null when the engine is unreachable (everything is then sample data).
@@ -110,25 +130,38 @@ const classOf = (c: string | undefined, fallback: DataClass): DataClass => (c ==
 type ServerColumn = { id: string; indicator: string; dims: Record<string, string>; period: string; unit: string; class: string; values: (number | null)[]; basis: string | number[] }
 type ServerFrame = { support: { level: number; parent: string | null; n: number }; codes: string[]; columns: ServerColumn[] }
 
-/** Keeps one series per period: the one the source asks for, else the "total" one. */
-function pickSeries(columns: ServerColumn[], dims: Record<string, string> | undefined): ServerColumn[] {
+/**
+ * Keeps one series per period. The frame URL carries the source's dims and the engine matches them (a
+ * mismatch is a 400 naming the valid values), so what is left per period differs only in the dims the
+ * source leaves open: the "total" one, else the first.
+ */
+function pickSeries(columns: ServerColumn[]): ServerColumn[] {
   const byPeriod = new Map<string, ServerColumn[]>()
   for (const c of columns) (byPeriod.get(c.period) ?? byPeriod.set(c.period, []).get(c.period)!).push(c)
   const out: ServerColumn[] = []
-  const want = (c: ServerColumn) => Object.entries(dims ?? {}).every(([k, v]) => String(c.dims[k] ?? '').toLowerCase() === String(v).toLowerCase())
-  for (const cols of byPeriod.values()) out.push(cols.find(want) ?? cols.find((c) => Object.values(c.dims).some((v) => /^(total|all)$/i.test(v))) ?? cols[0])
+  for (const cols of byPeriod.values()) out.push(cols.find((c) => Object.values(c.dims ?? {}).some((v) => /^(total|all)$/i.test(v))) ?? cols[0])
   return out.sort((a, b) => a.period.localeCompare(b.period))
 }
 
+/** The admin tileset, from its TileJSON: the template and the zoom each `adm{n}` layer starts at. */
+type TileJson = { tiles: string[]; minzoom: number; maxzoom: number; vector_layers: { id: string; minzoom?: number; maxzoom?: number }[] }
+let tilejson: Promise<TileJson> | null = null
+export async function adminTiles(level: number, parent?: string): Promise<AdminTiles> {
+  tilejson ??= getBytes('/v2/tiles/admin.json').then((r) => r.json() as Promise<TileJson>)
+  tilejson.catch(() => (tilejson = null))
+  const t = await tilejson
+  const layer = t.vector_layers.find((l) => l.id === `adm${level}`)
+  return { tiles: [absoluteApiUrl(t.tiles[0])], minzoom: layer?.minzoom ?? t.minzoom, maxzoom: layer?.maxzoom ?? t.maxzoom, sourceLayer: `adm${level}`, centroidsLayer: 'centroids', level, parent }
+}
+
 async function frame(source: Extract<Source, { kind: 'indicator' }>, r: ResolvedSource): Promise<FramePayload> {
-  const level0 = typeof source.level === 'number' ? source.level : 0
-  const [{ payload: f }, shapes] = await Promise.all([getEnvelope<ServerFrame>(r.frame!), adminShapes(level0)])
+  const { payload: f } = await getEnvelope<ServerFrame>(r.frame!)
   const ids = source.indicators?.length ? source.indicators : [source.indicator]
   const metas = ids.map((id) => indicatorMeta(id, source.dims))
   const columns: FrameColumn[] = []
   ids.forEach((id, k) => {
     const m = metas[k]
-    for (const c of pickSeries(f.columns.filter((c) => c.indicator === id), source.dims)) {
+    for (const c of pickSeries(f.columns.filter((c) => c.indicator === id))) {
       const estimated = c.basis === 'estimated' || c.basis === 'forecast'
       columns.push({ id: c.id, indicator: id, period: c.period, unit: m?.unit ?? c.unit, label: m?.label ?? id, class: classOf(c.class, m?.class ?? 'official'), values: c.values, ...(estimated ? { basis: c.values.map(() => 'estimated' as const) } : {}) })
     }
@@ -142,19 +175,14 @@ async function frame(source: Extract<Source, { kind: 'indicator' }>, r: Resolved
     // names come with the boundary tiles (`name_en`); the analysis panel looks them up when it needs them
     names: [],
     columns,
-    geometry: shapes,
+    geometry: EMPTY,
     centroids: [],
     fields: metas.length === 1 ? [{ id: 'value', label: metas[0]?.label ?? ids[0], kind: 'number', unit: metas[0]?.unit }] : ids.map((id, k) => ({ id, label: metas[k]?.label ?? id, kind: 'number' as const, unit: metas[k]?.unit })),
-    tiles: { tiles: [absoluteApiUrl(r.tiles!)], minzoom: 0, maxzoom: r.maxzoom ?? 12, sourceLayer: r.source_layer ?? `adm${level}`, centroidsLayer: r.centroids_layer ?? 'centroids', level, parent: source.parent, gate: SHAPE_GATE[level] },
+    // the tileset carries a level from its own zoom (`adm3` from z6, `adm4` from z9): nothing is drawn, or fetched, below it
+    tiles: { tiles: [absoluteApiUrl(r.tiles!)], minzoom: r.minzoom ?? 0, maxzoom: r.maxzoom ?? 12, sourceLayer: r.source_layer ?? `adm${level}`, centroidsLayer: r.centroids_layer ?? 'centroids', level, parent: source.parent },
   }
 }
 
-/** The engine nests declared attributes under `attrs` and names in three languages: one flat record per feature. */
-function flatten(f: Feature): Feature {
-  const p = (f.properties ?? {}) as Record<string, unknown>
-  const attrs = (p.attrs ?? {}) as Record<string, unknown>
-  return { type: 'Feature', id: (p.key as string) ?? f.id, geometry: f.geometry, properties: { key: p.key, kind: p.kind, name: p.name_en ?? p.name ?? null, unit: p.unit, ...attrs } }
-}
 const geometryOf = (dataset: string, kind: string | undefined, sample?: Geometry | null): 'point' | 'line' | 'polygon' => {
   if (kind && POINT_KINDS.has(kind)) return 'point'
   const t = sample?.type
@@ -183,9 +211,9 @@ function fieldsOf(dataset: string, info: FieldInfo[] | undefined, collection?: F
 }
 
 async function geojson(source: Extract<Source, { kind: 'features' }>, r: ResolvedSource): Promise<FeaturesPayload> {
-  // `format=geojson` is a bare FeatureCollection, not an envelope
+  // `format=geojson` is a bare FeatureCollection, not an envelope; its properties are flat (`key, kind, name, …fields`)
   const fc = (await (await getBytes(r.url!)).json()) as FeatureCollection
-  const collection: FeatureCollection = { type: 'FeatureCollection', features: (fc.features ?? []).map(flatten) }
+  const collection: FeatureCollection = { type: 'FeatureCollection', features: (fc.features ?? []).map((f) => ({ ...f, id: (f.properties?.key as string | undefined) ?? f.id })) }
   const meta = featureMeta(source.dataset)
   return { kind: 'features', origin: 'api', geometry: geometryOf(source.dataset, source.featureKind, collection.features[0]?.geometry), collection, fields: fieldsOf(source.dataset, r.fields, collection), title: 'name', class: meta?.class ?? 'official', count: r.count }
 }
@@ -233,7 +261,7 @@ export async function loadResolved(source: Source, r: ResolvedSource): Promise<L
       return frame(source, r.frame ? r : { ...r, frame: r.by_zoom?.[r.by_zoom.length - 1]?.frame, source_layer: r.by_zoom?.[r.by_zoom.length - 1]?.source_layer })
     case 'boundaries':
       if (source.kind !== 'boundaries') break
-      return { kind: 'boundaries', origin: 'api', level: source.level, collection: EMPTY, centroids: { type: 'FeatureCollection', features: [] }, tiles: { tiles: [absoluteApiUrl(r.tiles!)], minzoom: 0, maxzoom: r.maxzoom ?? 12, sourceLayer: r.source_layer ?? `adm${source.level}`, centroidsLayer: 'centroids', level: source.level, parent: source.parent } }
+      return { kind: 'boundaries', origin: 'api', level: source.level, collection: EMPTY, centroids: { type: 'FeatureCollection', features: [] }, tiles: { tiles: [absoluteApiUrl(r.tiles!)], minzoom: r.minzoom ?? 0, maxzoom: r.maxzoom ?? 12, sourceLayer: r.source_layer ?? `adm${source.level}`, centroidsLayer: 'centroids', level: source.level, parent: source.parent } }
     case 'values': {
       if (source.kind !== 'grid') break
       const codec = { scale: r.scale ?? 1, offset: r.offset ?? 0, nodata: r.nodata ?? 65535 }

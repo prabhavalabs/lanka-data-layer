@@ -82,7 +82,7 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
   const [addOpen, setAddOpen] = useState(false)
   const [mapsOpen, setMapsOpen] = useState(false)
   const { scheme, style } = useBasemap(doc, theme)
-  const { data, relief, loading, resolved, shown: onScreen } = useLayerData(doc, selected, solo)
+  const { data, failed, relief, loading, resolved, shown: onScreen } = useLayerData(doc, selected, solo)
   /* ---- attribution and notices of the resolved document, on the map and in exports ---- */
   const credits = useMemo(() => {
     const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
@@ -99,7 +99,7 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
   useEffect(() => {
     engine.current?.setAttribution(credits.html)
   }, [credits, tick])
-  const ctx = useMemo<WorkspaceCtx>(() => ({ engine, data, scheme, tick, desktop }), [data, scheme, tick, desktop])
+  const ctx = useMemo<WorkspaceCtx>(() => ({ engine, data, failed, scheme, tick, desktop }), [data, failed, scheme, tick, desktop])
   const onCompiled = useCallback(() => setTick((t) => t + 1), [])
   useEffect(() => {
     try {

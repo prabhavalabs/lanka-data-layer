@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useCopy } from '@/lib/hooks'
 import { allLayers, type AnalysisOutput, type AnalysisRequest, type Guard, type GuardCode, type MapDocument, type RelateRequest, type Source, type Variable } from '@/lib/map-spec'
-import { BIVARIATE, bivariateColors } from '@/lib/palettes'
+import { bivariateColors } from '@/lib/palettes'
 import { cn } from '@/lib/utils'
 import { useWorkspace } from '../context'
 import { fmt, fmtWith, unitSuffix } from '../format'
@@ -236,7 +236,11 @@ function Intervals({ result }: { result: CompareResult }) {
     .filter((g) => g.n > 0)
     .map((g) => {
       const ci = ((g as { median_ci?: [number, number] }).median_ci ?? g.ci) as [number, number]
-      return result['x-engine'] ? { ...g, label: g.id === 'inside' ? 'Inside the zone' : g.id === 'outside' ? 'Outside' : g.label, median: back(g.median), ci: [back(ci[0]), back(ci[1])] as [number, number] } : g
+      if (!result['x-engine']) return { ...g, rule: '' }
+      // the engine names a group with its rule, "inside flood zone (≥20 %)": the name on the row, the rule beside n
+      const m = /^(.*?)\s*\(([^)]*)\)$/.exec(g.label)
+      const name = (m?.[1] ?? g.label).replace(/^./, (c) => c.toUpperCase())
+      return { ...g, label: name, rule: m?.[2] ?? '', median: back(g.median), ci: [back(ci[0]), back(ci[1])] as [number, number] }
     })
   const lo = Math.min(...groups.map((g) => g.ci[0])), hi = Math.max(...groups.map((g) => g.ci[1]))
   const pad = (hi - lo) * 0.08 || 1
@@ -246,8 +250,10 @@ function Intervals({ result }: { result: CompareResult }) {
       {groups.map((g, i) => (
         <div key={g.id} className="flex h-9 items-center gap-3">
           <div className="w-[118px] shrink-0">
-            <div className={cn('truncate text-[12.5px] leading-tight', i === 0 ? 'font-medium text-ink' : 'text-ink2')}>{g.label.replace(' outside', '')}</div>
-            <div className="t-num font-mono text-[10px] text-ink3">n = {g.n.toLocaleString('en')}</div>
+            <div title={g.label} className={cn('truncate text-[12.5px] leading-tight', i === 0 ? 'font-medium text-ink' : 'text-ink2')}>{result['x-engine'] ? g.label : g.label.replace(' outside', '')}</div>
+            <div className="t-num truncate font-mono text-[10px] text-ink3">
+              {g.rule ? `${g.rule} · ` : ''}n = {g.n.toLocaleString('en')}
+            </div>
           </div>
           <div className="relative h-full min-w-0 flex-1">
             <span className="absolute inset-x-0 top-1/2 h-px bg-[var(--chart-grid)]" />
@@ -407,14 +413,10 @@ function previewQuery(req: RelateRequest, sources: Record<string, Source>) {
   }
 }
 
-/** An engine's suggested layer, completed with what this renderer needs (named palettes, scale types). */
+/** An engine's suggested layer, with this renderer's outline and opacity; its fill (palette, `{type, classes, breaks}` per axis) is used as given. */
 function normalise(l: NonNullable<AnalysisOutput['suggested_layer']>): NonNullable<AnalysisOutput['suggested_layer']> {
-  const fill = l.style.fill as { bivariate?: { x: { field: string; scale?: object }; y: { field: string; scale?: object }; palette?: string } } | { field: string; scale: { type: string; mid?: number } } | undefined
-  if (fill && 'bivariate' in fill && fill.bivariate) {
-    const b = fill.bivariate
-    const palette = BIVARIATE.some((p) => p.name === b.palette) ? b.palette! : 'ldl.biv.blue-orange'
-    return { ...l, opacity: l.opacity ?? 0.9, style: { ...l.style, fill: { bivariate: { palette, x: { field: b.x.field, scale: { type: 'quantile', classes: 3, ...b.x.scale } }, y: { field: b.y.field, scale: { type: 'quantile', classes: 3, ...b.y.scale } } } }, stroke: { color: 'ldl.tone.paper', width: 0.3 } } }
-  }
+  const fill = l.style.fill as { bivariate?: unknown } | { field: string; scale: { type: string; mid?: number } } | undefined
+  if (fill && 'bivariate' in fill && fill.bivariate) return { ...l, opacity: l.opacity ?? 0.9, style: { ...l.style, stroke: { color: 'ldl.tone.paper', width: 0.3 } } }
   if (fill && 'field' in fill && fill.scale?.type === 'diverging') return { ...l, opacity: l.opacity ?? 0.9, style: { ...l.style, fill: { field: fill.field, scale: { classes: 5, ramp: 'ldl.div.blue-orange', ...fill.scale, type: 'diverging' } } as never, stroke: { color: 'ldl.tone.paper', width: 0.3 } } }
   return l
 }
@@ -455,6 +457,7 @@ export function RelatePanel() {
   const r = rel.data as RelateResult | undefined
   const real = !!r?.['x-engine']
   const z = zone.data as CompareResult | undefined
+  const zc = z?.estimates?.contrasts[0]
   const d = r?.['x-data'] ?? null
   const e = r?.estimates ?? null
   const layers = allLayers(doc.layers)
@@ -481,6 +484,8 @@ export function RelatePanel() {
   const outputs = [...(r?.outputs ?? []).map((o) => ['rel', o] as const), ...(z?.outputs ?? []).map((o) => ['zone', o] as const)].filter(([ref, o]) => drawable(ref, o))
   const shown = mode ?? ((d?.table.codes.length ?? 0) > 400 ? 'hexbin' : 'points')
   const partial = e?.['x-partial']
+  // the engine's partial correlation: the headline whenever the request holds something constant
+  const held = real && e?.partial?.pearson ? e.partial : null
   const moran = e?.['x-moran']
 
   return (
@@ -565,10 +570,21 @@ export function RelatePanel() {
           <section className="border-t border-glass-line px-4 pt-3.5 pb-4">
             <h3 className="t-label mb-2.5 tracking-[0.08em] uppercase">Association</h3>
             <div className="grid grid-cols-2 gap-2">
+              {held ? (
+                <>
+                  <Stat label="Partial r" value={signed(held.pearson.r)} sub={`95% ${signed(held.pearson.ci[0])} to ${signed(held.pearson.ci[1])}`} hint={`Correlation left once ${held.controls.join(' and ')} ${held.controls.length === 1 ? 'is' : 'are'} held constant. The interval allows for neighbouring units not being independent.`} />
+                  <Stat label="p, adjusted" value={fmtP(held.pearson.p_adjusted)} sub={`n effective ${held.pearson.n_effective === undefined ? '—' : Math.round(held.pearson.n_effective).toLocaleString('en')} of ${r.n.used.toLocaleString('en')}`} hint={`The partial correlation, adjusted for spatial dependence. Ignoring spatial dependence, p would be ${fmtP(held.pearson.p)}.`} />
+                  {e.pearson && <Stat label="Pearson r" value={signed(e.pearson.r)} sub={`nothing held · p ${fmtP(e.pearson.p_adjusted)}`} hint="The plain correlation, before anything is held constant; p adjusted for spatial dependence." />}
+                  {e.spearman && <Stat label="Spearman ρ" value={signed(e.spearman.rho)} sub={`95% ${signed(e.spearman.ci[0])} to ${signed(e.spearman.ci[1])}`} hint="Rank correlation, before anything is held constant: does one rise as the other falls, whatever the shape." />}
+                </>
+              ) : (
+                <>
               {e.spearman && <Stat label="Spearman ρ" value={signed(e.spearman.rho)} sub={`95% ${signed(e.spearman.ci[0])} to ${signed(e.spearman.ci[1])}`} hint="Rank correlation: does one rise as the other falls, whatever the shape. The better summary when many units are zero." />}
               {e.pearson && <Stat label="Pearson r" value={signed(e.pearson.r)} sub={`95% ${signed(e.pearson.ci[0])} to ${signed(e.pearson.ci[1])}`} hint="Linear correlation of the (transformed) values. The interval allows for neighbouring units not being independent." />}
               {e.pearson && <Stat label="p, adjusted" value={fmtP(e.pearson.p_adjusted)} sub={`n effective ${e.pearson.n_effective === undefined ? "—" : Math.round(e.pearson.n_effective).toLocaleString("en")} of ${r.n.used.toLocaleString('en')}`} hint={`Adjusted for spatial dependence. Ignoring spatial dependence, p would be ${fmtP(e.pearson.p)}.`} />}
               {partial ? <Stat label="Partial r" value={signed(partial.r)} sub={`holding ${partial.controls.length} constant · p ${fmtP(partial.p_adjusted)}`} hint={`Correlation left once ${partial.controls.join(' and ')} are held constant.`} /> : e.ols && <Stat label="R²" value={e.ols.r2.toFixed(2)} sub={e.ols.formula} />}
+                </>
+              )}
             </div>
             <h3 className="t-label mt-4 mb-2.5 tracking-[0.08em] uppercase">Spatial structure</h3>
             <div className="grid grid-cols-3 gap-2">
@@ -623,15 +639,22 @@ export function RelatePanel() {
                   <Guards guards={z.guards} />
                   <p className="mt-3.5 text-[14px] leading-[1.4] font-semibold tracking-[-0.01em] text-ink">{z.interpretation?.summary}</p>
                   <div className="mt-3 mb-3 flex items-baseline gap-2.5">
-                    <span className="t-num font-mono text-[26px] leading-none font-medium tracking-[-0.04em] text-ink">{signed(z.estimates.contrasts[0].diff, 2)}</span>
+                    <span className="t-num font-mono text-[26px] leading-none font-medium tracking-[-0.04em] text-ink">{signed(zc!.diff, 2)}</span>
                     <span className="t-num font-mono text-[11.5px] text-ink2">
-                      95% {signed(z.estimates.contrasts[0].ci[0], 2)} to {signed(z.estimates.contrasts[0].ci[1], 2)}
+                      95% {signed((zc!.ci_adjusted ?? zc!.ci)[0], 2)} to {signed((zc!.ci_adjusted ?? zc!.ci)[1], 2)}
                       {z['x-data']?.transform === 'log' ? ' on the log scale' : ''}
+                      {zc!.ci_adjusted ? ', adjusted' : ''}
                     </span>
                   </div>
+                  {zc!.p_adjusted !== undefined && (
+                    <div className="mb-3 grid grid-cols-2 gap-2">
+                      <Stat label="p, adjusted" value={fmtP(zc!.p_adjusted)} sub={`n effective ${zc!.n_effective === undefined ? '—' : Math.round(zc!.n_effective).toLocaleString('en')} of ${z.estimates.groups.reduce((s, g) => s + g.n, 0).toLocaleString('en')}`} hint="The difference tested on the effective sample size: neighbouring units are alike, so they count for less than independent ones. The 95% interval above is widened the same way." />
+                      <Stat label="Interval, unadjusted" value={<span className="text-[13px]">{signed(zc!.ci[0], 2)} to {signed(zc!.ci[1], 2)}</span>} sub="as if every unit were independent" hint="The bootstrap interval of the difference, before allowing for spatial dependence." />
+                    </div>
+                  )}
                   <Intervals result={z} />
                   <p className="mt-3 text-[12px] leading-[1.55] text-ink3">
-                    {z.estimates.contrasts[0].reading}. Welch p {fmtP(z.estimates.contrasts[0].p_welch)} · Mann–Whitney p {fmtP(z.estimates.contrasts[0].p_mann_whitney)}, ignoring spatial dependence.
+                    {zc!.reading}. Welch p {fmtP(zc!.p_welch)} · Mann–Whitney p {fmtP(zc!.p_mann_whitney)}, ignoring spatial dependence.
                   </p>
                   <div className="mt-3">
                     <Explain result={z} />

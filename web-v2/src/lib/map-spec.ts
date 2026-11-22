@@ -254,13 +254,16 @@ export type RelateEstimates = {
   lee_l?: { L: number; p_perm: number }
   residual_moran?: { I: number; p_perm: number }
   scale_sensitivity?: { level: number; n: number; pearson_r: number; 'x-spearman'?: number }[]
+  /** the engine's partial correlations once `controls` are held constant; the headline when there are controls (`correlation_headline: 'partial'`) */
+  partial?: { controls: string[]; k: number; pearson: { r: number; ci: Interval; ci_level: number; p?: number; p_adjusted?: number; n_effective?: number; df?: number; n?: number }; spearman?: { rho: number; ci: Interval; p_adjusted?: number; n_effective?: number } }
+  correlation_headline?: 'pearson' | 'spearman' | 'partial'
   /** (client mock) correlation left once the controls are held constant, and the spatial pattern of each variable on its own */
   'x-partial'?: { r: number; p_adjusted: number; controls: string[] } | null
   'x-moran'?: { x: { I: number; p_perm: number }; y: { I: number; p_perm: number } }
 }
 export type GroupCompareEstimates = {
   groups: { id: string; label: string; n: number; median: number; mean: number; ci: Interval }[]
-  contrasts: { a: string; b: string; diff: number; ci: Interval; hodges_lehmann?: number; cohens_d?: number; p_welch?: number; p_mann_whitney?: number; reading: string }[]
+  contrasts: { a: string; b: string; diff: number; ci: Interval; hodges_lehmann?: number; cohens_d?: number; p_welch?: number; p_mann_whitney?: number; reading: string; /** allowing for spatial dependence: the interval and p on the effective sample size */ ci_adjusted?: Interval; p_adjusted?: number; n_effective?: number }[]
 }
 
 /* ---------------- document ---------------- */

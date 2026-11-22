@@ -60,6 +60,12 @@ export function HeadlineStrip({ profile }: { profile: AreaProfile }) {
                   {h.year}
                   <span aria-hidden>·</span>
                   <StatusMark status={h.status} />
+                  {h.basis && (
+                    <>
+                      <span aria-hidden>·</span>
+                      <span title={h.basis.hint}>{h.basis.label}</span>
+                    </>
+                  )}
                 </span>
               </span>
               {h.id === 'pop.total' && (

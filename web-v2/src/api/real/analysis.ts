@@ -26,6 +26,13 @@ function variable(v: Variable | undefined, sources: Record<string, Source>): Eng
   const period = v.period ?? (s?.kind === 'indicator' && typeof s.period === 'string' && s.period !== 'latest' ? s.period : undefined)
   return { indicator, ...(dims ? { dims: { ...dims } } : {}), ...(period ? { period } : {}), ...(v.transform && v.transform !== 'identity' ? { transform: v.transform } : {}), label: v.label ?? meta.label.toLowerCase() }
 }
+/** A zone's name in a few words: the document's own when it is short, else the variable's ("flood zone"). */
+function zoneLabel(group: EngineVariable, label: string | undefined): string {
+  if (label && label.length <= 24) return label
+  if (group.indicator.startsWith('haz.flood')) return 'flood zone'
+  const short = indicatorMeta(group.indicator, group.dims)?.short
+  return `${(short ?? group.indicator.split('.').pop() ?? 'the').toLowerCase()} zone`
+}
 /** The request as the engine takes it, or null when it names something only the sample data has. */
 export function toEngine(req: AnalysisRequest, sources: Record<string, Source>, pin: MapDocument['pin'] = 'latest'): EngineRequest | null {
   if (req.method === 'relate') {
@@ -45,13 +52,15 @@ export function toEngine(req: AnalysisRequest, sources: Record<string, Source>, 
   const threshold = (zone as { threshold?: number }).threshold
   if (req.support.kind !== 'admin' || !y || !group || threshold === undefined) return null
   const level = req.support.level
+  // the engine writes the groups as "inside {label} (≥20 %)": a short name of the zone, not the document's description of it
+  const label = zoneLabel(group, (zone as { label?: string }).label)
   return {
     spec: 'ldl-analysis/1',
     method: 'group_compare',
     pin: req.pin ?? pin,
     support: { kind: 'admin', level },
     variables: { y, group },
-    params: { zone: { threshold, ...((zone as { label?: string }).label ? { label: (zone as { label?: string }).label } : {}) }, compare: 'inside_vs_outside', tests: req.params.tests ?? ['welch', 'mann_whitney'], bootstrap: req.params.bootstrap ?? 999 },
+    params: { zone: { threshold, label }, compare: 'inside_vs_outside', tests: req.params.tests ?? ['welch', 'mann_whitney'], bootstrap: req.params.bootstrap ?? 999 },
   }
 }
 
@@ -131,7 +140,7 @@ async function adaptRelate(result: Result<RelateEstimates>, req: EngineRequest):
     support,
     x,
     y,
-    controls: [],
+    controls: (req.variables.controls ?? []).map((c) => varInfo(c, align('control'))),
     table: { codes, names: codes.map((c) => names.get(c) ?? c), x: xs, y: ys, n: [], estimated: basis.map((b) => b === 'estimated'), cls },
     breaks: { x: bx, y: by },
     fit,

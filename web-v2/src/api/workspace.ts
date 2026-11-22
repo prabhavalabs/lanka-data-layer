@@ -5,12 +5,10 @@
 // engine does not serve — the synthetic property sample, the drive-time surface — and every source when
 // the engine cannot be reached, loads the bundled sample data instead, marked `origin: 'sample'`.
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
-import { apiAvailable, getJson } from './http'
-import { loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
+import { ApiError, apiAvailable, getJson } from './http'
+import { adminTiles, engineSource, loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
 import { outputs as engineOutputs, planAnalysis, runAnalysisOnEngine, toEngine, type EngineRequest } from './real/analysis'
-import { adminShapes, SHAPE_GATE } from './real/adminShapes'
 import { realCatalogue } from './real/registry'
-import { absoluteApiUrl } from './http'
 import type { Theme } from '@/lib/hooks'
 import type { AnalysisRequest, GroupCompareRequest, MapDocument, RelateRequest, Source, TimeConfig, Variable } from '@/lib/map-spec'
 import { resolvePeriod } from '@/lib/map-spec'
@@ -92,7 +90,7 @@ export function planQuery(req: AnalysisRequest | null | undefined, sources: Reco
 /* ---------------- layer data: frames, grids, features ---------------- */
 /** An engine output frame on the boundary tiles of its support (`…/analyses/{id}/outputs/{output}`). */
 async function engineOutput(req: EngineRequest, output: string): Promise<LayerData> {
-  const [result, shapes] = await Promise.all([runAnalysisOnEngine(req), adminShapes(req.support.level)])
+  const [result, tiles] = await Promise.all([runAnalysisOnEngine(req), adminTiles(req.support.level, req.support.within)])
   const out = engineOutputs.get(result.id)
   const frame = output === 'bivariate' ? out?.bivariate : output === 'residuals' ? out?.residuals : null
   const level = req.support.level
@@ -112,10 +110,10 @@ async function engineOutput(req: EngineRequest, output: string): Promise<LayerDa
     codes: frame.codes,
     names: [],
     columns,
-    geometry: shapes,
+    geometry: { type: 'FeatureCollection', features: [] },
     centroids: [],
     fields: columns.map((c) => ({ id: c.id, label: c.label, kind: 'number' as const, unit: c.unit })),
-    tiles: { tiles: [absoluteApiUrl('/v2/tiles/admin/{z}/{x}/{y}.mvt')], minzoom: 0, maxzoom: 12, sourceLayer: `adm${level}`, centroidsLayer: 'centroids', level, parent: req.support.within, gate: SHAPE_GATE[level] },
+    tiles,
   } satisfies FramePayload
 }
 /** An analysis output, in the delivery shape the layer type expects (`…/analyses/{id}/outputs/{output}`). */
@@ -183,7 +181,14 @@ export function layerDataQuery(source: Source | undefined, doc: Pick<MapDocument
   if (source && source.kind !== 'analysis' && servable(resolved ?? undefined)) {
     const r = resolved as ResolvedSource
     key.push('api', ...resolvedKey(r))
-    return queryOptions({ queryKey: key, queryFn: () => loadResolved(source, r), enabled: true, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData, retry: 1 })
+    // a refusal (400: a dim the indicator does not have, a value it has none for) is final; only a failure is retried
+    return queryOptions({ queryKey: key, queryFn: () => loadResolved(source, r), enabled: true, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData, retry: (n, e) => n < 1 && !(e instanceof ApiError && e.status < 500) })
+  }
+  // the engine has this source but could not resolve it as written: the layer fails with the engine's reason, not with sample data
+  if (source && source.kind !== 'analysis' && resolved?.problem && engineSource(source)) {
+    const problem = resolved.problem
+    key.push('problem', problem)
+    return queryOptions({ queryKey: key, queryFn: (): Promise<LayerData> => Promise.reject(new Error(problem)), enabled: true, staleTime: Infinity, retry: false })
   }
   if (source?.kind === 'indicator') {
     const ids = source.indicators?.length ? source.indicators : [source.indicator]

@@ -57,6 +57,8 @@ export type Headline = {
   status: 'final' | 'provisional'
   delta?: { value: number; since: number }
   observationId: string
+  /** how the figure was arrived at, when it is not read from the source as published: `computed` (summed from the units below), `modelled (WorldPop)` */
+  basis?: { label: string; hint: string }
 }
 
 export type RankItem = {

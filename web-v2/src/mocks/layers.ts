@@ -110,7 +110,7 @@ export type Origin = { origin?: 'api' | 'sample' }
 /** Vector tiles of the engine (`/v2/tiles/{id}/{z}/{x}/{y}.mvt`), with the zoom range the archive holds. */
 export type TileRef = { tiles: string[]; minzoom: number; maxzoom: number; sourceLayer: string; filter?: unknown[] }
 /** The admin boundary tileset a frame joins to by p-code (`promoteId: 'pcode'`, feature-state). */
-export type AdminTiles = TileRef & { level: number; parent?: string; centroidsLayer: string; /** the zoom the tiles carry this level from; below it `geometry` (decoded shapes) draws the fill */ gate?: number }
+export type AdminTiles = TileRef & { level: number; parent?: string; centroidsLayer: string }
 export type FrameColumn = { id: string; indicator: string; period: string; unit: string; label: string; class: DataClass; values: (number | null)[]; n?: number[]; basis?: ('observed' | 'estimated')[]; /** class breaks the engine drew this column with (an analysis output), in its own units */ breaks?: number[] }
 export type FramePayload = {
   kind: 'frame'

@@ -1,9 +1,9 @@
 // Transport to the Lanka Data Layer API (the Rust engine): the public plane `/v2` and the app plane `/app/v1`.
 //
 // `VITE_API_BASE` is the origin the API lives on; empty (the default) means the page's own origin, which the
-// Vite dev server proxies to the engine. Every URL the API hands back goes through `apiUrl`, because some
-// payloads carry absolute URLs of another origin (TileJSON `tiles`, analysis output `href`s), which would
-// otherwise send the browser to a host it cannot reach.
+// Vite dev server proxies to the engine. The engine hands back relative paths (tile templates, analysis
+// output `href`s) and absolute URLs built from its public base or the request's own host (TileJSON), so a
+// relative path is prefixed with `API_BASE` and an absolute URL is used as it is.
 
 export const API_BASE = ((import.meta.env.VITE_API_BASE as string | undefined) ?? '').replace(/\/+$/, '')
 
@@ -12,7 +12,7 @@ export type Meta = {
   data_version: string | null
   contract_version: number
   dataset_versions: { dataset: string; dsv: string; vintage?: string | null }[]
-  source?: { id: string; publisher: string; title: string; url: string }[]
+  source?: { id: string; publisher: string; title: string; url: string; licence?: string | null; attribution?: string | null }[]
   licences?: { id: string; status: string; url?: string | null; attribution: string }[]
   attribution?: Attribution[]
 }
@@ -24,6 +24,8 @@ export type Problem = {
   detail?: string
   problems?: { path: string; code: string; message: string }[]
   hints?: { retry_after_s?: number; valid_values?: string[]; did_you_mean?: string[]; available_levels?: number[]; [k: string]: unknown }
+  /** a parameter the engine could not match (`UNKNOWN_DIM`, `DIMS_NO_MATCH`), with the values it would take */
+  problem?: { code: string; param?: string; given?: string | string[]; valid?: Record<string, string[]>; valid_dims?: Record<string, string[]>; [k: string]: unknown }
 }
 
 export class ApiError extends Error {
@@ -40,15 +42,14 @@ export class ApiError extends Error {
   }
 }
 
-/** A path or URL of the API, made reachable from this page: API paths of any origin are re-based on `API_BASE`. */
-export function apiUrl(pathOrUrl: string): string {
-  const m = /^https?:\/\/[^/]+(\/(?:v2|app|dl)\/.*)$/.exec(pathOrUrl)
-  const path = m ? m[1] : pathOrUrl
-  if (/^https?:\/\//.test(path)) return path
-  return `${API_BASE}${path.startsWith('/') ? '' : '/'}${path}`
+const ABSOLUTE = /^https?:\/\//
+/** A path of the API on `API_BASE`; an absolute URL the engine built is already reachable and passes through. */
+export const apiUrl = (pathOrUrl: string): string => (ABSOLUTE.test(pathOrUrl) ? pathOrUrl : `${API_BASE}${pathOrUrl.startsWith('/') ? '' : '/'}${pathOrUrl}`)
+/** The same, absolute: MapLibre fetches tiles from a worker, which has no page URL to resolve a relative template against. */
+export const absoluteApiUrl = (pathOrUrl: string) => {
+  const url = apiUrl(pathOrUrl)
+  return ABSOLUTE.test(url) ? url : `${window.location.origin}${url}`
 }
-/** The same, absolute: MapLibre wants tile templates it can resolve without a base. */
-export const absoluteApiUrl = (pathOrUrl: string) => new URL(apiUrl(pathOrUrl), window.location.origin).toString().replace(/%7B([a-z]+)%7D/gi, '{$1}')
 
 type Params = Record<string, string | number | boolean | undefined | null>
 const query = (params: Params) => {
