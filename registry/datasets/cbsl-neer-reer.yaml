@@ -1,6 +1,6 @@
 id: cbsl-neer-reer
 title: Nominal and real effective exchange rate indices
-description: NEER and REER indices (5- and 24-currency baskets).
+description: Monthly average NEER and REER indices (2017 = 100), 24-currency basket, January 2013 onwards.
 source_ids:
 - cbsl-exchange-rates
 indicators:
@@ -27,11 +27,14 @@ indicators:
   - national
   period_type: month
 time_coverage:
-  from: 2017-01
-  to: 2026-10
-method: IF_REER.xlsx.
+  from: 2013-01
+  to: 2026-09
+method: CBSL IF_REER.xlsx (sheet Monthly Average), read cell by cell.
 limits:
 - Basket weights revised periodically.
+- Only the 24-currency basket is published in the workbook; the 5-currency basket code is unused.
+- REER uses the rebased CCPI (2021 = 100) from February 2023 and rebased partner CPIs from January 2026; the latest
+  two months are provisional.
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'
