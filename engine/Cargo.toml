@@ -1,6 +1,12 @@
 [workspace]
 resolver = "3"
-members = ["crates/lanka-core", "crates/lanka-ingest", "crates/lanka-server", "crates/lanka-cli"]
+members = [
+  "crates/lanka-core",
+  "crates/lanka-store",
+  "crates/lanka-ingest",
+  "crates/lanka-server",
+  "crates/lanka-cli",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -13,13 +19,19 @@ publish = false
 [workspace.dependencies]
 lanka-core = { path = "crates/lanka-core" }
 lanka-ingest = { path = "crates/lanka-ingest" }
+lanka-store = { path = "crates/lanka-store" }
 lanka-server = { path = "crates/lanka-server" }
 
 anyhow = "=1.0.104"
 thiserror = "=2.0.21"
-tokio = { version = "=1.54.1", features = ["macros", "rt-multi-thread", "signal", "fs", "time", "sync"] }
+tokio = { version = "=1.54.1", features = ["macros", "rt-multi-thread", "signal", "fs", "time", "sync", "io-util"] }
 futures = "=0.3.34"
 bytes = "=1.12.2"
+async-trait = "=0.1.89"
+arrow-array = "=60.0.0"
+arrow-schema = "=60.0.0"
+parquet = { version = "=60.0.0", default-features = false, features = ["arrow", "zstd"] }
+proptest = { version = "=1.11.0", default-features = false, features = ["std"] }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.154", features = ["raw_value"] }
 serde_yaml_ng = "=0.10.0"
@@ -29,7 +41,7 @@ chrono = { version = "=0.4.45", default-features = false, features = ["std", "cl
 axum = { version = "=0.8.9", features = ["macros"] }
 tower-http = { version = "=0.7.1", features = ["compression-gzip", "compression-br", "trace", "cors", "timeout"] }
 utoipa = { version = "=6.0.0", features = ["axum_extras", "chrono"] }
-reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "gzip", "json"] }
+reqwest = { version = "=0.13.5", default-features = false, features = ["rustls", "gzip", "json", "stream"] }
 sha2 = "=0.11.1"
 hex = "=0.4.3"
 ryu = "=1.0.23"
