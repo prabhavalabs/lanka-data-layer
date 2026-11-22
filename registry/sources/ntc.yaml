@@ -4,7 +4,7 @@ title: NTC operational statistics and route permits
 homepage: https://www.ntc.gov.lk/
 access:
   method: pdf
-  endpoint: https://ntc.gov.lk/corporate/pdf/2025/stat/Stat2025-EN.pdf
+  endpoint: https://ntc.gov.lk/corporate/pdf/2024/stat/Stat2024-EN.pdf
   auth: none
 licence:
   id: lk-gov-unstated
@@ -23,8 +23,8 @@ datasets:
 - ntc-bus-statistics
 priority: P1
 effort: M
-status: planned
-verified_at: '2026-11-21'
+status: active
+verified_at: '2026-11-22'
 dc_refs:
 - public-transport-capacity
 - road-crashes-fatalities

@@ -22,8 +22,8 @@ datasets:
 - irrigation-river-water-levels
 priority: P1
 effort: S
-status: planned
-verified_at: '2026-11-21'
+status: active
+verified_at: '2026-11-22'
 notes: 322k+ measurements from 39 gauging stations with alert/minor/major flood thresholds.
 dc_refs:
 - irrigation-gauges

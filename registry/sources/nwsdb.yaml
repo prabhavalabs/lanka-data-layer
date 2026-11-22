@@ -25,11 +25,9 @@ datasets:
 - nwsdb-water-supply
 priority: P1
 effort: M
-status: planned
-verified_at: '2026-11-21'
-notes: 'Annual report hosted on Google Drive (link from waterboard.lk). waterboard.lk returned 403 to scripted requests; the
-  annual-report Google Drive file is reachable. Verification 2026-11-21: https://www.waterboard.lk/ -> HTTP 403 to scripted
-  clients (bot protection). Other access point(s) reachable.'
+status: active
+verified_at: '2026-11-22'
+notes: 'Annual report hosted on Google Drive (link from waterboard.lk, which answers 403 to scripted clients). Only table 05 is in the text layer; the connection, production and regional tables are images (OCR, class C).'
 dc_refs:
 - water-supply-connections-coverage
 - water-operating-performance

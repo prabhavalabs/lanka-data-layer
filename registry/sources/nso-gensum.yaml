@@ -4,7 +4,7 @@ title: Generation summary API
 homepage: https://edlcare.edl.lk/gensum/details
 access:
   method: api
-  endpoint: https://edlcare.edl.lk/gensum/details
+  endpoint: https://edlcare.edl.lk/api/gensum/energy-data?date=YYYY-MM-DD
   auth: none
 licence:
   id: lk-gov-unstated
@@ -24,9 +24,9 @@ datasets:
 - nso-electricity-generation
 priority: P1
 effort: S
-status: planned
-verified_at: '2026-11-21'
-notes: 'Live lane: 15-minute generation by source; poll politely, archive daily.'
+status: active
+verified_at: '2026-11-22'
+notes: 'Single-page app on edlcare.edl.lk; JSON endpoints /api/gensum/{energy-data,load-curve,peak-data}?date=YYYY-MM-DD (no auth; rate-limited: HTTP 429 seen even at 40 requests/min; the engine retries with Retry-After). Daily energy back to 2023-01; the load curve keeps about six months.'
 dc_refs:
 - electricity-generation-daily
 - electricity-generation-quarter-hourly
