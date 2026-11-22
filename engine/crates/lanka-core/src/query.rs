@@ -521,8 +521,9 @@ fn parse_bound(cat: &Catalog, p: Option<&String>) -> CoreResult<Option<NaiveDate
 /// combination in the catalogue (nothing can match).
 fn dims_filter(cat: &Catalog, dims: Option<&str>) -> CoreResult<Result<Option<i32>, ()>> {
     let Some(d) = dims else { return Ok(Ok(None)) };
-    let canon = Dims::parse(d)
-        .map_err(|e| CoreError::bad_request(e.to_string()))?
+    let canon = cat
+        .dims
+        .canonicalise(&Dims::parse(d).map_err(|e| CoreError::bad_request(e.to_string()))?)
         .canonical();
     Ok(cat.dims.key(&canon).map(Some).ok_or(()))
 }
@@ -762,8 +763,9 @@ pub async fn map(
     available.sort();
     let (dims, dims_key) = match q.dims.as_deref() {
         Some(d) => {
-            let canon = Dims::parse(d)
-                .map_err(|e| CoreError::bad_request(e.to_string()))?
+            let canon = cat
+                .dims
+                .canonicalise(&Dims::parse(d).map_err(|e| CoreError::bad_request(e.to_string()))?)
                 .canonical();
             match available.iter().find(|(t, _)| *t == canon) {
                 Some((t, k)) => (t.clone(), *k),

@@ -766,6 +766,43 @@ impl Builder<'_> {
                 }
             }
         }
+        // dims: a key must be a dimension of one of the indicators, a code
+        // one that is published (compared without regard to case).
+        for (k, v) in s.dims.iter().flatten() {
+            let known = ids.iter().any(|i| {
+                self.cat
+                    .indicators
+                    .get(*i)
+                    .is_some_and(|x| x.dims.iter().any(|d| d == k))
+            });
+            if !known {
+                let valid: BTreeMap<String, Vec<String>> = ids
+                    .iter()
+                    .filter_map(|i| {
+                        self.cat
+                            .indicators
+                            .get(*i)
+                            .map(|x| (i.to_string(), x.dims.clone()))
+                    })
+                    .collect();
+                self.problem(
+                    format!("{at}/dims/{}", ptr(k)),
+                    "NOT_FOUND",
+                    Some(json!({ "reason": format!("{k} is not a dimension of {}", ids.join(", ")), "valid_dims": valid })),
+                );
+                ok = false;
+                continue;
+            }
+            let codes = self.cat.dims.codes_of(k);
+            if !codes.is_empty() && self.cat.dims.canonical_code(k, v).is_none() {
+                self.problem(
+                    format!("{at}/dims/{}", ptr(k)),
+                    "NOT_FOUND",
+                    Some(json!({ "reason": format!("no data for {k}={v}"), "valid": codes })),
+                );
+                ok = false;
+            }
+        }
         let class = least_official(&classes);
         if class.as_deref() == Some("estimated") {
             self.notices.insert(Notice { code: "ESTIMATE", text: "Some layers show modelled estimates, not official statistics; their legends carry the estimate badge.".to_owned() });
@@ -830,7 +867,14 @@ impl Builder<'_> {
                 }
             }
             if let Some(d) = s.dims.as_ref().filter(|d| !d.is_empty()) {
-                let canon: Vec<String> = d.iter().map(|(k, v)| format!("{k}={v}")).collect();
+                // Codes in their stored spelling (`RP100` → `rp100`): the
+                // frame compares codes exactly as published.
+                let canon: Vec<String> = d
+                    .iter()
+                    .map(|(k, v)| {
+                        format!("{k}={}", self.cat.dims.canonical_code(k, v).unwrap_or(v))
+                    })
+                    .collect();
                 q.push(format!("dims={}", enc(&canon.join(";"))));
             }
             if !dsvs.is_empty() {

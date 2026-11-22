@@ -283,6 +283,97 @@ fn parse_dims_param(raw: Option<&str>, indicators: &[String]) -> CoreResult<Vec<
         .collect()
 }
 
+/// Every selector key must be a dimension of its indicator (scoped) or of
+/// at least one requested indicator (unscoped): an unknown key used to be
+/// ignored silently and returned every combination.
+fn check_dim_keys(cat: &Catalog, selectors: &[DimsSel], indicators: &[String]) -> CoreResult<()> {
+    let dims_of = |i: &str| -> Vec<String> {
+        cat.indicators
+            .get(i)
+            .map(|x| x.dims.clone())
+            .unwrap_or_default()
+    };
+    for s in selectors {
+        let targets: Vec<&String> = match &s.indicator {
+            Some(i) => indicators.iter().filter(|x| *x == i).collect(),
+            None => indicators.iter().collect(),
+        };
+        let ok = targets.iter().any(|i| {
+            let d = dims_of(i);
+            s.pairs.iter().all(|(k, _)| d.iter().any(|x| x == k))
+        });
+        if !ok && !targets.is_empty() {
+            let valid: serde_json::Map<String, serde_json::Value> = targets
+                .iter()
+                .map(|i| ((*i).clone(), serde_json::json!(dims_of(i))))
+                .collect();
+            let unknown: Vec<&str> = s
+                .pairs
+                .iter()
+                .map(|(k, _)| k)
+                .filter(|k| !targets.iter().any(|i| dims_of(i).iter().any(|x| x == k)))
+                .collect();
+            return Err(CoreError::invalid(
+                format!(
+                    "dims: {} is not a dimension of {}",
+                    if unknown.is_empty() {
+                        s.pairs.canonical()
+                    } else {
+                        unknown.join(", ")
+                    },
+                    targets
+                        .iter()
+                        .map(|t| t.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ),
+                serde_json::json!({
+                    "code": "UNKNOWN_DIM",
+                    "param": "dims",
+                    "given": s.pairs.canonical(),
+                    "unknown": unknown,
+                    "valid_dims": valid,
+                }),
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// The problem for selectors that match no stored combination: the valid
+/// codes per dimension and the combinations themselves.
+fn no_match(id: &str, mine: &[&DimsSel], available: &[(i32, String)]) -> CoreError {
+    let mut by_dim: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for (_, text) in available {
+        for (k, v) in dims_map(text) {
+            let e = by_dim.entry(k).or_default();
+            if !e.contains(&v) {
+                e.push(v);
+            }
+        }
+    }
+    let given: Vec<String> = mine.iter().map(|s| s.pairs.canonical()).collect();
+    CoreError::invalid(
+        format!(
+            "dims {} match nothing for {id}; valid values: {}",
+            given.join(" | "),
+            by_dim
+                .iter()
+                .map(|(k, v)| format!("{k}={}", v.join(",")))
+                .collect::<Vec<_>>()
+                .join("; ")
+        ),
+        serde_json::json!({
+            "code": "DIMS_NO_MATCH",
+            "param": "dims",
+            "indicator": id,
+            "given": given,
+            "valid": by_dim,
+            "combinations": available.iter().map(|a| a.1.as_str()).collect::<Vec<_>>(),
+        }),
+    )
+}
+
 fn dims_map(text: &str) -> BTreeMap<String, String> {
     text.split(';')
         .filter_map(|p| p.split_once('='))
@@ -517,6 +608,7 @@ pub async fn frame(pool: &PgPool, cat: &Catalog, q: &FrameQuery) -> CoreResult<F
     };
     let (versions, data_version) = pinned(pool, cat, &q.pin).await?;
     let selectors = parse_dims_param(q.dims.as_deref(), &q.indicators)?;
+    check_dim_keys(cat, &selectors, &q.indicators)?;
     let cal = &profile.calendars;
     let latest_only = q.periods.is_empty() || q.periods.iter().all(|p| p == "latest");
     if !latest_only && (q.from.is_some() || q.to.is_some()) {
@@ -632,6 +724,8 @@ pub async fn frame(pool: &PgPool, cat: &Catalog, q: &FrameQuery) -> CoreResult<F
         let dims: Vec<(i32, String)> = if mine.is_empty() {
             available.clone()
         } else {
+            // Codes match without regard to case (`RP100` = `rp100`); the
+            // columns carry the stored spelling.
             let picked: Vec<(i32, String)> = available
                 .iter()
                 .filter(|(_, text)| {
@@ -639,20 +733,13 @@ pub async fn frame(pool: &PgPool, cat: &Catalog, q: &FrameQuery) -> CoreResult<F
                     mine.iter().any(|s| {
                         s.pairs
                             .iter()
-                            .all(|(k, v)| have.get(k).map(String::as_str) == Some(v))
+                            .all(|(k, v)| have.get(k).is_some_and(|h| h.eq_ignore_ascii_case(v)))
                     })
                 })
                 .cloned()
                 .collect();
             if picked.is_empty() && !available.is_empty() {
-                return Err(CoreError::bad_request(format!(
-                    "dims for {id} match nothing; valid values: {}",
-                    available
-                        .iter()
-                        .map(|a| a.1.as_str())
-                        .collect::<Vec<_>>()
-                        .join(" | ")
-                )));
+                return Err(no_match(id, &mine, &available));
             }
             picked
         };
@@ -873,6 +960,41 @@ mod tests {
         assert_eq!(s[1].indicator, None);
         assert_eq!(s[1].pairs.canonical(), "sex=female");
         assert!(parse_dims_param(Some("sex=total=x"), &inds).is_err());
+    }
+
+    #[test]
+    fn dims_codes_are_canonicalised_and_mismatches_are_problems() {
+        let sets = crate::catalog::DimSets::from_rows([
+            (1, "return_period=rp10".to_owned()),
+            (2, "return_period=rp100".to_owned()),
+            (3, "series_code=SP.POP.TOTL".to_owned()),
+        ]);
+        assert_eq!(sets.canonical_code("return_period", "RP100"), Some("rp100"));
+        assert_eq!(
+            sets.canonical_code("series_code", "sp.pop.totl"),
+            Some("SP.POP.TOTL")
+        );
+        assert_eq!(sets.canonical_code("return_period", "rp7"), None);
+        let d = Dims::parse("return_period=RP100").unwrap_or_default();
+        assert_eq!(sets.canonicalise(&d).canonical(), "return_period=rp100");
+        assert_eq!(sets.codes_of("return_period"), vec!["rp10", "rp100"]);
+
+        let sel = DimsSel {
+            indicator: None,
+            pairs: Dims::parse("return_period=rp7").unwrap_or_default(),
+        };
+        let avail = vec![
+            (1, "return_period=rp10".to_owned()),
+            (2, "return_period=rp100".to_owned()),
+        ];
+        match no_match("haz.flood_area_share", &[&sel], &avail) {
+            CoreError::Invalid { problem, message } => {
+                assert_eq!(problem["code"], "DIMS_NO_MATCH");
+                assert_eq!(problem["valid"]["return_period"][1], "rp100");
+                assert!(message.contains("return_period=rp10,rp100"), "{message}");
+            }
+            e => panic!("{e:?}"),
+        }
     }
 
     #[test]

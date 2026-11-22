@@ -225,6 +225,8 @@ pub struct ApiError {
     status: StatusCode,
     message: String,
     data_version: Option<String>,
+    /// `payload.problem` of the error envelope (null otherwise).
+    problem: Option<serde_json::Value>,
 }
 
 impl ApiError {
@@ -233,6 +235,7 @@ impl ApiError {
             status,
             message: message.into(),
             data_version: None,
+            problem: None,
         }
     }
     fn with_version(mut self, dv: Option<String>) -> Self {
@@ -247,6 +250,10 @@ impl From<CoreError> for ApiError {
             CoreError::NotFound(m) => Self::new(StatusCode::NOT_FOUND, format!("not_found: {m}")),
             CoreError::NotInCoverage => Self::new(StatusCode::NOT_FOUND, "not_in_coverage"),
             CoreError::BadRequest(m) => Self::new(StatusCode::BAD_REQUEST, m),
+            CoreError::Invalid { message, problem } => Self {
+                problem: Some(problem),
+                ..Self::new(StatusCode::BAD_REQUEST, message)
+            },
             CoreError::Db(err) => {
                 tracing::error!(error = %err, "database error");
                 Self::new(StatusCode::INTERNAL_SERVER_ERROR, "internal error")
@@ -257,8 +264,19 @@ impl From<CoreError> for ApiError {
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let body = Envelope::error(self.message, Meta::bare(self.data_version));
-        let mut res = (self.status, axum::Json(body)).into_response();
+        let mut res = match self.problem {
+            None => {
+                let body = Envelope::error(self.message, Meta::bare(self.data_version));
+                (self.status, axum::Json(body)).into_response()
+            }
+            Some(p) => {
+                let body = serde_json::json!({
+                    "success": false, "message": self.message,
+                    "payload": { "problem": p }, "meta": Meta::bare(self.data_version),
+                });
+                (self.status, axum::Json(body)).into_response()
+            }
+        };
         res.headers_mut()
             .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
         res

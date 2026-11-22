@@ -136,9 +136,63 @@ pub struct DatasetInfo {
 pub struct DimSets {
     by_key: HashMap<i32, String>,
     by_text: HashMap<String, i32>,
+    /// `(dim, lower-cased code)` → the code as stored. Codes are unique per
+    /// codelist ignoring case (checked: no two differ by case only).
+    codes: HashMap<(String, String), String>,
 }
 
 impl DimSets {
+    /// From `(key, canonical text)` rows of `catalog.dim_sets`.
+    pub fn from_rows(rows: impl IntoIterator<Item = (i32, String)>) -> Self {
+        let mut s = Self::default();
+        for (k, text) in rows {
+            for (d, c) in text.split(';').filter_map(|p| p.split_once('=')) {
+                s.codes
+                    .entry((d.to_owned(), c.to_ascii_lowercase()))
+                    .or_insert_with(|| c.to_owned());
+            }
+            s.by_text.insert(text.clone(), k);
+            s.by_key.insert(k, text);
+        }
+        s
+    }
+
+    /// Every stored code of dimension `dim`, sorted.
+    #[must_use]
+    pub fn codes_of(&self, dim: &str) -> Vec<&str> {
+        let mut v: Vec<&str> = self
+            .codes
+            .iter()
+            .filter(|((d, _), _)| d == dim)
+            .map(|(_, c)| c.as_str())
+            .collect();
+        v.sort_unstable();
+        v
+    }
+
+    /// `dims` with every code in its stored spelling (codes no observation
+    /// carries are kept as given).
+    #[must_use]
+    pub fn canonicalise(&self, dims: &crate::dims::Dims) -> crate::dims::Dims {
+        crate::dims::Dims::from_pairs(dims.iter().map(|(k, v)| {
+            (
+                k.to_owned(),
+                self.canonical_code(k, v).unwrap_or(v).to_owned(),
+            )
+        }))
+        .unwrap_or_else(|_| dims.clone())
+    }
+
+    /// The stored spelling of `code` for dimension `dim`, matched without
+    /// regard to case (`RP100` → `rp100`, `sp.pop.totl` → `SP.POP.TOTL`);
+    /// `None` when no observation carries it.
+    #[must_use]
+    pub fn canonical_code(&self, dim: &str, code: &str) -> Option<&str> {
+        self.codes
+            .get(&(dim.to_owned(), code.to_ascii_lowercase()))
+            .map(String::as_str)
+    }
+
     #[must_use]
     pub fn text(&self, key: i32) -> Option<&str> {
         self.by_key.get(&key).map(String::as_str)
@@ -333,10 +387,7 @@ impl Catalog {
         for v in completed_by.values_mut() {
             v.sort();
         }
-        let dims = DimSets {
-            by_text: dims.iter().map(|(k, d)| (d.clone(), *k)).collect(),
-            by_key: dims.into_iter().collect(),
-        };
+        let dims = DimSets::from_rows(dims);
         Ok(Self {
             data_version,
             datasets,

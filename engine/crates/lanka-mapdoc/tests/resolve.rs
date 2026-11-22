@@ -239,3 +239,37 @@ fn release_pinned_document() {
         "dsv not loaded"
     );
 }
+
+#[test]
+fn dims_codes_resolve_to_their_stored_spelling() {
+    let mut cat = catalog();
+    cat.dims = lanka_core::catalog::DimSets::from_rows([
+        (1, "sex=total".to_owned()),
+        (2, "sex=female".to_owned()),
+    ]);
+    let v = |dims: serde_json::Value| {
+        let mut d = serde_json::to_value(doc(json!("latest"))).unwrap_or_default();
+        d["sources"]["a"]["dims"] = dims;
+        validate(&d).unwrap_or_else(|p| panic!("{p:#?}"))
+    };
+    let ctx = ResolveContext::default();
+    let r = resolve(&v(json!({"sex": "TOTAL"})), &cat, &ctx);
+    match &r.sources["a"].shape {
+        Shape::Frame { frame, .. } => assert!(frame.ends_with("&dims=sex%3Dtotal"), "{frame}"),
+        s => panic!("{s:?}"),
+    }
+    // an unpublished code and an unknown dimension are problems with the valid values
+    let r = resolve(&v(json!({"sex": "males"})), &cat, &ctx);
+    let p = r
+        .problems
+        .iter()
+        .find(|p| p.path == "/sources/a/dims/sex")
+        .unwrap_or_else(|| panic!("{:?}", r.problems));
+    assert_eq!(p.code, "NOT_FOUND");
+    assert_eq!(
+        p.hint.as_ref().map(|h| h["valid"].clone()),
+        Some(json!(["female", "total"]))
+    );
+    let r = resolve(&v(json!({"age": "all"})), &cat, &ctx);
+    assert!(r.problems.iter().any(|p| p.path == "/sources/a/dims/age"));
+}
