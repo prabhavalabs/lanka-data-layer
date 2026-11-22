@@ -142,6 +142,9 @@ enum Cmd {
     /// PDF table templates: test one against a document, propose a new one.
     #[command(subcommand)]
     Template(doc_cmd::TemplateCmd),
+    /// Class C (operator-run): propose an anchored extract from two model readings.
+    #[command(subcommand)]
+    Extract(ExtractCmd),
     /// Grid engine: lookup arrays, layers, v1 parity, reverse-geocoding check.
     #[command(subcommand)]
     Grid(grid_cmd::GridCmd),
@@ -386,6 +389,12 @@ enum ConnectorCmd {
     },
     /// Sources with a connector, and their driver.
     List,
+}
+
+#[derive(Subcommand)]
+enum ExtractCmd {
+    /// Two readings → anchored class-C `cells` extract + review with evidence.
+    Propose(propose::ExtractProposeArgs),
 }
 
 fn init_tracing(json: bool) {
@@ -1018,6 +1027,7 @@ async fn run(cli: Cli) -> Result<()> {
         Cmd::Probe { url } => probe(&url).await?,
         Cmd::Tiles(cmd) => tiles_cmd::run(g, cmd).await?,
         Cmd::Template(cmd) => doc_cmd::template(g, cmd).await?,
+        Cmd::Extract(ExtractCmd::Propose(a)) => propose::extract_propose(g, a).await?,
         Cmd::Map(cmd) => map_cmd(g, cmd).await?,
         Cmd::Grid(cmd) => {
             let dir = find_registry(g.registry.as_deref())?;

@@ -1738,6 +1738,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "axum",
+ "bytes",
  "chrono",
  "clap",
  "futures",
@@ -1750,8 +1751,10 @@ dependencies = [
  "lanka-mapdoc",
  "lanka-server",
  "lanka-store",
+ "reqwest",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "tokio",
  "tracing",
