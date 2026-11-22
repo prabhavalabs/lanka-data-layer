@@ -1,14 +1,27 @@
 id: wb-sldu-outlook
 title: World Bank macro outlook and poverty nowcasts
-description: Growth forecasts, fiscal/external projections and poverty nowcasts (national and provincial) from each Development
-  Update.
+description: Key economic indicators, forecasts and poverty nowcasts and forecasts (national) from each Sri Lanka Development
+  Update, one vintage per edition.
 source_ids:
 - worldbank-sldu
 indicators:
-- id: wbsldu.gdp_growth_forecast
-  label: Real GDP growth forecast
+- id: wbsldu.macro
+  label: Key economic indicator (World Bank outlook)
   unit: '%'
   measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - id: metric
+    codelist: wb_outlook_metric
+  - edition
+  geo_levels:
+  - national
+  period_type: year
+- id: wbsldu.reserves_months
+  label: Gross reserves in months of imports (World Bank outlook)
+  unit: mo
+  measure_type: ratio
   aggregation: none
   class: third_party
   dims:
@@ -16,28 +29,34 @@ indicators:
   geo_levels:
   - national
   period_type: year
-- id: wbsldu.poverty_nowcast
-  label: Poverty rate nowcast ($4.20/day)
+- id: wbsldu.poverty_rate
+  label: Poverty rate, actual, nowcast or forecast (World Bank outlook)
   unit: '%'
   measure_type: share
   aggregation: none
   class: third_party
   dims:
+  - poverty_line
   - edition
   geo_levels:
   - national
-  - adm1
   period_type: year
 time_coverage:
-  from: '2021'
-  to: '2027'
-method: PDF table extraction per edition, vintage-stamped.
+  from: '2022'
+  to: '2028'
+method: >-
+  Key economic indicators table of the Sri Lanka Development Update (PDF text layer, reviewed template): Table 1.1
+  (October 2026) and the Macro Poverty Outlook table (May 2026). Each edition is a separate vintage in the `edition`
+  dimension.
 limits:
-- Forecasts and nowcasts, not outturns; each edition supersedes the last.
+- Forecasts and nowcasts, not outturns; each edition supersedes the last. The table marks estimates (e) and forecasts (f)
+  in the year header; the basis is not carried per value (read the edition and the year).
+- Poverty rates are microsimulation nowcasts from HIES 2019 (actual data 2019; nowcast 2020-2025 in the 2026 editions).
+- The May 2026 and October 2026 editions are loaded. October 2025 prints the table as an image; earlier editions use other
+  layouts and indicator sets (not loaded yet). Provincial poverty appears only as a map figure (no table).
 enrichment:
   joins:
   - 'national series: no spatial join; joins to other national series by period'
-  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
   aggregations:
   - vintage comparison across editions
 publication_class: B

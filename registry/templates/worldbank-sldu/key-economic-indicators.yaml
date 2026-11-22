@@ -1,0 +1,39 @@
+# World Bank Sri Lanka Development Update: the key economic indicators table.
+# October 2026: "TABLE 1.1 Key economic indicators", 2022-2028 (forecasts from 2026).
+# May 2026: the Macro Poverty Outlook table "Recent history and projections",
+# 2023-2028 (2025e estimate, 2026f-2028f forecasts). Section headings carry no
+# numbers and are not rows; footnote markers are superscripts.
+id: worldbank-sldu/key-economic-indicators
+title: Key economic indicators, outlook and poverty rates
+editions:
+  - match: { edition: "2026-10" }
+    locate:
+      page: { find_text: "TABLE 1.1 Key economic indicators", then_text: "Real GDP growth and inflation" }
+    columns:
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+      - { key: y2026, header: "2026" }
+      - { key: y2027, header: "2027" }
+      - { key: y2028, header: "2028" }
+    rows: { stop_at: ["Source"] }
+    number: { missing: ["..", "-"] }
+    checks:
+      - { rows_present: ["Real GDP", "Central government debt", "Lower middle-income poverty rate (US$4.20 in 2021 PPP)"] }
+      - { row_count: { min: 20, max: 20 } }
+  - match: { edition: "2026-05" }
+    locate:
+      page: { find_text: "medium-term growth prospects are improving", then_text: "Recent history and projections" }
+    columns:
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025e" }
+      - { key: y2026, header: "2026f" }
+      - { key: y2027, header: "2027f" }
+      - { key: y2028, header: "2028f" }
+    rows: { stop_at: ["Source"] }
+    number: { missing: ["..", "-"] }
+    checks:
+      - { rows_present: ["Real GDP growth, at constant market prices", "Debt (% of GDP)"] }
+      - { row_count: { min: 22, max: 22 } }
