@@ -405,7 +405,7 @@ async fn restandardise_inner(
     run: &RunTracker,
     c: &dyn Connector,
 ) -> Result<RunReport> {
-    let ids: Vec<(i64, Vec<u8>, String, String, String)> = sqlx::query_as(
+    let ids: Vec<StoredExtract> = sqlx::query_as(
         "SELECT e.id, e.sha256, e.store_key, e.extractor, e.extractor_ver
          FROM ops.run_extracts re JOIN ops.extracts e ON e.id = re.extract_id
          WHERE re.run_id = (SELECT max(re2.run_id) FROM ops.run_extracts re2
@@ -422,6 +422,26 @@ async fn restandardise_inner(
         c.source_id(),
         c.source_id()
     );
+    let (extracts, artifact_ids) = load_stored(env, run, c, ids).await?;
+    run.info(
+        Stage::Extract,
+        &format!("{} stored extract(s) loaded (offline)", extracts.len()),
+        None,
+    )
+    .await;
+    standardise_and_publish(env, run, c, &extracts, &artifact_ids).await
+}
+
+/// `(id, sha256, store_key, extractor, extractor_ver)` of a stored extract.
+type StoredExtract = (i64, Vec<u8>, String, String, String);
+
+/// Loads stored extracts (store + artifact lists) and links them to `run`.
+async fn load_stored(
+    env: &Env<'_>,
+    run: &RunTracker,
+    c: &dyn Connector,
+    ids: Vec<StoredExtract>,
+) -> Result<(Vec<ExtractRef>, Vec<i64>)> {
     let mut extracts = Vec::new();
     let mut artifact_ids: Vec<i64> = Vec::new();
     for (id, sha, key, extractor, ver) in ids {
@@ -489,13 +509,73 @@ async fn restandardise_inner(
             data: Arc::new(data),
         });
     }
-    run.info(
-        Stage::Extract,
-        &format!("{} stored extract(s) loaded (offline)", extracts.len()),
-        None,
+    Ok((extracts, artifact_ids))
+}
+
+/// The extract `lanka extract publish x<id>` standardises: an approved
+/// class-C extract, or the reviewer's corrected child of one (`manual`,
+/// written by `lanka review approve` when cells were corrected or rejected;
+/// a child supersedes its parent). Anything else is refused.
+pub async fn approved_class_c(pool: &PgPool, extract_id: i64) -> Result<i64> {
+    let row = crate::review::extract_row(pool, extract_id).await?;
+    let class_c = if row.is_class_c() {
+        true
+    } else if let Some(parent) = row.parent_id {
+        crate::review::extract_row(pool, parent).await?.is_class_c()
+    } else {
+        false
+    };
+    ensure!(
+        class_c,
+        "x{extract_id} is not a class-C extract (reader {}); class A/B extracts are published by `lanka ingest run`",
+        row.reader.as_deref().unwrap_or("none")
+    );
+    ensure!(
+        row.approved_at.is_some(),
+        "x{extract_id} is not approved: sign its cells with `lanka review sign x{extract_id} …`, \
+         then `lanka review approve x{extract_id} --by NAME`"
+    );
+    let child: Option<i64> = sqlx::query_scalar(
+        "SELECT id FROM ops.extracts WHERE parent_id = $1 AND approved_at IS NOT NULL
+         ORDER BY id DESC LIMIT 1",
     )
+    .bind(extract_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(child.unwrap_or(extract_id))
+}
+
+/// `lanka extract publish x<id>`: standardise (and everything after it:
+/// expectations, staging, the review gate) over one approved class-C
+/// extract, as a run of the extract's source. The version is created with
+/// the dataset's class (B/C stay in review for the owner).
+pub async fn publish_extract(env: &Env<'_>, extract_id: i64) -> Result<RunReport> {
+    let use_id = approved_class_c(env.pool, extract_id).await?;
+    let row = crate::review::extract_row(env.pool, use_id).await?;
+    let c = connector(env, &row.source_id)?;
+    let run = RunTracker::start(env.pool, &row.source_id, "manual").await?;
+    let result = async {
+        run.info(
+            Stage::Extract,
+            &format!(
+                "class-C extract x{use_id} (approved by {})",
+                row.approved_by.as_deref().unwrap_or("?")
+            ),
+            Some(json!({ "extract_id": use_id, "requested": extract_id })),
+        )
+        .await;
+        let ids = vec![(
+            row.id,
+            row.sha256.clone(),
+            row.store_key.clone(),
+            row.extractor.clone(),
+            row.extractor_ver.clone(),
+        )];
+        let (extracts, artifact_ids) = load_stored(env, &run, c.as_ref(), ids).await?;
+        standardise_and_publish(env, &run, c.as_ref(), &extracts, &artifact_ids).await
+    }
     .await;
-    standardise_and_publish(env, run, c, &extracts, &artifact_ids).await
+    close(run, result).await
 }
 
 /// Writes an extract to the store (content-addressed Parquet) and indexes it.
