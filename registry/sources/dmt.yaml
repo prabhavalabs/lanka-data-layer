@@ -1,0 +1,28 @@
+id: dmt
+publisher: Department of Motor Traffic
+title: Vehicle registration statistics
+homepage: https://dmt.gov.lk/
+access:
+  method: html
+  endpoint: https://dmt.gov.lk/index.php?option=com_content&view=article&id=152&Itemid=134&lang=en
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Motor Traffic
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- TRAN
+datasets:
+- dmt-vehicle-registrations
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- registered-motor-vehicles-annual

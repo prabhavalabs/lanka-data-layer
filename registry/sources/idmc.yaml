@@ -1,0 +1,30 @@
+id: idmc
+publisher: Internal Displacement Monitoring Centre
+title: IDMC displacement data
+homepage: https://www.internal-displacement.org/countries/sri-lanka/
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=idmc-idp-data-lka
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: IDMC
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - point
+  join: spatial
+themes:
+- SOCI
+- ENVI
+- INTR
+datasets:
+- idmc-displacements
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

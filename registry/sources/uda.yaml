@@ -1,0 +1,28 @@
+id: uda
+publisher: Urban Development Authority
+title: UDA development plans 2025-2035
+homepage: https://www.uda.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.uda.gov.lk/attachments/dev-plans-2025-2035/KandyDevelopmentPlan-English.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Urban Development Authority
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- REGI
+- GOVE
+datasets:
+- lk-major-projects
+- uda-zoning-plans
+priority: P3
+effort: L
+status: planned
+verified_at: '2026-11-21'

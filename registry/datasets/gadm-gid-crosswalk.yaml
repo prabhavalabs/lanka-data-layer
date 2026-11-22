@@ -1,0 +1,17 @@
+id: gadm-gid-crosswalk
+title: GADM GID to p-code crosswalk (internal)
+description: Internal lookup table mapping GADM 4.1 GID_1/GID_2/GID_3 codes to COD-AB p-codes so third-party data keyed on
+  GADM can be joined.
+source_ids:
+- gadm-lka
+indicators: []
+time_coverage:
+  from: '2022'
+method: Spatial best-match (largest area overlap) between GADM and COD-AB units, manually reviewed.
+limits:
+- 'Not published: GADM licence is non-commercial; only the derived code mapping is kept internally.'
+- GADM ADM3 units do not match DS divisions one-to-one in all districts.
+enrichment:
+  joins:
+  - spatial overlap GADM unit x COD-AB unit (max-area match)
+publication_class: B

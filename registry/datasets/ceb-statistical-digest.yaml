@@ -1,0 +1,59 @@
+id: ceb-statistical-digest
+title: Electricity customers, sales and plants (CEB)
+description: Customers and sales by tariff category and province/region, power plant list with capacity, losses.
+source_ids:
+- ceb
+indicators:
+- id: ener.customers
+  label: Electricity customers
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - tariff_category
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+- id: ener.sales_gwh
+  label: Electricity sales
+  unit: GW.h
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - tariff_category
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+- id: ener.plant_capacity_mw
+  label: Installed capacity
+  unit: MW
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - plant
+  - id: source
+    codelist: energy_source
+  geo_levels:
+  - national
+  - point
+  period_type: year
+time_coverage:
+  from: '2010'
+  to: '2025'
+method: PDF tables, reviewed; plant names geocoded.
+limits:
+- CEB distribution regions do not equal provinces exactly.
+enrichment:
+  joins:
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  - plants -> points
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - kWh per capita per province
+publication_class: B

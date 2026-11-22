@@ -1,0 +1,30 @@
+id: gem-power-tracker
+publisher: Global Energy Monitor
+title: Global Integrated Power Tracker (Sri Lanka units)
+homepage: https://globalenergymonitor.org/projects/global-integrated-power-tracker/
+access:
+  method: xlsx
+  endpoint: https://globalenergymonitor.org/projects/global-integrated-power-tracker/download-data/
+  auth: manual
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Global Energy Monitor, Global Integrated Power Tracker
+cadence:
+  frequency: quarterly
+geo:
+  levels:
+  - point
+  - adm2
+  join: spatial
+themes:
+- ENER
+datasets:
+- power-plants
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Unit-level coal/oil/gas/hydro/solar/wind/bioenergy plants with capacity (MW), status (operating/construction/announced),
+  owner, start year and coordinates. Download form requires a name/email (manual auth).

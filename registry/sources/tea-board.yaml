@@ -1,0 +1,28 @@
+id: tea-board
+publisher: Sri Lanka Tea Board
+title: Tea production and export statistics
+homepage: https://www.pureceylontea.com/
+access:
+  method: html
+  endpoint: https://www.pureceylontea.com/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Sri Lanka Tea Board
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- AGRI
+- ECON
+datasets:
+- tea-production-exports
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: srilankateaboard.lk timed out on 2026-11-21; pureceylontea.com is the Tea Board's own portal.

@@ -1,0 +1,35 @@
+id: elections-commission
+publisher: Election Commission of Sri Lanka
+title: Official election results
+homepage: https://elections.gov.lk/
+access:
+  method: html
+  endpoint: https://results.elections.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Election Commission of Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm2
+  - polygon
+  join: pcode
+themes:
+- GOVE
+datasets:
+- ec-presidential-results
+- ec-parliamentary-results
+- ec-local-authority-results
+- ec-provincial-council-results
+- local-authority-boundaries
+priority: P0
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 'results.elections.gov.lk carries live/final results (Presidential 2024, Parliamentary 2024, LG 2025); historical PDFs
+  on elections.gov.lk. Verification 2026-11-21: https://results.elections.gov.lk/ -> connection timed out (no response; .gov.lk
+  hosts often drop non-Sri-Lankan traffic - re-verify from an LK vantage point). Other access point(s) reachable.'

@@ -1,0 +1,44 @@
+id: derived-service-gap-index
+title: Composite service-gap index per GN
+description: Composite of travel time to health/school/bank, piped water/electricity gaps, connectivity and hazard exposure,
+  with transparent weights.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: idx.service_gap
+  label: Service gap index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: idx.service_gap_rank
+  label: Rank within district
+  unit: '{rank}'
+  measure_type: rank
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Min-max normalised components, equal weights by default; user-adjustable weights in UI.
+limits:
+- Composite indices hide trade-offs; inspect components.
+enrichment:
+  derived_from:
+  - derived-facility-coverage
+  - dcs-census-2024-basic-services
+  - opencellid-towers
+  - derived-flood-exposure
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - population-weighted means per unit using worldpop-pop-grid as weights (cell value x cell population / unit population)
+publication_class: A

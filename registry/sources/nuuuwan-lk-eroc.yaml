@@ -1,0 +1,26 @@
+id: nuuuwan-lk-eroc
+publisher: Nuwan Senaratna (nuuuwan) - data from Registrar of Companies
+title: 'lk_eroc: company registrations'
+homepage: https://github.com/nuuuwan/lk_eroc
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_eroc
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of the Registrar of Companies. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- company-registrations
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

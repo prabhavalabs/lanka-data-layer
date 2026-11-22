@@ -1,0 +1,12 @@
+# Bus operator
+# Source/authority: National Transport Commission (NTC), Bus Transport Statistics - SLTB and private bus fleets.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ntc-bus-statistics
+id: operator
+title: Bus operator
+codes:
+  - { code: total, label: All operators, total: true, sdmx: _T }
+  - { code: sltb, label: Sri Lanka Transport Board (SLTB), parent: total }
+  - { code: private, label: Private operators, parent: total }

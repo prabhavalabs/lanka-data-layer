@@ -1,0 +1,389 @@
+{
+  "alignment": [
+    {
+      "coverage": 1.0,
+      "dropped": {},
+      "from": "admin:3",
+      "method": "identity",
+      "params": {},
+      "period": "2024",
+      "role": "x",
+      "to": "admin:3"
+    },
+    {
+      "coverage": 1.0,
+      "dropped": {},
+      "from": "admin:3",
+      "method": "identity",
+      "params": {},
+      "period": "2024",
+      "role": "y",
+      "to": "admin:3"
+    }
+  ],
+  "attribution": [
+    {
+      "licence": "cc-by-4.0",
+      "publisher": "European Commission Joint Research Centre",
+      "source": "jrc-flood-hazard",
+      "text": "European Commission JRC, Global flood hazard maps",
+      "title": "Global river flood hazard maps",
+      "url": "https://data.jrc.ec.europa.eu/collection/id-0054"
+    },
+    {
+      "licence": "cc-by-4.0",
+      "publisher": "Lanka Data Layer",
+      "source": "lanka-data-layer-derived",
+      "text": "Lanka Data Layer derived product (inputs keep their own licences; OSM-derived layers ODbL)",
+      "title": "Lanka Data Layer derived analytics",
+      "url": "https://github.com/prabhavalabs/lanka-data-layer"
+    }
+  ],
+  "basis": "computed",
+  "citation": {
+    "text": "Lanka Data Layer. Analysis an_61a6a1eac4e04ed3: relate(haz.flood_area_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.5.",
+    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_61a6a1eac4e04ed3"
+  },
+  "estimates": {
+    "headline": "ols",
+    "ols": {
+      "adj_r2": 0.022232912671526606,
+      "coef": [
+        {
+          "b": 5.840181419124669,
+          "ci": [
+            5.684597493705469,
+            5.995765344543869
+          ],
+          "p": 3.6265934022269994e-210,
+          "se": 0.08380660198659486,
+          "se_hc3": 0.07909592690242319,
+          "term": "(intercept)"
+        },
+        {
+          "b": 0.015089276140312984,
+          "ci": [
+            0.0048049852014456045,
+            0.025373567079180363
+          ],
+          "p": 0.004152553426584207,
+          "se": 0.005119983381508564,
+          "se_hc3": 0.005228339124059163,
+          "term": "x"
+        }
+      ],
+      "diagnostics": {
+        "breusch_pagan": {
+          "lm": 2.313529090591894,
+          "p": 0.12825257058416561
+        },
+        "df_resid": 337.0,
+        "max_cooks": 0.09193436780313904,
+        "sigma": 1.2679603149418774
+      },
+      "formula": "log(y) ~ x",
+      "n": 339,
+      "r2": 0.025125714705042768,
+      "reading": "one percentage point more of flood area share (1-in-100-year) is associated with 1.5 % higher population density"
+    },
+    "pearson": {
+      "ci": [
+        0.052884689303565435,
+        0.2606295117014912
+      ],
+      "ci_level": 0.95,
+      "n": 339,
+      "n_effective": 77.94825519298789,
+      "p": 0.0034308826579179524,
+      "p_adjusted": 0.16313318231981289,
+      "r": 0.1585109292920921
+    },
+    "residual_moran": {
+      "I": 0.6699262153059433,
+      "expected": -0.0029585798816568047,
+      "p_perm": 0.001,
+      "permutations": 999,
+      "weights": "knn6"
+    },
+    "robust": {
+      "coef": [
+        {
+          "b": 5.850820469156845,
+          "term": "(intercept)"
+        },
+        {
+          "b": 0.013836632485594323,
+          "term": "x"
+        }
+      ],
+      "converged": true,
+      "iterations": 15,
+      "method": "huber",
+      "scale": 1.0654369010211353,
+      "tuning": 1.345
+    },
+    "scale_sensitivity": [
+      {
+        "level": 2,
+        "n": 25,
+        "pearson_r": 0.034573135518070806
+      },
+      {
+        "level": 3,
+        "n": 339,
+        "pearson_r": 0.1585109292920921
+      }
+    ],
+    "significance": "adjusted",
+    "spearman": {
+      "ci": [
+        -0.07013711017556279,
+        0.14880600843135622
+      ],
+      "ci_level": 0.95,
+      "n_effective": 59.871132973838186,
+      "p": 0.46502071565876524,
+      "p_adjusted": 0.7609206616075531,
+      "rho": 0.039812309053635454
+    }
+  },
+  "guards": [
+    {
+      "code": "ECOLOGICAL",
+      "message": "Results describe Divisional Secretariat divisions, not individual people, households or properties; what holds for areas need not hold for those inside them.",
+      "severity": "warn"
+    },
+    {
+      "action": {
+        "label": "fit a spatial model (WP-30)",
+        "method": "spatial_regress"
+      },
+      "code": "RESIDUAL_AUTOCORR",
+      "detail": {
+        "I": 0.6699262153059433,
+        "p_perm": 0.001,
+        "weights": "knn6"
+      },
+      "message": "Residuals are spatially clustered (Moran's I 0.67, permutation p 0.001). Standard errors of the plain regression are too small; use the adjusted figures or a spatial model.",
+      "severity": "warn"
+    },
+    {
+      "code": "NOT_CAUSAL",
+      "message": "This is an association between Divisional Secretariat divisions. It does not show that one variable changes the other.",
+      "severity": "note"
+    },
+    {
+      "code": "MAUP",
+      "message": "Results describe Divisional Secretariat divisions. The strength of an association between areas depends on how the areas are drawn; r is 0.035 at districts, 0.16 at Divisional Secretariat divisions.",
+      "severity": "note"
+    },
+    {
+      "code": "NO_CONTROLS",
+      "message": "No other variables are held constant; candidate controls at this level: any indicator published at this level.",
+      "severity": "note"
+    }
+  ],
+  "id": "an_61a6a1eac4e04ed3",
+  "inputs": [
+    {
+      "class": "third_party",
+      "dataset": "jrc-river-flood-hazard",
+      "dsv": "dsv_5f4824f8361ba7ce",
+      "indicator": "haz.flood_area_share",
+      "licence": "cc-by-4.0",
+      "period": "2024",
+      "role": "x",
+      "time_invariant": true,
+      "visibility": "public"
+    },
+    {
+      "class": "derived",
+      "dataset": "derived-per-capita-indicators",
+      "dsv": "dsv_3761902c4276c418",
+      "indicator": "derived.per_km2",
+      "licence": "cc-by-4.0",
+      "period": "2024",
+      "role": "y",
+      "visibility": "public"
+    }
+  ],
+  "interpretation": {
+    "caveats": [
+      "Results describe Divisional Secretariat divisions, not individual people, households or properties; what holds for areas need not hold for those inside them.",
+      "Residuals are spatially clustered (Moran's I 0.67, permutation p 0.001). Standard errors of the plain regression are too small; use the adjusted figures or a spatial model."
+    ],
+    "summary": "Across 339 Divisional Secretariat divisions, a higher flood area share (1-in-100-year) is associated with higher population density (a weak association, r = 0.16, adjusted p = 0.16)."
+  },
+  "licence": {
+    "id": "cc-by-4.0",
+    "redistribution": "bulk"
+  },
+  "method": {
+    "citations": [
+      "Clifford, Richardson & Hémon 1989, Biometrics 45",
+      "Dutilleul 1993, Biometrics 49",
+      "MacKinnon & White 1985, J. Econometrics 29 (HC3)",
+      "Huber 1964, Ann. Math. Statist. 35",
+      "Fieller, Hartley & Pearson 1957, Biometrika 44",
+      "Fisher 1924, Metron 3 (partial correlation)"
+    ],
+    "id": "relate",
+    "revision": 2,
+    "version": "1.0.0"
+  },
+  "n": {
+    "dropped": {},
+    "units": 339,
+    "used": 339
+  },
+  "outputs": [
+    {
+      "columns": [
+        "x",
+        "y",
+        "class",
+        "basis"
+      ],
+      "href": "/v2/analyses/an_61a6a1eac4e04ed3/outputs/bivariate",
+      "id": "bivariate",
+      "kind": "frame",
+      "suggested_layer": {
+        "name": "flood area share (1-in-100-year) × population density",
+        "style": {
+          "fill": {
+            "bivariate": {
+              "palette": "ldl.biv.blue-orange",
+              "x": {
+                "field": "x",
+                "scale": {
+                  "breaks": [
+                    1.483938616297831,
+                    7.983473327162992
+                  ],
+                  "classes": 3,
+                  "type": "quantile"
+                }
+              },
+              "y": {
+                "field": "y",
+                "scale": {
+                  "breaks": [
+                    251.33160118656718,
+                    615.4222763615105
+                  ],
+                  "classes": 3,
+                  "type": "quantile"
+                }
+              }
+            }
+          }
+        },
+        "type": "bivariate"
+      }
+    },
+    {
+      "columns": [
+        "fitted",
+        "residual",
+        "cooks",
+        "leverage"
+      ],
+      "href": "/v2/analyses/an_61a6a1eac4e04ed3/outputs/residuals",
+      "id": "residuals",
+      "kind": "frame",
+      "suggested_layer": {
+        "name": "Residuals",
+        "style": {
+          "fill": {
+            "field": "residual",
+            "scale": {
+              "classes": 7,
+              "mid": 0,
+              "ramp": "ldl.div.blue-orange",
+              "type": "diverging"
+            }
+          }
+        },
+        "type": "choropleth"
+      }
+    },
+    {
+      "encoding": "points",
+      "href": "/v2/analyses/an_61a6a1eac4e04ed3/outputs/scatter",
+      "id": "scatter",
+      "kind": "chart"
+    }
+  ],
+  "provenance": {
+    "computed_at": "",
+    "data_version": "20261122.5",
+    "elapsed_ms": 0,
+    "engine": "lanka 0.1.0",
+    "engine_revision": 2,
+    "fingerprint": "61a6a1eac4e04ed3611155780f0042dfb430422a0d9cb84484e284e03a2a00ab",
+    "git_rev": "",
+    "seed": "7036489497510432467",
+    "stats": "lanka-stats 1.0.0"
+  },
+  "request": {
+    "method": "relate",
+    "params": {
+      "bivariate": {
+        "classes": 3,
+        "method": "quantile"
+      },
+      "correlation": [
+        "pearson",
+        "spearman"
+      ],
+      "effective_n": true,
+      "regression": "ols",
+      "robust": true,
+      "scale_sensitivity": [
+        2
+      ],
+      "spatial": {
+        "local": "none",
+        "permutations": 999,
+        "weights": "knn6"
+      },
+      "uncertainty": "analytic"
+    },
+    "pin": {
+      "release": "20261122.5"
+    },
+    "spec": "ldl-analysis/1",
+    "support": {
+      "kind": "admin",
+      "level": 3
+    },
+    "variables": {
+      "x": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "return_period": "rp100"
+        },
+        "indicator": "haz.flood_area_share",
+        "label": "flood area share (1-in-100-year)",
+        "period": "2024",
+        "transform": "identity"
+      },
+      "y": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "source_indicator": "census24.pop_total"
+        },
+        "indicator": "derived.per_km2",
+        "label": "population density",
+        "period": "2024",
+        "transform": "log"
+      }
+    }
+  },
+  "spec": "ldl-analysis-result/1",
+  "state": "ready"
+}

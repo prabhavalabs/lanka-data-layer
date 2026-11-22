@@ -1,0 +1,17 @@
+# Central government transfer to provincial councils
+# Source/authority: Finance Commission of Sri Lanka, annual reports - grants to provincial councils (Article 154R of the Constitution).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-province-transfers
+id: grant_type
+title: Central government transfer to provincial councils
+codes:
+  - { code: total, label: All transfers, total: true, sdmx: _T }
+  - { code: block_grant, label: Block grant, parent: total }
+  - { code: criteria_based_grant, label: Criteria based grant, parent: total }
+  - { code: psdg, label: Province specific development grant, parent: total }
+  - { code: matching_grant, label: Matching grant, parent: total }
+  - { code: foreign_funded, label: Foreign-funded projects, parent: total }
+  - { code: other, label: Other, parent: total }

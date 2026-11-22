@@ -1,0 +1,48 @@
+id: lk-gtfs-feeds
+title: Public transit schedules (GTFS)
+description: Stops, routes, trips and schedules from all GTFS feeds published for Sri Lanka.
+source_ids:
+- transitland-lmt
+- mobilitydb-lk
+indicators:
+- id: tran.gtfs_stops
+  label: Transit stops
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - feed
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: tran.gtfs_trips_per_day
+  label: Scheduled trips per stop per weekday
+  unit: '{trip}/d'
+  measure_type: rate
+  aggregation: sum
+  class: third_party
+  dims:
+  - feed
+  geo_levels:
+  - point
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+  to: '2026'
+method: Fetch feeds, validate with gtfs-validator, load into GTFS tables; stop-level frequency.
+limits:
+- Covers a tiny share of island bus service.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - service frequency per GN
+  - input to derived-transit-access
+publication_class: A

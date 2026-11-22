@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/registry/schema/source.schema.json",
+  "title": "Lanka Data Layer source registry entry",
+  "description": "One upstream source (publisher + access point). File: registry/sources/<id>.yaml; the file stem must equal `id`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "publisher",
+    "title",
+    "homepage",
+    "access",
+    "licence",
+    "cadence",
+    "geo",
+    "themes",
+    "datasets",
+    "priority",
+    "effort",
+    "status"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "#/$defs/slug",
+      "description": "Stable source id, kebab-case. Never reused."
+    },
+    "publisher": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Publishing organisation, full name (e.g. 'Department of Census and Statistics')."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3
+    },
+    "homepage": {
+      "$ref": "#/$defs/url"
+    },
+    "access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "endpoint",
+        "auth"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "api",
+            "xlsx",
+            "pdf",
+            "csv",
+            "zip",
+            "osm_pbf",
+            "raster",
+            "git",
+            "html",
+            "gtfs"
+          ]
+        },
+        "endpoint": {
+          "type": "string",
+          "minLength": 3,
+          "description": "URL or URL template ({placeholders} allowed) of the machine access point."
+        },
+        "auth": {
+          "enum": [
+            "none",
+            "key",
+            "manual"
+          ]
+        }
+      }
+    },
+    "licence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9.+-]*$",
+          "description": "Licence id, lowercase (cc-by-4.0, odbl-1.0, cc-by-igo-3.0, lk-gov-unstated, ...)."
+        },
+        "status": {
+          "enum": [
+            "open",
+            "attribution",
+            "permission_unclear",
+            "restricted"
+          ]
+        },
+        "url": {
+          "$ref": "#/$defs/url"
+        },
+        "attribution": {
+          "type": "string",
+          "minLength": 3
+        },
+        "spdx": {
+          "type": "string",
+          "minLength": 2,
+          "description": "SPDX id; derived from id for common licences."
+        },
+        "redistribution": {
+          "enum": [
+            "bulk",
+            "api",
+            "link",
+            "internal"
+          ],
+          "description": "Redistribution tier (08 §2); derived from status when omitted. May only be stricter than the derived tier."
+        }
+      }
+    },
+    "cadence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "frequency"
+      ],
+      "properties": {
+        "frequency": {
+          "enum": [
+            "realtime",
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "annual",
+            "irregular",
+            "one_off"
+          ]
+        },
+        "release_calendar_url": {
+          "$ref": "#/$defs/url"
+        },
+        "expected_lag_days": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3650,
+          "description": "Typical delay between period end and publication."
+        }
+      }
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Scheduling overrides for `lanka worker` (03 §4). Everything is optional; defaults derive from cadence.",
+      "properties": {
+        "check_every": {
+          "$ref": "#/$defs/duration",
+          "description": "How often discover runs. Default by cadence: realtime PT15M, daily PT6H, weekly/monthly P1D, quarterly P3D, annual/irregular P7D, one_off manual."
+        },
+        "window": {
+          "type": "string",
+          "pattern": "^[0-2][0-9]:[0-5][0-9]-[0-2][0-9]:[0-5][0-9]$",
+          "description": "Politeness window in the country profile's local time, e.g. 01:00-05:00 (may wrap midnight)."
+        },
+        "stale_after": {
+          "$ref": "#/$defs/duration",
+          "description": "Overdue threshold since the last successful check. Default 2 × cadence."
+        },
+        "release_calendar": {
+          "type": "array",
+          "description": "Expected upstream editions, entered yearly. A reached date makes the source due; 3 days past it without new content is expected_missing.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "edition",
+              "expected"
+            ],
+            "properties": {
+              "edition": {
+                "type": "string",
+                "minLength": 1
+              },
+              "expected": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "paused": {
+      "type": "boolean",
+      "default": false,
+      "description": "Stop scheduled runs (manual runs still work)."
+    },
+    "geo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "levels",
+        "join"
+      ],
+      "properties": {
+        "levels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/geoLevel"
+          }
+        },
+        "join": {
+          "enum": [
+            "pcode",
+            "name_match",
+            "spatial",
+            "grid",
+            "none"
+          ]
+        }
+      }
+    },
+    "themes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/theme"
+      }
+    },
+    "datasets": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/slug"
+      },
+      "description": "Dataset ids (registry/datasets/<id>.yaml) fed by this source."
+    },
+    "priority": {
+      "enum": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    "effort": {
+      "enum": [
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    "status": {
+      "enum": [
+        "planned",
+        "active",
+        "blocked"
+      ]
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Date a human last confirmed access + licence (YYYY-MM-DD)."
+    },
+    "notes": {
+      "type": "string"
+    },
+    "dc_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Slugs of the equivalent developing-country.org datasets (for cross-checking only)."
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "maxLength": 80
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^https?://",
+      "format": "uri"
+    },
+    "geoLevel": {
+      "enum": [
+        "national",
+        "adm1",
+        "adm2",
+        "adm3",
+        "adm4",
+        "point",
+        "line",
+        "polygon",
+        "raster"
+      ]
+    },
+    "theme": {
+      "enum": [
+        "AGRI",
+        "ECON",
+        "EDUC",
+        "ENER",
+        "ENVI",
+        "GOVE",
+        "HEAL",
+        "INTR",
+        "JUST",
+        "REGI",
+        "SOCI",
+        "TECH",
+        "TRAN"
+      ],
+      "description": "EU DCAT-AP data theme codes."
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^P([0-9]+Y)?([0-9]+M)?([0-9]+W)?([0-9]+D)?(T([0-9]+H)?([0-9]+M)?([0-9]+S)?)?$",
+      "description": "ISO 8601 duration (P1D, PT6H, P3DT12H)."
+    }
+  }
+}

@@ -1,0 +1,34 @@
+id: osm-buildings
+title: Building footprints (OSM)
+description: Mapped building polygons with building type where tagged.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: built.osm_buildings
+  label: OSM buildings
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - building_type
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: building=* polygons -> counts/area per grid cell.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+- Coverage patchy; prefer google-open-buildings for completeness.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'derive: OSM completeness ratio vs Google/Microsoft buildings'
+publication_class: A

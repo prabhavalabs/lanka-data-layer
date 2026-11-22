@@ -1,0 +1,38 @@
+id: wikidata
+publisher: Wikimedia Foundation / Wikidata community
+title: Wikidata SPARQL endpoint
+homepage: https://www.wikidata.org/
+access:
+  method: api
+  endpoint: https://query.wikidata.org/sparql
+  auth: none
+licence:
+  id: cc0-1.0
+  status: open
+  url: https://creativecommons.org/publicdomain/zero/1.0/
+  attribution: Wikidata
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  - point
+  join: pcode
+themes:
+- REGI
+- SOCI
+datasets:
+- wikidata-admin-crosswalk
+- wikidata-places-entities
+- protected-monuments
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'Query items with P31 = district/DS division/GN of Sri Lanka and their native-label variants. Polite UA + rate limiting
+  required. Verification 2026-11-21: https://query.wikidata.org/sparql -> connection timed out (no response; .gov.lk hosts
+  often drop non-Sri-Lankan traffic - re-verify from an LK vantage point). Other access point(s) reachable.'

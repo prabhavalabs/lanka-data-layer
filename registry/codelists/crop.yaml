@@ -1,0 +1,49 @@
+# Crop (DCS / Department of Agriculture crop list)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Other Field Crops (OFC) extent and production; Pocket Book of Agricultural Statistics; Department of Export Agriculture crop list.
+# Note: Shared across dcs-other-field-crops and dcs-pocketbook-agriculture; FAOSTAT items use FAO item codes (separate list, crosswalk later).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-other-field-crops, dcs-pocketbook-agriculture
+id: crop
+title: Crop (DCS / Department of Agriculture crop list)
+codes:
+  - { code: total, label: All crops, total: true, sdmx: _T }
+  - { code: cereals, label: Cereals, parent: total }
+  - { code: pulses, label: Pulses, parent: total }
+  - { code: oilseeds, label: Oilseeds, parent: total }
+  - { code: condiments, label: Condiments / vegetables (OFC), parent: total }
+  - { code: roots_tubers, label: Roots and tubers, parent: total }
+  - { code: plantation, label: Plantation crops, parent: total }
+  - { code: export_agri, label: Export agricultural crops, parent: total }
+  - { code: vegetables, label: Vegetables, parent: total }
+  - { code: fruits, label: Fruits, parent: total }
+  - { code: paddy, label: Paddy, parent: cereals }
+  - { code: maize, label: Maize, parent: cereals }
+  - { code: finger_millet, label: Finger millet (kurakkan), parent: cereals }
+  - { code: sorghum, label: Sorghum, parent: cereals }
+  - { code: green_gram, label: Green gram (mung bean), parent: pulses }
+  - { code: cowpea, label: Cowpea, parent: pulses }
+  - { code: black_gram, label: Black gram, parent: pulses }
+  - { code: soya_bean, label: Soya bean, parent: pulses }
+  - { code: groundnut, label: Groundnut, parent: oilseeds }
+  - { code: gingelly, label: Gingelly (sesame), parent: oilseeds }
+  - { code: chilli, label: Chilli, parent: condiments }
+  - { code: big_onion, label: Big onion, parent: condiments }
+  - { code: red_onion, label: Red onion, parent: condiments }
+  - { code: potato, label: Potato, parent: roots_tubers }
+  - { code: sweet_potato, label: Sweet potato, parent: roots_tubers }
+  - { code: cassava, label: Cassava (manioc), parent: roots_tubers }
+  - { code: tea, label: Tea, parent: plantation }
+  - { code: rubber, label: Rubber, parent: plantation }
+  - { code: coconut, label: Coconut, parent: plantation }
+  - { code: sugarcane, label: Sugarcane, parent: plantation }
+  - { code: cinnamon, label: Cinnamon, parent: export_agri }
+  - { code: pepper, label: Pepper, parent: export_agri }
+  - { code: cloves, label: Cloves, parent: export_agri }
+  - { code: cardamom, label: Cardamom, parent: export_agri }
+  - { code: nutmeg_mace, label: Nutmeg and mace, parent: export_agri }
+  - { code: coffee, label: Coffee, parent: export_agri }
+  - { code: cocoa, label: Cocoa, parent: export_agri }
+  - { code: arecanut, label: Arecanut, parent: export_agri }
+  - { code: other, label: Other crops, parent: total }

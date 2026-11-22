@@ -1,0 +1,27 @@
+id: emdat-lka
+title: EM-DAT disasters (link-only)
+description: Major disasters with deaths, affected and damages.
+source_ids:
+- emdat
+indicators:
+- id: dis.emdat_events
+  label: Disaster events
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1900'
+  to: '2026'
+method: Not redistributed; used for QA of desinventar-losses.
+limits:
+- Restricted; threshold-based (10+ deaths or 100+ affected).
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+publication_class: A

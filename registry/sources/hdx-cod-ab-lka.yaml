@@ -1,0 +1,39 @@
+id: hdx-cod-ab-lka
+publisher: UN OCHA (data from Survey Department of Sri Lanka)
+title: Sri Lanka Subnational Administrative Boundaries (COD-AB)
+homepage: https://data.humdata.org/dataset/cod-ab-lka
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=cod-ab-lka
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: OCHA, Survey Department of Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  - polygon
+  join: pcode
+themes:
+- REGI
+- GOVE
+datasets:
+- cod-ab-lka-boundaries
+- gnd-id-crosswalk
+- local-authority-boundaries
+priority: P0
+effort: S
+status: active
+verified_at: '2026-11-21'
+notes: Authoritative p-codes (LK, LK1, LK11, LK1103, LK1103xxx). Watch package metadata_modified for re-releases; ADM3 has
+  339 units vs 331 official DS divisions (sub-divisions split).
+dc_refs:
+- administrative-units-district

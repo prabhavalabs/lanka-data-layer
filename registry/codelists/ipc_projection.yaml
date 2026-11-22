@@ -1,0 +1,14 @@
+# IPC analysis period
+# Source/authority: FEWS NET IPC-compatible food security outlook - current, near-term and medium-term projections.
+# Note: No total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: fewsnet-food-insecurity
+id: ipc_projection
+title: IPC analysis period
+codes:
+  - { code: current, label: Current situation (CS) }
+  - { code: ml1, label: "Most likely, near-term projection (ML1)" }
+  - { code: ml2, label: "Most likely, medium-term projection (ML2)" }

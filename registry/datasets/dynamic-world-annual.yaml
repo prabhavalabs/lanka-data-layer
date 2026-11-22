@@ -1,0 +1,37 @@
+id: dynamic-world-annual
+title: Annual land cover composites (Dynamic World)
+description: Annual modal land cover 2016-present at 10 m, enabling change detection.
+source_ids:
+- dynamic-world
+indicators:
+- id: lc.dw_class_share
+  label: Land cover class share (Dynamic World)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - id: lc_class
+    codelist: dynamic_world_class
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '2016'
+  to: '2026'
+method: GEE annual mode composite export.
+limits:
+- Cloud cover in wet-zone monsoons reduces quality.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: cropland/built-up change per DS'
+publication_class: A

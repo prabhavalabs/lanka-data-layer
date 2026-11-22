@@ -1,0 +1,31 @@
+id: nuuuwan-lk-metro
+publisher: Nuwan Senaratna (nuuuwan)
+title: 'lk_metro: proposed Colombo metro network'
+homepage: https://github.com/nuuuwan/lk_metro
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_metro
+  auth: none
+licence:
+  id: mit
+  status: attribution
+  url: https://opensource.org/licenses/MIT
+  attribution: nuuuwan/lk_metro
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  - line
+  join: spatial
+themes:
+- TRAN
+datasets:
+- lk-metro-proposed-lines
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- metro
+- metro_catchment

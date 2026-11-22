@@ -1,0 +1,30 @@
+id: ndcu-dengue
+publisher: National Dengue Control Unit, Ministry of Health
+title: Dengue cases (NDCU)
+homepage: https://www.dengue.health.gov.lk/
+access:
+  method: html
+  endpoint: https://www.dengue.health.gov.lk/web/index.php/en/statistical-data/district-wise
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: National Dengue Control Unit
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - adm2
+  - polygon
+  join: name_match
+themes:
+- HEAL
+datasets:
+- dengue-weekly-cases
+priority: P1
+effort: S
+status: planned
+notes: 'District weekly + MOH-level case counts; nuuuwan/lk_dengue scrapes it. Verification 2026-11-21: https://www.dengue.health.gov.lk/
+  -> connection timed out (no response; .gov.lk hosts often drop non-Sri-Lankan traffic - re-verify from an LK vantage point);
+  https://www.dengue.health.gov.lk/web/index.php/en/statistical-data/district-wise -> connection timed out (no response; .gov.lk
+  hosts often drop non-Sri-Lankan traffic - re-verify from an LK vantage point).'

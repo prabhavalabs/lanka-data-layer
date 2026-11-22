@@ -1,0 +1,16 @@
+# Company type (Companies Act No. 7 of 2007)
+# Source/authority: Companies Act No. 7 of 2007, Part I and Part XVIII; Department of the Registrar of Companies.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: company-registrations
+id: company_type
+title: Company type (Companies Act No. 7 of 2007)
+codes:
+  - { code: total, label: All companies, total: true, sdmx: _T }
+  - { code: private_limited, label: Private limited company, parent: total }
+  - { code: public_limited, label: Public limited company, parent: total }
+  - { code: guarantee, label: Company limited by guarantee, parent: total }
+  - { code: unlimited, label: Unlimited company, parent: total }
+  - { code: offshore, label: Offshore company, parent: total }
+  - { code: overseas, label: Overseas company (foreign branch), parent: total }

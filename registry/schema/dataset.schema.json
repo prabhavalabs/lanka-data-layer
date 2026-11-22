@@ -1,0 +1,489 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/registry/schema/dataset.schema.json",
+  "title": "Lanka Data Layer dataset registry entry",
+  "description": "One dataset we publish. File: registry/datasets/<id>.yaml; the file stem must equal `id`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "description",
+    "source_ids",
+    "indicators",
+    "time_coverage",
+    "method",
+    "limits",
+    "publication_class"
+  ],
+  "properties": {
+    "id": {
+      "$ref": "#/$defs/slug"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10
+    },
+    "source_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/slug"
+      },
+      "description": "Source ids (registry/sources/<id>.yaml)."
+    },
+    "indicators": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/indicator"
+      },
+      "description": "Indicators this dataset publishes. May be empty for pure feature/boundary datasets."
+    },
+    "time_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "$ref": "#/$defs/period"
+        },
+        "to": {
+          "$ref": "#/$defs/period"
+        }
+      }
+    },
+    "method": {
+      "type": "string",
+      "minLength": 3
+    },
+    "limits": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 3
+      },
+      "description": "What this dataset cannot tell you. At least one entry is mandatory."
+    },
+    "enrichment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "derived_from": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/slug"
+          }
+        },
+        "joins": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "aggregations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "publication_class": {
+      "enum": [
+        "A",
+        "B",
+        "C"
+      ],
+      "description": "A auto-publish, B human review of deterministic parse, C LLM-assisted with human sign-off."
+    },
+    "kind": {
+      "enum": [
+        "indicators",
+        "features",
+        "boundaries",
+        "grid",
+        "crosswalk",
+        "codelist"
+      ],
+      "description": "What the dataset publishes (default indicators). Derivation is not a kind: derived datasets carry a recipe (WP-06)."
+    },
+    "boundary_set": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Boundary set (vintage) the geographies are keyed on; default: the profile's reference set."
+    },
+    "live": {
+      "type": "boolean",
+      "description": "Intraday release cuts allowed (ADR 0012)."
+    },
+    "fields": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "Typed attributes of a features dataset (10 §3.3): only declared fields are stored in attrs and served.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "type": {
+            "enum": [
+              "string",
+              "integer",
+              "number",
+              "boolean"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "description": "UCUM code listed in units.yaml."
+          },
+          "measure_type": {
+            "enum": [
+              "count",
+              "sum",
+              "rate",
+              "ratio",
+              "share",
+              "mean",
+              "median",
+              "index",
+              "score",
+              "rank",
+              "category"
+            ]
+          },
+          "enum": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "tiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "minzoom",
+        "maxzoom"
+      ],
+      "description": "Vector tileset of a features dataset (05 §9), built with tippecanoe into PMTiles.",
+      "properties": {
+        "tileset": {
+          "$ref": "#/$defs/slug"
+        },
+        "layer": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "minzoom": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "maxzoom": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "attrs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "minzoom_by_kind": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16
+          }
+        },
+        "drop_densest": {
+          "type": "boolean"
+        }
+      }
+    },
+    "searchable": {
+      "type": "boolean",
+      "description": "Name search (q=) is served: trigram index on name_en (features datasets)."
+    }
+  },
+  "$defs": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "maxLength": 80
+    },
+    "indicatorId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_]*(\\.[a-z0-9][a-z0-9_]*)*$",
+      "maxLength": 120,
+      "description": "Dotted lowercase id, globally unique across datasets (e.g. pop.total, wdi.ny_gdp_mktp_cd)."
+    },
+    "period": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}(-(Q[1-4]|H[12]|W\\d{2}|\\d{2}(-\\d{2})?)|/\\d{2})?$"
+        },
+        {
+          "type": "integer",
+          "minimum": 1800,
+          "maximum": 2200
+        }
+      ],
+      "description": "YYYY, YYYY/YY, YYYY-Hn, YYYY-Qn, YYYY-Www, YYYY-MM or YYYY-MM-DD (a bare YAML year like 2024 is accepted)."
+    },
+    "geoLevel": {
+      "enum": [
+        "national",
+        "adm1",
+        "adm2",
+        "adm3",
+        "adm4",
+        "point",
+        "line",
+        "polygon",
+        "raster"
+      ]
+    },
+    "indicator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "unit",
+        "measure_type",
+        "aggregation",
+        "class",
+        "geo_levels",
+        "period_type"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/indicatorId"
+        },
+        "label": {
+          "$ref": "#/$defs/label"
+        },
+        "unit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[!-~]+$",
+          "description": "Case-sensitive UCUM code (ISO 4217 for money, {annotation} for countables); must be listed in registry/units.yaml."
+        },
+        "dims": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/dimension"
+          },
+          "description": "Codelist-backed dimensions (02 §3)."
+        },
+        "geo_levels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/geoLevel"
+          }
+        },
+        "period_type": {
+          "enum": [
+            "year",
+            "fiscal_year",
+            "half_year",
+            "season",
+            "quarter",
+            "month",
+            "week",
+            "day",
+            "snapshot"
+          ]
+        },
+        "upstream_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional identifier of this series at the source (e.g. World Bank code SP.POP.TOTL, a sheet column key)."
+        },
+        "definition": {
+          "type": "string",
+          "minLength": 3
+        },
+        "unit_mult": {
+          "type": "integer",
+          "minimum": -12,
+          "maximum": 12,
+          "description": "Power of ten of stored values (SDMX UNIT_MULT): 3 = thousands, 6 = millions."
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12
+        },
+        "measure_type": {
+          "enum": [
+            "count",
+            "sum",
+            "rate",
+            "ratio",
+            "share",
+            "mean",
+            "median",
+            "index",
+            "score",
+            "rank",
+            "category"
+          ]
+        },
+        "aggregation": {
+          "enum": [
+            "sum",
+            "ratio_of_sums",
+            "weighted_mean",
+            "min",
+            "max",
+            "none"
+          ],
+          "description": "How a parent value follows from its children; ratio_of_sums needs numerator+denominator, weighted_mean needs weight."
+        },
+        "class": {
+          "enum": [
+            "official",
+            "third_party",
+            "derived",
+            "estimated"
+          ],
+          "description": "What the number is (02 §3). The est. namespace is reserved for class estimated."
+        },
+        "numerator": {
+          "$ref": "#/$defs/indicatorId"
+        },
+        "denominator": {
+          "$ref": "#/$defs/indicatorId"
+        },
+        "weight": {
+          "$ref": "#/$defs/indicatorId"
+        },
+        "completes": {
+          "$ref": "#/$defs/indicatorId",
+          "description": "A roll-up that completes this indicator at levels its source does not print (04 §8.1); readers serve its rows under that id where the indicator has none, basis and provenance unchanged."
+        },
+        "time_invariant": {
+          "type": "boolean",
+          "default": false,
+          "description": "The value does not change on the time scale of analyses (terrain, static hazard maps, climate normals): its period is when the data was made. Analyses never block on its period gap (11 §6 PERIOD_MISMATCH); the gap is reported as a warn."
+        },
+        "ci_level": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        },
+        "direction": {
+          "enum": [
+            "higher_better",
+            "lower_better",
+            "neutral"
+          ]
+        },
+        "sdg": {
+          "type": "string",
+          "pattern": "^[0-9]+(\\.[0-9a-z]+)*$"
+        },
+        "base_period": {
+          "type": "string",
+          "minLength": 4
+        }
+      }
+    },
+    "label": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "en"
+          ],
+          "properties": {
+            "en": {
+              "type": "string",
+              "minLength": 1
+            },
+            "si": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ta": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ],
+      "description": "English text, or {en, si, ta} (02 §6)."
+    },
+    "dimension": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "codelist"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            },
+            "codelist": {
+              "$ref": "#/$defs/slugOrId"
+            }
+          }
+        }
+      ],
+      "description": "Dimension id (codelist of the same name in registry/codelists/), or {id, codelist}."
+    },
+    "slugOrId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]*$",
+      "maxLength": 80
+    }
+  }
+}

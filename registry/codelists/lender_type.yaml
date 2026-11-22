@@ -1,0 +1,17 @@
+# Lending institution type
+# Source/authority: Central Bank of Sri Lanka - licensed financial institution types (Banking Act; Finance Business Act No. 42 of 2011; Microfinance Act No. 6 of 2016).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-women-msme-finance
+id: lender_type
+title: Lending institution type
+codes:
+  - { code: total, label: All lenders, total: true, sdmx: _T }
+  - { code: lcb, label: Licensed commercial bank, parent: total }
+  - { code: lsb, label: Licensed specialised bank, parent: total }
+  - { code: lfc, label: Licensed finance company, parent: total }
+  - { code: mfi, label: Licensed microfinance company / NGO-MFI, parent: total }
+  - { code: cooperative, label: Co-operative rural bank / thrift society, parent: total }
+  - { code: other, label: Other, parent: total }

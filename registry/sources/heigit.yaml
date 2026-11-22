@@ -1,0 +1,34 @@
+id: heigit
+publisher: Heidelberg Institute for Geoinformation Technology
+title: HeiGIT road surface and accessibility indicators
+homepage: https://heigit.org/
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=sri-lanka-road-surface-data
+  auth: none
+licence:
+  id: odbl-1.0+cc-by-sa-4.0
+  status: attribution
+  url: https://opendatacommons.org/licenses/odbl/1-0/
+  attribution: HeiGIT gGmbH, (c) OpenStreetMap contributors
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - line
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  join: spatial
+themes:
+- TRAN
+- HEAL
+datasets:
+- heigit-road-surface
+- heigit-accessibility
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Also sri-lanka-accessibility-indicators (CC BY-SA) on HDX.

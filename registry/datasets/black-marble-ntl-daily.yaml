@@ -1,0 +1,31 @@
+id: black-marble-ntl-daily
+title: Daily night lights (NASA Black Marble VNP46A2)
+description: Daily moonlight-corrected night-time lights for outage and recovery monitoring.
+source_ids:
+- nasa-earthdata
+indicators:
+- id: ntl.blackmarble_radiance
+  label: Daily NTL radiance
+  unit: nW/cm2/sr
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: day
+time_coverage:
+  from: 2012-01
+  to: 2026-11
+method: VNP46A2 tiles, quality-masked.
+limits:
+- Cloud gaps; use monthly composites for trends.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'derive: power outage / disaster recovery index (e.g. 2022 crisis, Cyclone Ditwah 2025)'
+publication_class: A

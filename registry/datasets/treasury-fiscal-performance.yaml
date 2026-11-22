@@ -1,0 +1,39 @@
+id: treasury-fiscal-performance
+title: Fiscal performance, in-year outturn and financial soundness
+description: Budget vs actual revenue/expenditure, in-year fiscal outturn and SOE/bank financial soundness indicators.
+source_ids:
+- treasury-fiscal-reports
+indicators:
+- id: fisc.outturn_vs_budget
+  label: Outturn vs budget estimate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - line_item
+  geo_levels:
+  - national
+  period_type: year
+- id: fisc.in_year_revenue
+  label: In-year revenue (cumulative)
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: '2019'
+  to: '2026'
+method: PDF tables.
+limits:
+- Provisional data revised in Annual Report.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

@@ -1,0 +1,27 @@
+id: adb-key-indicators-lka
+title: ADB Key Indicators (Sri Lanka)
+description: ADB-compiled macro, social and SDG indicators.
+source_ids:
+- adb-kidb
+indicators:
+- id: adb.value
+  label: ADB key indicator
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
+  dims:
+  - indicator
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2000'
+  to: '2024'
+method: HDX CSV.
+limits:
+- Secondary compilation.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+publication_class: A

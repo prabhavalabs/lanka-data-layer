@@ -1,0 +1,30 @@
+id: geonames
+publisher: GeoNames
+title: GeoNames gazetteer and postal-code dumps
+homepage: https://www.geonames.org/
+access:
+  method: zip
+  endpoint: https://download.geonames.org/export/dump/LK.zip
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: GeoNames
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- REGI
+datasets:
+- geonames-postal-codes
+- geonames-gazetteer
+priority: P0
+effort: S
+status: active
+verified_at: '2026-11-21'
+notes: 'Postal dump: https://download.geonames.org/export/zip/LK.zip (in production). Gazetteer dump has Sinhala/Tamil alternate
+  names.'

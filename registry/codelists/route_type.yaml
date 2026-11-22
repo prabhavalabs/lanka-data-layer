@@ -1,0 +1,14 @@
+# Bus route permit type
+# Source/authority: National Transport Commission Act No. 37 of 1991 (inter-provincial permits); Provincial Road Passenger Transport Authority statutes.
+# Note: NTC also classifies services (normal, semi-luxury, luxury, super-luxury); add as a separate dimension if a table needs it.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ntc-bus-statistics
+id: route_type
+title: Bus route permit type
+codes:
+  - { code: total, label: All route permits, total: true, sdmx: _T }
+  - { code: inter_provincial, label: Inter-provincial (NTC), parent: total }
+  - { code: intra_provincial, label: Intra-provincial (Provincial Road Passenger Transport Authorities), parent: total }

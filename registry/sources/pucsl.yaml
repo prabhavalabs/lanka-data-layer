@@ -1,0 +1,30 @@
+id: pucsl
+publisher: Public Utilities Commission of Sri Lanka
+title: Supply reliability (SAIDI/SAIFI) returns
+homepage: https://www.pucsl.gov.lk/
+access:
+  method: xlsx
+  endpoint: https://www.pucsl.gov.lk/wp-content/uploads/2026/06/SAIDI_SAIFI-values-of-DLs-of-Sri-Lanka_Q1_2026.xls
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Public Utilities Commission of Sri Lanka
+cadence:
+  frequency: quarterly
+geo:
+  levels:
+  - adm1
+  - polygon
+  join: name_match
+themes:
+- ENER
+datasets:
+- pucsl-supply-reliability
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Quarterly XLS per distribution licensee/area; file names inconsistent (discover via uploads listing).
+dc_refs:
+- electricity-supply-reliability

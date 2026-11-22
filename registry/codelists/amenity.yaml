@@ -1,0 +1,16 @@
+# Housing amenity (Census 2012)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing 2012 - housing amenities at GN level.
+# Note: Exact amenity list must be taken from the 2012 GN-level table headers; households have several amenities, so `total` is the denominator only.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2012
+id: amenity
+title: Housing amenity (Census 2012)
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: electricity, label: Electricity for lighting }
+  - { code: safe_drinking_water, label: Safe drinking water }
+  - { code: toilet, label: Toilet facility }
+  - { code: lp_gas, label: LP gas for cooking }

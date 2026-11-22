@@ -1,0 +1,16 @@
+# Capital project funding source (budget)
+# Source/authority: Ministry of Finance, Budget Estimates - financing source columns for capital expenditure.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: budget-capital-projects
+id: funding_source
+title: Capital project funding source (budget)
+codes:
+  - { code: total, label: All sources, total: true, sdmx: _T }
+  - { code: domestic, label: Domestic funds, parent: total }
+  - { code: foreign, label: Foreign funds, parent: total }
+  - { code: foreign_loan, label: Foreign loans, parent: foreign }
+  - { code: foreign_grant, label: Foreign grants, parent: foreign }
+  - { code: reimbursable, label: Reimbursable foreign aid, parent: foreign }

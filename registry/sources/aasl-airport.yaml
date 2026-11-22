@@ -1,0 +1,29 @@
+id: aasl-airport
+publisher: Airport and Aviation Services (Sri Lanka) - mirrored by nuuuwan/lk_air_travel
+title: Daily flight schedules (BIA)
+homepage: https://www.airport.lk/
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_air_travel
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Airport and Aviation Services (Sri Lanka). Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- TRAN
+- INTR
+datasets:
+- lk-major-projects
+- bia-flight-arrivals
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: nuuuwan scrapes airport.lk arrivals daily via GitHub Actions.

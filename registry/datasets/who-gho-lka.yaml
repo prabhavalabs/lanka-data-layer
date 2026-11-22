@@ -1,0 +1,27 @@
+id: who-gho-lka
+title: WHO health indicators (link-only)
+description: WHO GHO health indicators for Sri Lanka (NCD mortality, UHC index, health workforce).
+source_ids:
+- who-gho
+indicators:
+- id: who.value
+  label: GHO indicator
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
+  dims:
+  - indicator
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2000'
+  to: '2025'
+method: OData pull; stored for internal comparison.
+limits:
+- 'Non-commercial licence: not redistributed in open bundles.'
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+publication_class: A

@@ -1,0 +1,46 @@
+id: cckp-climate-projections
+title: Climate projections by province (CMIP6 ensembles)
+description: Projected temperature, precipitation, extreme indices under SSP scenarios for 2040-2059 and 2080-2099.
+source_ids:
+- wb-cckp
+indicators:
+- id: clim.proj_tas_change
+  label: Projected temperature change
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  dims:
+  - id: scenario
+    codelist: ssp_scenario
+  - id: period
+    codelist: climate_period
+  geo_levels:
+  - national
+  - adm1
+  period_type: snapshot
+- id: clim.proj_pr_change
+  label: Projected precipitation change
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - id: scenario
+    codelist: ssp_scenario
+  - id: period
+    codelist: climate_period
+  geo_levels:
+  - national
+  - adm1
+  period_type: snapshot
+time_coverage:
+  from: '2020'
+  to: '2100'
+method: API pull at ADM1.
+limits:
+- Ensemble medians hide spread; coarse resolution.
+enrichment:
+  joins:
+  - CCKP ADM1 codes -> p-codes
+publication_class: A

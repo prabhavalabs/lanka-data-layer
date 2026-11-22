@@ -1,0 +1,51 @@
+# Lanka Data Layer country profile — everything country-specific the engine
+# needs (docs/architecture-v2/08-openness-and-governance.md §7.2). The engine
+# has no country literal; a fork writes its own country/<id>/profile.yaml.
+# Validated by registry/schema/profile.schema.json; synced to catalog.profile.
+id: lk
+name: { en: Sri Lanka, si: ශ්‍රී ලංකාව, ta: இலங்கை }
+iso3166: { alpha2: LK, alpha3: LKA }
+site: { base_url: https://lanka-data-layer.prabhavalabs.com }
+languages: [en, si, ta]                 # first = mandatory fallback
+timezone: Asia/Colombo
+currency: LKR
+# The canonical grid (docs/architecture.md §1): the formula is fixed, these
+# parameters are not. lat_min/lon_max follow from rows/cols.
+grid:
+  lat_max: 10.0
+  lon_min: 79.4
+  step_deg: 0.001
+  rows: 4200
+  cols: 2700
+admin:
+  scheme: admin
+  # p-codes: root code + a fixed number of digits per level (OCHA COD-AB).
+  pcode_pattern: "^LK[0-9]*$"
+  root_code: LK
+  levels:
+    - { level: 0, digits: 0, name: { en: Country } }
+    - { level: 1, digits: 1, name: { en: Province, si: පළාත, ta: மாகாணம் } }
+    - { level: 2, digits: 2, name: { en: District, si: දිස්ත්‍රික්කය, ta: மாவட்டம் } }
+    - { level: 3, digits: 4, name: { en: Divisional Secretariat division }, short: DSD }
+    - { level: 4, digits: 7, name: { en: Grama Niladhari division }, short: GND }
+  # Boundary set every admin-keyed dataset is published on, and the dataset
+  # that loads it (cited in meta on every area response).
+  reference_boundary_set: cod-ab-lka
+  boundary_dataset: cod-ab-lka-boundaries
+metric_crs: EPSG:5235
+calendars:
+  fiscal: { start_month: 1 }
+  agri: { start_month: 9 }
+  seasons:
+    - { id: Maha, start: "09-01" }
+    - { id: Yala, start: "04-01" }
+# Other coded geographies (geo.schemes), `<scheme>:<code>` on the wire.
+schemes:
+  - { id: ed, title: Electoral district }
+  - { id: pd, title: Polling division, nests_in: ed }
+  - { id: la, title: Local authority }
+  - { id: moh, title: Medical Officer of Health area }
+  - { id: police, title: Police division }
+  - { id: basin, title: River basin }
+  - { id: station, title: Observation station }
+suppression: { min_count_adm4: 10 }

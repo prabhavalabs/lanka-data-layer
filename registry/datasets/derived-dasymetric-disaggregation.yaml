@@ -1,0 +1,51 @@
+id: derived-dasymetric-disaggregation
+title: Dasymetric disaggregation of district/DS statistics to GN and grid
+description: District/DS totals (LFS employment, HIES households, agriculture, vehicles) reallocated to GN and the 0.001-degree
+  grid using population and building ancillary layers.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: dasy.value
+  label: Disaggregated value
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: derived
+  dims:
+  - id: indicator
+    codelist: source_indicator
+  geo_levels:
+  - adm4
+  - raster
+  period_type: year
+- id: dasy.quality_flag
+  label: Disaggregation quality class
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm4
+  period_type: year
+time_coverage:
+  from: 2012
+  to: 2026
+method: Binary/three-class dasymetric mapping (Mennis & Hultgren 2006 intelligent dasymetric) with WorldPop/buildings as ancillary;
+  pycnophylactic constraint preserves source totals.
+limits:
+- Output inherits source-unit totals exactly; within-unit pattern is modelled, never observed - publish as modelled with quality
+  class.
+enrichment:
+  derived_from:
+  - worldpop-pop-grid
+  - google-open-buildings
+  - worldcover-land-cover
+  - dcs-lfs-annual-subnational
+  - dcs-hies-income-expenditure
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

@@ -1,0 +1,31 @@
+id: nuuuwan-lk-dmc
+publisher: Nuwan Senaratna (nuuuwan) - data from DMC
+title: lk_dmc / lk_dmc_landslides
+homepage: https://github.com/nuuuwan/lk_dmc
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_dmc
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Disaster Management Centre. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - adm2
+  - adm3
+  join: pcode
+themes:
+- ENVI
+datasets:
+- dmc-situation-report-impacts
+- dmc-landslide-warnings
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 13k documents (situation reports, warnings) plus lk_dmc_landslides which already maps warnings to DS ids (LK-2103 style).
+dc_refs:
+- natural-disaster-impacts

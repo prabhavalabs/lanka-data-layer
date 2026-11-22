@@ -1,0 +1,35 @@
+id: wfp-food-prices
+title: Market food prices (WFP)
+description: Retail/wholesale prices of rice, wheat flour, lentils, sugar, vegetables, fuel at named markets.
+source_ids:
+- wfp-vam
+indicators:
+- id: price.wfp_market
+  label: Commodity price at market
+  unit: LKR/kg
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  dims:
+  - commodity
+  - market
+  - pricetype
+  geo_levels:
+  - point
+  - adm2
+  period_type: month
+time_coverage:
+  from: 2004-01
+  to: 2026-10
+method: HDX CSV with market lat/lon and admin names.
+limits:
+- Market coverage changes over time.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  - admin1/admin2 names -> p-codes
+  aggregations:
+  - district median prices
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: price dispersion as market-access signal'
+publication_class: A

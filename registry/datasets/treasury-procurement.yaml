@@ -1,0 +1,54 @@
+id: treasury-procurement
+title: 'Public procurement: bids, competitiveness, status'
+description: 'Procurement activity by agency: number of bids, single-bid share, contract status and value.'
+source_ids:
+- treasury-procurement
+indicators:
+- id: proc.bids_per_tender
+  label: Average bids per tender
+  unit: '{count}'
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - agency
+  geo_levels:
+  - national
+  period_type: year
+- id: proc.single_bid_share
+  label: Share of single-bid tenders
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - agency
+  geo_levels:
+  - national
+  period_type: year
+- id: proc.contract_value
+  label: Contract value
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - agency
+  - id: status
+    codelist: contract_status
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2022'
+  to: '2025'
+method: XLSX/PDF tables.
+limits:
+- Coverage of agencies incomplete; no contract locations.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - agency roll-ups
+publication_class: B

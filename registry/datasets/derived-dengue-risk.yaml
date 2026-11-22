@@ -1,0 +1,43 @@
+id: derived-dengue-risk
+title: Dengue incidence and risk context
+description: MOH/district dengue incidence joined with lagged rainfall, urban density and building density for risk stratification.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: heal.dengue_incidence_lagged_rain
+  label: Incidence vs 4-week lagged rainfall
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm2
+  period_type: year
+- id: heal.dengue_risk_class
+  label: Dengue risk class
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm2
+  - polygon
+  period_type: month
+time_coverage:
+  from: '2010'
+  to: '2026'
+method: Distributed-lag regression per district; risk classes by incidence quantiles.
+limits:
+- Reporting artefacts; association not causation.
+enrichment:
+  derived_from:
+  - dengue-weekly-cases
+  - chirps-rainfall
+  - derived-building-density
+  - moh-area-boundaries
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

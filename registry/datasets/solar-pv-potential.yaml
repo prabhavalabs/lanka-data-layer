@@ -1,0 +1,46 @@
+id: solar-pv-potential
+title: Solar irradiation and PV potential
+description: GHI, DNI and specific PV output long-term averages.
+source_ids:
+- global-solar-atlas
+indicators:
+- id: ener.pvout
+  label: Specific PV output
+  unit: 'kW.h/{kWp}/d'
+  measure_type: rate
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: ener.ghi
+  label: Global horizontal irradiation
+  unit: kW.h/m2/d
+  measure_type: rate
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '1999'
+  to: '2018'
+method: GeoTIFF zonal means.
+limits:
+- Long-term average; not site assessment.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - rooftop PV potential = buildings x PVOUT
+publication_class: A

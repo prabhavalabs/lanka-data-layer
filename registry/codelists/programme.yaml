@@ -1,0 +1,15 @@
+# Budget programme
+# Source/authority: Ministry of Finance, Budget Estimates (Volumes I-III) - programme structure of each expenditure head.
+# Note: Programme numbers beyond 02 are head-specific; the label then comes from the head, so a (head, programme) pair is the real key.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: budget-estimates-heads
+id: programme
+title: Budget programme
+codes:
+  - { code: total, label: All programmes, total: true, sdmx: _T }
+  - { code: "01", label: Programme 01 - Operational activities, parent: total }
+  - { code: "02", label: Programme 02 - Development activities, parent: total }
+  - { code: "03", label: Programme 03 (head-specific), parent: total }

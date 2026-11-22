@@ -1,0 +1,34 @@
+id: dcs-national-accounts
+publisher: Department of Census and Statistics, Sri Lanka
+title: 'National accounts: quarterly/annual GDP and provincial GDP'
+homepage: https://www.statistics.gov.lk/NationalAccounts/StaticalInformation/GDP
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/abstract2025/CHAP10/10.2.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, National Accounts
+cadence:
+  frequency: quarterly
+  expected_lag_days: 75
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- ECON
+datasets:
+- dcs-gdp-by-industry
+- dcs-gdp-expenditure
+- dcs-provincial-gdp
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Quarterly GDP press releases + annual tables; Provincial GDP published annually (sub-national).
+dc_refs:
+- gdp-by-industry
+- gdp-expenditure

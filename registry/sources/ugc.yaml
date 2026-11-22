@@ -1,0 +1,28 @@
+id: ugc
+publisher: University Grants Commission
+title: University admissions statistics
+homepage: https://www.ugc.ac.lk/
+access:
+  method: pdf
+  endpoint: https://www.ugc.ac.lk/index.php?option=com_content&view=article&id=2398&Itemid=54&lang=en
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: University Grants Commission
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- EDUC
+datasets:
+- ugc-admissions-district
+priority: P2
+effort: M
+status: planned
+notes: 'ugc.ac.lk returned HTTP 500 on 2026-11-21. Verification 2026-11-21: https://www.ugc.ac.lk/ -> HTTP 500 server error;
+  https://www.ugc.ac.lk/index.php?option=com_content&view=article&id=2398&Itemid=54&lang=en -> HTTP 500 server error.'

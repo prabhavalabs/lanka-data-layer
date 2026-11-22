@@ -1,0 +1,32 @@
+id: cbsl-exchange-rates
+publisher: Central Bank of Sri Lanka
+title: CBSL exchange rates and effective exchange rate indices
+homepage: https://www.cbsl.gov.lk/en/rates-and-indicators/exchange-rates
+access:
+  method: xlsx
+  endpoint: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/IF_Monthly_Average_Exchange_Rates.xlsx
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Central Bank of Sri Lanka, exchange rates
+cadence:
+  frequency: daily
+  expected_lag_days: 1
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- cbsl-exchange-rates
+- cbsl-neer-reer
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Also IF_End_of_the_Month_Exchange_Rates.xlsx and IF_REER.xlsx; daily indicative rates via the rates page.
+dc_refs:
+- exchange-rates-monthly
+- effective-exchange-rate-indices

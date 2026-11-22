@@ -1,0 +1,27 @@
+id: moh-area-boundaries
+title: Medical Officer of Health (MOH) areas
+description: ~350 MOH areas grouped into 26 RDHS divisions, the reporting geography for dengue and notifiable diseases.
+source_ids:
+- nuuuwan-lk-moh-regions
+indicators:
+- id: health.moh_area_count
+  label: MOH areas per district
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: Ingest polygons, attach RDHS codes, compute MOH x DS overlap weights.
+limits:
+- MOH areas mostly align with DS divisions but not always; Colombo MC is split into several MOH areas.
+enrichment:
+  joins:
+  - RDHS/MOH area names -> MOH-area polygons (nuuuwan/lk_moh_regions) -> spatial overlay to ADM3; RDHS ~ district except Kalmunai
+    RDHS (part of Ampara)
+  aggregations:
+  - MOH -> RDHS -> province
+publication_class: B

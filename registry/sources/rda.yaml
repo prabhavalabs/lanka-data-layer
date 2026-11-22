@@ -1,0 +1,34 @@
+id: rda
+publisher: Road Development Authority
+title: RDA national road network and expressways
+homepage: https://www.rda.gov.lk/
+access:
+  method: html
+  endpoint: https://www.rda.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Road Development Authority
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - line
+  join: name_match
+themes:
+- TRAN
+datasets:
+- rda-national-roads
+- lk-major-projects
+- rda-expressway-programme
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 'A/B class road lists with lengths by province; expressway interchanges. The RDA project map (https://rda.gov.lk/rda_project_new/map)
+  loads GeoJSON: A-class 79 roads (uploads/uploaded_geojson_files/1620375878_2021-05-07.geojson) and B-class 1,166 roads (1619595154_2021-04-28.json),
+  both 2021 vintage; the E-class file (1656675093_2022-07-01.geojson) returned 404 on 2026-11-21. Licence unstated.'
+dc_refs:
+- developments

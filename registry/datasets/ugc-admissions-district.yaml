@@ -1,0 +1,42 @@
+id: ugc-admissions-district
+title: University admissions by district
+description: Applicants and admissions to state universities by district of origin and stream.
+source_ids:
+- ugc
+indicators:
+- id: educ.univ_admissions
+  label: University admissions
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - stream
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: educ.univ_admission_rate
+  label: Admissions per eligible candidate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: Sri Lanka University Statistics PDF.
+limits:
+- District quota system shapes figures.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: B

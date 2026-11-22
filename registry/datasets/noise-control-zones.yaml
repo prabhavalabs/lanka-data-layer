@@ -1,0 +1,48 @@
+id: noise-control-zones
+title: Silent zones and noise-control zone rules
+description: Silent zones generated from the Noise Control Regulations rule (100 m around courts, hospitals, schools, etc.)
+  plus permissible levels by zone type.
+source_ids:
+- cea
+- osm-geofabrik
+indicators:
+- id: envi.silent_zone_area
+  label: Silent-zone area
+  unit: km2
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - polygon
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: envi.noise_limit_db
+  label: Permissible noise level
+  unit: 'dB{A}'
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - id: zone_type
+    codelist: noise_zone
+  - time_of_day
+  geo_levels:
+  - national
+  period_type: snapshot
+time_coverage:
+  from: 1996
+  to: 2026
+method: Encode Gazette 924/12 thresholds; buffer facility points (moh-health-institutions, giga-schools, courthouses, OSM
+  worship) by 100 m.
+limits:
+- Rule-derived, not gazetted polygons; local authority enforcement varies.
+enrichment:
+  derived_from:
+  - moh-health-institutions
+  - giga-schools
+  - courthouses
+  - osm-pois-amenities
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+publication_class: B

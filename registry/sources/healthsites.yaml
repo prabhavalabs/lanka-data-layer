@@ -1,0 +1,28 @@
+id: healthsites
+publisher: Healthsites.io / Global Healthsites Mapping Project
+title: Sri Lanka Healthsites
+homepage: https://healthsites.io/
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=sri-lanka-healthsites
+  auth: none
+licence:
+  id: odbl-1.0
+  status: attribution
+  url: https://opendatacommons.org/licenses/odbl/1-0/
+  attribution: Healthsites.io, (c) OpenStreetMap contributors
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- HEAL
+datasets:
+- healthsites-facilities
+- moh-health-institutions
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

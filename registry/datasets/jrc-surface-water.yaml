@@ -1,0 +1,45 @@
+id: jrc-surface-water
+title: Surface water occurrence and change 1984-2021
+description: Occurrence, seasonality, recurrence and transitions of surface water at 30 m.
+source_ids:
+- jrc-gsw
+indicators:
+- id: water.occurrence
+  label: Water occurrence
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: water.permanent_area
+  label: Permanent water area
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '1984'
+  to: '2021'
+method: 10x10 deg tiles; zonal stats.
+limits:
+- Landsat-based; small tanks under 30 m missed.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - tank/reservoir drying trends
+publication_class: A

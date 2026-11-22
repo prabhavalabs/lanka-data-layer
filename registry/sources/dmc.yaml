@@ -1,0 +1,30 @@
+id: dmc
+publisher: Disaster Management Centre, Sri Lanka
+title: DMC situation reports and early warnings
+homepage: https://www.dmc.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.dmc.gov.lk/index.php?option=com_dmcreports&view=reports&Itemid=273&report_type_id=1&lang=en
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Disaster Management Centre
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - national
+  - adm2
+  - adm3
+  join: name_match
+themes:
+- ENVI
+- SOCI
+datasets:
+- dmc-situation-report-impacts
+- dmc-landslide-warnings
+priority: P1
+effort: L
+status: planned
+verified_at: '2026-11-21'

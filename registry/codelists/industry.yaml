@@ -1,0 +1,39 @@
+# Economic activity (ISIC Rev.4 / SLSIC Rev.4 sections, with DCS broad sectors)
+# Source/authority: UN ISIC Rev.4 (UNSD, 2008) sections A-U; DCS Sri Lanka Standard Industrial Classification (SLSIC) Rev.4 is identical at section level.
+# Source/authority: DCS national accounts broad sectors: Agriculture = A, Industries = B-F, Services = G-T (DCS GDP releases).
+# Note: Broad sectors agriculture/industry/services are aggregates with the sections as children, so provincial GDP, LFS 'sector' and PMI (C / services) reuse this list.
+# Note: DCS GDP by industry publishes ~20+ activity lines (e.g. growing of tea, rice) finer than sections; those need ISIC division codes added here as children of the sections.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-pmi, dcs-economic-census-establishments, dcs-gdp-by-industry, dcs-lfs-annual-subnational, dcs-lfs-quarterly, dcs-pocketbook-prices-wages, dcs-ppi, dcs-provincial-gdp
+id: industry
+title: "Economic activity (ISIC Rev.4 / SLSIC Rev.4 sections, with DCS broad sectors)"
+sdmx_ref: "SDMX:CL_ACTIVITY_ISIC4"
+codes:
+  - { code: total, label: All economic activities, total: true, sdmx: _T }
+  - { code: agriculture, label: Agriculture (section A), parent: total }
+  - { code: industry, label: Industry (sections B-F), parent: total }
+  - { code: services, label: Services (sections G-U), parent: total }
+  - { code: A, label: "Agriculture, forestry and fishing", parent: agriculture }
+  - { code: B, label: Mining and quarrying, parent: industry }
+  - { code: C, label: Manufacturing, parent: industry }
+  - { code: D, label: "Electricity, gas, steam and air conditioning supply", parent: industry }
+  - { code: E, label: "Water supply; sewerage, waste management and remediation activities", parent: industry }
+  - { code: F, label: Construction, parent: industry }
+  - { code: G, label: "Wholesale and retail trade; repair of motor vehicles and motorcycles", parent: services }
+  - { code: H, label: Transportation and storage, parent: services }
+  - { code: I, label: Accommodation and food service activities, parent: services }
+  - { code: J, label: Information and communication, parent: services }
+  - { code: K, label: Financial and insurance activities, parent: services }
+  - { code: L, label: Real estate activities, parent: services }
+  - { code: M, label: "Professional, scientific and technical activities", parent: services }
+  - { code: "N", label: Administrative and support service activities, parent: services }
+  - { code: O, label: "Public administration and defence; compulsory social security", parent: services }
+  - { code: P, label: Education, parent: services }
+  - { code: Q, label: Human health and social work activities, parent: services }
+  - { code: R, label: "Arts, entertainment and recreation", parent: services }
+  - { code: S, label: Other service activities, parent: services }
+  - { code: T, label: "Activities of households as employers; undifferentiated goods- and services-producing activities of households for own use", parent: services }
+  - { code: U, label: Activities of extraterritorial organizations and bodies, parent: services }
+  - { code: taxes_less_subsidies, label: Taxes less subsidies on products (GDP reconciliation item), parent: total }

@@ -1,0 +1,21 @@
+# Settlement typology (GHSL SMOD, Degree of Urbanisation stage I)
+# Source/authority: European Commission JRC, GHSL Data Package 2023, GHS-SMOD R2023A; Degree of Urbanisation methodology (UN Statistical Commission 2020) level 1 and level 2 classes.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ghsl-settlement-model
+id: smod_class
+title: "Settlement typology (GHSL SMOD, Degree of Urbanisation stage I)"
+codes:
+  - { code: total, label: All settlement classes, total: true, sdmx: _T }
+  - { code: "3", label: Urban centre (L1), parent: total }
+  - { code: "2", label: Urban cluster (L1), parent: total }
+  - { code: "1", label: Rural grid cells (L1), parent: total }
+  - { code: "30", label: Urban centre grid cell, parent: "3" }
+  - { code: "23", label: Dense urban cluster grid cell, parent: "2" }
+  - { code: "22", label: Semi-dense urban cluster grid cell, parent: "2" }
+  - { code: "21", label: Suburban or peri-urban grid cell, parent: "2" }
+  - { code: "13", label: Rural cluster grid cell, parent: "1" }
+  - { code: "12", label: Low density rural grid cell, parent: "1" }
+  - { code: "11", label: Very low density rural grid cell, parent: "1" }
+  - { code: "10", label: Water grid cell, parent: total }

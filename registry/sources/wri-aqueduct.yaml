@@ -1,0 +1,27 @@
+id: wri-aqueduct
+publisher: World Resources Institute
+title: Aqueduct 4.0 water risk
+homepage: https://www.wri.org/aqueduct
+access:
+  method: zip
+  endpoint: https://www.wri.org/data/aqueduct-global-maps-40-data
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: WRI Aqueduct 4.0
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- aqueduct-water-risk
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

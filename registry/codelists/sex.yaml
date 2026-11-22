@@ -1,0 +1,7 @@
+id: sex
+title: Sex
+sdmx_ref: SDMX:CL_SEX(2.1)
+codes:
+  - { code: total, label: Total, total: true, sdmx: _T }
+  - { code: male, label: Male, sdmx: M }
+  - { code: female, label: Female, sdmx: F }

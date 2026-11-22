@@ -1,0 +1,27 @@
+id: ophi-mpi
+publisher: Oxford Poverty and Human Development Initiative
+title: Global and national MPI (Sri Lanka)
+homepage: https://ophi.org.uk/global-mpi
+access:
+  method: xlsx
+  endpoint: https://data.humdata.org/dataset/sri-lanka-mpi
+  auth: none
+licence:
+  id: ophi-terms
+  status: attribution
+  attribution: Alkire, Kanagaratnam and Suppa, Global MPI (OPHI)
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- SOCI
+datasets:
+- dcs-mpi
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

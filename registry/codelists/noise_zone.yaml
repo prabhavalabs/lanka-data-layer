@@ -1,0 +1,14 @@
+# Noise control zone type
+# Source/authority: National Environmental (Noise Control) Regulations No. 1 of 1996, Schedule I (zones and permissible levels).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: noise-control-zones
+id: noise_zone
+title: Noise control zone type
+codes:
+  - { code: total, label: All zones, total: true, sdmx: _T }
+  - { code: low_noise, label: Low noise (residential) area, parent: total }
+  - { code: medium_noise, label: Medium noise (mixed / commercial) area, parent: total }
+  - { code: high_noise, label: High noise (industrial) area, parent: total }
+  - { code: silent, label: "Silent zone (100 m from courts, hospitals, schools...)", parent: total }

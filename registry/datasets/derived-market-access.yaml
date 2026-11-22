@@ -1,0 +1,51 @@
+id: derived-market-access
+title: Travel time to towns and markets
+description: Motorised and walking travel time from every grid cell/GN to the nearest town above 20k/50k people, economic
+  centre and district capital.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: acc.market_minutes
+  label: Travel time to nearest town
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: derived
+  dims:
+  - town_size
+  - mode
+  geo_levels:
+  - raster
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: acc.pop_within_market_60
+  label: Population within 60 min of a 50k town
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  geo_levels:
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: 2026
+method: Cost-distance on OSM road friction surface (Weiss et al. 2018 method) cross-checked with OSRM network times; population-weighted
+  unit means.
+limits:
+- Ignores congestion and service frequency; ferry/seasonal roads approximated.
+enrichment:
+  derived_from:
+  - osm-routing-graph
+  - osm-road-network
+  - osm-places
+  - ghsl-settlement-model
+  - worldpop-pop-grid
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

@@ -1,0 +1,32 @@
+id: electoral-boundaries
+title: Electoral districts and polling divisions
+description: 22 electoral districts and 160 polling divisions (plus postal-vote pseudo-units) used by presidential and parliamentary
+  results.
+source_ids:
+- nuuuwan-sl-topojson
+indicators:
+- id: elec.pd_count
+  label: Polling divisions per electoral district
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - polygon
+  period_type: snapshot
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: Convert TopoJSON to GeoJSON, attach EC codes, overlay with ADM3/ADM4 to build PD<->DS/GN allocation table.
+limits:
+- Polling divisions do not nest in DS divisions; PD->DS allocation uses population-weighted overlap.
+- Boundaries reflect the 1980s delimitation used up to 2024; the pending delimitation will change them.
+enrichment:
+  joins:
+  - 'electoral district / polling division codes (EC-xx, EC-xxx) -> ADM2 via the electoral crosswalk (22 EDs vs 25 districts:
+    Jaffna ED = Jaffna+Kilinochchi, Vanni ED = Mannar+Vavuniya+Mullaitivu)'
+  - PD x GN population-weighted overlap table
+  aggregations:
+  - PD -> ED -> national
+kind: features
+publication_class: A

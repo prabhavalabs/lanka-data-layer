@@ -1,0 +1,35 @@
+id: nuuuwan-lk-census-2024
+publisher: Nuwan Senaratna (nuuuwan) - data from DCS
+title: 'lk_census_2024: CPH 2024 GN-level tables'
+homepage: https://github.com/nuuuwan/lk_census_2024
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_census_2024
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Census and Statistics, CPH 2024. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  join: pcode
+themes:
+- SOCI
+datasets:
+- dcs-census-2024-population
+- dcs-census-2024-households
+- dcs-census-2024-ethnicity-religion
+- dcs-census-2024-gnd
+priority: P0
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: GN-level population/household tables keyed by DCS GN ids; needs gnd-id-crosswalk.
+dc_refs:
+- demographics

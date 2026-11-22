@@ -1,0 +1,27 @@
+id: kontur-population
+publisher: Kontur
+title: 'Kontur Population: Sri Lanka 400 m H3'
+homepage: https://data.humdata.org/dataset/kontur-population-sri-lanka
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=kontur-population-sri-lanka
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Kontur Population dataset
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - raster
+  join: spatial
+themes:
+- SOCI
+datasets:
+- kontur-population-h3
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

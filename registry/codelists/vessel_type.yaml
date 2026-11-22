@@ -1,0 +1,15 @@
+# Vessel type (IMF PortWatch)
+# Source/authority: IMF PortWatch daily port activity data (portcalls_container, _dry_bulk, _general_cargo, _roro, _tanker).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: imf-portwatch-lka
+id: vessel_type
+title: Vessel type (IMF PortWatch)
+codes:
+  - { code: total, label: All vessels, total: true, sdmx: _T }
+  - { code: container, label: Container, parent: total }
+  - { code: dry_bulk, label: Dry bulk, parent: total }
+  - { code: general_cargo, label: General cargo, parent: total }
+  - { code: roro, label: Roll-on/roll-off, parent: total }
+  - { code: tanker, label: Tanker, parent: total }

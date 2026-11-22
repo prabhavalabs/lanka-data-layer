@@ -1,0 +1,27 @@
+id: nuuuwan-weather-lk
+publisher: Nuwan Senaratna (nuuuwan) - data from Department of Meteorology
+title: weather_lk + lk_weather_3h
+homepage: https://github.com/nuuuwan/weather_lk
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/weather_lk
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Meteorology. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+datasets:
+- meteo-daily-station-weather
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Daily station rainfall/temperature archive; companion repo nuuuwan/lk_weather_3h for 3-hourly synoptic.

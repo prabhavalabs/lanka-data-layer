@@ -1,0 +1,32 @@
+id: slbfe
+publisher: Sri Lanka Bureau of Foreign Employment
+title: SLBFE annual statistical report on foreign employment
+homepage: https://www.slbfe.lk/
+access:
+  method: pdf
+  endpoint: https://www.slbfe.lk/statistics/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Sri Lanka Bureau of Foreign Employment
+cadence:
+  frequency: annual
+  expected_lag_days: 180
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- SOCI
+- ECON
+- INTR
+datasets:
+- slbfe-labour-migration
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- foreign-employment-departures

@@ -1,0 +1,14 @@
+# Aswesuma beneficiary category
+# Source/authority: Welfare Benefits Board, Aswesuma welfare benefit scheme (Welfare Benefits Act No. 24 of 2002; regulations 2023) - four beneficiary categories.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: aswesuma-beneficiaries
+id: aswesuma_category
+title: Aswesuma beneficiary category
+codes:
+  - { code: total, label: All beneficiary families, total: true, sdmx: _T }
+  - { code: transitional, label: Transitional, parent: total }
+  - { code: vulnerable, label: Vulnerable, parent: total }
+  - { code: poor, label: Poor, parent: total }
+  - { code: extreme_poor, label: Extreme poor, parent: total }

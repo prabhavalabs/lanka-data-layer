@@ -1,0 +1,32 @@
+id: mangrove-extent
+title: Mangrove extent 1996-2020
+description: Mangrove polygons for 11 epochs.
+source_ids:
+- global-mangrove-watch
+indicators:
+- id: env.mangrove_area
+  label: Mangrove area
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  - adm3
+  period_type: year
+time_coverage:
+  from: '1996'
+  to: '2020'
+method: Zenodo shapefiles clipped.
+limits:
+- 25 m minimum mapping.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

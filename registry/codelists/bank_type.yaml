@@ -1,0 +1,12 @@
+# Bank type (CBSL licensing)
+# Source/authority: Central Bank of Sri Lanka, Banking Act No. 30 of 1988 - licensed commercial banks and licensed specialised banks; CBSL banking sector branch statistics.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-bank-branches
+id: bank_type
+title: Bank type (CBSL licensing)
+codes:
+  - { code: total, label: All banks, total: true, sdmx: _T }
+  - { code: lcb, label: Licensed commercial bank, parent: total }
+  - { code: lsb, label: Licensed specialised bank, parent: total }

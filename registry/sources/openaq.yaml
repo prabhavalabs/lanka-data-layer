@@ -1,0 +1,29 @@
+id: openaq
+publisher: OpenAQ
+title: OpenAQ air quality API
+homepage: https://openaq.org/
+access:
+  method: api
+  endpoint: https://api.openaq.org/v3/locations?iso=LK
+  auth: key
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: OpenAQ and data providers
+cadence:
+  frequency: realtime
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+- HEAL
+datasets:
+- openaq-air-quality
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Few stations (US Embassy Colombo, NBRO/CEA, low-cost sensors). Provider licences vary - keep only CC BY/PD providers.

@@ -1,0 +1,16 @@
+# Procurement contract status
+# Source/authority: National Procurement Commission / Ministry of Finance Public Finance Department, Procurement Guidelines 2006 - procurement stages.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-procurement
+id: contract_status
+title: Procurement contract status
+codes:
+  - { code: total, label: All contracts, total: true, sdmx: _T }
+  - { code: tendered, label: Tendered, parent: total }
+  - { code: awarded, label: Awarded, parent: total }
+  - { code: ongoing, label: Ongoing, parent: total }
+  - { code: completed, label: Completed, parent: total }
+  - { code: cancelled, label: Cancelled, parent: total }

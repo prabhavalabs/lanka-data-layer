@@ -1,0 +1,29 @@
+id: fhb
+publisher: Family Health Bureau, Ministry of Health
+title: FHB maternal and child health statistics
+homepage: https://fhb.health.gov.lk/
+access:
+  method: pdf
+  endpoint: https://fhb.health.gov.lk/statistics
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Family Health Bureau
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- HEAL
+datasets:
+- fhb-maternal-child-health
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- child-nutrition-annual

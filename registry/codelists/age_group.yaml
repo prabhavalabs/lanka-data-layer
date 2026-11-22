@@ -1,0 +1,9 @@
+id: age_group
+title: Broad age group (census A5 bands)
+sdmx_ref: SDMX:CL_AGE(1.0)
+codes:
+  - { code: total, label: All ages, total: true, sdmx: _T }
+  - { code: 0-14, label: Under 15, parent: total, sdmx: Y_LT15 }
+  - { code: 15-59, label: 15-59, parent: total, sdmx: Y15T59 }
+  - { code: 60-64, label: 60-64, parent: total, sdmx: Y60T64 }
+  - { code: 65+, label: 65 and over, parent: total, sdmx: Y_GE65 }

@@ -1,0 +1,192 @@
+{
+  "data_version": "20261122.5",
+  "level": 3,
+  "method": "relate",
+  "request": {
+    "method": "relate",
+    "params": {
+      "bivariate": {
+        "classes": 3,
+        "method": "quantile"
+      },
+      "correlation": [
+        "pearson",
+        "spearman"
+      ],
+      "effective_n": true,
+      "regression": "ols",
+      "robust": true,
+      "scale_sensitivity": [
+        2
+      ],
+      "spatial": {
+        "local": "none",
+        "permutations": 999,
+        "weights": "knn6"
+      },
+      "uncertainty": "analytic"
+    },
+    "pin": {
+      "release": "20261122.5"
+    },
+    "spec": "ldl-analysis/1",
+    "support": {
+      "kind": "admin",
+      "level": 3
+    },
+    "variables": {
+      "x": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "return_period": "rp100"
+        },
+        "indicator": "haz.flood_area_share",
+        "label": "flood area share (1-in-100-year)",
+        "period": "2024",
+        "transform": "identity"
+      },
+      "y": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "source_indicator": "census24.pop_total"
+        },
+        "indicator": "derived.per_km2",
+        "label": "population density",
+        "period": "2024",
+        "transform": "log"
+      }
+    }
+  },
+  "scale_levels": [
+    2
+  ],
+  "vars": [
+    {
+      "input": {
+        "about_people": false,
+        "class": "third_party",
+        "community": false,
+        "dataset": "jrc-river-flood-hazard",
+        "dsv": "dsv_5f4824f8361ba7ce",
+        "grid": null,
+        "grid_sha256": null,
+        "indicator": "haz.flood_area_share",
+        "label": "flood area share (1-in-100-year)",
+        "licence": "cc-by-4.0",
+        "measure_type": "share",
+        "period": "2024",
+        "redistribution": "bulk",
+        "role": "x",
+        "sources": [
+          "jrc-flood-hazard"
+        ],
+        "synthetic": false,
+        "time_invariant": true,
+        "unit": "%",
+        "upstream": [
+          "jrc-river-flood-hazard"
+        ]
+      },
+      "method": "identity",
+      "role": "x",
+      "source": {
+        "aggregation": "none",
+        "dataset_key": 157,
+        "dims": "return_period=rp100",
+        "freq": "P",
+        "id": "haz.flood_area_share",
+        "indicator_key": 329,
+        "kind": "indicator",
+        "period": "2024-01-01",
+        "source_level": 3
+      },
+      "var": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "return_period": "rp100"
+        },
+        "indicator": "haz.flood_area_share",
+        "label": "flood area share (1-in-100-year)",
+        "period": "2024",
+        "transform": "identity"
+      },
+      "version": {
+        "dataset_id": "jrc-river-flood-hazard",
+        "dataset_key": 157,
+        "dsv": "dsv_5f4824f8361ba7ce",
+        "seq": 1,
+        "version_id": 22
+      }
+    },
+    {
+      "input": {
+        "about_people": true,
+        "class": "derived",
+        "community": false,
+        "dataset": "derived-per-capita-indicators",
+        "dsv": "dsv_3761902c4276c418",
+        "grid": null,
+        "grid_sha256": null,
+        "indicator": "derived.per_km2",
+        "label": "population density",
+        "licence": "cc-by-4.0",
+        "measure_type": "rate",
+        "period": "2024",
+        "redistribution": "bulk",
+        "role": "y",
+        "sources": [
+          "lanka-data-layer-derived"
+        ],
+        "synthetic": false,
+        "unit": "/km2",
+        "upstream": [
+          "cod-ab-lka-boundaries",
+          "dcs-census-2024-ethnicity-religion",
+          "dcs-census-2024-population",
+          "derived-admin-metrics",
+          "derived-census-2024-rollups",
+          "derived-per-capita-indicators"
+        ]
+      },
+      "method": "identity",
+      "role": "y",
+      "source": {
+        "aggregation": "none",
+        "dataset_key": 116,
+        "dims": "source_indicator=census24.pop_total",
+        "freq": "A",
+        "id": "derived.per_km2",
+        "indicator_key": 225,
+        "kind": "indicator",
+        "period": "2024-01-01",
+        "source_level": 3
+      },
+      "var": {
+        "align": {
+          "method": "identity"
+        },
+        "dims": {
+          "source_indicator": "census24.pop_total"
+        },
+        "indicator": "derived.per_km2",
+        "label": "population density",
+        "period": "2024",
+        "transform": "log"
+      },
+      "version": {
+        "dataset_id": "derived-per-capita-indicators",
+        "dataset_key": 116,
+        "dsv": "dsv_3761902c4276c418",
+        "seq": 1,
+        "version_id": 21
+      }
+    }
+  ],
+  "within": null
+}

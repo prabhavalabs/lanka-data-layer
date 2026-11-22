@@ -1,0 +1,31 @@
+id: treasury-procurement
+publisher: Ministry of Finance, Public Finance Department
+title: Public procurement data
+homepage: https://www.treasury.gov.lk/web/pfd-public-procurement-data
+access:
+  method: xlsx
+  endpoint: https://www.treasury.gov.lk/web/pfd-public-procurement-data
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Finance, Planning and Economic Development, public procurement data
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- GOVE
+- ECON
+datasets:
+- treasury-procurement
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- treasury-procurement-bids
+- treasury-procurement-competitiveness
+- treasury-procurement-status

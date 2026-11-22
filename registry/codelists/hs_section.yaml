@@ -1,0 +1,31 @@
+# Product (Harmonized System sections)
+# Source/authority: WCO Harmonized Commodity Description and Coding System (HS 2022) sections I-XXI; WITS product groups by HS section.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: wits-trade-partners
+id: hs_section
+title: Product (Harmonized System sections)
+codes:
+  - { code: total, label: All products, total: true, sdmx: _T }
+  - { code: I, label: "Live animals; animal products", parent: total }
+  - { code: II, label: Vegetable products, parent: total }
+  - { code: III, label: "Animal, vegetable or microbial fats and oils", parent: total }
+  - { code: IV, label: "Prepared foodstuffs; beverages, spirits and vinegar; tobacco", parent: total }
+  - { code: V, label: Mineral products, parent: total }
+  - { code: VI, label: Products of the chemical or allied industries, parent: total }
+  - { code: VII, label: Plastics and rubber and articles thereof, parent: total }
+  - { code: VIII, label: "Raw hides and skins, leather, furskins; travel goods, handbags", parent: total }
+  - { code: IX, label: "Wood and articles of wood; cork; manufactures of straw", parent: total }
+  - { code: X, label: "Pulp of wood; paper and paperboard", parent: total }
+  - { code: XI, label: Textiles and textile articles, parent: total }
+  - { code: XII, label: "Footwear, headgear, umbrellas", parent: total }
+  - { code: XIII, label: "Articles of stone, plaster, cement, asbestos; ceramic products; glass", parent: total }
+  - { code: XIV, label: "Natural or cultured pearls, precious stones and metals; imitation jewellery; coin", parent: total }
+  - { code: XV, label: Base metals and articles of base metal, parent: total }
+  - { code: XVI, label: "Machinery and mechanical appliances; electrical equipment", parent: total }
+  - { code: XVII, label: "Vehicles, aircraft, vessels and associated transport equipment", parent: total }
+  - { code: XVIII, label: "Optical, photographic, medical instruments; clocks and watches; musical instruments", parent: total }
+  - { code: XIX, label: Arms and ammunition, parent: total }
+  - { code: XX, label: Miscellaneous manufactured articles, parent: total }
+  - { code: XXI, label: "Works of art, collectors' pieces and antiques", parent: total }

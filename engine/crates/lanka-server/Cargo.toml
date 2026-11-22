@@ -1,0 +1,39 @@
+[package]
+name = "lanka-server"
+description = "Lanka Data Layer REST v2 server (axum)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+lanka-core.workspace = true
+lanka-analysis.workspace = true
+lanka-app.workspace = true
+lanka-enrich.workspace = true
+lanka-export.workspace = true
+lanka-grid.workspace = true
+lanka-mapdoc.workspace = true
+arrow-array.workspace = true
+arrow-schema.workspace = true
+arrow-ipc.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+axum.workspace = true
+tower-http.workspace = true
+utoipa.workspace = true
+tracing.workspace = true
+sha2.workspace = true
+hex.workspace = true
+
+[dev-dependencies]
+flate2.workspace = true
+tower = { version = "=0.5.3", features = ["util"] }
+http-body-util = "=0.1.5"
+
+[lints]
+workspace = true

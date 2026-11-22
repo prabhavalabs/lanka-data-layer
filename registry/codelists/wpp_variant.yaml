@@ -1,0 +1,25 @@
+# UN World Population Prospects variant
+# Source/authority: UN DESA Population Division, World Population Prospects 2024 - projection variants and probabilistic intervals.
+# Note: Alternative projections: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: un-wpp-lka
+id: wpp_variant
+title: UN World Population Prospects variant
+codes:
+  - { code: estimates, label: Estimates (past) }
+  - { code: medium, label: Medium }
+  - { code: high, label: High }
+  - { code: low, label: Low }
+  - { code: constant_fertility, label: Constant fertility }
+  - { code: instant_replacement, label: Instant replacement fertility }
+  - { code: zero_migration, label: Zero migration }
+  - { code: constant_mortality, label: Constant mortality }
+  - { code: no_change, label: No change }
+  - { code: momentum, label: Momentum }
+  - { code: lower80, label: Lower 80 PI }
+  - { code: upper80, label: Upper 80 PI }
+  - { code: lower95, label: Lower 95 PI }
+  - { code: upper95, label: Upper 95 PI }

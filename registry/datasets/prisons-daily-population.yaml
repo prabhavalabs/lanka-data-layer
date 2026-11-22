@@ -1,0 +1,39 @@
+id: prisons-daily-population
+title: Prison population (daily)
+description: Convicted and remand prisoners, capacity and occupancy, daily.
+source_ids:
+- prisons
+indicators:
+- id: just.prisoners
+  label: Prison population
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: status
+    codelist: prisoner_status
+  geo_levels:
+  - national
+  period_type: day
+- id: just.occupancy_rate
+  label: Prison occupancy rate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: day
+time_coverage:
+  from: 2025-01
+  to: 2026-11
+method: Repo JSON.
+limits:
+- National totals only.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

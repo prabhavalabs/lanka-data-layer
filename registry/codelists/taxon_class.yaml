@@ -1,0 +1,20 @@
+# Taxonomic group (GBIF backbone)
+# Source/authority: GBIF Backbone Taxonomy (classes/kingdoms); add GBIF taxonKey crosswalk from the occurrence download.
+# Note: Mixed ranks (class and kingdom) as used in the dataset description; species richness is not additive across groups.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: gbif-biodiversity
+id: taxon_class
+title: Taxonomic group (GBIF backbone)
+codes:
+  - { code: total, label: All taxa, total: true, sdmx: _T }
+  - { code: aves, label: Birds (class Aves), parent: total }
+  - { code: mammalia, label: Mammals (class Mammalia), parent: total }
+  - { code: reptilia, label: Reptiles (class Reptilia), parent: total }
+  - { code: amphibia, label: Amphibians (class Amphibia), parent: total }
+  - { code: actinopterygii, label: Ray-finned fishes (class Actinopterygii), parent: total }
+  - { code: insecta, label: Insects (class Insecta), parent: total }
+  - { code: plantae, label: Plants (kingdom Plantae), parent: total }
+  - { code: fungi, label: Fungi (kingdom Fungi), parent: total }
+  - { code: other, label: Other taxa, parent: total }

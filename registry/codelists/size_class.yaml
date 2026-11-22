@@ -1,0 +1,16 @@
+# Establishment size class (persons engaged)
+# Source/authority: Ministry of Industry and Commerce, National Policy Framework for SME Development (2016) employment thresholds; DCS Economic Census 2013/14 reports by persons-engaged size.
+# Note: DCS Economic Census tables use persons-engaged bands that may differ from the SME policy thresholds (which also differ for manufacturing vs services); confirm against the census table.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-economic-census-establishments
+id: size_class
+title: Establishment size class (persons engaged)
+codes:
+  - { code: total, label: All establishments, total: true, sdmx: _T }
+  - { code: micro, label: Micro (fewer than 10 persons engaged), parent: total }
+  - { code: small, label: Small (10-49 persons engaged), parent: total }
+  - { code: medium, label: Medium (50-199 persons engaged), parent: total }
+  - { code: large, label: "Large (200+ persons engaged)", parent: total }

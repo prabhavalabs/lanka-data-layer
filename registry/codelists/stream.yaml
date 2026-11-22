@@ -1,0 +1,17 @@
+# GCE A/L subject stream
+# Source/authority: Department of Examinations, GCE A/L subject streams; University Grants Commission, University Admissions statistical handbook (admissions by stream).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: exam-results-district, ugc-admissions-district
+id: stream
+title: GCE A/L subject stream
+codes:
+  - { code: total, label: All streams, total: true, sdmx: _T }
+  - { code: physical_science, label: Physical science (mathematics), parent: total }
+  - { code: biological_science, label: Biological science, parent: total }
+  - { code: commerce, label: Commerce, parent: total }
+  - { code: arts, label: Arts, parent: total }
+  - { code: engineering_technology, label: Engineering technology, parent: total }
+  - { code: biosystems_technology, label: Biosystems technology, parent: total }
+  - { code: other, label: Other / common stream, parent: total }

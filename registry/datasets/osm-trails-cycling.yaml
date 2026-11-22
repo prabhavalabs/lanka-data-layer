@@ -1,0 +1,48 @@
+id: osm-trails-cycling
+title: Walking trails and cycle routes (OSM)
+description: Hiking paths, footways and cycleways/cycle routes.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tran.osm_trail_km
+  label: Trail and cycleway length
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: type
+    codelist: trail_type
+  geo_levels:
+  - line
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: highway=path/footway/cycleway + route relations.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: network, type: string, label: Route network}
+- {name: ref, type: string, label: Route reference}
+- {name: distance, type: string, label: Distance (as tagged)}
+- {name: surface, type: string, label: Surface}
+- {name: sac_scale, type: string, label: Hiking difficulty (SAC scale)}
+- {name: trail_visibility, type: string, label: Trail visibility}
+tiles:
+  minzoom: 6
+  maxzoom: 14
+  attrs: [network, ref, sac_scale]
+  drop_densest: true
+  minzoom_by_kind: {bicycle_route: 6, hiking_route: 6, cycleway: 10, path: 11, bridleway: 11, footway: 12}

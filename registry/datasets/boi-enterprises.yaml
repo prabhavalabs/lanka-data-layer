@@ -1,0 +1,42 @@
+id: boi-enterprises
+title: BOI enterprises and available industrial land
+description: BOI enterprises in commercial operation (name, sector, zone, address) and the BOI land bank of available plots.
+source_ids:
+- boi
+indicators:
+- id: econ.boi_enterprises
+  label: BOI enterprises
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: sector
+    codelist: boi_sector
+  - zone
+  geo_levels:
+  - point
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: econ.boi_available_land_ha
+  label: Available BOI land
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - point
+  - polygon
+  period_type: snapshot
+time_coverage:
+  from: 2025
+  to: 2026
+method: Scrape BOI enterprise directory and available-lands page; geocode addresses to GN; class C sign-off.
+limits:
+- Address geocoding to GN centroid where no building match; directory completeness unknown.
+enrichment:
+  joins:
+  - address -> GN via gazetteer + Overture/OSM places
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+publication_class: C

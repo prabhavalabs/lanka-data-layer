@@ -1,0 +1,28 @@
+id: copernicus-cds
+publisher: ECMWF / Copernicus Climate Change Service
+title: ERA5-Land reanalysis (CDS)
+homepage: https://cds.climate.copernicus.eu/datasets/reanalysis-era5-land-monthly-means
+access:
+  method: api
+  endpoint: https://cds.climate.copernicus.eu/api
+  auth: key
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Copernicus Climate Change Service (C3S), ERA5-Land
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+datasets:
+- era5-land-climate
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Free CDS account and API key.

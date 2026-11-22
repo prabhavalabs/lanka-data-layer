@@ -1,0 +1,17 @@
+# Project / asset status
+# Source/authority: Generic project life-cycle (World Bank project status: pipeline, active, closed, dropped; RDA expressway programme: proposed, under construction, open).
+# Note: Shared by lk-major-projects, rda-expressway-programme and wb-projects-lka (pipeline -> proposed, active -> under_construction, closed -> completed, dropped -> cancelled).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: lk-major-projects, rda-expressway-programme, wb-projects-lka
+id: project_status
+title: Project / asset status
+codes:
+  - { code: total, label: All projects, total: true, sdmx: _T }
+  - { code: proposed, label: Proposed / pipeline, parent: total }
+  - { code: approved, label: Approved, parent: total }
+  - { code: under_construction, label: Under construction / implementation (active), parent: total }
+  - { code: completed, label: Completed / open / operational, parent: total }
+  - { code: suspended, label: Suspended / on hold, parent: total }
+  - { code: cancelled, label: Cancelled / dropped, parent: total }

@@ -1,0 +1,17 @@
+# Audit finding type
+# Source/authority: National Audit Office (Auditor General's Department), annual detailed audit reports - categories of quantified findings.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: auditor-general-findings
+id: finding_type
+title: Audit finding type
+codes:
+  - { code: total, label: All quantified findings, total: true, sdmx: _T }
+  - { code: unsettled_advances, label: Unsettled advances, parent: total }
+  - { code: idle_assets, label: Idle / underutilised assets, parent: total }
+  - { code: losses_damages, label: Losses and damages, parent: total }
+  - { code: irregular_payments, label: Irregular / unauthorised payments, parent: total }
+  - { code: unrecovered_dues, label: Unrecovered dues, parent: total }
+  - { code: other, label: Other, parent: total }

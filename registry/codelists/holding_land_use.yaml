@@ -1,0 +1,15 @@
+# Land use of agricultural holdings
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Agriculture 2013/14 - extent of holdings by land use.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-of-agriculture
+id: holding_land_use
+title: Land use of agricultural holdings
+codes:
+  - { code: total, label: All land in holdings, total: true, sdmx: _T }
+  - { code: paddy, label: Paddy land, parent: total }
+  - { code: highland, label: "Highland (other field crops, plantations)", parent: total }
+  - { code: home_garden, label: Home garden, parent: total }
+  - { code: other, label: Other land, parent: total }

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/spec/analysis/1/plan.schema.json",
+  "title": "ldl-analysis/1 plan — the dry run of POST /v2/analyses/plan",
+  "type": "object",
+  "required": [
+    "support",
+    "alignment",
+    "cost",
+    "guards",
+    "request",
+    "id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^an_[0-9a-f]{16}$",
+      "description": "The id the result will have."
+    },
+    "request": {
+      "$ref": "request.schema.json"
+    },
+    "support": {
+      "type": "object",
+      "required": [
+        "kind",
+        "n_expected"
+      ],
+      "properties": {
+        "kind": {
+          "const": "admin"
+        },
+        "level": {
+          "type": "integer"
+        },
+        "within": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "n_expected": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "alignment": {
+      "type": "array",
+      "items": {
+        "$ref": "result.schema.json#/$defs/alignment"
+      }
+    },
+    "cost": {
+      "type": "object",
+      "required": [
+        "mode",
+        "expected_ms",
+        "within_quota"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "sync",
+            "async"
+          ]
+        },
+        "expected_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "within_quota": {
+          "type": "boolean"
+        }
+      }
+    },
+    "guards": {
+      "type": "array",
+      "items": {
+        "$ref": "result.schema.json#/$defs/guard"
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "request"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "request.schema.json"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+# Principal construction material (census)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing 2012 and 2024 - material of wall, roof and floor.
+# Note: Used together with `housing_element`; valid material x element pairs follow the census table layout.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-housing
+id: housing_material
+title: Principal construction material (census)
+codes:
+  - { code: total, label: All housing units, total: true, sdmx: _T }
+  - { code: brick, label: Brick, parent: total }
+  - { code: cement_block, label: Cement block / stone, parent: total }
+  - { code: cabook, label: Cabook, parent: total }
+  - { code: mud, label: Soil bricks / mud, parent: total }
+  - { code: cadjan_palmyrah, label: Cadjan / palmyrah / straw, parent: total }
+  - { code: plank_metal_sheet, label: Plank / metal sheet, parent: total }
+  - { code: tile, label: Tile (roof), parent: total }
+  - { code: asbestos, label: Asbestos (roof), parent: total }
+  - { code: concrete, label: Concrete, parent: total }
+  - { code: metal_sheet, label: Metal sheet (roof), parent: total }
+  - { code: cement, label: Cement (floor), parent: total }
+  - { code: terrazzo_tile, label: Terrazzo / tile / granite (floor), parent: total }
+  - { code: wood, label: Wood, parent: total }
+  - { code: other, label: Other, parent: total }

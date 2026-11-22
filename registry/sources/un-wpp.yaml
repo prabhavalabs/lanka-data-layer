@@ -1,0 +1,27 @@
+id: un-wpp
+publisher: UN DESA Population Division
+title: World Population Prospects 2024
+homepage: https://population.un.org/wpp/
+access:
+  method: csv
+  endpoint: https://population.un.org/wpp/
+  auth: none
+licence:
+  id: cc-by-igo-3.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/3.0/igo/
+  attribution: United Nations, DESA, Population Division. World Population Prospects 2024
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- SOCI
+datasets:
+- un-wpp-lka
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

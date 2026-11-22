@@ -1,0 +1,42 @@
+id: boi-zones
+title: Export processing zones and industrial parks
+description: BOI zones with area, enterprises and employment where published; polygons digitised.
+source_ids:
+- boi
+- osm-geofabrik
+indicators:
+- id: econ.boi_zone_area
+  label: Zone area
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - polygon
+  period_type: snapshot
+- id: econ.boi_zone_employment
+  label: Zone employment
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - polygon
+  period_type: year
+time_coverage:
+  from: '2024'
+  to: '2026'
+method: Agency pages + OSM landuse=industrial polygons.
+limits:
+- Employment figures irregular.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - jobs within commuting distance
+kind: features
+publication_class: B
+searchable: true
+fields:
+- {name: operator, type: string, label: Operator}
+tiles: {minzoom: 6, maxzoom: 14, attrs: [operator]}

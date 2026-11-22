@@ -1,0 +1,51 @@
+id: hrsl-population-30m
+title: High-resolution population, 30 m (Meta/CIESIN HRSL)
+description: 30 m population density with demographic splits (women, men, children under 5, youth 15-24, elderly 60+, women
+  of reproductive age).
+source_ids:
+- meta-hrsl
+indicators:
+- id: pop.hrsl_total
+  label: Population (HRSL)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: pop.hrsl_group
+  label: Population by demographic group (HRSL)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: group
+    codelist: demographic_group
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2020'
+method: Aggregate 30 m COGs to canonical grid (sum), zonal sums to ADM4; compare with WorldPop for model-disagreement layer.
+limits:
+- Single vintage; building detection misses some dense informal areas.
+- Not a census count.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'derive: model-disagreement index (HRSL vs WorldPop vs census) per GN'
+publication_class: A

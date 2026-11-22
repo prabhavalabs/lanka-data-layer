@@ -1,0 +1,32 @@
+id: local-authority-boundaries
+title: Local authority areas (MC/UC/PS) and wards
+description: Polygons for 341 local authorities and their wards, built from GN membership lists.
+source_ids:
+- elections-commission
+- hdx-cod-ab-lka
+- nuuuwan-lg-election-2025
+indicators:
+- id: gov.la_count
+  label: Local authorities
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - la_type
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2025'
+method: Gazette/EC LA-to-GN membership lists dissolved over COD-AB GN polygons.
+limits:
+- Ward delimitation lists incomplete for some LAs.
+enrichment:
+  joins:
+  - GN membership -> dissolve ADM4 polygons
+  aggregations:
+  - enables LA-level joins for dcs-local-government-finance, auditor-general-findings, LG elections
+publication_class: B

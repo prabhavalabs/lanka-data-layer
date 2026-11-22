@@ -1,0 +1,38 @@
+id: wb-pip-poverty
+title: International poverty and inequality (PIP)
+description: Poverty headcount at international lines, Gini, mean consumption, prosperity gap from HIES microdata.
+source_ids:
+- worldbank-pip
+indicators:
+- id: pip.headcount
+  label: Poverty headcount at international line
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - poverty_line
+  geo_levels:
+  - national
+  period_type: year
+- id: pip.gini
+  label: Gini index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1985'
+  to: '2024'
+method: API pull at $3.00, $4.20, $8.30 lines.
+limits:
+- Survey years only (interpolated lineup years flagged).
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

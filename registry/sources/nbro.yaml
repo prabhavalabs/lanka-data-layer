@@ -1,0 +1,28 @@
+id: nbro
+publisher: National Building Research Organisation
+title: Landslide hazard zonation maps
+homepage: https://www.nbro.gov.lk/
+access:
+  method: html
+  endpoint: https://www.nbro.gov.lk/
+  auth: manual
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: National Building Research Organisation
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- nbro-landslide-hazard-zones
+priority: P2
+effort: L
+status: blocked
+verified_at: '2026-11-21'
+notes: '1:10,000/1:50,000 landslide hazard zonation for 13 districts exists but is not openly downloadable; request data-sharing
+  agreement. Interim: susceptibility model from DEM + rainfall + DMC warnings.'

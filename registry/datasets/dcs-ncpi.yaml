@@ -1,0 +1,43 @@
+id: dcs-ncpi
+title: National Consumer Price Index (NCPI)
+description: Monthly national CPI with food/non-food split and inflation rates.
+source_ids:
+- dcs-prices
+- nuuuwan-lk-dcs
+indicators:
+- id: econ.cpi.ncpi_index
+  label: NCPI index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
+  dims:
+  - id: group
+    codelist: coicop_group
+  geo_levels:
+  - national
+  period_type: month
+- id: econ.cpi.ncpi_yoy
+  label: NCPI inflation, year-on-year
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - id: group
+    codelist: coicop_group
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2021-01
+  to: 2026-10
+method: Parse NCPI food/non-food tables.
+limits:
+- No provincial breakdown published monthly.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

@@ -1,0 +1,32 @@
+id: sltda
+publisher: Sri Lanka Tourism Development Authority
+title: SLTDA tourism statistics
+homepage: https://www.sltda.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.sltda.gov.lk/en/statistics
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Sri Lanka Tourism Development Authority
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - national
+  - adm2
+  - point
+  join: name_match
+themes:
+- ECON
+- SOCI
+datasets:
+- sltda-tourist-arrivals
+- sltda-accommodation
+- sltda-registered-establishments
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Monthly arrivals by country; annual statistical report with accommodation by region; registered establishment lists.

@@ -1,0 +1,29 @@
+id: wits-comtrade
+publisher: World Bank WITS / UN Comtrade
+title: Bilateral trade by product (WITS API)
+homepage: https://wits.worldbank.org/
+access:
+  method: api
+  endpoint: https://wits.worldbank.org/API/V1/SDMX/V21/datasource/tradestats-trade/reporter/lka/year/{year}/partner/all/product/total/indicator/XPRT-TRD-VL
+  auth: none
+licence:
+  id: wits-comtrade-terms
+  status: permission_unclear
+  url: https://wits.worldbank.org/data/public/WITSAPI_UserGuide.pdf
+  attribution: UN Comtrade via WITS
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+- INTR
+datasets:
+- wits-trade-partners
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'nuuuwan/lk_world_trade wraps the WITS API. Comtrade terms limit bulk redistribution: publish aggregates only.'

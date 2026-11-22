@@ -1,0 +1,46 @@
+id: dcs-census-2024-households
+title: 'Census 2024: households and household size'
+description: Number of households, household population and average household size by DS and GN.
+source_ids:
+- dcs-census-2024
+- nuuuwan-lk-census-2024
+indicators:
+- id: census24.households
+  label: Households
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: census24.avg_household_size
+  label: Average household size
+  unit: '{person}'
+  measure_type: mean
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: As above.
+limits:
+- Census reference night 2024; no intercensal updates.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: B

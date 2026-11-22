@@ -1,0 +1,33 @@
+id: firms-active-fires
+title: Active fire detections (MODIS/VIIRS)
+description: Daily satellite fire hotspots with confidence and FRP.
+source_ids:
+- nasa-firms
+indicators:
+- id: env.fire_detections
+  label: Active fire detections
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - sensor
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  period_type: day
+time_coverage:
+  from: 2001-01
+  to: 2026-11
+method: API pull, archive.
+limits:
+- Detects hot spots, not burned area; cloud masking.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - fires per district per month
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

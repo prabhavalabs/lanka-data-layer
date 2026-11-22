@@ -1,0 +1,54 @@
+id: meteo-daily-station-weather
+title: Daily station rainfall and temperature (Met Dept)
+description: Daily 24-hour rainfall and min/max temperature at ~20 synoptic and agromet stations; 3-hourly synoptic observations.
+source_ids:
+- meteo
+- nuuuwan-weather-lk
+indicators:
+- id: wx.met_rain_24h
+  label: 24-hour rainfall
+  unit: mm
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: day
+- id: wx.met_tmax
+  label: Maximum temperature
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: day
+- id: wx.met_rh
+  label: Relative humidity (3-hourly)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: day
+time_coverage:
+  from: 2021-01
+  to: 2026-11
+method: Repo archives + daily scrape.
+limits:
+- Short archive; station network sparse in the dry zone.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - bias-correction of CHIRPS/IMERG
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+kind: features
+publication_class: A

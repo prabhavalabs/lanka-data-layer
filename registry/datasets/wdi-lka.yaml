@@ -1,0 +1,77 @@
+id: wdi-lka
+title: World Development Indicators for Sri Lanka (~1,500 series)
+description: 'All WDI series with Sri Lanka data: GDP, poverty, health, education, environment, energy, infrastructure, gender,
+  1960-latest.'
+source_ids:
+- worldbank-wdi
+indicators:
+- id: wdi.ny_gdp_mktp_cd
+  label: GDP (current US$)
+  unit: USD
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - national
+  period_type: year
+- id: wdi.ny_gdp_pcap_pp_kd
+  label: GDP per capita, PPP (constant 2021 int'l $)
+  unit: '{int_dollar}'
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  period_type: year
+- id: wdi.si_pov_dday
+  label: Poverty headcount at $3.00/day (2021 PPP)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  period_type: year
+- id: wdi.sp_dyn_le00_in
+  label: Life expectancy at birth
+  unit: a
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  period_type: year
+- id: wdi.eg_elc_accs_zs
+  label: Access to electricity
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  period_type: year
+- id: wdi.series
+  label: Any WDI series (generic, keyed by series code)
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
+  dims:
+  - id: series_code
+    codelist: wdi-series
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '1960'
+  to: '2025'
+method: Bulk API pull of all series for LKA; series metadata stored.
+limits:
+- National only; many series are modelled or sparse.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - peer-country benchmarking (South Asia, LMIC) via same API
+publication_class: A

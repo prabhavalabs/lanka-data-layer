@@ -1,0 +1,23 @@
+# World Bank project sector (major sector)
+# Source/authority: World Bank Projects & Operations API, major sector taxonomy (2016 revision; codes as published in the `sector` / `mjsector` fields).
+# Note: Local slugs for the eleven major sectors; add the API two-letter major-sector codes as a crosswalk once verified against the live response.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: wb-projects-lka
+id: wb_sector
+title: World Bank project sector (major sector)
+codes:
+  - { code: total, label: All sectors, total: true, sdmx: _T }
+  - { code: agriculture_fishing_forestry, label: "Agriculture, Fishing and Forestry", parent: total }
+  - { code: education, label: Education, parent: total }
+  - { code: energy_extractives, label: Energy and Extractives, parent: total }
+  - { code: financial, label: Financial Sector, parent: total }
+  - { code: health, label: Health, parent: total }
+  - { code: industry_trade_services, label: "Industry, Trade and Services", parent: total }
+  - { code: ict, label: Information and Communications Technologies, parent: total }
+  - { code: public_administration, label: Public Administration, parent: total }
+  - { code: social_protection, label: Social Protection, parent: total }
+  - { code: transportation, label: Transportation, parent: total }
+  - { code: water_sanitation_waste, label: "Water, Sanitation and Waste Management", parent: total }

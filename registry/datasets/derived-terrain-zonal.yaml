@@ -1,0 +1,35 @@
+id: derived-terrain-zonal
+title: Terrain profile by admin unit
+description: Mean/min/max elevation, slope distribution and ruggedness per unit.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: terrain.unit_profile
+  label: Terrain statistic
+  unit: '{m_or_deg}'
+  measure_type: mean
+  aggregation: none
+  class: derived
+  dims:
+  - statistic
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+  time_invariant: true
+time_coverage:
+  from: '2026'
+method: Zonal stats.
+limits:
+- DSM effects in forests/cities.
+enrichment:
+  derived_from:
+  - copernicus-dem-terrain
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+publication_class: A

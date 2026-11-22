@@ -1,0 +1,31 @@
+id: fewsnet-food-insecurity
+title: Acute food insecurity phases
+description: IPC-compatible phase classification polygons (current and projected).
+source_ids:
+- fewsnet
+indicators:
+- id: food.ipc_phase
+  label: Acute food insecurity phase
+  unit: '{phase}'
+  measure_type: category
+  aggregation: none
+  class: third_party
+  dims:
+  - id: scenario
+    codelist: ipc_projection
+  geo_levels:
+  - polygon
+  - adm2
+  period_type: month
+time_coverage:
+  from: '2022'
+  to: '2026'
+method: Shapefile per analysis.
+limits:
+- Irregular coverage of Sri Lanka (crisis periods).
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - population in phase 3+ via worldpop-pop-grid
+publication_class: A

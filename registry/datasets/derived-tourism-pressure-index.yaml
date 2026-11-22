@@ -1,0 +1,48 @@
+id: derived-tourism-pressure-index
+title: Tourism pressure index by DS
+description: 'Tourist beds, attractions and arrivals relative to resident population and area: beds per 1,000 residents, attractions
+  per km2, seasonal pressure.'
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: tour.pressure_index
+  label: Tourism pressure index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm2
+  - adm3
+  period_type: year
+- id: tour.beds_per_1000
+  label: Registered beds per 1,000 residents
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm2
+  - adm3
+  period_type: year
+time_coverage:
+  from: 2018
+  to: 2026
+method: Defert tourist function index (beds/residents x 100) plus attraction density; min-max normalised composite, weights
+  published.
+limits:
+- Unregistered accommodation (Airbnb, informal guesthouses) is missing; arrivals are national-by-month only.
+enrichment:
+  derived_from:
+  - sltda-accommodation
+  - sltda-registered-establishments
+  - derived-attractions-register
+  - sltda-tourist-arrivals
+  - derived-intercensal-population
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

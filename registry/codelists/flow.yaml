@@ -1,0 +1,14 @@
+# Trade flow
+# Source/authority: UN IMTS 2010 trade flows; IMF DOTS/SDMX indicator suffixes X (exports) and M (imports).
+# Note: Shared by dcs-pocketbook-trade-indices, imf-portwatch-lka and wits-trade-partners. Volume/unit-value indices by flow are not additive (total unused there).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-trade-indices, imf-portwatch-lka, wits-trade-partners
+id: flow
+title: Trade flow
+codes:
+  - { code: total, label: Total trade, total: true, sdmx: _T }
+  - { code: export, label: Exports, parent: total, sdmx: X }
+  - { code: import, label: Imports, parent: total, sdmx: M }
+  - { code: re_export, label: Re-exports, parent: export }

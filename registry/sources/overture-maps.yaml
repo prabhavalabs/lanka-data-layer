@@ -1,0 +1,34 @@
+id: overture-maps
+publisher: Overture Maps Foundation
+title: Overture Maps releases (places, buildings)
+homepage: https://overturemaps.org/
+access:
+  method: api
+  endpoint: s3://overturemaps-us-west-2/release/
+  auth: none
+licence:
+  id: cdla-permissive-2.0+odbl
+  status: attribution
+  url: https://docs.overturemaps.org/attribution/
+  attribution: Overture Maps Foundation (places CDLA-Permissive-2.0; buildings ODbL)
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - point
+  - polygon
+  join: spatial
+themes:
+- ECON
+- REGI
+datasets:
+- overture-places
+- overture-buildings
+- sltda-registered-establishments
+priority: P0
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: GeoParquet on S3/Azure; query with DuckDB bbox filter. Filter places by source licence as dc does.
+dc_refs:
+- workplaces

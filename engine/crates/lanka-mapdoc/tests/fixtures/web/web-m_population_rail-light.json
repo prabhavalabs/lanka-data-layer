@@ -1,0 +1,262 @@
+{
+  "spec": "ldl-map/1",
+  "title": "Population and rail",
+  "pin": "latest",
+  "view": {
+    "center": [
+      80.72,
+      7.87
+    ],
+    "zoom": 6.7,
+    "bounds": [
+      79.35,
+      5.75,
+      82.15,
+      10
+    ]
+  },
+  "extent": null,
+  "basemap": {
+    "style": "ldl-auto",
+    "labels": "off",
+    "hillshade": {
+      "on": false,
+      "exaggeration": 1
+    },
+    "x-coast": true
+  },
+  "time": {
+    "cursor": "2024",
+    "range": [
+      "2012",
+      "2026"
+    ],
+    "freq": "A",
+    "playback": {
+      "fps": 1.1,
+      "loop": true
+    }
+  },
+  "sources": {
+    "s_towns_and_cities": {
+      "kind": "features",
+      "dataset": "places"
+    },
+    "s_railway_by_trains_per_day": {
+      "kind": "features",
+      "dataset": "railways"
+    },
+    "s_protected_areas": {
+      "kind": "features",
+      "dataset": "protected-areas"
+    },
+    "s_provinces": {
+      "kind": "boundaries",
+      "scheme": "admin",
+      "level": 1
+    },
+    "s_population_density": {
+      "kind": "grid",
+      "grid": "pop.density",
+      "period": {
+        "bind": "time",
+        "match": "asof"
+      }
+    }
+  },
+  "analyses": {},
+  "layers": [
+    {
+      "id": "l_population_density",
+      "type": "raster",
+      "name": "Population density",
+      "source": "s_population_density",
+      "visible": true,
+      "opacity": 0.9,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "fill": {
+          "field": "value",
+          "scale": {
+            "type": "continuous",
+            "ramp": "ldl.seq.violet",
+            "transform": "sqrt",
+            "clamp": [
+              40,
+              9000
+            ]
+          }
+        },
+        "range": [
+          40,
+          null
+        ],
+        "resample": "linear",
+        "x-relief": true
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_provinces",
+      "type": "line",
+      "name": "Provinces",
+      "source": "s_provinces",
+      "visible": true,
+      "opacity": 0.4,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.ink",
+          "width": 1.4
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_protected_areas",
+      "type": "polygon",
+      "name": "Protected areas",
+      "source": "s_protected_areas",
+      "visible": true,
+      "opacity": 0.45,
+      "blend": "multiply",
+      "filter": null,
+      "style": {
+        "fill": {
+          "field": "designation",
+          "scale": {
+            "type": "categorical",
+            "mapping": {
+              "National park": "ldl.tone.green",
+              "Nature reserve": "ldl.tone.teal",
+              "Protected area": "ldl.tone.grey"
+            }
+          }
+        },
+        "stroke": {
+          "color": "ldl.tone.green",
+          "width": 0.8,
+          "dash": [
+            4.5,
+            2.4
+          ]
+        }
+      },
+      "legend": {
+        "show": true,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_railway_by_trains_per_day",
+      "type": "line",
+      "name": "Railway, by trains per day",
+      "source": "s_railway_by_trains_per_day",
+      "visible": true,
+      "opacity": 0.9,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "stroke": {
+          "color": "ldl.tone.ink",
+          "width": {
+            "field": "trains_per_day",
+            "scale": {
+              "type": "continuous",
+              "transform": "sqrt",
+              "range": [
+                0.8,
+                3.6
+              ]
+            }
+          },
+          "x-casing": true
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    },
+    {
+      "id": "l_towns_and_cities",
+      "type": "point",
+      "name": "Towns and cities",
+      "source": "s_towns_and_cities",
+      "visible": true,
+      "opacity": 0.9,
+      "blend": "normal",
+      "filter": null,
+      "style": {
+        "size": {
+          "field": "population",
+          "scale": {
+            "type": "continuous",
+            "transform": "sqrt",
+            "range": [
+              1.8,
+              5.5
+            ]
+          }
+        },
+        "fill": "ldl.tone.ink",
+        "stroke": {
+          "color": "ldl.tone.paper",
+          "width": 1.2
+        },
+        "label": {
+          "text": "{name}",
+          "size": 11.5
+        }
+      },
+      "legend": {
+        "show": false,
+        "title": null
+      },
+      "interaction": {
+        "hover": true,
+        "select": true
+      }
+    }
+  ],
+  "panels": [
+    {
+      "id": "p_legend",
+      "type": "legend"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-11-18T04:12:00Z",
+    "updated_at": "2026-11-18T04:12:00Z",
+    "forked_from": null,
+    "licence": "CC-BY-4.0",
+    "generator": "lanka-web-v2 mockup",
+    "author": "@lanka"
+  },
+  "description": "Where people live against the railway that serves them, 2012 to 2026.",
+  "id": "m_population_rail"
+}

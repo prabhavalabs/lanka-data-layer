@@ -1,0 +1,17 @@
+# Livestock product
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Pocket Book of Agricultural Statistics - livestock production; Department of Animal Production and Health.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-agriculture
+id: livestock_product
+title: Livestock product
+codes:
+  - { code: total, label: All livestock products, total: true, sdmx: _T }
+  - { code: milk, label: Milk, parent: total }
+  - { code: eggs, label: Eggs, parent: total }
+  - { code: chicken_meat, label: Chicken meat, parent: total }
+  - { code: beef, label: Beef, parent: total }
+  - { code: mutton, label: Mutton / goat meat, parent: total }
+  - { code: pork, label: Pork, parent: total }

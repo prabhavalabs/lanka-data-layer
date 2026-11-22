@@ -1,0 +1,44 @@
+id: dcs-building-construction
+title: Building approvals/construction by district
+description: Buildings approved/completed by type and floor area by district.
+source_ids:
+- dcs-statistical-abstract
+indicators:
+- id: constr.buildings_approved
+  label: Building plans approved
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - building_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: constr.floor_area
+  label: Approved floor area
+  unit: m2
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: Abstract ch.6 table 6.7.
+limits:
+- Only local-authority-approved construction; informal building excluded.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'cross-source: compare with ghsl-built-up and google-open-buildings growth'
+publication_class: B

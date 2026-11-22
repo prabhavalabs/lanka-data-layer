@@ -1,0 +1,15 @@
+# Prisoner status
+# Source/authority: Department of Prisons, Prison Statistics of Sri Lanka - convicted and unconvicted (remand) prisoners; daily prison population returns.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-justice, prisons-daily-population
+id: prisoner_status
+title: Prisoner status
+codes:
+  - { code: total, label: All prisoners / admissions, total: true, sdmx: _T }
+  - { code: convicted, label: Convicted, parent: total }
+  - { code: remand, label: Unconvicted / remand, parent: total }
+  - { code: detainee, label: Detainee (PTA / other), parent: total }
+  - { code: other, label: Other, parent: total }

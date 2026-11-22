@@ -1,0 +1,29 @@
+id: dmc-landslide-warnings
+title: Landslide early warnings by DS division
+description: NBRO/DMC landslide warning level (watch/alert/evacuate) per DS division, daily.
+source_ids:
+- nuuuwan-lk-dmc
+- dmc
+indicators:
+- id: dis.landslide_warning_level
+  label: Landslide warning level
+  unit: '{level}'
+  measure_type: category
+  aggregation: none
+  class: official
+  geo_levels:
+  - adm3
+  period_type: day
+time_coverage:
+  from: 2023-01
+  to: 2026-11
+method: Repo parsed warnings (already keyed to DS ids) -> p-codes.
+limits:
+- Warnings, not observed landslides.
+enrichment:
+  joins:
+  - DCS DS ids -> p-codes via nuuuwan-lk-admin-regions
+  aggregations:
+  - days at alert per DS per year
+  - population under warning (worldpop)
+publication_class: A

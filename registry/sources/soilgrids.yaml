@@ -1,0 +1,28 @@
+id: soilgrids
+publisher: ISRIC - World Soil Information
+title: SoilGrids 2.0
+homepage: https://soilgrids.org/
+access:
+  method: raster
+  endpoint: https://files.isric.org/soilgrids/latest/data/
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: ISRIC SoilGrids
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- AGRI
+- ENVI
+datasets:
+- soilgrids-properties
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

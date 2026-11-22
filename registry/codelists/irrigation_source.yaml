@@ -1,0 +1,13 @@
+# Paddy water source
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Paddy Statistics - extent sown under major irrigation, minor irrigation and rainfed.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-agriculture
+id: irrigation_source
+title: Paddy water source
+codes:
+  - { code: total, label: All sown extent, total: true, sdmx: _T }
+  - { code: major_irrigation, label: Major irrigation schemes, parent: total }
+  - { code: minor_irrigation, label: Minor irrigation schemes, parent: total }
+  - { code: rainfed, label: Rainfed, parent: total }

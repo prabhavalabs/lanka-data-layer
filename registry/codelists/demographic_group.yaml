@@ -1,0 +1,17 @@
+# Population group (HRSL / Data for Good)
+# Source/authority: Meta Data for Good / CIESIN High Resolution Settlement Layer demographic estimates (population_<group> rasters).
+# Note: Groups overlap (women vs women of reproductive age): no parent links; prefer sex x age where the source permits.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: hrsl-population-30m
+id: demographic_group
+title: Population group (HRSL / Data for Good)
+codes:
+  - { code: total, label: Total population, total: true, sdmx: _T }
+  - { code: women, label: Women }
+  - { code: men, label: Men }
+  - { code: children_under_five, label: Children under five }
+  - { code: youth_15_24, label: Youth 15-24 }
+  - { code: elderly_60_plus, label: "Elderly 60+" }
+  - { code: women_reproductive_age, label: Women of reproductive age (15-49) }

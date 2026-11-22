@@ -1,0 +1,13 @@
+# UCDP type of violence
+# Source/authority: UCDP Georeferenced Event Dataset (GED) codebook v24.1, variable type_of_violence (1, 2, 3).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ucdp-ged-lka
+id: violence_type
+title: UCDP type of violence
+codes:
+  - { code: total, label: All organised violence, total: true, sdmx: _T }
+  - { code: "1", label: State-based conflict, parent: total }
+  - { code: "2", label: Non-state conflict, parent: total }
+  - { code: "3", label: One-sided violence, parent: total }

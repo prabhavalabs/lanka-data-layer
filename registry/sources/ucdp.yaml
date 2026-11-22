@@ -1,0 +1,29 @@
+id: ucdp
+publisher: Uppsala Conflict Data Program
+title: UCDP Georeferenced Event Dataset
+homepage: https://ucdp.uu.se/country/780
+access:
+  method: csv
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=ucdp-data-for-sri-lanka
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: UCDP GED (Sundberg & Melander 2013)
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- JUST
+- SOCI
+datasets:
+- ucdp-ged-lka
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: UCDP API now needs a token; HDX mirror is keyless.

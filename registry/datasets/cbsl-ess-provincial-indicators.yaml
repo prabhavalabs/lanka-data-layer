@@ -1,0 +1,29 @@
+id: cbsl-ess-provincial-indicators
+title: Provincial socio-economic indicators (CBSL ESS)
+description: Provincial tables on GDP share, employment, electricity, health and education indicators compiled by CBSL.
+source_ids:
+- cbsl-ess
+indicators:
+- id: ess.provincial_indicator
+  label: Provincial indicator value
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: official
+  dims:
+  - indicator
+  geo_levels:
+  - adm1
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: ESS chapter tables.
+limits:
+- Compilation of other agencies' data; check primary vintages.
+enrichment:
+  joins:
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - province only
+publication_class: B

@@ -1,0 +1,28 @@
+id: fisheries-ministry
+publisher: Ministry of Fisheries, Aquatic and Ocean Resources (mirrored by nuuuwan/lk_fisheries)
+title: Fisheries statistics
+homepage: https://www.fisheries.gov.lk/
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_fisheries
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Ministry of Fisheries, Aquatic and Ocean Resources. Parsed/scraped by Nuwan Senaratna (nuuuwan), code
+    MIT.'
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- AGRI
+datasets:
+- fisheries-statistics
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'

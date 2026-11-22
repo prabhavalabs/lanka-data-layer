@@ -1,0 +1,13 @@
+# Treasury bill tenor
+# Source/authority: Central Bank of Sri Lanka, Public Debt Department - Treasury bill auction tenors (weekly economic indicators).
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-weekly-indicators
+id: tenor
+title: Treasury bill tenor
+codes:
+  - { code: "91d", label: "91-day" }
+  - { code: "182d", label: "182-day" }
+  - { code: "364d", label: "364-day" }

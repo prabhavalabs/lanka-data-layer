@@ -1,0 +1,75 @@
+id: desinventar-losses
+title: Historical disaster losses by DS division (DesInventar)
+description: 'Event records 1974-present: deaths, affected, houses destroyed/damaged, crops lost, by hazard and DS division.'
+source_ids:
+- desinventar
+indicators:
+- id: dis.di_events
+  label: Disaster records
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: year
+- id: dis.di_deaths
+  label: Deaths
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: year
+- id: dis.di_houses_destroyed
+  label: Houses destroyed
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: year
+- id: dis.di_affected
+  label: Persons affected
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - hazard
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: year
+time_coverage:
+  from: '1974'
+  to: '2024'
+method: HDX CSV/XML; DS names crosswalked with effective dating.
+limits:
+- Recording completeness varies by decade; small events over-represented recently.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'derive: loss frequency per DS by hazard; validate hazard models'
+publication_class: A

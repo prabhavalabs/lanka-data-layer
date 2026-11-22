@@ -1,0 +1,28 @@
+id: trcsl
+publisher: Telecommunications Regulatory Commission of Sri Lanka
+title: Telecom statistics
+homepage: https://www.trc.gov.lk/
+access:
+  method: html
+  endpoint: https://www.trc.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: TRCSL
+cadence:
+  frequency: quarterly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- TECH
+datasets:
+- trcsl-telecom-indicators
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- telecom-services

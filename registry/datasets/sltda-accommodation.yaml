@@ -1,0 +1,43 @@
+id: sltda-accommodation
+title: Tourist accommodation capacity and occupancy by region
+description: Registered establishments, rooms, occupancy rates and guest nights by resort region/district.
+source_ids:
+- sltda
+indicators:
+- id: tour.rooms
+  label: Registered rooms
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - establishment_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: tour.occupancy_rate
+  label: Room occupancy rate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - id: region
+    codelist: resort_region
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: Annual Statistical Report PDF.
+limits:
+- SLTDA resort regions are groups of districts.
+enrichment:
+  joins:
+  - resort region -> district crosswalk
+  aggregations:
+  - rooms per 1,000 residents
+publication_class: B

@@ -1,0 +1,15 @@
+# Climate projection period (20-year window)
+# Source/authority: World Bank Climate Change Knowledge Portal CMIP6 projection windows; reference period 1995-2014 per IPCC AR6.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cckp-climate-projections
+id: climate_period
+title: Climate projection period (20-year window)
+codes:
+  - { code: "1995-2014", label: Reference period 1995-2014 }
+  - { code: "2020-2039", label: "2020-2039 (near term)" }
+  - { code: "2040-2059", label: "2040-2059 (mid century)" }
+  - { code: "2060-2079", label: "2060-2079" }
+  - { code: "2080-2099", label: "2080-2099 (end of century)" }

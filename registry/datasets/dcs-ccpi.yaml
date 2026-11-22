@@ -1,0 +1,49 @@
+id: dcs-ccpi
+title: Colombo Consumer Price Index (CCPI, base 2021)
+description: Monthly CCPI headline and core, by COICOP group, with year-on-year and month-on-month inflation.
+source_ids:
+- dcs-prices
+- nuuuwan-lk-dcs
+indicators:
+- id: econ.cpi.ccpi_index
+  label: CCPI index (2021=100)
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
+  dims:
+  - coicop_group
+  geo_levels:
+  - national
+  period_type: month
+- id: econ.cpi.ccpi_yoy
+  label: CCPI headline inflation, year-on-year
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+- id: econ.cpi.ccpi_core_yoy
+  label: CCPI core inflation, year-on-year
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2021-01
+  to: 2026-10
+method: Parse monthly movements tables; cross-check with lk_dcs parsed CSV.
+limits:
+- Colombo district urban households only.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: real wages/remittances deflators'
+publication_class: A

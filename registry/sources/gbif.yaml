@@ -1,0 +1,30 @@
+id: gbif
+publisher: GBIF Secretariat
+title: GBIF occurrence API
+homepage: https://www.gbif.org/country/LK/summary
+access:
+  method: api
+  endpoint: https://api.gbif.org/v1/occurrence/search?country=LK
+  auth: none
+licence:
+  id: gbif-cc0-cc-by-cc-by-nc
+  status: attribution
+  url: https://www.gbif.org/terms
+  attribution: GBIF.org occurrence download (DOI per download)
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+datasets:
+- gbif-biodiversity
+priority: P3
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: 'Filter to CC0/CC BY records; exclude CC BY-NC. gbif.org web returns 403 to scripts; api.gbif.org answers 200. Verification
+  2026-11-21: https://www.gbif.org/country/LK/summary -> HTTP 403 to scripted clients (bot protection). Other access point(s)
+  reachable.'

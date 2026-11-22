@@ -1,0 +1,43 @@
+id: dcs-pocketbook-prices-wages
+title: Building material prices and minimum wage indices
+description: Average prices of building materials and minimum wage rate indices by sector.
+source_ids:
+- dcs-pocketbook
+indicators:
+- id: econ.building_material_price
+  label: Average building material price
+  unit: 'LKR/{unit}'
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - id: material
+    codelist: building_material
+  geo_levels:
+  - national
+  period_type: year
+- id: econ.minimum_wage_index
+  label: Minimum wage rate index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
+  dims:
+  - id: sector
+    codelist: industry
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: PDF tables.
+limits:
+- Colombo-market prices; not regional.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: real wage index with NCPI'
+publication_class: B

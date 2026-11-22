@@ -1,0 +1,70 @@
+id: dcs-lfs-annual-subnational
+title: Labour force by district and province (annual)
+description: Annual unemployment, participation, informal employment and employment by industry/occupation for provinces and
+  districts.
+source_ids:
+- dcs-lfs
+- dcs-statistical-abstract
+- dcs-pocketbook
+indicators:
+- id: lab.unemployment_rate_sub
+  label: Unemployment rate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: lab.informal_share
+  label: Informal sector share of employment
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: lab.employment_by_industry
+  label: Employment by industry
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - industry
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+- id: lab.employment_by_occupation
+  label: Employment by occupation
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - occupation
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: Annual report PDF tables + Abstract ch.4.
+limits:
+- District estimates have large sampling error; flag CV > 20%.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - no additive roll-up for rates; counts roll up district->province
+publication_class: B

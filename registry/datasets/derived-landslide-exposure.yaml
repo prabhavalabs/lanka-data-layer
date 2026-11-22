@@ -1,0 +1,50 @@
+id: derived-landslide-exposure
+title: Landslide susceptibility and exposure
+description: Interim landslide susceptibility (slope, rainfall, land cover, historical warnings) and exposed population/buildings
+  per GN.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: exp.landslide_susceptibility
+  label: Landslide susceptibility class
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: derived
+  geo_levels:
+  - raster
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: exp.landslide_pop
+  label: Population in high susceptibility
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Weighted-overlay susceptibility calibrated on DesInventar/DMC landslide records; replaced by NBRO zonation if licensed.
+limits:
+- Screening-level model, not the official NBRO zonation.
+enrichment:
+  derived_from:
+  - copernicus-dem-terrain
+  - chirps-rainfall
+  - worldcover-land-cover
+  - dmc-landslide-warnings
+  - desinventar-losses
+  - worldpop-pop-grid
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

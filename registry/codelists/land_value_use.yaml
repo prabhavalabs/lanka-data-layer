@@ -1,0 +1,15 @@
+# Land use (CBSL Land Valuation Indicator)
+# Source/authority: Central Bank of Sri Lanka, Land Valuation Indicator (LVI) for Colombo District - residential, commercial and industrial sub-indicators.
+# Note: Index sub-indicators are not additive: `composite` is not a total member.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-land-valuation-indicator
+id: land_value_use
+title: Land use (CBSL Land Valuation Indicator)
+codes:
+  - { code: composite, label: Composite (all uses) }
+  - { code: residential, label: Residential }
+  - { code: commercial, label: Commercial }
+  - { code: industrial, label: Industrial }

@@ -1,0 +1,60 @@
+id: viirs-nightlights
+title: Night-time lights annual and monthly (VIIRS VNL)
+description: Average radiance (masked for fires/ephemeral lights) 2012-present, the standard sub-national economic activity
+  proxy.
+source_ids:
+- eog-viirs
+indicators:
+- id: ntl.radiance_annual
+  label: Annual average radiance
+  unit: nW/cm2/sr
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: ntl.radiance_monthly
+  label: Monthly average radiance
+  unit: nW/cm2/sr
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: month
+- id: ntl.sum_lights
+  label: Sum of lights
+  unit: nW/cm2/sr.km2
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '2012'
+  to: '2025'
+method: Clip global GeoTIFF; zonal sums/means; low-radiance noise floor applied.
+limits:
+- Proxy of electrified economic activity; saturates little but misses unlit agriculture.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: nightlights growth; per-capita lights; calibration against dcs-provincial-gdp'
+publication_class: A

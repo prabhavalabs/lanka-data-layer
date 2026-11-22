@@ -1,0 +1,24 @@
+id: cod-ab-lka-boundaries
+title: Administrative boundaries ADM0-ADM4 with p-codes
+description: Country, 9 provinces, 25 districts, DS divisions and ~14,000 GN divisions with OCHA p-codes; the spine every
+  other dataset joins to.
+source_ids:
+- hdx-cod-ab-lka
+- geoboundaries-lka
+indicators: []
+time_coverage:
+  from: '2018'
+  to: '2024'
+method: Download COD-AB shapefiles/GeoPackage via HDX CKAN API, normalise p-codes, simplify for tiles, compute areas in EPSG:5235.
+limits:
+- Boundaries are administrative, not legal cadastral limits.
+- GN boundaries in some districts date from older Survey Department editions and may not reflect recent splits.
+- ADM3 unit count (339) differs from the official DS count (331) because of sub-divisions.
+enrichment:
+  joins:
+  - defines the p-code spine; all other datasets join to it
+  aggregations:
+  - admin hierarchy table (parent p-codes) used for every roll-up
+  - areas for density denominators (admin.area_km2 and admin.child_count are published by derived-admin-metrics)
+kind: boundaries
+publication_class: A

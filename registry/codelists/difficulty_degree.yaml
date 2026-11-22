@@ -1,0 +1,14 @@
+# Degree of functional difficulty (Washington Group response categories)
+# Source/authority: Washington Group Short Set response categories (no difficulty, some difficulty, a lot of difficulty, cannot do at all).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-disability
+id: difficulty_degree
+title: Degree of functional difficulty (Washington Group response categories)
+codes:
+  - { code: total, label: All levels of difficulty, total: true, sdmx: _T }
+  - { code: no_difficulty, label: No difficulty, parent: total }
+  - { code: some_difficulty, label: Some difficulty, parent: total }
+  - { code: a_lot_of_difficulty, label: A lot of difficulty, parent: total }
+  - { code: cannot_do_at_all, label: Cannot do at all, parent: total }

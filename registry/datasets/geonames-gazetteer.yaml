@@ -1,0 +1,30 @@
+id: geonames-gazetteer
+title: Place-name gazetteer (multilingual)
+description: ~30k named places, features and alternate names (si, ta, en) for search and name crosswalks.
+source_ids:
+- geonames
+indicators:
+- id: places.geonames_features
+  label: Named features per unit
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - feature_class
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Parse LK.txt + alternateNamesV2 filtered to LK; dedupe against OSM places.
+limits:
+- Feature classes are heterogeneous and partly stale.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  - alternate names feed admin-name crosswalk
+publication_class: A

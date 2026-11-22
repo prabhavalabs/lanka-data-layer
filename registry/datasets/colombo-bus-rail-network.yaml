@@ -1,0 +1,42 @@
+id: colombo-bus-rail-network
+title: Colombo bus routes and rail network (community)
+description: Route geometries and stops for Colombo bus routes and suburban rail.
+source_ids:
+- nuuuwan-cmb-transit
+indicators:
+- id: tran.bus_routes
+  label: Bus routes
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - line
+  - adm1
+  - adm2
+  period_type: snapshot
+- id: tran.bus_route_km
+  label: Bus route length
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - line
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2023'
+  to: '2026'
+method: Repo GeoJSON/TSV.
+limits:
+- Community-derived; no frequencies.
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - route-km per DS
+publication_class: B

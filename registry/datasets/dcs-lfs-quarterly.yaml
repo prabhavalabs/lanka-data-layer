@@ -1,0 +1,56 @@
+id: dcs-lfs-quarterly
+title: Labour force indicators, quarterly
+description: Labour force participation, employment, unemployment by sex, age and education; quarterly series.
+source_ids:
+- dcs-lfs
+indicators:
+- id: lab.lfpr
+  label: Labour force participation rate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  period_type: quarter
+- id: lab.unemployment_rate
+  label: Unemployment rate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - sex
+  - age_group
+  - education
+  geo_levels:
+  - national
+  period_type: quarter
+- id: lab.employed
+  label: Employed population
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  - id: sector
+    codelist: industry
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: 2019-Q4
+  to: 2026-Q1
+method: Quarterly report PDFs, reviewed tables.
+limits:
+- Sample survey; youth/education splits have wide CIs.
+- Definitions revised 2023 (ICLS-19) - break flagged.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

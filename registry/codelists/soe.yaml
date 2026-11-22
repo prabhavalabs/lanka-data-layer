@@ -1,0 +1,24 @@
+# State-owned enterprise
+# Source/authority: Ministry of Finance, Annual Report - performance of the 52 strategic state-owned business enterprises; Department of Public Enterprises.
+# Note: Shared by treasury-soe-finances (soe) and treasury-guarantees (beneficiary). Complete from the Treasury SOE list.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-guarantees, treasury-soe-finances
+id: soe
+title: State-owned enterprise
+codes:
+  - { code: total, label: All state-owned enterprises, total: true, sdmx: _T }
+  - { code: ceb, label: Ceylon Electricity Board, parent: total }
+  - { code: cpc, label: Ceylon Petroleum Corporation, parent: total }
+  - { code: srilankan_airlines, label: SriLankan Airlines Limited, parent: total }
+  - { code: nwsdb, label: National Water Supply and Drainage Board, parent: total }
+  - { code: slpa, label: Sri Lanka Ports Authority, parent: total }
+  - { code: aasl, label: Airport and Aviation Services (Sri Lanka) (Private) Limited, parent: total }
+  - { code: boc, label: Bank of Ceylon, parent: total }
+  - { code: peoples_bank, label: "People's Bank", parent: total }
+  - { code: nsb, label: National Savings Bank, parent: total }
+  - { code: slic, label: Sri Lanka Insurance Corporation, parent: total }
+  - { code: sltb, label: Sri Lanka Transport Board, parent: total }
+  - { code: other, label: Other SOEs, parent: total }

@@ -1,0 +1,15 @@
+# Active-fire sensor
+# Source/authority: NASA FIRMS active fire products (MODIS C6.1, VIIRS 375 m S-NPP / NOAA-20 / NOAA-21).
+# Note: The same fire may be detected by several sensors: total is a sum of detections, not of fires.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: firms-active-fires
+id: sensor
+title: Active-fire sensor
+codes:
+  - { code: total, label: All detections, total: true, sdmx: _T }
+  - { code: modis, label: MODIS (Terra/Aqua), parent: total }
+  - { code: viirs_snpp, label: VIIRS (Suomi NPP), parent: total }
+  - { code: viirs_noaa20, label: VIIRS (NOAA-20), parent: total }
+  - { code: viirs_noaa21, label: VIIRS (NOAA-21), parent: total }

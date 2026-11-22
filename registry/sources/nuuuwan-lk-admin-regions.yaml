@@ -1,0 +1,33 @@
+id: nuuuwan-lk-admin-regions
+publisher: Nuwan Senaratna (nuuuwan)
+title: lk_admin_regions + lk_admin_region_history
+homepage: https://github.com/nuuuwan/lk_admin_regions
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_admin_regions
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Census and Statistics; Ministry of Public Administration. Parsed/scraped by Nuwan Senaratna
+    (nuuuwan), code MIT.'
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  join: pcode
+themes:
+- REGI
+- GOVE
+datasets:
+- gnd-id-crosswalk
+- admin-region-history
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Region id formats and hierarchy as used in national datasets; companion repo lk_admin_region_history tracks splits/renames.

@@ -1,0 +1,28 @@
+id: parliament-lk
+publisher: Parliament of Sri Lanka
+title: Members of Parliament and Hansard
+homepage: https://www.parliament.lk/
+access:
+  method: html
+  endpoint: https://www.parliament.lk/en/members-of-parliament/directory-of-members
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Parliament of Sri Lanka
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- GOVE
+datasets:
+- parliament-members
+priority: P3
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: nuuuwan/lk_hansard and nuuuwan/politicians_lk hold scraped Hansard and MP lists.

@@ -1,0 +1,32 @@
+id: rda-national-roads
+title: National road register (A/B class) and expressways
+description: List of national A and B class roads with lengths by province, and expressway sections/interchanges.
+source_ids:
+- rda
+- osm-geofabrik
+indicators:
+- id: tran.rda_road_km
+  label: National road length
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - road_class
+  geo_levels:
+  - national
+  - adm1
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+  to: '2026'
+method: Parse RDA lists; match road refs to OSM ref tags for geometry.
+limits:
+- Legal class vs OSM geometry may disagree.
+enrichment:
+  joins:
+  - road ref (A1, B123) -> OSM ways
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - km per province
+publication_class: B

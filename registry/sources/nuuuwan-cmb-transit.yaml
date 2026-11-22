@@ -1,0 +1,28 @@
+id: nuuuwan-cmb-transit
+publisher: Nuwan Senaratna (nuuuwan) - community-mapped
+title: cmb_bus_network / cmb_rail / bus_routes_lk
+homepage: https://github.com/nuuuwan/cmb_bus_network
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/cmb_bus_network
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: NTC/SLTB route lists, OSM. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  - line
+  join: spatial
+themes:
+- TRAN
+datasets:
+- colombo-bus-rail-network
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Colombo bus network and rail repos (nuuuwan/cmb_rail, nuuuwan/bus_routes_lk).

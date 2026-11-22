@@ -1,0 +1,25 @@
+[package]
+name = "lanka-core"
+description = "Lanka Data Layer query core: standard model types, country profile, envelope, Postgres access"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+utoipa.workspace = true
+tokio.workspace = true
+serde_yaml_ng.workspace = true
+sha2.workspace = true
+hex.workspace = true
+ryu.workspace = true
+
+[lints]
+workspace = true

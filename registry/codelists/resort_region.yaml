@@ -1,0 +1,17 @@
+# Tourism resort region (SLTDA)
+# Source/authority: Sri Lanka Tourism Development Authority (SLTDA), Annual Statistical Report - resort regions.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: sltda-accommodation
+id: resort_region
+title: Tourism resort region (SLTDA)
+codes:
+  - { code: total, label: All regions, total: true, sdmx: _T }
+  - { code: colombo_city, label: Colombo City, parent: total }
+  - { code: greater_colombo, label: Greater Colombo, parent: total }
+  - { code: south_coast, label: South Coast, parent: total }
+  - { code: east_coast, label: East Coast, parent: total }
+  - { code: hill_country, label: Hill Country, parent: total }
+  - { code: ancient_cities, label: Ancient Cities, parent: total }
+  - { code: northern, label: Northern Region, parent: total }

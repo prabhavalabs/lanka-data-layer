@@ -1,0 +1,35 @@
+id: ghsl-population-grid
+title: GHS-POP population grid 1975-2030
+description: Long-run gridded population consistent with built-up epochs; only open long time series of population at small
+  area.
+source_ids:
+- ghsl
+indicators:
+- id: pop.ghsl_total
+  label: Population (GHS-POP)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '1975'
+  to: '2030'
+method: Zonal sums per epoch.
+limits:
+- Back-cast years rely on coarse historical census inputs.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

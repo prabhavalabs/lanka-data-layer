@@ -1,0 +1,52 @@
+id: osm-rail-network
+title: Railway lines and stations (OSM)
+description: Railway lines, stations and halts with names.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tran.osm_rail_km
+  label: Railway length
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - line
+  period_type: snapshot
+- id: tran.osm_rail_stations
+  label: Railway stations
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: railway=rail/station/halt filter.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: gauge, type: string, label: Gauge (mm)}
+- {name: electrified, type: string, label: Electrified}
+- {name: usage, type: string, label: Usage}
+- {name: service, type: string, label: Service}
+tiles: {minzoom: 6, maxzoom: 14, attrs: [usage], minzoom_by_kind: {halt: 10, tram_stop: 12, station: 8}}

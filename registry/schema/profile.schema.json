@@ -1,0 +1,292 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/registry/schema/profile.schema.json",
+  "title": "Lanka Data Layer country profile",
+  "description": "country/<id>/profile.yaml: everything country-specific the engine needs (08 §7.2). One country per deployment.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "iso3166",
+    "site",
+    "languages",
+    "timezone",
+    "currency",
+    "grid",
+    "admin",
+    "metric_crs",
+    "calendars"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[a-z0-9]+)?$"
+    },
+    "name": {
+      "$ref": "#/$defs/label"
+    },
+    "iso3166": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alpha2",
+        "alpha3"
+      ],
+      "properties": {
+        "alpha2": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "alpha3": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        }
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_url"
+      ],
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "pattern": "^https?://"
+        }
+      }
+    },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "prefixItems": [
+        {
+          "const": "en"
+        }
+      ],
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z]{2}$"
+      }
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 3
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "grid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lat_max",
+        "lon_min",
+        "step_deg",
+        "rows",
+        "cols"
+      ],
+      "properties": {
+        "lat_max": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon_min": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "step_deg": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "admin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scheme",
+        "pcode_pattern",
+        "root_code",
+        "levels",
+        "reference_boundary_set",
+        "boundary_dataset"
+      ],
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "pcode_pattern": {
+          "type": "string"
+        },
+        "root_code": {
+          "type": "string",
+          "pattern": "^[A-Z]+$"
+        },
+        "levels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "level",
+              "digits",
+              "name"
+            ],
+            "properties": {
+              "level": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "digits": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "name": {
+                "$ref": "#/$defs/label"
+              },
+              "short": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "reference_boundary_set": {
+          "type": "string",
+          "minLength": 1
+        },
+        "boundary_dataset": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metric_crs": {
+      "type": "string",
+      "pattern": "^EPSG:[0-9]+$"
+    },
+    "calendars": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fiscal",
+        "agri"
+      ],
+      "properties": {
+        "fiscal": {
+          "$ref": "#/$defs/monthStart"
+        },
+        "agri": {
+          "$ref": "#/$defs/monthStart"
+        },
+        "seasons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "start"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z]+$"
+              },
+              "start": {
+                "type": "string",
+                "pattern": "^[0-1][0-9]-[0-3][0-9]$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "nests_in": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "suppression": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "label": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "en"
+          ],
+          "properties": {
+            "en": {
+              "type": "string",
+              "minLength": 1
+            },
+            "si": {
+              "type": "string",
+              "minLength": 1
+            },
+            "ta": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "monthStart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_month"
+      ],
+      "properties": {
+        "start_month": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        }
+      }
+    }
+  }
+}

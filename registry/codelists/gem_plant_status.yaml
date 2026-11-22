@@ -1,0 +1,18 @@
+# Power plant status (Global Energy Monitor)
+# Source/authority: Global Energy Monitor, Global Integrated Power Tracker - unit status definitions.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: power-plants
+id: gem_plant_status
+title: Power plant status (Global Energy Monitor)
+codes:
+  - { code: total, label: All units, total: true, sdmx: _T }
+  - { code: announced, label: Announced, parent: total }
+  - { code: pre_construction, label: Pre-construction, parent: total }
+  - { code: construction, label: Construction, parent: total }
+  - { code: operating, label: Operating, parent: total }
+  - { code: mothballed, label: Mothballed, parent: total }
+  - { code: retired, label: Retired, parent: total }
+  - { code: cancelled, label: Cancelled, parent: total }
+  - { code: shelved, label: Shelved, parent: total }

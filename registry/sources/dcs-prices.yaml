@@ -1,0 +1,34 @@
+id: dcs-prices
+publisher: Department of Census and Statistics, Sri Lanka
+title: Consumer and producer price indices (CCPI, NCPI, PPI)
+homepage: https://www.statistics.gov.lk/InflationAndPrices/StaticalInformation
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Resource/en/InflationAndPrices/CCPI/Movements_of_CCPI-CCPI_Core_2021.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, price statistics
+cadence:
+  frequency: monthly
+  expected_lag_days: 0
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- dcs-ccpi
+- dcs-ncpi
+- dcs-ppi
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: CCPI released on last working day of the reference month; NCPI ~3 weeks after month end. nuuuwan/lk_dcs mirrors parsed
+  tables.
+dc_refs:
+- ccpi-monthly
+- ncpi-monthly

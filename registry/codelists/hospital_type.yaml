@@ -1,0 +1,27 @@
+# Government hospital type (Ministry of Health)
+# Source/authority: Ministry of Health, Annual Health Bulletin and Health Institutions list - categorisation of government hospitals (Ministry of Health circular on reclassification of hospitals, 2014).
+# Note: Shared by moh-health-bulletin-rdhs, moh-health-institutions (institution_type), dcs-pocketbook-social-services (type) and derived travel-time tiers.
+# Note: Base hospitals are sometimes reported without A/B: use a parent-level `BH` only if a source does (add then).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-social-services, moh-health-bulletin-rdhs, moh-health-institutions
+id: hospital_type
+title: Government hospital type (Ministry of Health)
+codes:
+  - { code: total, label: All government health institutions, total: true, sdmx: _T }
+  - { code: tertiary, label: Tertiary care, parent: total }
+  - { code: secondary, label: Secondary care, parent: total }
+  - { code: primary, label: Primary care, parent: total }
+  - { code: NH, label: National Hospital, parent: tertiary }
+  - { code: TH, label: Teaching Hospital, parent: tertiary }
+  - { code: PGH, label: Provincial General Hospital, parent: tertiary }
+  - { code: SH, label: Specialised hospital, parent: tertiary }
+  - { code: DGH, label: District General Hospital, parent: secondary }
+  - { code: "BH-A", label: Base Hospital - Type A, parent: secondary }
+  - { code: "BH-B", label: Base Hospital - Type B, parent: secondary }
+  - { code: "DH-A", label: Divisional Hospital - Type A, parent: primary }
+  - { code: "DH-B", label: Divisional Hospital - Type B, parent: primary }
+  - { code: "DH-C", label: Divisional Hospital - Type C, parent: primary }
+  - { code: PMCU, label: Primary Medical Care Unit, parent: primary }
+  - { code: other, label: "Other institution (e.g. MOH office, maternity home)", parent: total }

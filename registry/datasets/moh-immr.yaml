@@ -1,0 +1,48 @@
+id: moh-immr
+title: Hospital morbidity and mortality (IMMR)
+description: Inpatient discharges and deaths by ICD-10 disease group, age and sex from government hospitals.
+source_ids:
+- moh-health
+indicators:
+- id: heal.inpatient_discharges
+  label: Inpatient discharges
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - icd_group
+  - sex
+  - age_group
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: heal.hospital_deaths
+  label: Hospital deaths
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - icd_group
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2018'
+  to: '2024'
+method: XLSX parse.
+limits:
+- Government hospitals only; by hospital location not residence.
+enrichment:
+  joins:
+  - RDHS/MOH area names -> MOH-area polygons (nuuuwan/lk_moh_regions) -> spatial overlay to ADM3; RDHS ~ district except Kalmunai
+    RDHS (part of Ampara)
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: A

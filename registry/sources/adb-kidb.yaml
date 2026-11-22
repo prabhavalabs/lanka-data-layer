@@ -1,0 +1,28 @@
+id: adb-kidb
+publisher: Asian Development Bank
+title: ADB Key Indicators Database
+homepage: https://kidb.adb.org/
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=lka-key-indicators
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Asian Development Bank, Key Indicators
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+- SOCI
+datasets:
+- adb-key-indicators-lka
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

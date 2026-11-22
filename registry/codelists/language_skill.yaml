@@ -1,0 +1,16 @@
+# Language skill
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing 2024 language ability questions.
+# Note: Skills overlap; no total. Keep only the combinations the source table reports.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-education-literacy
+id: language_skill
+title: Language skill
+codes:
+  - { code: speak, label: Speak }
+  - { code: read, label: Read }
+  - { code: write, label: Write }
+  - { code: read_write, label: Read and write }
+  - { code: speak_read_write, label: "Speak, read and write" }

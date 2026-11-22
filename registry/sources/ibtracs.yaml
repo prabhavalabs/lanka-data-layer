@@ -1,0 +1,26 @@
+id: ibtracs
+publisher: NOAA NCEI
+title: IBTrACS tropical cyclone best tracks
+homepage: https://www.ncei.noaa.gov/products/international-best-track-archive
+access:
+  method: csv
+  endpoint: https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/ibtracs.NI.list.v04r01.csv
+  auth: none
+licence:
+  id: public-domain
+  status: open
+  attribution: NOAA NCEI IBTrACS v04
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - line
+  join: spatial
+themes:
+- ENVI
+datasets:
+- cyclone-tracks
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

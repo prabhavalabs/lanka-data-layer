@@ -1,0 +1,102 @@
+# WorldClim 2.1 historical climate (1970-2000), 30 arc-sec, country tiles of the geodata service
+# (masked to the country, NaN outside). Each canonical cell takes the pixel containing its centre;
+# units get area-weighted means. Normals are dated by the first year of the window (02 §5 multi-year
+# rule): monthly normals 1970-01 … 1970-12 (freq M), bioclimatic variables 1970 (freq P).
+source: worldclim
+driver: raster
+version: 1.0.0
+description: WorldClim 2.1 monthly mean temperature and precipitation normals and BIO1-BIO19 on the canonical grid; zonal means per admin unit (ADM1-ADM4).
+dataset: worldclim-climate-normals
+discover:
+  files:
+    - { key: tavg, url: https://geodata.ucdavis.edu/climate/worldclim/2_1/tiles/iso/LKA_wc2.1_30s_tavg.tif }
+    - { key: prec, url: https://geodata.ucdavis.edu/climate/worldclim/2_1/tiles/iso/LKA_wc2.1_30s_prec.tif }
+    - { key: bio, url: https://geodata.ucdavis.edu/climate/worldclim/2_1/tiles/iso/LKA_wc2.1_30s_bio.tif }
+layers:
+  - { id: clim.tavg, period: "1970-01", indicator: clim.wc_tavg, files: [tavg], band: 1, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: true, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-02", indicator: clim.wc_tavg, files: [tavg], band: 2, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-03", indicator: clim.wc_tavg, files: [tavg], band: 3, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-04", indicator: clim.wc_tavg, files: [tavg], band: 4, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-05", indicator: clim.wc_tavg, files: [tavg], band: 5, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-06", indicator: clim.wc_tavg, files: [tavg], band: 6, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-07", indicator: clim.wc_tavg, files: [tavg], band: 7, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-08", indicator: clim.wc_tavg, files: [tavg], band: 8, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-09", indicator: clim.wc_tavg, files: [tavg], band: 9, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-10", indicator: clim.wc_tavg, files: [tavg], band: 10, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-11", indicator: clim.wc_tavg, files: [tavg], band: 11, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.tavg, period: "1970-12", indicator: clim.wc_tavg, files: [tavg], band: 12, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: Cel, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.YlOrRd, domain: [10, 30] } }
+  - { id: clim.prec, period: "1970-01", indicator: clim.wc_prec, files: [prec], band: 1, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: true, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-02", indicator: clim.wc_prec, files: [prec], band: 2, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-03", indicator: clim.wc_prec, files: [prec], band: 3, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-04", indicator: clim.wc_prec, files: [prec], band: 4, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-05", indicator: clim.wc_prec, files: [prec], band: 5, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-06", indicator: clim.wc_prec, files: [prec], band: 6, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-07", indicator: clim.wc_prec, files: [prec], band: 7, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-08", indicator: clim.wc_prec, files: [prec], band: 8, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-09", indicator: clim.wc_prec, files: [prec], band: 9, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-10", indicator: clim.wc_prec, files: [prec], band: 10, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-11", indicator: clim.wc_prec, files: [prec], band: 11, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.prec, period: "1970-12", indicator: clim.wc_prec, files: [prec], band: 12, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: mm, zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: brewer.Blues, domain: [0, 600] } }
+  - { id: clim.bio1, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO1, files: [bio], band: 1, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: true, style: { ramp: viridis.viridis } }
+  - { id: clim.bio2, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO2, files: [bio], band: 2, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio3, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO3, files: [bio], band: 3, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio4, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO4, files: [bio], band: 4, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio5, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO5, files: [bio], band: 5, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio6, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO6, files: [bio], band: 6, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio7, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO7, files: [bio], band: 7, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio8, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO8, files: [bio], band: 8, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio9, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO9, files: [bio], band: 9, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio10, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO10, files: [bio], band: 10, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio11, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO11, files: [bio], band: 11, resample: centre_sample, encoding: { dtype: i16, scale: 0.01, nodata: -32768 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio12, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO12, files: [bio], band: 12, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: true, style: { ramp: viridis.viridis } }
+  - { id: clim.bio13, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO13, files: [bio], band: 13, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio14, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO14, files: [bio], band: 14, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio15, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO15, files: [bio], band: 15, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio16, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO16, files: [bio], band: 16, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio17, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO17, files: [bio], band: 17, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio18, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO18, files: [bio], band: 18, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+  - { id: clim.bio19, period: "1970", indicator: clim.wc_bio, dims: bio_var=BIO19, files: [bio], band: 19, resample: centre_sample, encoding: { dtype: u16, scale: 0.1, nodata: 65535 }, unit: "{various}", zonal: mean, overview: mean, source_res_m: 1000, serve: false, style: { ramp: viridis.viridis } }
+zonal:
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-01", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-02", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-03", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-04", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-05", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-06", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-07", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-08", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-09", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-10", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-11", stat: mean }
+  - { indicator: clim.wc_tavg, layer: clim.tavg, period: "1970-12", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-01", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-02", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-03", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-04", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-05", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-06", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-07", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-08", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-09", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-10", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-11", stat: mean }
+  - { indicator: clim.wc_prec, layer: clim.prec, period: "1970-12", stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio1, dims: bio_var=BIO1, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio2, dims: bio_var=BIO2, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio3, dims: bio_var=BIO3, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio4, dims: bio_var=BIO4, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio5, dims: bio_var=BIO5, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio6, dims: bio_var=BIO6, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio7, dims: bio_var=BIO7, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio8, dims: bio_var=BIO8, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio9, dims: bio_var=BIO9, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio10, dims: bio_var=BIO10, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio11, dims: bio_var=BIO11, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio12, dims: bio_var=BIO12, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio13, dims: bio_var=BIO13, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio14, dims: bio_var=BIO14, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio15, dims: bio_var=BIO15, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio16, dims: bio_var=BIO16, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio17, dims: bio_var=BIO17, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio18, dims: bio_var=BIO18, stat: mean }
+  - { indicator: clim.wc_bio, layer: clim.bio19, dims: bio_var=BIO19, stat: mean }

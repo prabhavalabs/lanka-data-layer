@@ -1,0 +1,35 @@
+id: healthsites-facilities
+title: Health facilities (healthsites.io)
+description: Hospitals, clinics, pharmacies with OSM-based attributes (beds, operator, specialities).
+source_ids:
+- healthsites
+indicators:
+- id: heal.healthsites_count
+  label: Health facilities
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - facility_type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: HDX shapefile/GeoJSON.
+limits:
+- OSM-derived; not the MoH registry.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: A

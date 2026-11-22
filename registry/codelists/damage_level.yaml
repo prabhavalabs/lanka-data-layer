@@ -1,0 +1,12 @@
+# House damage level (DMC)
+# Source/authority: Disaster Management Centre, situation reports - houses fully / partially damaged.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dmc-situation-report-impacts
+id: damage_level
+title: House damage level (DMC)
+codes:
+  - { code: total, label: All houses damaged, total: true, sdmx: _T }
+  - { code: fully_damaged, label: Fully damaged, parent: total }
+  - { code: partially_damaged, label: Partially damaged, parent: total }

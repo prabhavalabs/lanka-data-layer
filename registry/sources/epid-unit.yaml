@@ -1,0 +1,28 @@
+id: epid-unit
+publisher: Epidemiology Unit, Ministry of Health
+title: Weekly Epidemiological Report (notifiable diseases)
+homepage: https://www.epid.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.epid.gov.lk/weekly-epidemiological-report
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Epidemiology Unit, Ministry of Health
+cadence:
+  frequency: weekly
+  expected_lag_days: 14
+geo:
+  levels:
+  - adm2
+  join: name_match
+themes:
+- HEAL
+datasets:
+- epid-notifiable-diseases
+priority: P1
+effort: M
+status: planned
+notes: 'epid.gov.lk returned HTTP 500 on 2026-11-21. Verification 2026-11-21: https://www.epid.gov.lk/ -> HTTP 500 server
+  error; https://www.epid.gov.lk/weekly-epidemiological-report -> HTTP 500 server error.'

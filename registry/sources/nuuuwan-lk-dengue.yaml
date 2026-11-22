@@ -1,0 +1,26 @@
+id: nuuuwan-lk-dengue
+publisher: Nuwan Senaratna (nuuuwan) - data from NDCU
+title: 'lk_dengue: scraped dengue cases'
+homepage: https://github.com/nuuuwan/lk_dengue
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_dengue
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: National Dengue Control Unit. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - adm2
+  join: name_match
+themes:
+- HEAL
+datasets:
+- dengue-weekly-cases
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

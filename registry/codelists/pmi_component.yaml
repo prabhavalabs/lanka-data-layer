@@ -1,0 +1,20 @@
+# PMI sub-index (CBSL)
+# Source/authority: Central Bank of Sri Lanka, Purchasing Managers' Index survey - manufacturing and services sub-indices.
+# Note: Diffusion indices: no total. Manufacturing vs services is the `sector` dim (industry codes C / services).
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-pmi
+id: pmi_component
+title: PMI sub-index (CBSL)
+codes:
+  - { code: headline, label: Headline PMI / Business Activity index }
+  - { code: new_orders, label: New orders / new businesses }
+  - { code: production, label: Production }
+  - { code: employment, label: Employment }
+  - { code: suppliers_delivery, label: "Suppliers' delivery time" }
+  - { code: stock_of_purchases, label: Stock of purchases }
+  - { code: business_activity, label: Business activity }
+  - { code: backlogs, label: Backlogs of work }
+  - { code: expectations, label: Expectations for activity }

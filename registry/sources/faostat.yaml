@@ -1,0 +1,31 @@
+id: faostat
+publisher: Food and Agriculture Organization
+title: FAOSTAT API
+homepage: https://www.fao.org/faostat/
+access:
+  method: api
+  endpoint: https://bulks-faostat.fao.org/production/Production_Crops_Livestock_E_All_Data_(Normalized).zip
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: FAO, FAOSTAT
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- AGRI
+datasets:
+- faostat-crops-livestock
+- faostat-land-inputs
+- faostat-food-security
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: HDX mirrors lka-faostat-* (CC BY-IGO on HDX). Area code 38 = Sri Lanka. FAOSTAT REST API now returns 401 without a
+  token; bulk normalized CSV zips are keyless.

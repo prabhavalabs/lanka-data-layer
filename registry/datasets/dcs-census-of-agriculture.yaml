@@ -1,0 +1,46 @@
+id: dcs-census-of-agriculture
+title: Census of Agriculture 2013/14 (holdings)
+description: Agricultural operators, holdings and land use by DS division from the last agricultural census.
+source_ids:
+- dcs-agriculture
+indicators:
+- id: agri.holdings
+  label: Agricultural holdings
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - holding_size
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: agri.holding_area
+  label: Area under holdings
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: land_use
+    codelist: holding_land_use
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2014'
+method: PDF report tables.
+limits:
+- 2013/14 vintage.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: B

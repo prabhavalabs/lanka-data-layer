@@ -1,0 +1,14 @@
+# Port cargo type
+# Source/authority: Sri Lanka Ports Authority, Performance statistics - cargo handled by type; UNCTAD maritime cargo categories.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport
+id: cargo_type
+title: Port cargo type
+codes:
+  - { code: total, label: All cargo, total: true, sdmx: _T }
+  - { code: containerised, label: Containerised cargo, parent: total }
+  - { code: break_bulk, label: Break bulk / general cargo, parent: total }
+  - { code: dry_bulk, label: Dry bulk, parent: total }
+  - { code: liquid_bulk, label: Liquid bulk (incl. petroleum), parent: total }

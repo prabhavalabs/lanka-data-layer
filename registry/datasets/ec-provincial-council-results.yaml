@@ -1,0 +1,33 @@
+id: ec-provincial-council-results
+title: Provincial council election results
+description: Party votes and seats by district for provincial council elections (last held 2012-2014).
+source_ids:
+- elections-commission
+- nuuuwan-lk-elections
+indicators:
+- id: elec.pc_votes
+  label: Votes by party (PC)
+  unit: '{vote}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - election
+  - party
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '1988'
+  to: '2014'
+method: EC PDFs/HTML.
+limits:
+- Elections overdue since 2017-2019; series stale.
+enrichment:
+  joins:
+  - 'electoral district / polling division codes (EC-xx, EC-xxx) -> ADM2 via the electoral crosswalk (22 EDs vs 25 districts:
+    Jaffna ED = Jaffna+Kilinochchi, Vanni ED = Mannar+Vavuniya+Mullaitivu)'
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+publication_class: B

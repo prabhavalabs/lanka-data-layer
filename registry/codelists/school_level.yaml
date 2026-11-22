@@ -1,0 +1,16 @@
+# Education level of a school (GIGA)
+# Source/authority: UNICEF/ITU GIGA school location data, `education_level` attribute; levels aligned to ISCED 0-3.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: giga-schools
+id: school_level
+title: Education level of a school (GIGA)
+codes:
+  - { code: total, label: All schools, total: true, sdmx: _T }
+  - { code: pre_primary, label: Pre-primary, parent: total }
+  - { code: primary, label: Primary, parent: total }
+  - { code: secondary, label: Secondary, parent: total }
+  - { code: primary_secondary, label: Primary and secondary, parent: total }
+  - { code: post_secondary, label: Post-secondary, parent: total }
+  - { code: unknown, label: Unknown, parent: total }

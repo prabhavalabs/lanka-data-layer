@@ -1,0 +1,44 @@
+id: irrigation-river-water-levels
+title: River water levels and flood alert status
+description: Gauge water levels and rainfall at ~40 river stations with alert, minor and major flood thresholds, updated several
+  times daily.
+source_ids:
+- nuuuwan-lk-irrigation
+- irrigation-dept
+indicators:
+- id: water.river_level
+  label: River water level
+  unit: m
+  measure_type: mean
+  aggregation: none
+  class: official
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: day
+- id: water.flood_alert_level
+  label: Flood alert status
+  unit: '{category}'
+  measure_type: category
+  aggregation: none
+  class: official
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: day
+time_coverage:
+  from: 2022-01
+  to: 2026-11
+method: Repo history + live scrape; stations to river basins (hydrosheds).
+limits:
+- Gauges cover major rivers only.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  - station -> HydroBASINS basin -> downstream ADM4 units
+  aggregations:
+  - 'derive: population downstream of gauges at alert'
+kind: features
+publication_class: A

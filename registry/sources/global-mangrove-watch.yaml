@@ -1,0 +1,27 @@
+id: global-mangrove-watch
+publisher: Global Mangrove Watch (Aberystwyth University, soloEO, JAXA, WCMC)
+title: Global Mangrove Watch v3
+homepage: https://www.globalmangrovewatch.org/
+access:
+  method: zip
+  endpoint: https://zenodo.org/records/6894273
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Bunting et al. 2022, Global Mangrove Watch
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- ENVI
+datasets:
+- mangrove-extent
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

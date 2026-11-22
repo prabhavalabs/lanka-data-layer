@@ -1,0 +1,14 @@
+# Local authority type
+# Source/authority: Municipal Councils Ordinance (1947), Urban Councils Ordinance (1939), Pradeshiya Sabhas Act No. 15 of 1987; Ministry of Public Administration, Provincial Councils and Local Government - list of 341 local authorities.
+# Note: Administrative terms: si/ta must come from the official gazette names, not translation.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: local-authority-boundaries
+id: la_type
+title: Local authority type
+codes:
+  - { code: total, label: All local authorities, total: true, sdmx: _T }
+  - { code: mc, label: Municipal Council, parent: total }
+  - { code: uc, label: Urban Council, parent: total }
+  - { code: ps, label: Pradeshiya Sabha, parent: total }

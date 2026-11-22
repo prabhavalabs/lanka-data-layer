@@ -1,0 +1,29 @@
+id: parliament-members
+title: Members of Parliament by electoral district
+description: Current and past MPs with party and electoral district.
+source_ids:
+- parliament-lk
+indicators:
+- id: gov.mps
+  label: Members of Parliament
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - party
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '1989'
+  to: '2026'
+method: Directory scrape.
+limits:
+- Personal data limited to public office holders.
+enrichment:
+  joins:
+  - 'electoral district / polling division codes (EC-xx, EC-xxx) -> ADM2 via the electoral crosswalk (22 EDs vs 25 districts:
+    Jaffna ED = Jaffna+Kilinochchi, Vanni ED = Mannar+Vavuniya+Mullaitivu)'
+publication_class: B

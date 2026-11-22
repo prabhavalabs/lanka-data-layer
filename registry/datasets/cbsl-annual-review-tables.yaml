@@ -1,0 +1,31 @@
+id: cbsl-annual-review-tables
+title: CBSL Annual Report statistical appendix
+description: Long-run statistical appendix tables (prices, wages, agriculture, industry, fiscal, external) back to the 1950s.
+source_ids:
+- cbsl-annual-reports
+indicators:
+- id: cbslar.appendix_value
+  label: Annual Report appendix series
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: official
+  dims:
+  - table
+  - series
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+time_coverage:
+  from: '1950'
+  to: '2025'
+method: PDF table extraction with LLM assist + human review.
+limits:
+- Definitions drift over 70 years; series breaks flagged per table.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: C

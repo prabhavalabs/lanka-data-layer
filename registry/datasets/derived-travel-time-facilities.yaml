@@ -1,0 +1,59 @@
+id: derived-travel-time-facilities
+title: Travel time to nearest facility (walk/drive)
+description: Travel time from every grid cell to the nearest hospital (by tier), school, bank, railway station, bus stop,
+  district town and police station.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: acc.tt_nearest
+  label: Travel time to nearest facility
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: derived
+  dims:
+  - facility_type
+  - mode
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: acc.pop_mean_tt
+  label: Population-weighted mean travel time
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: derived
+  dims:
+  - facility_type
+  - mode
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Multi-source Dijkstra on OSM graph (walking speed slope-adjusted with DEM), validated on a Valhalla sample.
+limits:
+- Road speeds assumed, not observed; facility lists incomplete.
+enrichment:
+  derived_from:
+  - osm-routing-graph
+  - osm-pois-amenities
+  - moh-health-institutions
+  - giga-schools
+  - worldpop-pop-grid
+  - copernicus-dem-terrain
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - population-weighted means per unit using worldpop-pop-grid as weights (cell value x cell population / unit population)
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A

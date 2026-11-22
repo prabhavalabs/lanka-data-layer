@@ -1,0 +1,46 @@
+id: exam-results-district
+title: GCE O/L and A/L performance by district
+description: Candidates sat and qualification rates for GCE O/L (university-entry eligibility for A/L) by district and stream.
+source_ids:
+- doenets
+- dcs-pocketbook
+indicators:
+- id: educ.ol_pass_rate
+  label: O/L qualified for A/L
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+- id: educ.al_eligible_rate
+  label: A/L eligible for university
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - stream
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2025'
+method: Performance report PDFs.
+limits:
+- School-level results not published openly.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - no additive roll-up
+publication_class: B

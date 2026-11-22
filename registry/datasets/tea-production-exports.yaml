@@ -1,0 +1,39 @@
+id: tea-production-exports
+title: Tea production by elevation and exports
+description: Monthly tea production (high/medium/low grown) and export volume/value.
+source_ids:
+- tea-board
+indicators:
+- id: agri.tea_production
+  label: Tea production
+  unit: kg
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - elevation
+  geo_levels:
+  - national
+  period_type: month
+- id: agri.tea_exports
+  label: Tea exports
+  unit: kg
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2010-01
+  to: 2026-10
+method: HTML/PDF statistics.
+limits:
+- Elevation categories, not districts.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: rainfall anomalies in hill country'
+publication_class: B

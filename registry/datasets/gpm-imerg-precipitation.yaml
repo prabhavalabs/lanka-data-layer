@@ -1,0 +1,32 @@
+id: gpm-imerg-precipitation
+title: Satellite precipitation, half-hourly to monthly (GPM IMERG)
+description: Near-real-time and final-run precipitation at 0.1 deg; daily accumulations for flood monitoring.
+source_ids:
+- nasa-earthdata
+indicators:
+- id: clim.imerg_precip_daily
+  label: Daily precipitation (IMERG)
+  unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: day
+time_coverage:
+  from: 2000-06
+  to: 2026-11
+method: Daily GeoTIFF/HDF5 subset to LKA, zonal means.
+limits:
+- 0.1 deg; under-estimates orographic extremes.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - 'derive: 3-day accumulated rain triggers for landslide warnings'
+publication_class: A

@@ -1,0 +1,30 @@
+id: unesco-whc
+publisher: UNESCO World Heritage Centre
+title: World Heritage List (Sri Lanka)
+homepage: https://whc.unesco.org/en/statesparties/lk
+access:
+  method: api
+  endpoint: https://whc.unesco.org/en/list/xml/
+  auth: none
+licence:
+  id: cc-by-sa-3.0-igo
+  status: attribution
+  url: https://creativecommons.org/licenses/by-sa/3.0/igo/
+  attribution: UNESCO World Heritage Centre
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - point
+  - polygon
+  join: spatial
+themes:
+- SOCI
+- ECON
+datasets:
+- world-heritage-sites
+priority: P2
+effort: S
+status: planned
+notes: '8 inscribed sites + tentative list; core/buffer-zone polygons where published. Verification 2026-11-21: whc.unesco.org
+  returns HTTP 403 to non-browser clients - fetch the XML/KML list via browser-like client or mirror via Wikidata (P757).'

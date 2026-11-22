@@ -1,0 +1,50 @@
+id: overture-places
+title: Places of business and services (Overture)
+description: ~200k+ POIs (shops, restaurants, offices, services) with categories and confidence scores.
+source_ids:
+- overture-maps
+indicators:
+- id: biz.overture_places
+  label: Places by category
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: category
+    codelist: overture_category
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: biz.places_per_1000
+  label: Places per 1,000 population
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+  to: '2026'
+method: DuckDB query by bbox + country; keep confidence >= 0.5; licence-filter sources.
+limits:
+- Commercial/social-media derived; urban bias; duplicates.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'derive: commercial activity density as economic proxy'
+publication_class: A

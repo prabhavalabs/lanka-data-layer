@@ -1,0 +1,70 @@
+id: dcs-paddy-statistics
+title: Paddy sown, harvested, production and yield by district and season
+description: Maha and Yala season paddy extent sown and harvested, production and average yield for every district since 1979.
+source_ids:
+- dcs-agriculture
+indicators:
+- id: agri.paddy_sown_ha
+  label: Paddy extent sown
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - season
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: agri.paddy_harvested_ha
+  label: Paddy extent harvested
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - season
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: agri.paddy_production_t
+  label: Paddy production
+  unit: t
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - season
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: agri.paddy_yield
+  label: Average paddy yield
+  unit: kg/har
+  measure_type: rate
+  aggregation: none
+  class: official
+  dims:
+  - season
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '1979'
+  to: '2025'
+method: HTML/XLS tables per variable x season; reviewed.
+limits:
+- District totals; no DS breakdown.
+- Mullaitivu/Kilinochchi missing in conflict years.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - 'derive: crop-failure ratio (1 - harvested/sown) vs CHIRPS rainfall anomaly'
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

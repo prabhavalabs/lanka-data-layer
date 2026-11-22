@@ -1,0 +1,28 @@
+id: ctrees
+publisher: CTrees
+title: Aboveground biomass (CTrees)
+homepage: https://ctrees.org/
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=lka-ctrees-aboveground-biomass
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: CTrees
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - raster
+  - adm1
+  join: grid
+themes:
+- ENVI
+datasets:
+- aboveground-biomass
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

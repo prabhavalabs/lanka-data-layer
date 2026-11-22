@@ -1,0 +1,27 @@
+# DCS survey series
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, National Data Archive (NADA) survey catalogue.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-survey-catalogue
+id: survey_series
+title: DCS survey series
+codes:
+  - { code: total, label: All surveys, total: true, sdmx: _T }
+  - { code: census_population_housing, label: Census of Population and Housing, parent: total }
+  - { code: census_agriculture, label: Census of Agriculture, parent: total }
+  - { code: economic_census, label: Economic Census, parent: total }
+  - { code: lfs, label: Labour Force Survey, parent: total }
+  - { code: hies, label: Household Income and Expenditure Survey, parent: total }
+  - { code: dhs, label: Demographic and Health Survey, parent: total }
+  - { code: asi, label: Annual Survey of Industries, parent: total }
+  - { code: trade_services, label: Survey of Trade and Services, parent: total }
+  - { code: construction, label: Survey of Construction Industries, parent: total }
+  - { code: child_activity, label: Child Activity Survey, parent: total }
+  - { code: computer_literacy, label: Computer Literacy Survey, parent: total }
+  - { code: time_use, label: Time Use Survey, parent: total }
+  - { code: crop_estimation, label: Agricultural crop estimation surveys, parent: total }
+  - { code: prices, label: Price surveys (CCPI / NCPI / PPI), parent: total }
+  - { code: school_census, label: School Census (Ministry of Education), parent: total }
+  - { code: other, label: Other, parent: total }

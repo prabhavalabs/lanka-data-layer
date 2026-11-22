@@ -1,0 +1,19 @@
+[package]
+name = "lanka-store"
+description = "Lanka Data Layer blob store (L0 raw, L1 extracts, distributions) behind one trait"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+bytes.workspace = true
+hex.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true

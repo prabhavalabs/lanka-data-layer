@@ -1,0 +1,28 @@
+id: dcs-nada
+publisher: Department of Census and Statistics, Sri Lanka
+title: Lanka Datta - DCS microdata catalogue (NADA)
+homepage: https://nada.statistics.gov.lk/index.php/catalog
+access:
+  method: api
+  endpoint: https://nada.statistics.gov.lk/index.php/api/catalog/search
+  auth: manual
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- SOCI
+- ECON
+datasets:
+- dcs-survey-catalogue
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Survey metadata (DDI) is public; microdata access requires application and cannot be redistributed.

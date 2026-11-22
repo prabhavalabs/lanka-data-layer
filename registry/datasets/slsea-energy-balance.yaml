@@ -1,0 +1,44 @@
+id: slsea-energy-balance
+title: National energy balance
+description: Primary energy supply and final consumption by fuel and sector; renewable project register.
+source_ids:
+- slsea
+indicators:
+- id: ener.primary_supply_ktoe
+  label: Primary energy supply
+  unit: '{ktoe}'
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: fuel
+    codelist: energy_source
+  geo_levels:
+  - national
+  period_type: year
+- id: ener.final_consumption_ktoe
+  label: Final energy consumption
+  unit: '{ktoe}'
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: sector
+    codelist: energy_end_use_sector
+  - id: fuel
+    codelist: energy_source
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2010'
+  to: '2024'
+method: PDF/XLS tables.
+limits:
+- Biomass estimated.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

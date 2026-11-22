@@ -1,0 +1,47 @@
+id: giga-schools
+title: School locations and connectivity
+description: Geolocated schools with education level and internet connectivity status.
+source_ids:
+- giga-schools
+indicators:
+- id: educ.school_points
+  label: Schools (geolocated)
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: level
+    codelist: school_level
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: educ.schools_connected_share
+  label: Schools with internet connectivity
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: HDX CSV to points; conflate with OSM schools.
+limits:
+- Connectivity status may be outdated; location precision varies.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - destinations for school travel-time; school-age population per school
+publication_class: A

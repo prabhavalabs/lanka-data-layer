@@ -1,0 +1,32 @@
+id: heigit-accessibility
+title: Accessibility to health and education (HeiGIT)
+description: Population share within travel-time thresholds of facilities at ADM levels.
+source_ids:
+- heigit
+indicators:
+- id: acc.heigit_share_within
+  label: Population within threshold of facility
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - id: facility
+    codelist: facility_type
+  - threshold
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: HDX tables.
+limits:
+- OSM facility completeness drives results.
+enrichment:
+  joins:
+  - 'native p-codes: direct join to admin_units (ADM0-ADM4)'
+  aggregations:
+  - benchmark for derived-travel-time-facilities
+publication_class: A

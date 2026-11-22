@@ -1,0 +1,36 @@
+id: treasury-annual-report
+publisher: Ministry of Finance
+title: Ministry of Finance Annual Report
+homepage: https://www.treasury.gov.lk/web/annual-reports
+access:
+  method: pdf
+  endpoint: https://www.treasury.gov.lk/web/annual-reports
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Ministry of Finance, Planning and Economic Development, Annual Report
+cadence:
+  frequency: annual
+  expected_lag_days: 180
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- ECON
+- GOVE
+datasets:
+- treasury-revenue-outturn
+- treasury-soe-finances
+- treasury-province-transfers
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- treasury-revenue-budget-outturn
+- treasury-soe-finances
+- treasury-soe-sector-outturn
+- treasury-province-transfers

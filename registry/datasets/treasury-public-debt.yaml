@@ -1,0 +1,55 @@
+id: treasury-public-debt
+title: Public debt stock and creditor composition
+description: Central government debt by instrument, currency and creditor (bilateral, multilateral, commercial), domestic
+  debt composition.
+source_ids:
+- treasury-debt
+indicators:
+- id: debt.total
+  label: Central government debt stock
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - instrument
+  geo_levels:
+  - national
+  period_type: quarter
+- id: debt.external_by_creditor
+  label: External debt by creditor
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - creditor
+  geo_levels:
+  - national
+  period_type: quarter
+- id: debt.domestic_by_instrument
+  label: Domestic debt by instrument
+  unit: LKR
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - instrument
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: 2019-Q1
+  to: 2026-Q2
+method: PDF tables, reviewed.
+limits:
+- Restructuring-period valuation changes.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

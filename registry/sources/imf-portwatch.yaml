@@ -1,0 +1,28 @@
+id: imf-portwatch
+publisher: IMF and University of Oxford
+title: PortWatch daily port activity
+homepage: https://portwatch.imf.org/
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=sri-lanka-daily-port-activity-data-and-shipment-estimates
+  auth: none
+licence:
+  id: portwatch-terms
+  status: attribution
+  attribution: IMF PortWatch
+cadence:
+  frequency: weekly
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- TRAN
+- ECON
+- INTR
+datasets:
+- imf-portwatch-lka
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

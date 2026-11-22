@@ -1,0 +1,16 @@
+# Vocational training provider
+# Source/authority: Tertiary and Vocational Education Commission (TVEC), Labour Market Information Bulletin - training providers.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-social-services
+id: provider
+title: Vocational training provider
+codes:
+  - { code: total, label: All providers, total: true, sdmx: _T }
+  - { code: vta, label: Vocational Training Authority (VTA), parent: total }
+  - { code: naita, label: National Apprentice and Industrial Training Authority (NAITA), parent: total }
+  - { code: dtet, label: Department of Technical Education and Training (DTET), parent: total }
+  - { code: nysc, label: National Youth Services Council (NYSC), parent: total }
+  - { code: other, label: "Other (incl. private, registered with TVEC)", parent: total }

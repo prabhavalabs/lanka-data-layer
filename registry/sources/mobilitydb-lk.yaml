@@ -1,0 +1,28 @@
+id: mobilitydb-lk
+publisher: MobilityData (Mobility Database)
+title: Mobility Database Sri Lanka feeds (e.g. mdb-3490)
+homepage: https://mobilitydatabase.org/feeds/gtfs/mdb-3490
+access:
+  method: gtfs
+  endpoint: https://mobilitydatabase.org/feeds/gtfs/mdb-3490
+  auth: none
+licence:
+  id: gtfs-licence-unstated
+  status: permission_unclear
+  attribution: Feed publisher via Mobility Database
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - point
+  - line
+  join: spatial
+themes:
+- TRAN
+datasets:
+- lk-gtfs-feeds
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Pettah-Kottawa express bus feed. No SLTB, NTC or Sri Lanka Railways GTFS exists as of 2026-11.

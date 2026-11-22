@@ -1,0 +1,30 @@
+id: wikidata-admin-crosswalk
+title: Wikidata admin crosswalk and multilingual names
+description: Maps p-codes to Wikidata QIDs and pulls Sinhala/Tamil/English labels, aliases, Wikipedia links and official websites
+  for every admin unit.
+source_ids:
+- wikidata
+indicators:
+- id: xwalk.wikidata_qid_coverage
+  label: Share of units with a Wikidata QID
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: SPARQL by instance-of class and administrative parent; match on name + parent + coordinates, store QID per p-code.
+limits:
+- Wikidata coverage of GN divisions is sparse.
+- 'Crowd-edited: labels can be vandalised; pinned to a dated snapshot.'
+enrichment:
+  joins:
+  - p-code <-> QID
+  - name variants feed the name->p-code crosswalk used by every name_match source
+publication_class: A

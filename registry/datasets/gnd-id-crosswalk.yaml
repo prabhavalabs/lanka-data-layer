@@ -1,0 +1,30 @@
+id: gnd-id-crosswalk
+title: DCS GN id <-> COD-AB p-code crosswalk
+description: Maps DCS/gig GN division ids (used by census 2012/2024 tables, lk_census repos and elections) to OCHA p-codes,
+  with match method and confidence.
+source_ids:
+- nuuuwan-gig-data
+- hdx-cod-ab-lka
+- nuuuwan-lk-admin-regions
+indicators:
+- id: xwalk.gnd_match_rate
+  label: Share of GN ids matched to a p-code
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2012'
+  to: '2024'
+method: Match on (district, DS, GN number, normalised name), then spatial overlap of gig-data polygons with COD-AB GN polygons;
+  manual review of residuals.
+limits:
+- A few GN divisions were split/merged after 2012; many-to-one rows carry allocation weights.
+- Unmatched residue (~2-3%) published with reason codes rather than forced.
+enrichment:
+  joins:
+  - required for every GN-level table sourced from DCS ids
+publication_class: B

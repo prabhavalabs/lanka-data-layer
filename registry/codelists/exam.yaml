@@ -1,0 +1,14 @@
+# National examination
+# Source/authority: Department of Examinations, Sri Lanka - GCE O/L, GCE A/L and Grade 5 scholarship examinations.
+# Note: Pass rates per exam are non-additive: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-social-services
+id: exam
+title: National examination
+codes:
+  - { code: gce_ol, label: GCE Ordinary Level }
+  - { code: gce_al, label: GCE Advanced Level }
+  - { code: grade5_scholarship, label: Grade 5 Scholarship Examination }

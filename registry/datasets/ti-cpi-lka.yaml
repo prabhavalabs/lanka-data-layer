@@ -1,0 +1,27 @@
+id: ti-cpi-lka
+title: Corruption Perceptions Index
+description: Sri Lanka CPI score and rank.
+source_ids:
+- transparency-intl
+indicators:
+- id: gov.cpi_score
+  label: CPI score
+  unit: '{score}'
+  measure_type: score
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2012'
+  to: '2025'
+method: HDX CSV.
+limits:
+- Perception index, not measured corruption.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

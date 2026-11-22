@@ -1,0 +1,26 @@
+id: prisons
+publisher: Department of Prisons (mirrored by nuuuwan/lk_prisons)
+title: Daily prison population snapshot
+homepage: http://prisons.gov.lk/web/en/statistics-information-en/
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_prisons
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Prisons. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- JUST
+datasets:
+- prisons-daily-population
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'

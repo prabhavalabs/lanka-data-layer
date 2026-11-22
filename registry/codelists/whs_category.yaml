@@ -1,0 +1,13 @@
+# World Heritage property category
+# Source/authority: UNESCO Operational Guidelines for the Implementation of the World Heritage Convention - cultural, natural, mixed properties.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: world-heritage-sites
+id: whs_category
+title: World Heritage property category
+codes:
+  - { code: total, label: All properties, total: true, sdmx: _T }
+  - { code: cultural, label: Cultural, parent: total }
+  - { code: natural, label: Natural, parent: total }
+  - { code: mixed, label: Mixed, parent: total }

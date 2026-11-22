@@ -1,0 +1,39 @@
+id: hydrosheds-rivers-basins
+title: River network and catchments
+description: Vector river network with discharge estimates and nested basins (levels 1-12).
+source_ids:
+- hydrosheds
+indicators:
+- id: water.basin_area
+  label: Basin area
+  unit: km2
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - basin_level
+  geo_levels:
+  - polygon
+  period_type: snapshot
+- id: water.river_discharge
+  label: Long-term average discharge
+  unit: m3/s
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - line
+  period_type: snapshot
+time_coverage:
+  from: '2013'
+method: Clip Asia files to LKA.
+limits:
+- Derived from 15 arc-second DEM.
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - basin -> ADM overlay for upstream rainfall
+kind: features
+publication_class: A

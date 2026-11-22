@@ -1,0 +1,35 @@
+id: worldclim
+publisher: WorldClim (Fick & Hijmans, UC Davis)
+title: WorldClim 2.1 historical climate normals
+homepage: https://www.worldclim.org/data/worldclim21.html
+access:
+  method: raster
+  endpoint: https://geodata.ucdavis.edu/climate/worldclim/2_1/base/wc2.1_30s_{var}.zip
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: 'Fick, S.E. and R.J. Hijmans, 2017. WorldClim 2. Int. J. Climatology 37: 4302-4315'
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  join: grid
+themes:
+- ENVI
+datasets:
+- worldclim-climate-normals
+priority: P2
+effort: S
+status: active
+verified_at: '2026-11-21'
+notes: 1970-2000 monthly normals (tmin/tmax/tavg/prec/srad/wind/vapr) + 19 bioclim variables at 30 arc-sec. dc 'climate' explore
+  layer uses it.
+dc_refs:
+- climate

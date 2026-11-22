@@ -1,0 +1,29 @@
+id: eog-viirs
+publisher: Earth Observation Group, Payne Institute, Colorado School of Mines
+title: VIIRS Nighttime Lights (VNL v2) annual and monthly
+homepage: https://eogdata.mines.edu/products/vnl/
+access:
+  method: raster
+  endpoint: https://eogdata.mines.edu/nighttime_light/annual/v22/
+  auth: key
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Earth Observation Group, Payne Institute for Public Policy, Colorado School of Mines
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ECON
+- ENER
+datasets:
+- viirs-nightlights
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: Free EOG account token required for download.

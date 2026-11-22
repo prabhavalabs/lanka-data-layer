@@ -1,0 +1,41 @@
+id: cbsl-statistical-tables
+publisher: Central Bank of Sri Lanka
+title: CBSL statistical tables (external sector, fiscal sector)
+homepage: https://www.cbsl.gov.lk/en/statistics/statistical-tables
+access:
+  method: xlsx
+  endpoint: https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/table{n}_{yyyymmdd}_e.xlsx
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Central Bank of Sri Lanka, statistical tables
+cadence:
+  frequency: monthly
+  expected_lag_days: 30
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+- INTR
+datasets:
+- cbsl-merchandise-trade
+- cbsl-tourism-earnings
+- cbsl-workers-remittances
+- cbsl-fiscal-operations
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: File names are date-stamped; discover the latest link by scraping the table index page. CBSL site gives no explicit
+  reuse licence.
+dc_refs:
+- merchandise-trade-monthly
+- merchandise-trade-category-annual
+- tourism-earnings-monthly
+- workers-remittances-monthly
+- government-fiscal-operations-annual
+- government-revenue-annual
+- central-government-debt-annual

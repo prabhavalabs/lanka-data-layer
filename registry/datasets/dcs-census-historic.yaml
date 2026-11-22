@@ -1,0 +1,49 @@
+id: dcs-census-historic
+title: Census 1971 and 2001 summary tables
+description: Population by DS/district and ethnicity for 1971 and 2001, re-based to current units where possible.
+source_ids:
+- nuuuwan-lk-census-2001
+- nuuuwan-lk-census-1971
+indicators:
+- id: census_hist.pop_total
+  label: Population (historic census)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - census_year
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: census_hist.pop_by_ethnicity
+  label: Population by ethnicity (historic census)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - census_year
+  - ethnicity
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '1971'
+  to: '2001'
+method: Repo TSVs re-based via admin-region-history.
+limits:
+- 2001 census did not enumerate fully in Northern and Eastern provinces.
+- Re-basing to current units is approximate.
+enrichment:
+  joins:
+  - admin-region-history effective-dated crosswalk
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

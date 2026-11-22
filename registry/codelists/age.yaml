@@ -1,0 +1,58 @@
+# Age (shared master: single, 5-year and broad bands)
+# Source/authority: SDMX global codelist CL_AGE (SDMX Global Registry); band choice covers DCS census A5/GN tables, DCS LFS, ILOSTAT (ILO harmonised bands), UN WPP and WorldPop 5-year groups.
+# Note: Bands overlap by design (5-year, broad and survey-specific bands live in one list, as in CL_AGE); no code has a parent because overlapping bands do not form one additive hierarchy - an indicator must use one non-overlapping partition per release.
+# Note: Census 2024 A5 tables keep using the existing `age_group` codelist (0-14, 15-59, 60-64, 65+); every one of those bands also exists here.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-gnd, ilostat-lka
+id: age
+title: "Age (shared master: single, 5-year and broad bands)"
+sdmx_ref: "SDMX:CL_AGE(1.0)"
+codes:
+  - { code: total, label: All ages, total: true, sdmx: _T }
+  - { code: "0", label: Under 1 year, sdmx: Y_LT1 }
+  - { code: "1-4", label: "1-4 years", sdmx: Y1T4 }
+  - { code: "0-4", label: "0-4 years", sdmx: Y0T4 }
+  - { code: "5-9", label: "5-9 years", sdmx: Y5T9 }
+  - { code: "10-14", label: "10-14 years", sdmx: Y10T14 }
+  - { code: "15-19", label: "15-19 years", sdmx: Y15T19 }
+  - { code: "20-24", label: "20-24 years", sdmx: Y20T24 }
+  - { code: "25-29", label: "25-29 years", sdmx: Y25T29 }
+  - { code: "30-34", label: "30-34 years", sdmx: Y30T34 }
+  - { code: "35-39", label: "35-39 years", sdmx: Y35T39 }
+  - { code: "40-44", label: "40-44 years", sdmx: Y40T44 }
+  - { code: "45-49", label: "45-49 years", sdmx: Y45T49 }
+  - { code: "50-54", label: "50-54 years", sdmx: Y50T54 }
+  - { code: "55-59", label: "55-59 years", sdmx: Y55T59 }
+  - { code: "60-64", label: "60-64 years", sdmx: Y60T64 }
+  - { code: "65-69", label: "65-69 years", sdmx: Y65T69 }
+  - { code: "70-74", label: "70-74 years", sdmx: Y70T74 }
+  - { code: "75-79", label: "75-79 years", sdmx: Y75T79 }
+  - { code: "80-84", label: "80-84 years", sdmx: Y80T84 }
+  - { code: "85-89", label: "85-89 years", sdmx: Y85T89 }
+  - { code: "90-94", label: "90-94 years", sdmx: Y90T94 }
+  - { code: "95-99", label: "95-99 years", sdmx: Y95T99 }
+  - { code: "80+", label: "80 years and over", sdmx: Y_GE80 }
+  - { code: "85+", label: "85 years and over", sdmx: Y_GE85 }
+  - { code: "90+", label: "90 years and over", sdmx: Y_GE90 }
+  - { code: "100+", label: "100 years and over", sdmx: Y_GE100 }
+  - { code: "0-14", label: Under 15 years, sdmx: Y_LT15 }
+  - { code: "0-17", label: Under 18 years, sdmx: Y_LT18 }
+  - { code: "15+", label: "15 years and over", sdmx: Y_GE15 }
+  - { code: "18+", label: "18 years and over", sdmx: Y_GE18 }
+  - { code: "15-24", label: "15-24 years", sdmx: Y15T24 }
+  - { code: "15-49", label: "15-49 years", sdmx: Y15T49 }
+  - { code: "15-59", label: "15-59 years", sdmx: Y15T59 }
+  - { code: "15-64", label: "15-64 years", sdmx: Y15T64 }
+  - { code: "25+", label: "25 years and over", sdmx: Y_GE25 }
+  - { code: "25-34", label: "25-34 years", sdmx: Y25T34 }
+  - { code: "25-54", label: "25-54 years", sdmx: Y25T54 }
+  - { code: "30-39", label: "30-39 years", sdmx: Y30T39 }
+  - { code: "35-44", label: "35-44 years", sdmx: Y35T44 }
+  - { code: "40-49", label: "40-49 years", sdmx: Y40T49 }
+  - { code: "45-54", label: "45-54 years", sdmx: Y45T54 }
+  - { code: "50+", label: "50 years and over", sdmx: Y_GE50 }
+  - { code: "55-64", label: "55-64 years", sdmx: Y55T64 }
+  - { code: "60+", label: "60 years and over", sdmx: Y_GE60 }
+  - { code: "65+", label: "65 years and over", sdmx: Y_GE65 }

@@ -1,0 +1,30 @@
+id: searoute-shipping-lanes
+title: Indicative shipping lanes to Sri Lankan ports
+description: Generated shortest sea routes from Sri Lankan ports to major world ports.
+source_ids:
+- eurostat-searoute
+indicators:
+- id: tran.sea_route_km
+  label: Sea route distance
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: origin
+    codelist: port
+  - id: destination
+    codelist: world_port
+  geo_levels:
+  - line
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Run searoute network for port pairs.
+limits:
+- Modelled routes, not AIS traffic.
+enrichment:
+  joins:
+  - port points
+kind: features
+publication_class: A

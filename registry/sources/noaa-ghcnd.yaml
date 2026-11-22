@@ -1,0 +1,28 @@
+id: noaa-ghcnd
+publisher: NOAA National Centers for Environmental Information
+title: GHCN-Daily station records
+homepage: https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-daily
+access:
+  method: csv
+  endpoint: https://www.ncei.noaa.gov/pub/data/ghcn/daily/
+  auth: none
+licence:
+  id: public-domain
+  status: open
+  attribution: NOAA NCEI GHCN-Daily
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+datasets:
+- ghcnd-stations
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- weather-station-observations

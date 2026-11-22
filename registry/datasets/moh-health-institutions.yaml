@@ -1,0 +1,37 @@
+id: moh-health-institutions
+title: Government health institution registry (geocoded)
+description: List of government hospitals by type (NH, TH, DGH, BH, DH, PMCU) with beds; geocoded and matched to OSM/healthsites.
+source_ids:
+- moh-health
+- osm-geofabrik
+- healthsites
+indicators:
+- id: heal.gov_institutions
+  label: Government health institutions
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: institution_type
+    codelist: hospital_type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2023'
+method: Extract institution list; geocode by name+district; conflate with OSM points; manual review.
+limits:
+- Private sector excluded; geocodes reviewed but imperfect.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - destinations for derived-travel-time-facilities (by hospital tier)
+publication_class: C

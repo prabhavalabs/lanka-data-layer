@@ -1,0 +1,18 @@
+# Toilet facility
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing - type of toilet facility used by the household.
+# Note: Census also cross-classifies exclusive vs shared use; add a separate dimension if released.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-basic-services
+id: toilet_type
+title: Toilet facility
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: water_seal_sewer, label: "Water seal, connected to piped sewer", parent: total }
+  - { code: water_seal_septic, label: "Water seal, connected to septic tank / pit", parent: total }
+  - { code: pour_flush, label: Pour flush (not water seal), parent: total }
+  - { code: direct_pit, label: Direct pit, parent: total }
+  - { code: other, label: Other, parent: total }
+  - { code: none, label: Not using a toilet, parent: total }

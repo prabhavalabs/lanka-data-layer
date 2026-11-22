@@ -1,0 +1,54 @@
+id: derived-per-capita-indicators
+title: Per-capita and density versions of count indicators
+description: Systematic per-capita, per-100k and per-km2 versions of every count indicator using matched-year denominators.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: derived.per_capita
+  label: Per-capita value of a count indicator
+  unit: '/{person}'
+  measure_type: rate
+  aggregation: none
+  class: derived
+  dims:
+  - source_indicator
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: derived.per_km2
+  label: Density of a count indicator
+  unit: '/km2'
+  measure_type: rate
+  aggregation: none
+  class: derived
+  dims:
+  - source_indicator
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '2026'
+method: Engine-generated; denominators chosen by level and year.
+limits:
+- Mismatch between numerator and denominator vintages flagged.
+enrichment:
+  derived_from:
+  - derived-zonal-population
+  - dcs-midyear-population-district
+  - cod-ab-lka-boundaries
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - density per km2 using ADM area from cod-ab-lka-boundaries
+publication_class: A

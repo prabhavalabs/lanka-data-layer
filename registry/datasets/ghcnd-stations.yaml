@@ -1,0 +1,41 @@
+id: ghcnd-stations
+title: Daily station weather records (GHCN-D)
+description: Long-run daily rainfall and temperature at Sri Lankan synoptic stations (CE* ids).
+source_ids:
+- noaa-ghcnd
+indicators:
+- id: wx.station_prcp
+  label: Daily station precipitation
+  unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: day
+- id: wx.station_tmax
+  label: Daily max temperature
+  unit: Cel
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  dims:
+  - station
+  geo_levels:
+  - point
+  period_type: day
+time_coverage:
+  from: 1869-01
+  to: 2026-11
+method: by_station CSVs for country code CE.
+limits:
+- Gaps; few stations reported internationally.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - validation of chirps and era5
+kind: features
+publication_class: A

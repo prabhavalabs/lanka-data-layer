@@ -1,0 +1,37 @@
+# Natural hazard type (EM-DAT families, GLIDE codes)
+# Source/authority: CRED EM-DAT classification of natural hazards (geophysical, hydrological, meteorological, climatological, biological); GLIDE hazard codes (glidenumber.net).
+# Source/authority: Covers ThinkHazard! (11 hazards), DesInventar Sri Lanka and DMC situation-report event types.
+# Note: ThinkHazard 'water scarcity' maps to drought; 'river flood', 'urban flood', 'coastal flood' map to the flood children.
+# Note: EM-DAT places landslide (wet mass movement) under hydrological; dry mass movement would be geophysical.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-social-services, derived-multi-hazard-exposure, desinventar-losses, dmc-situation-report-impacts, emdat-lka, gdacs-alerts, idmc-displacements, thinkhazard-levels
+id: hazard
+title: "Natural hazard type (EM-DAT families, GLIDE codes)"
+codes:
+  - { code: total, label: All hazards, total: true, sdmx: _T }
+  - { code: geophysical, label: Geophysical, parent: total }
+  - { code: hydrological, label: Hydrological, parent: total }
+  - { code: meteorological, label: Meteorological, parent: total }
+  - { code: climatological, label: Climatological, parent: total }
+  - { code: biological, label: Biological, parent: total }
+  - { code: other, label: Other / unspecified, parent: total }
+  - { code: earthquake, label: Earthquake (GLIDE EQ), parent: geophysical }
+  - { code: tsunami, label: Tsunami (GLIDE TS), parent: geophysical }
+  - { code: volcano, label: Volcanic activity (GLIDE VO), parent: geophysical }
+  - { code: flood, label: Flood (GLIDE FL), parent: hydrological }
+  - { code: river_flood, label: River flood, parent: flood }
+  - { code: flash_flood, label: Flash flood (GLIDE FF), parent: flood }
+  - { code: urban_flood, label: Urban flood, parent: flood }
+  - { code: coastal_flood, label: Coastal flood / storm surge (GLIDE SS), parent: flood }
+  - { code: landslide, label: Landslide / mass movement (GLIDE LS), parent: hydrological }
+  - { code: coastal_erosion, label: Coastal erosion, parent: hydrological }
+  - { code: cyclone, label: Tropical cyclone (GLIDE TC), parent: meteorological }
+  - { code: storm, label: Severe local storm / high wind (GLIDE ST), parent: meteorological }
+  - { code: lightning, label: Lightning, parent: meteorological }
+  - { code: extreme_heat, label: Extreme heat / heat wave (GLIDE HT), parent: meteorological }
+  - { code: drought, label: Drought / water scarcity (GLIDE DR), parent: climatological }
+  - { code: wildfire, label: Wildfire (GLIDE WF), parent: climatological }
+  - { code: epidemic, label: Epidemic (GLIDE EP), parent: biological }
+  - { code: animal_attack, label: Wild animal attack (e.g. elephant), parent: biological }

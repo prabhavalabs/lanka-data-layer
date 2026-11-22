@@ -1,0 +1,28 @@
+id: geonames-postal-codes
+title: Postal codes
+description: Sri Lankan postal codes with place names and approximate points; areas derived by nearest-code assignment.
+source_ids:
+- geonames
+indicators:
+- id: postal.code_count
+  label: Postal codes per unit
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Parse LK.zip postal dump; re-geocode points to same-named admin units; Voronoi within district.
+limits:
+- Not an official delivery-zone map; GeoNames postal coordinates are often imprecise.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - codes per DS/district
+publication_class: A

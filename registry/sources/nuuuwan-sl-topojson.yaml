@@ -1,0 +1,29 @@
+id: nuuuwan-sl-topojson
+publisher: Nuwan Senaratna (nuuuwan) - data from Survey Department / Election Commission
+title: 'sl-topojson: electoral and admin TopoJSON'
+homepage: https://github.com/nuuuwan/sl-topojson
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/sl-topojson
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Survey Department of Sri Lanka; Election Commission. Parsed/scraped by Nuwan Senaratna (nuuuwan), code
+    MIT.'
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - adm2
+  - polygon
+  join: spatial
+themes:
+- GOVE
+- REGI
+datasets:
+- electoral-boundaries
+priority: P0
+effort: S
+status: active
+verified_at: '2026-11-21'

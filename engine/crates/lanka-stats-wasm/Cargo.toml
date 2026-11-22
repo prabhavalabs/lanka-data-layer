@@ -1,0 +1,21 @@
+[package]
+name = "lanka-stats-wasm"
+description = "lanka-stats for the browser: a C-ABI WebAssembly module (no wasm-bindgen) over the same kernels"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+lanka-stats.workspace = true
+
+[dev-dependencies]
+# correctly rounded parsing: fixture inputs must reach the kernels bit-exact
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+
+[lints]
+workspace = true

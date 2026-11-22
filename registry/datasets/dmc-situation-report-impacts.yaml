@@ -1,0 +1,86 @@
+id: dmc-situation-report-impacts
+title: Disaster impacts from DMC situation reports
+description: Persons/families affected, deaths, injured, missing, houses damaged, safe-centre populations by DS division and
+  event.
+source_ids:
+- nuuuwan-lk-dmc
+- dmc
+- dcs-pocketbook
+indicators:
+- id: dis.affected_persons
+  label: Persons affected
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - hazard
+  - id: event
+    codelist: disaster_event
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: day
+- id: dis.deaths
+  label: Deaths
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - hazard
+  - id: event
+    codelist: disaster_event
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: day
+- id: dis.houses_damaged
+  label: Houses damaged
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - damage_level
+  - id: event
+    codelist: disaster_event
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: day
+- id: dis.displaced_in_safe_centres
+  label: Persons in safe centres
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: event
+    codelist: disaster_event
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: day
+time_coverage:
+  from: 2015-01
+  to: 2026-11
+method: LLM-assisted table extraction from PDF sitreps (cumulative per event), DS names crosswalked; human sign-off per event.
+limits:
+- Sitreps are cumulative and revised; we keep the final report per event.
+- Damage counts are preliminary assessments.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - 'derive: event footprint vs modelled flood/landslide exposure'
+publication_class: C

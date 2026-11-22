@@ -1,0 +1,23 @@
+# HydroBASINS level
+# Source/authority: Lehner & Grill (2013), HydroSHEDS HydroBASINS v1c, nested levels 1-12.
+# Note: Nested levels: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: hydrosheds-rivers-basins
+id: basin_level
+title: HydroBASINS level
+codes:
+  - { code: lev01, label: Pfafstetter level 1 }
+  - { code: lev02, label: Pfafstetter level 2 }
+  - { code: lev03, label: Pfafstetter level 3 }
+  - { code: lev04, label: Pfafstetter level 4 }
+  - { code: lev05, label: Pfafstetter level 5 }
+  - { code: lev06, label: Pfafstetter level 6 }
+  - { code: lev07, label: Pfafstetter level 7 }
+  - { code: lev08, label: Pfafstetter level 8 }
+  - { code: lev09, label: Pfafstetter level 9 }
+  - { code: lev10, label: Pfafstetter level 10 }
+  - { code: lev11, label: Pfafstetter level 11 }
+  - { code: lev12, label: Pfafstetter level 12 }

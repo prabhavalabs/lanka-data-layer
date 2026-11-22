@@ -1,0 +1,38 @@
+id: derived-electoral-demographics
+title: Election results joined to demographics
+description: Polling-division vote shares joined to census demographics, poverty and access indicators via population-weighted
+  PD-GN allocation.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: elec.pd_profile
+  label: Polling division demographic profile
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: derived
+  dims:
+  - id: indicator
+    codelist: source_indicator
+  geo_levels:
+  - polygon
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: PD x GN allocation weights from population grid; aggregate GN attributes to PD.
+limits:
+- Ecological correlations only; no individual inference.
+enrichment:
+  derived_from:
+  - ec-presidential-results
+  - ec-parliamentary-results
+  - electoral-boundaries
+  - dcs-census-2024-gnd
+  - derived-zonal-population
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - PD -> ED
+kind: features
+publication_class: A

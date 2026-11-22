@@ -1,0 +1,52 @@
+id: osm-waterways-waterbodies
+title: Rivers, canals, tanks and reservoirs (OSM)
+description: Waterways and water bodies incl. ancient irrigation tanks.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: env.osm_waterway_km
+  label: Waterway length
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: type
+    codelist: waterway_type
+  geo_levels:
+  - line
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: env.osm_tank_count
+  label: Tanks/reservoirs
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: waterway=*, natural=water, water=reservoir filters.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+enrichment:
+  joins:
+  - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+publication_class: A
+kind: features
+tiles:
+  minzoom: 6
+  maxzoom: 14
+  drop_densest: true
+  minzoom_by_kind: {river: 7, reservoir: 6, lake: 6, lagoon: 6, river_area: 8, canal: 9, stream: 11}

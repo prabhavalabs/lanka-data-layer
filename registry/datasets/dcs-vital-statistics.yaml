@@ -1,0 +1,72 @@
+id: dcs-vital-statistics
+title: Births, deaths, marriages (vital registration)
+description: Registered live births, deaths, infant deaths, marriages and crude rates, national and by district.
+source_ids:
+- dcs-population-vital
+- dcs-pocketbook
+indicators:
+- id: vital.births
+  label: Registered live births
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: vital.deaths
+  label: Registered deaths
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: vital.infant_deaths
+  label: Infant deaths
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: vital.crude_birth_rate
+  label: Crude birth rate
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: vital.marriages
+  label: Registered marriages
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2000'
+  to: '2025'
+method: Pocket Book + Abstract + Vital Statistics reports.
+limits:
+- Registration by place of occurrence, not residence (hospital districts inflated).
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: B

@@ -1,0 +1,32 @@
+# Notifiable disease (Epidemiology Unit)
+# Source/authority: Epidemiology Unit, Ministry of Health - Weekly Epidemiological Report (WER) notifiable disease table; Notifiable Diseases list (Quarantine and Prevention of Diseases Ordinance). ICD-10 codes indicative.
+# Note: Confirm the WER column set for each year (diseases are added to the notification list over time).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: epid-notifiable-diseases
+id: disease
+title: Notifiable disease (Epidemiology Unit)
+codes:
+  - { code: total, label: All notifiable diseases, total: true, sdmx: _T }
+  - { code: dengue, label: Dengue fever / DHF (A90-A91), parent: total }
+  - { code: dysentery, label: "Dysentery (A03, A06)", parent: total }
+  - { code: encephalitis, label: Encephalitis (A83-A86), parent: total }
+  - { code: enteric_fever, label: Enteric fever (A01), parent: total }
+  - { code: food_poisoning, label: Food poisoning (A05), parent: total }
+  - { code: leptospirosis, label: Leptospirosis (A27), parent: total }
+  - { code: typhus, label: Typhus fever (A75), parent: total }
+  - { code: viral_hepatitis, label: Viral hepatitis (B15-B19), parent: total }
+  - { code: human_rabies, label: Human rabies (A82), parent: total }
+  - { code: chickenpox, label: Chickenpox (B01), parent: total }
+  - { code: meningitis, label: Meningitis (G00-G03), parent: total }
+  - { code: mumps, label: Mumps (B26), parent: total }
+  - { code: leishmaniasis, label: Leishmaniasis (B55), parent: total }
+  - { code: measles, label: Measles (B05), parent: total }
+  - { code: rubella, label: Rubella (B06), parent: total }
+  - { code: whooping_cough, label: Whooping cough (A37), parent: total }
+  - { code: tetanus, label: Tetanus (A33-A35), parent: total }
+  - { code: tuberculosis, label: Tuberculosis (A15-A19), parent: total }
+  - { code: malaria, label: Malaria (B50-B54), parent: total }
+  - { code: other, label: Other notifiable diseases, parent: total }

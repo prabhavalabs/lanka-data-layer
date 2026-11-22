@@ -1,0 +1,48 @@
+id: dcs-statistical-abstract
+publisher: Department of Census and Statistics, Sri Lanka
+title: Statistical Abstract (chapter tables)
+homepage: https://www.statistics.gov.lk/Publication/Statistical-Abstract
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/abstract{year}/CHAP{n}/{table}.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Statistical Abstract
+cadence:
+  frequency: annual
+  expected_lag_days: 300
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - polygon
+  join: name_match
+themes:
+- ECON
+- SOCI
+- GOVE
+- TRAN
+datasets:
+- dcs-lfs-annual-subnational
+- dcs-building-construction
+- dcs-local-government-finance
+- dcs-abstract-transport
+- dcs-abstract-education-health
+- dcs-abstract-justice
+- police-road-accidents
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: One PDF per table; URL pattern stable year to year (abstract2025/CHAP7/7.3.pdf).
+dc_refs:
+- building-construction-district
+- local-government-revenue
+- local-government-expenditure
+- national-road-length
+- new-vehicle-registrations-annual
+- port-traffic-cargo
+- colombo-port-performance

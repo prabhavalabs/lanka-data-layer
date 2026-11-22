@@ -1,0 +1,513 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadatalayer.org/spec/analysis/1/result.schema.json",
+  "title": "ldl-analysis-result/1 — Lanka Data Layer analysis result",
+  "description": "Immutable, fingerprinted result of an analysis request (11 §5.2). Clients MUST render warn and block guards next to any number, chart or layer from the result. A blocked result has no estimates and no outputs. Under SMALL_N, p-values are absent (not hidden). Licence: CC BY 4.0.",
+  "type": "object",
+  "required": [
+    "spec",
+    "id",
+    "state",
+    "method",
+    "request",
+    "inputs",
+    "alignment",
+    "n",
+    "estimates",
+    "guards",
+    "interpretation",
+    "outputs",
+    "basis",
+    "licence",
+    "attribution",
+    "provenance",
+    "citation"
+  ],
+  "properties": {
+    "spec": {
+      "const": "ldl-analysis-result/1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^an_[0-9a-f]{16}$"
+    },
+    "state": {
+      "enum": [
+        "queued",
+        "running",
+        "ready",
+        "failed",
+        "blocked"
+      ]
+    },
+    "retry_after_s": {
+      "type": "integer"
+    },
+    "method": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "citations"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "describe",
+            "relate",
+            "regress",
+            "group_compare",
+            "exposure",
+            "zonal",
+            "classify",
+            "autocorr",
+            "local_clusters",
+            "hotspots",
+            "spatial_regress",
+            "change",
+            "composite",
+            "interpolate",
+            "isochrone",
+            "gwr",
+            "isochrone_network"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Implementation revision of the method (enters the fingerprint, 11 §9)."
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "request": {
+      "$ref": "request.schema.json"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "dataset",
+          "dsv",
+          "class",
+          "licence",
+          "visibility"
+        ],
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "dataset": {
+            "type": "string"
+          },
+          "dsv": {
+            "type": "string"
+          },
+          "indicator": {
+            "type": "string"
+          },
+          "grid": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "period": {
+            "type": "string"
+          },
+          "class": {
+            "type": "string"
+          },
+          "licence": {
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "synthetic": {
+            "type": "boolean"
+          },
+          "time_invariant": {
+            "type": "boolean",
+            "description": "Terrain, static hazard map or climate normal: its period gap warns, never blocks (PERIOD_MISMATCH)."
+          }
+        }
+      }
+    },
+    "alignment": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/alignment"
+      }
+    },
+    "n": {
+      "type": "object",
+      "required": [
+        "used",
+        "dropped"
+      ],
+      "properties": {
+        "units": {
+          "type": "integer"
+        },
+        "points": {
+          "type": "integer"
+        },
+        "used": {
+          "type": "integer"
+        },
+        "dropped": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "estimates": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "guards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/guard"
+      }
+    },
+    "interpretation": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "summary",
+            "caveats"
+          ],
+          "properties": {
+            "summary": {
+              "type": "string"
+            },
+            "caveats": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "href"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "frame",
+              "grid",
+              "features",
+              "chart"
+            ]
+          },
+          "href": {
+            "type": "string"
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "encoding": {
+            "type": "string"
+          },
+          "suggested_layer": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "basis": {
+      "enum": [
+        "reported",
+        "computed",
+        "estimated",
+        "forecast"
+      ]
+    },
+    "licence": {
+      "type": "object",
+      "required": [
+        "id",
+        "redistribution"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "redistribution": {
+          "enum": [
+            "bulk",
+            "api",
+            "link",
+            "internal"
+          ]
+        }
+      }
+    },
+    "attribution": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "fingerprint",
+        "seed",
+        "engine",
+        "git_rev",
+        "data_version",
+        "computed_at",
+        "elapsed_ms"
+      ],
+      "properties": {
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "seed": {
+          "description": "The permutation/bootstrap seed (the first 8 bytes of the fingerprint, big-endian) as the decimal digits of an unsigned 64-bit integer; a string because most seeds exceed 2^53, the largest integer a JSON number keeps exactly in JavaScript.",
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,19})$"
+        },
+        "engine": {
+          "type": "string"
+        },
+        "git_rev": {
+          "type": "string"
+        },
+        "data_version": {
+          "type": "string"
+        },
+        "computed_at": {
+          "type": "string"
+        },
+        "elapsed_ms": {
+          "type": "integer"
+        },
+        "stats": {
+          "type": "string"
+        },
+        "engine_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Revision of the shared pipeline: alignment, guards, presentation (enters the fingerprint, 11 §9)."
+        }
+      }
+    },
+    "citation": {
+      "type": "object",
+      "required": [
+        "text",
+        "url"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "blocked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "estimates": {
+            "const": null
+          },
+          "outputs": {
+            "maxItems": 0
+          },
+          "guards": {
+            "contains": {
+              "properties": {
+                "severity": {
+                  "const": "block"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "guard": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "NOT_CAUSAL",
+            "MIN_N",
+            "SMALL_N",
+            "MAUP",
+            "MAUP_UNSTABLE",
+            "ECOLOGICAL",
+            "RESIDUAL_AUTOCORR",
+            "SIZE_CONFOUND",
+            "SHARED_LINEAGE",
+            "ESTIMATED_INPUT",
+            "MODEL_ON_MODEL",
+            "INPUT_UNCERTAINTY_IGNORED",
+            "PERIOD_MISMATCH",
+            "LOW_COVERAGE",
+            "PSEUDO_REPLICATION",
+            "DISAGGREGATED_INPUT",
+            "INTERP_SOCIO",
+            "OUTLIER_LEVERAGE",
+            "NO_CONTROLS",
+            "MULTICOLLINEAR",
+            "MULTIPLE_TESTING",
+            "SUPPRESSED_CELLS",
+            "SYNTHETIC_INPUT",
+            "COMMUNITY_INPUT",
+            "EXPLORATORY"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "note",
+            "warn",
+            "block"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "detail": {
+          "type": "object"
+        },
+        "action": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "method": {
+              "type": "string"
+            },
+            "support": {
+              "type": "string"
+            },
+            "request": {
+              "type": "object"
+            }
+          }
+        },
+        "overridden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "alignment": {
+      "type": "object",
+      "required": [
+        "role",
+        "from",
+        "to",
+        "method",
+        "coverage"
+      ],
+      "properties": {
+        "role": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object"
+        },
+        "coverage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "quality": {
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ]
+        },
+        "dropped": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "period": {
+          "type": "string"
+        }
+      }
+    },
+    "interval": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    }
+  }
+}

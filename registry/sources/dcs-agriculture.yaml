@@ -1,0 +1,37 @@
+id: dcs-agriculture
+publisher: Department of Census and Statistics, Sri Lanka
+title: Agriculture statistics (paddy, OFC, production index)
+homepage: https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics
+access:
+  method: html
+  endpoint: https://www.statistics.gov.lk/Agriculture/StaticalInformation/PaddyStatistics
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Agriculture and Environment Statistics Division
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm2
+  join: name_match
+themes:
+- AGRI
+datasets:
+- dcs-paddy-statistics
+- dcs-agri-production-index
+- dcs-other-field-crops
+- dcs-census-of-agriculture
+priority: P0
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Twice-yearly (Maha, Yala) season releases; HTML tables 1979-2025 by district.
+dc_refs:
+- paddy-sown-area-history
+- paddy-harvested-area-history
+- paddy-production-history
+- paddy-yield-history
+- agricultural-production-index

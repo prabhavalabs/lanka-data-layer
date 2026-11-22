@@ -1,0 +1,36 @@
+id: worldbank-wdi
+publisher: World Bank
+title: World Development Indicators API
+homepage: https://data.worldbank.org/country/sri-lanka
+access:
+  method: api
+  endpoint: https://api.worldbank.org/v2/country/LKA/indicator/{indicator}?format=json&per_page=20000
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: World Bank, World Development Indicators
+cadence:
+  frequency: quarterly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+- SOCI
+- HEAL
+- EDUC
+- ENVI
+- ENER
+datasets:
+- wdi-lka
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'Open mirror of many national series (plan rule: ingest the open mirror as default, national original as second flagged
+  source). HDX topic mirrors exist (world-bank-*-indicators-for-sri-lanka). data.worldbank.org returns 403 to scripted clients;
+  the API (api.worldbank.org/v2) answers 200. Verification 2026-11-21: https://data.worldbank.org/country/sri-lanka -> HTTP
+  403 to scripted clients (bot protection). Other access point(s) reachable.'

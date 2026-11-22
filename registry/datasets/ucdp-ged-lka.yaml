@@ -1,0 +1,44 @@
+id: ucdp-ged-lka
+title: Conflict events 1989-present (UCDP GED)
+description: Georeferenced organised-violence events with fatality estimates, incl. the civil war period.
+source_ids:
+- ucdp
+indicators:
+- id: conf.events
+  label: Organised violence events
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - violence_type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  period_type: year
+- id: conf.fatalities_best
+  label: Fatalities (best estimate)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  period_type: year
+time_coverage:
+  from: '1989'
+  to: '2024'
+method: HDX CSV; points with precision code.
+limits:
+- Geo-precision varies (precision 4+ only to district).
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - events per district per decade
+publication_class: A

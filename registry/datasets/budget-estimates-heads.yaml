@@ -1,0 +1,45 @@
+id: budget-estimates-heads
+title: Budget estimates by ministry head and programme
+description: Approved recurrent and capital expenditure by expenditure head, programme and object code.
+source_ids:
+- treasury-budget-estimates
+indicators:
+- id: budget.allocation
+  label: Budget allocation
+  unit: LKR
+  unit_mult: 3
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - head
+  - programme
+  - object_code
+  geo_levels:
+  - national
+  period_type: year
+- id: budget.actual_prev_year
+  label: Actual expenditure (t-2)
+  unit: LKR
+  unit_mult: 3
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - head
+  - programme
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2018'
+  to: '2026'
+method: PDF table extraction; totals reconciled to Appropriation Act.
+limits:
+- Allocations, not spending; supplementary estimates excluded.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - head -> ministry -> total
+publication_class: B

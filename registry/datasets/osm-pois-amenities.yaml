@@ -1,0 +1,63 @@
+id: osm-pois-amenities
+title: Facilities and amenities (OSM)
+description: Hospitals, clinics, pharmacies, schools, universities, banks, ATMs, police, post offices, fuel, places of worship,
+  markets, government offices.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: fac.osm_count
+  label: Facilities by type
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - amenity_type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: fac.osm_per_10k
+  label: Facilities per 10,000 population
+  unit: '/10*4'
+  measure_type: rate
+  aggregation: none
+  class: third_party
+  dims:
+  - amenity_type
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: amenity/healthcare/shop/office filters to points (polygons -> centroids).
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+- Absence in OSM is not absence on the ground.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+  - destinations for derived-travel-time-facilities
+publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: category, type: string, label: Category, enum: [health, education, finance, public_service, transport, community]}
+- {name: operator, type: string, label: Operator}
+- {name: beds, type: integer, label: Beds, unit: '{count}', measure_type: count}
+- {name: healthcare, type: string, label: Healthcare type}
+- {name: iata, type: string, label: IATA code}
+- {name: icao, type: string, label: ICAO code}
+- {name: religion, type: string, label: Religion}
+tiles: {minzoom: 6, maxzoom: 14, attrs: [category, operator]}

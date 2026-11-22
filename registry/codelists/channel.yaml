@@ -1,0 +1,14 @@
+# Investment channel
+# Source/authority: Lanka Data Layer derived-investment-density method (inputs boi-enterprises, erd-foreign-financing / iati, budget-capital-projects).
+# Note: Channels overlap (aid-funded budget projects): no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-investment-density
+id: channel
+title: Investment channel
+codes:
+  - { code: boi, label: BOI enterprise investment / employment }
+  - { code: aid, label: Development partner commitments }
+  - { code: budget_capital, label: Budget capital projects }

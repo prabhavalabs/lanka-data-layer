@@ -1,0 +1,49 @@
+id: erd-foreign-financing
+title: Foreign financing commitments and disbursements
+description: Foreign loans and grants by development partner, sector and project, with commitments and disbursements.
+source_ids:
+- erd
+indicators:
+- id: aid.commitments
+  label: Foreign financing commitments
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: partner
+    codelist: development_partner
+  - id: sector
+    codelist: dac_sector
+  geo_levels:
+  - national
+  period_type: year
+- id: aid.disbursements
+  label: Foreign financing disbursements
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: partner
+    codelist: development_partner
+  - id: sector
+    codelist: dac_sector
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2010'
+  to: '2025'
+method: PDF annual performance reports.
+limits:
+- Project locations rarely specified.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: reconcile with iati-activities-lka and wb-projects-lka'
+publication_class: B

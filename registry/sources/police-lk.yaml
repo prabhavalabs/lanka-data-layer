@@ -1,0 +1,32 @@
+id: police-lk
+publisher: Sri Lanka Police
+title: Crime statistics
+homepage: https://www.police.lk/
+access:
+  method: pdf
+  endpoint: https://www.police.lk/?page_id=1050
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Sri Lanka Police
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - polygon
+  join: name_match
+themes:
+- JUST
+datasets:
+- dcs-abstract-justice
+- police-road-accidents
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Grave crime abstracts by police division; road accident statistics. nuuuwan/lk_police_press_releases archives press
+  releases.
+dc_refs:
+- road-crashes-fatalities

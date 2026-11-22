@@ -1,0 +1,58 @@
+id: cbsl-weekly-indicators
+title: Weekly economic indicators (rates, reserves, money)
+description: Policy rates, T-bill yields, AWPR, money supply, official reserves, CSE indices, selected prices.
+source_ids:
+- cbsl-economic-indicators
+indicators:
+- id: mon.policy_rate
+  label: Overnight policy rate
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  period_type: day
+- id: mon.tbill_yield
+  label: Treasury bill yield
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - tenor
+  geo_levels:
+  - national
+  period_type: day
+- id: mon.gross_official_reserves
+  label: Gross official reserves
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+- id: mon.broad_money
+  label: Broad money (M2b)
+  unit: LKR
+  unit_mult: 9
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2015-01
+  to: 2026-11
+method: Weekly PDF parsed (class B).
+limits:
+- Provisional; revised in later issues.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

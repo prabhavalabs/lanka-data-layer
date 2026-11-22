@@ -1,0 +1,13 @@
+# Tea elevation category
+# Source/authority: Sri Lanka Tea Board, monthly tea production statistics by elevation.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: tea-production-exports
+id: elevation
+title: Tea elevation category
+codes:
+  - { code: total, label: All elevations, total: true, sdmx: _T }
+  - { code: high_grown, label: "High grown (above 1,200 m)", parent: total }
+  - { code: medium_grown, label: "Medium grown (600-1,200 m)", parent: total }
+  - { code: low_grown, label: Low grown (below 600 m), parent: total }

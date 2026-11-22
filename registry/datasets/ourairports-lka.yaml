@@ -1,0 +1,31 @@
+id: ourairports-lka
+title: Airports and airstrips
+description: Airports, airstrips, heliports and seaplane bases with codes and runways.
+source_ids:
+- ourairports
+indicators:
+- id: air.airports
+  label: Airports and airfields
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: type
+    codelist: airport_type
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: CSV filter iso_country=LK.
+limits:
+- Includes disused/military strips.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  aggregations:
+  - travel time to nearest commercial airport
+publication_class: A

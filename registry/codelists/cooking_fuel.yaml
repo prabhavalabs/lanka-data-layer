@@ -1,0 +1,19 @@
+# Principal type of cooking fuel
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing - principal type of cooking fuel.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-basic-services
+id: cooking_fuel
+title: Principal type of cooking fuel
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: firewood, label: Firewood, parent: total }
+  - { code: lp_gas, label: LP gas, parent: total }
+  - { code: kerosene, label: Kerosene, parent: total }
+  - { code: electricity, label: Electricity, parent: total }
+  - { code: sawdust_paddy_husk, label: Sawdust / paddy husk, parent: total }
+  - { code: biogas, label: Biogas, parent: total }
+  - { code: none, label: Not cooking, parent: total }
+  - { code: other, label: Other, parent: total }

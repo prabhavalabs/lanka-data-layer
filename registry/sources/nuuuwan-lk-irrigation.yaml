@@ -1,0 +1,29 @@
+id: nuuuwan-lk-irrigation
+publisher: Nuwan Senaratna (nuuuwan) - data from Irrigation Department
+title: 'lk_irrigation: live river water levels'
+homepage: https://github.com/nuuuwan/lk_irrigation
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_irrigation
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Irrigation Department, Sri Lanka. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: realtime
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+datasets:
+- irrigation-river-water-levels
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 322k+ measurements from 39 gauging stations with alert/minor/major flood thresholds.
+dc_refs:
+- irrigation-gauges

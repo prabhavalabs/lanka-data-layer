@@ -1,0 +1,21 @@
+# Tourist attraction type
+# Source/authority: OpenStreetMap Key:tourism / historic / natural values (attraction, viewpoint, museum, beach, waterfall...); SLTDA destination categories.
+# Note: Shared by derived-attractions-register (`category`) and osm-tourism-attractions (`type`).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-attractions-register, osm-tourism-attractions
+id: attraction_type
+title: Tourist attraction type
+codes:
+  - { code: total, label: All attractions, total: true, sdmx: _T }
+  - { code: heritage, label: Heritage / archaeological site, parent: total }
+  - { code: religious, label: Religious site, parent: total }
+  - { code: museum, label: Museum, parent: total }
+  - { code: nature, label: Nature / wildlife, parent: total }
+  - { code: beach, label: Beach, parent: total }
+  - { code: viewpoint, label: Viewpoint, parent: total }
+  - { code: waterfall, label: Waterfall, parent: total }
+  - { code: park, label: Park / garden, parent: total }
+  - { code: theme_park, label: Theme park / zoo / aquarium, parent: total }
+  - { code: other, label: Other attraction, parent: total }

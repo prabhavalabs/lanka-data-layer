@@ -1,0 +1,27 @@
+id: osm-routing-graph
+title: Walk and drive routing graph (OSM)
+description: Routable network graph (walk, drive, two-wheeler) with speeds by class; input to all travel-time products.
+source_ids:
+- osm-geofabrik
+indicators:
+- id: tran.graph_edges
+  label: Routable edges
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - mode
+  geo_levels:
+  - national
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Build per-mode graph (OSRM/Valhalla-compatible) with Sri Lanka speed profile; snapshot monthly.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+- Speeds are assumed by road class, not observed traffic.
+enrichment:
+  joins:
+  - graph nodes on canonical grid
+publication_class: A

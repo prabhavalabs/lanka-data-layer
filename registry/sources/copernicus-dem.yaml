@@ -1,0 +1,29 @@
+id: copernicus-dem
+publisher: European Space Agency / Airbus (Copernicus)
+title: Copernicus DEM GLO-30
+homepage: https://registry.opendata.aws/copernicus-dem/
+access:
+  method: raster
+  endpoint: https://copernicus-dem-30m.s3.amazonaws.com/
+  auth: none
+licence:
+  id: copernicus-dem-licence
+  status: attribution
+  url: https://spacedata.copernicus.eu/documents/20123/121286/CSCDA_ESA_Mission-specific+Annex_31_Oct_22.pdf
+  attribution: Copernicus DEM (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018, provided under COPERNICUS
+    by the EU and ESA
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+- REGI
+datasets:
+- copernicus-dem-terrain
+priority: P0
+effort: S
+status: active
+verified_at: '2026-11-21'

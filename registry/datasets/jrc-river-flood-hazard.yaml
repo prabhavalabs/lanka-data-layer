@@ -1,0 +1,49 @@
+id: jrc-river-flood-hazard
+title: River flood depth by return period (JRC)
+description: Modelled inundation depth for 10, 20, 50, 100, 200, 500-year river floods at ~90 m.
+source_ids:
+- jrc-flood-hazard
+indicators:
+- id: haz.flood_depth
+  label: Flood depth
+  unit: m
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  dims:
+  - return_period
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+  time_invariant: true
+- id: haz.flood_area_share
+  label: Share of area flooded
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - return_period
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+  time_invariant: true
+time_coverage:
+  from: '2024'
+method: 'JRC/CEMS v2.1.2 GeoTIFF tiles per return period (3 arc-sec), resampled to the canonical grid (deepest pixel per cell; wet share per cell); area share = area-weighted mean wet share over cells inside the unit.'
+limits:
+- River (fluvial) only; no pluvial/coastal; no flood defences.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - input to derived-flood-exposure
+publication_class: A

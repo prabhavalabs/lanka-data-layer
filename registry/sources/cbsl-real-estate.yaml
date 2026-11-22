@@ -1,0 +1,32 @@
+id: cbsl-real-estate
+publisher: Central Bank of Sri Lanka
+title: Land Valuation Indicator and Condominium Market Survey
+homepage: https://www.cbsl.gov.lk/en/statistics/business-surveys/condominium-market-survey
+access:
+  method: html
+  endpoint: https://www.cbsl.gov.lk/en/statistics/business-surveys/condominium-market-survey
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Central Bank of Sri Lanka, land valuation indicator / condominium market survey
+cadence:
+  frequency: quarterly
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+datasets:
+- cbsl-land-valuation-indicator
+- cbsl-condominium-prices
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: LVI is semi-annual for Colombo district; no openly licensed land-price data exists at finer level (commercial portals
+  are proprietary).
+dc_refs:
+- colombo-land-valuation-indicator
+- colombo-asking-price-indices

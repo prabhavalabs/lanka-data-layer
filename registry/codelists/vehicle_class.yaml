@@ -1,0 +1,22 @@
+# Vehicle class (Department of Motor Traffic)
+# Source/authority: Department of Motor Traffic (DMT), new registration statistics by vehicle class; DCS Statistical Abstract table 'new registration of motor vehicles'.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport, dmt-vehicle-registrations
+id: vehicle_class
+title: Vehicle class (Department of Motor Traffic)
+codes:
+  - { code: total, label: All vehicles, total: true, sdmx: _T }
+  - { code: motor_car, label: Motor cars, parent: total }
+  - { code: motor_tricycle, label: Motor tricycles, parent: total }
+  - { code: motor_cycle, label: Motor cycles, parent: total }
+  - { code: bus, label: Buses, parent: total }
+  - { code: dual_purpose, label: Dual purpose vehicles, parent: total }
+  - { code: motor_lorry, label: Motor lorries, parent: total }
+  - { code: motor_home, label: Motor homes, parent: total }
+  - { code: quadricycle, label: Motor quadricycles, parent: total }
+  - { code: special_purpose, label: Special purpose vehicles, parent: total }
+  - { code: land_vehicle_tractor, label: Land vehicles - tractors, parent: total }
+  - { code: land_vehicle_trailer, label: Land vehicles - trailers, parent: total }
+  - { code: other, label: Other, parent: total }

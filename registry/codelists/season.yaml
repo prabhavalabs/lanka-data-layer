@@ -1,0 +1,13 @@
+# Cultivation season (Maha / Yala)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Paddy Statistics (Maha and Yala seasonal reports); Department of Agriculture cropping calendar.
+# Note: Maha season is labelled by its starting/ending years (e.g. Maha 2024/25); the period of an observation carries that, not this code.
+# Status: complete for the classification as cited.
+# Labels: si/ta are the standard season names; native-speaker sign-off still requested.
+# Order: codes are listed in display order.
+# Used by: dcs-other-field-crops, dcs-paddy-statistics, derived-agri-season-monitor, derived-rainfall-anomaly
+id: season
+title: Cultivation season (Maha / Yala)
+codes:
+  - { code: total, label: Both seasons (cultivation year), total: true, sdmx: _T }
+  - { code: maha, label: { en: Maha (September/October - March), si: "මහ", ta: "பெரும்போகம்" }, parent: total }
+  - { code: yala, label: { en: Yala (April - August/September), si: "යල", ta: "சிறுபோகம்" }, parent: total }

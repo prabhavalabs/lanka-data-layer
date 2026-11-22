@@ -1,0 +1,30 @@
+id: courthouses
+title: Courts and courthouses
+description: Courts by type (Supreme, Appeal, High, District, Magistrate, Primary, Labour tribunals) with location and judicial
+  zone.
+source_ids:
+- moj-courts
+- osm-geofabrik
+indicators:
+- id: just.courts
+  label: Courts
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - court_type
+  geo_levels:
+  - point
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: 2026
+method: MoJ/JSC court list joined to OSM amenity=courthouse by town name; unmatched geocoded to town centroid.
+limits:
+- Court list is not geocoded at source; co-located courts share one complex.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+publication_class: B

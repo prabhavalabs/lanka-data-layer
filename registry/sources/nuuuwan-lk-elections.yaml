@@ -1,0 +1,31 @@
+id: nuuuwan-lk-elections
+publisher: Nuwan Senaratna (nuuuwan) - data from Election Commission
+title: lk_elections / elections_lk
+homepage: https://github.com/nuuuwan/lk_elections
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_elections
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Election Commission of Sri Lanka. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm2
+  - polygon
+  join: pcode
+themes:
+- GOVE
+datasets:
+- ec-presidential-results
+- ec-parliamentary-results
+- ec-provincial-council-results
+priority: P0
+effort: S
+status: active
+verified_at: '2026-11-21'
+notes: Presidential 1982-2024 and parliamentary 1989-2024 by polling division (elections_lk library).

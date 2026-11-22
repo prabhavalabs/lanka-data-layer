@@ -1,0 +1,25 @@
+# Energy source / fuel
+# Source/authority: Sri Lanka Sustainable Energy Authority (SLSEA), Sri Lanka Energy Balance (primary supply by source); Ceylon Electricity Board Statistical Digest (generation by source); IRENA/IEA source groupings.
+# Note: Shared by slsea-energy-balance (fuel), ceb-statistical-digest (source), nso-electricity-generation (source), dcs-pocketbook-sector-services (source) and power-plants (technology).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ceb-statistical-digest, dcs-pocketbook-sector-services, nso-electricity-generation, power-plants, slsea-energy-balance
+id: energy_source
+title: Energy source / fuel
+codes:
+  - { code: total, label: All sources, total: true, sdmx: _T }
+  - { code: renewable, label: Renewable, parent: total }
+  - { code: fossil, label: Fossil, parent: total }
+  - { code: hydro, label: Hydro, parent: renewable }
+  - { code: major_hydro, label: Major hydro (CEB), parent: hydro }
+  - { code: mini_hydro, label: Mini / small hydro, parent: hydro }
+  - { code: wind, label: Wind, parent: renewable }
+  - { code: solar, label: Solar, parent: renewable }
+  - { code: biomass, label: "Biomass (incl. fuelwood, bagasse)", parent: renewable }
+  - { code: other_renewable, label: "Other renewable (e.g. waste-to-energy, dendro)", parent: renewable }
+  - { code: coal, label: Coal, parent: fossil }
+  - { code: petroleum, label: Petroleum (crude oil and products), parent: fossil }
+  - { code: fuel_oil, label: Fuel oil / diesel (thermal oil plants), parent: petroleum }
+  - { code: lng, label: Natural gas / LNG, parent: fossil }
+  - { code: other, label: Other, parent: total }

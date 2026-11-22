@@ -1,0 +1,27 @@
+id: usgs-earthquakes
+publisher: US Geological Survey
+title: USGS earthquake catalogue (FDSN)
+homepage: https://earthquake.usgs.gov/
+access:
+  method: api
+  endpoint: https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=0&maxlatitude=15&minlongitude=75&maxlongitude=90&minmagnitude=4
+  auth: none
+licence:
+  id: public-domain
+  status: open
+  attribution: USGS
+cadence:
+  frequency: realtime
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+datasets:
+- earthquakes-near-lka
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: nuuuwan/lk_tsunamis monitors quakes near Sri Lanka.

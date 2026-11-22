@@ -1,0 +1,31 @@
+id: meteo
+publisher: Department of Meteorology, Sri Lanka
+title: Met Department observations, forecasts and climate data
+homepage: https://www.meteo.gov.lk/
+access:
+  method: html
+  endpoint: https://www.meteo.gov.lk/
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Meteorology
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+datasets:
+- meteo-daily-station-weather
+- meteo-climate-normals
+priority: P1
+effort: M
+status: planned
+notes: 'Daily rainfall table and 3-hourly synoptic reports (scraped by nuuuwan/weather_lk and nuuuwan/lk_weather_3h). Historical
+  archives sold on request. Verification 2026-11-21: https://www.meteo.gov.lk/ -> connection timed out (no response; .gov.lk
+  hosts often drop non-Sri-Lankan traffic - re-verify from an LK vantage point).'
+dc_refs:
+- weather-station-observations

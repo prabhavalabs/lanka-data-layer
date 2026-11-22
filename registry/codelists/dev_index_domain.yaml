@@ -1,0 +1,18 @@
+# Development index domain
+# Source/authority: Lanka Data Layer derived-development-index method.
+# Note: Sub-indices: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-development-index
+id: dev_index_domain
+title: Development index domain
+codes:
+  - { code: education, label: Education }
+  - { code: health_access, label: Health access }
+  - { code: basic_services, label: Basic services }
+  - { code: housing, label: Housing quality }
+  - { code: connectivity, label: Connectivity }
+  - { code: nightlights, label: Night-time lights }
+  - { code: poverty, label: Poverty }

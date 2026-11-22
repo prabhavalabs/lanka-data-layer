@@ -1,0 +1,29 @@
+id: cbsl-tourism-earnings
+title: Earnings from tourism
+description: Monthly tourism earnings in USD and LKR.
+source_ids:
+- cbsl-statistical-tables
+indicators:
+- id: tour.earnings_usd
+  label: Tourism earnings
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2009-01
+  to: 2026-09
+method: Sheet 2.14.1.
+limits:
+- Estimated from arrivals x average spend survey.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'cross-source: earnings per arrival with sltda-tourist-arrivals'
+publication_class: A

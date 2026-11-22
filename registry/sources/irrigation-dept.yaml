@@ -1,0 +1,28 @@
+id: irrigation-dept
+publisher: Irrigation Department, Sri Lanka (Hydrology and Disaster Management Division)
+title: River water levels and reservoir status
+homepage: https://www.irrigation.gov.lk/web/index.php?option=com_content&view=article&id=27&Itemid=128&lang=en
+access:
+  method: html
+  endpoint: https://www.irrigation.gov.lk/web/index.php?option=com_content&view=article&id=27&Itemid=128&lang=en
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Irrigation Department, Sri Lanka
+cadence:
+  frequency: realtime
+geo:
+  levels:
+  - point
+  join: spatial
+themes:
+- ENVI
+- AGRI
+datasets:
+- irrigation-river-water-levels
+- irrigation-reservoir-levels
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'

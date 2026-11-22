@@ -1,0 +1,54 @@
+id: cbsl-merchandise-trade
+title: Merchandise exports and imports
+description: Monthly and annual exports/imports by major category (tea, apparel, rubber, fuel, intermediate, investment goods).
+source_ids:
+- cbsl-statistical-tables
+indicators:
+- id: trade.exports_usd
+  label: Merchandise exports
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: category
+    codelist: trade_category
+  geo_levels:
+  - national
+  period_type: month
+- id: trade.imports_usd
+  label: Merchandise imports
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: category
+    codelist: trade_category
+  geo_levels:
+  - national
+  period_type: month
+- id: trade.balance_usd
+  label: Trade balance
+  unit: USD
+  unit_mult: 6
+  measure_type: sum
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  period_type: month
+time_coverage:
+  from: 2010-01
+  to: 2026-09
+method: Sheets 2.02 and 2.04.
+limits:
+- Provisional for latest months.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

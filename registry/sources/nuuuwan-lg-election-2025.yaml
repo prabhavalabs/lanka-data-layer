@@ -1,0 +1,28 @@
+id: nuuuwan-lg-election-2025
+publisher: Nuwan Senaratna (nuuuwan) - data from Election Commission
+title: lg_election_lk_2025
+homepage: https://github.com/nuuuwan/lg_election_lk_2025
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lg_election_lk_2025
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Election Commission of Sri Lanka. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - polygon
+  join: name_match
+themes:
+- GOVE
+datasets:
+- ec-local-authority-results
+- local-authority-boundaries
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 339 local authorities, ward-level seats and votes scraped from results.elections.gov.lk.

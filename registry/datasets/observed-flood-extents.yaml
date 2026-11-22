@@ -1,0 +1,54 @@
+id: observed-flood-extents
+title: Observed flood extents and damage proxies (satellite)
+description: Satellite-mapped flood extents and SAR damage proxy maps for major events (2014-16 floods, 2017, 2024, Cyclone
+  Ditwah Nov-Dec 2025).
+source_ids:
+- copernicus-ems
+- unosat
+- eos-rs
+indicators:
+- id: dis.flooded_area
+  label: Observed flooded area
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: event
+    codelist: disaster_event
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: day
+- id: dis.pop_in_observed_flood
+  label: Population in observed flood extent
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - id: event
+    codelist: disaster_event
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: day
+time_coverage:
+  from: '2014'
+  to: '2025'
+method: Download vector extents/rasters per event; overlay with population and buildings.
+limits:
+- Snapshots at satellite pass times; clouds/vegetation hide water.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - validate jrc-river-flood-hazard; observed exposure per DS
+publication_class: A

@@ -1,0 +1,81 @@
+id: dcs-census-2012
+title: Census 2012 profile (GN level)
+description: '2012 Census of Population and Housing tables at GN level: population, age, ethnicity, religion, housing, amenities.'
+source_ids:
+- nuuuwan-lk-census-2012
+- nuuuwan-gig-data
+indicators:
+- id: census12.pop_total
+  label: Population 2012
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: census12.pop_by_ethnicity
+  label: Population by ethnicity 2012
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - ethnicity
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: census12.pop_by_religion
+  label: Population by religion 2012
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - religion
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: census12.housing_amenities
+  label: Households by amenity 2012
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - amenity
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2012'
+method: Repo TSVs + gnd-id-crosswalk.
+limits:
+- 2012 boundaries; some GNs have since split.
+- Religion figures rounded in source.
+enrichment:
+  joins:
+  - gnd-id-crosswalk + admin-region-history
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'derive: 2012->2024 GN-level change'
+publication_class: B

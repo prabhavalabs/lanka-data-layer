@@ -1,0 +1,30 @@
+id: doenets
+publisher: Department of Examinations
+title: GCE O/L and A/L results statistics
+homepage: https://www.doenets.lk/
+access:
+  method: pdf
+  endpoint: https://www.doenets.lk/statistics
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Examinations
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- EDUC
+datasets:
+- exam-results-district
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- school-examination-results

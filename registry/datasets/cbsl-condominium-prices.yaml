@@ -1,0 +1,29 @@
+id: cbsl-condominium-prices
+title: Condominium asking-price indices (Colombo)
+description: Asking-price indices for condominiums in Colombo district.
+source_ids:
+- cbsl-real-estate
+indicators:
+- id: re.condo_asking_index
+  label: Condominium asking price index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: official
+  dims:
+  - segment
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: '2018'
+  to: '2026'
+method: Survey release tables.
+limits:
+- Asking prices, not sale prices.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: B

@@ -1,0 +1,30 @@
+id: admin-region-history
+title: Admin unit change history (splits, renames)
+description: Effective-dated record of DS/GN creations, splits, merges and renames so older tables can be re-based to current
+  p-codes.
+source_ids:
+- nuuuwan-lk-admin-regions
+indicators:
+- id: admin.changes
+  label: Admin unit change events
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - change_type
+  geo_levels:
+  - adm2
+  - adm3
+  period_type: year
+time_coverage:
+  from: '1971'
+  to: '2025'
+method: Parse repo TSVs, align ids via gnd-id-crosswalk, emit effective-dated crosswalk rows.
+limits:
+- History before 2001 is incomplete.
+- Gazette dates not always available; some rows only carry census vintage.
+enrichment:
+  joins:
+  - effective-dated id->p-code crosswalk for historic censuses and elections
+publication_class: B

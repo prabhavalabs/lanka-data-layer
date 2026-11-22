@@ -1,0 +1,33 @@
+id: modis-ndvi
+title: Vegetation index 250 m (MODIS NDVI/EVI)
+description: 16-day NDVI/EVI composites for crop and drought monitoring.
+source_ids:
+- nasa-earthdata
+indicators:
+- id: env.ndvi
+  label: NDVI
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: day
+time_coverage:
+  from: 2000-02
+  to: 2026-11
+method: MOD13Q1 tiles h25v07/h26v08.
+limits:
+- Cloud contamination in monsoon seasons.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - 'derive: paddy-season greenness anomaly per DS'
+publication_class: A

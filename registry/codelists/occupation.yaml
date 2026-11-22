@@ -1,0 +1,23 @@
+# Occupation (ISCO-08 / SLSCO-08 major groups)
+# Source/authority: ILO International Standard Classification of Occupations ISCO-08 major groups; DCS Sri Lanka Standard Classification of Occupations (SLSCO-08) uses the same major groups in the LFS.
+# Note: `sdmx` carries the ILOSTAT classif1 suffix (OCU_ISCO08_<code>).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-lfs-annual-subnational
+id: occupation
+title: Occupation (ISCO-08 / SLSCO-08 major groups)
+sdmx_ref: "ILO:CL_OCU_ISCO08"
+codes:
+  - { code: total, label: All occupations, total: true, sdmx: _T }
+  - { code: "1", label: Managers, parent: total, sdmx: ISCO08_1 }
+  - { code: "2", label: Professionals, parent: total, sdmx: ISCO08_2 }
+  - { code: "3", label: Technicians and associate professionals, parent: total, sdmx: ISCO08_3 }
+  - { code: "4", label: Clerical support workers, parent: total, sdmx: ISCO08_4 }
+  - { code: "5", label: Service and sales workers, parent: total, sdmx: ISCO08_5 }
+  - { code: "6", label: "Skilled agricultural, forestry and fishery workers", parent: total, sdmx: ISCO08_6 }
+  - { code: "7", label: Craft and related trades workers, parent: total, sdmx: ISCO08_7 }
+  - { code: "8", label: "Plant and machine operators, and assemblers", parent: total, sdmx: ISCO08_8 }
+  - { code: "9", label: Elementary occupations, parent: total, sdmx: ISCO08_9 }
+  - { code: "0", label: Armed forces occupations, parent: total, sdmx: ISCO08_0 }
+  - { code: X, label: Not elsewhere classified, parent: total, sdmx: ISCO08_X }

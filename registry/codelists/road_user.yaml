@@ -1,0 +1,20 @@
+# Road user type (fatalities)
+# Source/authority: Sri Lanka Police, Traffic Headquarters - persons killed by road user category.
+# Note: Category boundaries (three-wheeler vs driver/passenger) vary by year; confirm against the police table before ingest.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: police-road-accidents
+id: road_user
+title: Road user type (fatalities)
+codes:
+  - { code: total, label: All road users, total: true, sdmx: _T }
+  - { code: pedestrian, label: Pedestrians, parent: total }
+  - { code: pedal_cyclist, label: Pedal cyclists, parent: total }
+  - { code: motorcyclist, label: Motor cycle riders, parent: total }
+  - { code: pillion_rider, label: Pillion riders, parent: total }
+  - { code: three_wheeler, label: Three-wheeler occupants, parent: total }
+  - { code: driver, label: Drivers (other vehicles), parent: total }
+  - { code: passenger, label: Passengers (other vehicles), parent: total }
+  - { code: other, label: Other / unknown, parent: total }

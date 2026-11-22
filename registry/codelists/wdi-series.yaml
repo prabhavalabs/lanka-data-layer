@@ -1,0 +1,29 @@
+id: wdi-series
+title: World Development Indicators series codes (generic wdi.series indicator)
+codes:
+  - { code: SP.POP.TOTL, label: "Population, total" }
+  - { code: SP.POP.GROW, label: Population growth (annual %) }
+  - { code: SP.URB.TOTL.IN.ZS, label: Urban population (% of total population) }
+  - { code: SP.DYN.LE00.IN, label: "Life expectancy at birth, total (years)" }
+  - { code: SP.DYN.TFRT.IN, label: "Fertility rate, total (births per woman)" }
+  - { code: SH.DYN.MORT, label: "Mortality rate, under-5 (per 1,000 live births)" }
+  - { code: NY.GDP.MKTP.CD, label: GDP (current US$) }
+  - { code: NY.GDP.MKTP.KD.ZG, label: GDP growth (annual %) }
+  - { code: NY.GDP.PCAP.CD, label: GDP per capita (current US$) }
+  - { code: NY.GDP.PCAP.PP.CD, label: "GDP per capita, PPP (current international $)" }
+  - { code: FP.CPI.TOTL.ZG, label: "Inflation, consumer prices (annual %)" }
+  - { code: SI.POV.DDAY, label: Poverty headcount ratio at $3.00 a day (2021 PPP) (% of population) }
+  - { code: SI.POV.NAHC, label: Poverty headcount ratio at national poverty lines (% of population) }
+  - { code: SI.POV.GINI, label: Gini index }
+  - { code: SL.UEM.TOTL.ZS, label: "Unemployment, total (% of total labor force) (modeled ILO estimate)" }
+  - { code: SL.TLF.CACT.ZS, label: "Labor force participation rate, total (% of total population ages 15+) (modeled ILO estimate)" }
+  - { code: EG.ELC.ACCS.ZS, label: Access to electricity (% of population) }
+  - { code: IT.NET.USER.ZS, label: Individuals using the Internet (% of population) }
+  - { code: SE.ADT.LITR.ZS, label: "Literacy rate, adult total (% of people ages 15 and above)" }
+  - { code: SH.XPD.CHEX.GD.ZS, label: Current health expenditure (% of GDP) }
+  - { code: NE.EXP.GNFS.ZS, label: Exports of goods and services (% of GDP) }
+  - { code: BX.TRF.PWKR.DT.GD.ZS, label: "Personal remittances, received (% of GDP)" }
+  - { code: DT.DOD.DECT.CD, label: "External debt stocks, total (DOD, current US$)" }
+  - { code: GC.DOD.TOTL.GD.ZS, label: "Central government debt, total (% of GDP)" }
+  - { code: EN.GHG.CO2.PC.CE.AR5, label: Carbon dioxide (CO2) emissions excluding LULUCF per capita (t CO2e/capita) }
+  - { code: AG.LND.FRST.ZS, label: Forest area (% of land area) }

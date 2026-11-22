@@ -1,0 +1,34 @@
+id: protected-monuments
+title: Gazetted archaeological protected monuments
+description: Protected monuments and archaeological reserves declared under the Antiquities Ordinance, by district/DS, geocoded.
+source_ids:
+- archaeology-dept
+- osm-geofabrik
+- wikidata
+indicators:
+- id: heritage.protected_monuments
+  label: Protected monuments
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: type
+    codelist: monument_type
+  geo_levels:
+  - point
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: 1940
+  to: 2026
+method: Parse gazette lists (district, DS, village, monument); geocode to GN/village then match OSM historic=* / Wikidata;
+  class C sign-off on ambiguous matches.
+limits:
+- Geocodes are village-level where no OSM/Wikidata match exists; locational precision flag published per row.
+enrichment:
+  joins:
+  - DS/village names -> ADM3/ADM4 via registry/crosswalks
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+publication_class: C

@@ -1,0 +1,17 @@
+# Functional domain (Washington Group Short Set)
+# Source/authority: Washington Group on Disability Statistics, Short Set on Functioning (WG-SS); used in Census of Population and Housing 2024 (DCS).
+# Note: A person can have difficulty in several domains: 'Any domain' is not the sum of the domains (no parent links).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-disability
+id: functional_domain
+title: Functional domain (Washington Group Short Set)
+codes:
+  - { code: total, label: Any domain, total: true, sdmx: _T }
+  - { code: seeing, label: Seeing }
+  - { code: hearing, label: Hearing }
+  - { code: walking, label: Walking or climbing steps }
+  - { code: cognition, label: Remembering or concentrating }
+  - { code: self_care, label: "Self-care (washing, dressing)" }
+  - { code: communication, label: Communicating }

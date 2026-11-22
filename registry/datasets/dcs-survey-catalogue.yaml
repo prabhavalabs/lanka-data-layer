@@ -1,0 +1,28 @@
+id: dcs-survey-catalogue
+title: Official survey metadata catalogue
+description: 'Metadata for DCS surveys (LFS, HIES, DHS, school census, etc.): variables, sampling, years - used for method
+  pages and data discovery.'
+source_ids:
+- dcs-nada
+indicators:
+- id: meta.surveys_catalogued
+  label: Surveys in catalogue
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - survey_series
+  geo_levels:
+  - national
+  period_type: snapshot
+time_coverage:
+  from: '1990'
+  to: '2026'
+method: NADA API catalogue + DDI XML.
+limits:
+- Metadata only; microdata cannot be republished.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+publication_class: A

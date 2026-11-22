@@ -1,0 +1,18 @@
+# Telecommunication service
+# Source/authority: Telecommunications Regulatory Commission of Sri Lanka (TRCSL), Statistical overview - subscriptions by service; ITU indicator definitions.
+# Note: Mobile broadband subscribers are also mobile cellular subscribers: `total` is only meaningful within one parent branch.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-sector-services, trcsl-telecom-indicators
+id: telecom_service
+title: Telecommunication service
+codes:
+  - { code: total, label: All subscriptions, total: true, sdmx: _T }
+  - { code: fixed_telephone, label: Fixed telephone, parent: total }
+  - { code: mobile_cellular, label: Mobile cellular, parent: total }
+  - { code: internet, label: Internet (broadband), parent: total }
+  - { code: fixed_wireline, label: Fixed wireline, parent: fixed_telephone }
+  - { code: fixed_wireless, label: Fixed wireless, parent: fixed_telephone }
+  - { code: fixed_broadband, label: Fixed broadband, parent: internet }
+  - { code: mobile_broadband, label: Mobile broadband, parent: internet }

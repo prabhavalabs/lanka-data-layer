@@ -1,0 +1,30 @@
+id: eurostat-searoute
+publisher: Eurostat (searoute library)
+title: SeaRoute maritime network
+homepage: https://github.com/eurostat/searoute
+access:
+  method: git
+  endpoint: https://github.com/eurostat/searoute
+  auth: none
+licence:
+  id: eupl-1.2
+  status: attribution
+  url: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+  attribution: Eurostat searoute
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - line
+  join: none
+themes:
+- TRAN
+- INTR
+datasets:
+- searoute-shipping-lanes
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+dc_refs:
+- sea-routes

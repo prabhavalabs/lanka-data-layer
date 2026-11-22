@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WP-27 smoke</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>html,body,#map{margin:0;height:100%;width:100%}#out{position:absolute;top:4px;left:4px;background:#fffd;font:11px monospace;padding:4px;max-width:420px;white-space:pre-wrap;z-index:9}</style>
+</head>
+<body>
+<div id="map"></div><div id="out">loading…</div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script type="module">
+import { tableFromIPC } from 'https://cdn.jsdelivr.net/npm/apache-arrow@17.0.0/+esm';
+const API = new URLSearchParams(location.search).get('api') || 'http://127.0.0.1:8627';
+const t0 = performance.now();
+const result = { layers: {}, errors: [], requests: {}, valid_pixels: {}, dem_tiles: 0 };
+window.__smoke = result;
+const RAMPS = {
+  'ldl.seq.blue': ['#eff3ff', '#bdd7e7', '#6baed6', '#3182bd', '#08519c'],
+  'ldl.seq.violet': ['#f2f0f7', '#cbc9e2', '#9e9ac8', '#756bb1', '#54278f'],
+  'ldl.seq.green': ['#edf8e9', '#bae4b3', '#74c476', '#31a354', '#006d2c'],
+  'ldl.seq.orange': ['#feedde', '#fdbe85', '#fd8d3c', '#e6550d', '#a63603'],
+};
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const doc = await (await fetch('ref12.resolved.json')).json();
+const R = doc.resolved, S = R.sources;
+const count = (k) => { result.requests[k] = (result.requests[k] || 0) + 1; };
+
+// ── ldl-v16 value tiles: decode in the browser, colour with the layer's ramp ──
+const valueCfg = {};
+maplibregl.addProtocol('ldlv16', async (params) => {
+  const m = params.url.match(/^ldlv16:\/\/([^/]+)\/(\d+)\/(\d+)\/(\d+)$/);
+  const [_, sid, z, x, y] = m; const c = valueCfg[sid];
+  const url = API + c.values.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+  count('values'); const res = await fetch(url);
+  const out = new OffscreenCanvas(256, 256); const ctx = out.getContext('2d');
+  if (res.status === 204) return { data: await (await out.convertToBlob()).arrayBuffer() };
+  const bmp = await createImageBitmap(await res.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+  const cv = new OffscreenCanvas(256, 256); const cx = cv.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(bmp, 0, 0); const px = cx.getImageData(0, 0, 256, 256); const d = px.data;
+  const img = ctx.createImageData(256, 256); const o = img.data; let valid = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const q = d[i] * 256 + d[i + 1]; if (q === c.nodata) continue;
+    const v = q * c.scale + c.offset;
+    if (c.range && ((c.range[0] != null && v < c.range[0]) || (c.range[1] != null && v > c.range[1]))) continue;
+    valid++;
+    let k = 0; while (k < c.breaks.length && v >= c.breaks[k]) k++;
+    const col = c.colours[Math.min(k, c.colours.length - 1)];
+    o[i] = col[0]; o[i + 1] = col[1]; o[i + 2] = col[2]; o[i + 3] = 220;
+  }
+  result.valid_pixels[sid] = (result.valid_pixels[sid] || 0) + valid;
+  ctx.putImageData(img, 0, 0);
+  return { data: await (await out.convertToBlob()).arrayBuffer() };
+});
+
+const quantiles = (vals, n) => { const s = vals.filter(v => v != null).sort((a, b) => a - b);
+  return Array.from({ length: n - 1 }, (_, i) => s[Math.floor((i + 1) * s.length / n)]); };
+const stepExpr = (key, breaks, colours) => { const e = ['step', ['feature-state', key], colours[0]];
+  breaks.forEach((b, i) => e.push(b, colours[i + 1])); return ['case', ['==', ['feature-state', key], null], 'rgba(0,0,0,0)', e]; };
+
+const map = new maplibregl.Map({ container: 'map', center: doc.view.center, zoom: doc.view.zoom,
+  style: { version: 8, glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf', sources: {},
+           layers: [{ id: 'basemap', type: 'background', paint: { 'background-color': '#f4f1ea' } }] } });
+map.on('error', e => result.errors.push(String(e.error && e.error.message || e)));
+map.on('data', e => { if (e.sourceId === 'relief' && e.tile) result.dem_tiles++; });
+await new Promise(r => map.on('load', r));
+
+map.addSource('admin', { type: 'vector', url: API + '/v2/tiles/admin.json', promoteId: 'pcode' });
+const frames = [];
+for (const l of doc.layers) {
+  const s = S[l.source]; const id = l.id;
+  if (s.shape === 'dem') {
+    map.addSource(l.source, { type: 'raster-dem', tiles: [API + s.tiles], encoding: s.encoding, tileSize: 256, minzoom: s.minzoom, maxzoom: s.maxzoom });
+    map.addLayer({ id, type: 'hillshade', source: l.source, paint: { 'hillshade-exaggeration': l.style.exaggeration } });
+  } else if (s.shape === 'values') {
+    const sc = l.style.fill.scale; const colours = (RAMPS[sc.ramp] || RAMPS['ldl.seq.blue']).map(hex);
+    const breaks = sc.breaks || (() => { const lo = s.stats.min, hi = s.stats.max; return [0.1, 0.25, 0.5, 0.75].map(f => lo + f * f * (hi - lo)); })();
+    valueCfg[l.source] = { ...s, colours, breaks, range: l.style.range };
+    map.addSource(l.source, { type: 'raster', tiles: [`ldlv16://${l.source}/{z}/{x}/{y}`], tileSize: 256, minzoom: 5, maxzoom: s.maxzoom });
+    map.addLayer({ id, type: 'raster', source: l.source, paint: { 'raster-opacity': l.opacity ?? 1, 'raster-resampling': 'nearest' } });
+  } else if (s.shape === 'frame') {
+    const sc = l.style.fill.scale; frames.push({ l, s, colours: RAMPS[sc.ramp] });
+  } else if (s.shape === 'tiles') {
+    map.addSource(l.source, { type: 'vector', url: API + s.tilejson });
+    map.addLayer({ id, type: 'line', source: l.source, 'source-layer': s.source_layers[0],
+      paint: { 'line-color': l.style.stroke.color, 'line-width': l.style.stroke.width, 'line-opacity': l.opacity } });
+  } else if (s.shape === 'geojson') {
+    count('geojson'); map.addSource(l.source, { type: 'geojson', data: API + s.url });
+    map.addLayer({ id, type: 'circle', source: l.source, paint: { 'circle-radius': l.style.size, 'circle-color': l.style.fill, 'circle-opacity': l.opacity } });
+  } else if (s.shape === 'points') {
+    count('points'); const t = tableFromIPC(await (await fetch(API + s.points)).arrayBuffer());
+    const lon = t.getChild('lon').toArray(), lat = t.getChild('lat').toArray();
+    const fc = { type: 'FeatureCollection', features: Array.from(lon, (x, i) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: [x, lat[i]] }, properties: {} })) };
+    result.layers[id + ':rows'] = t.numRows;
+    map.addSource(l.source, { type: 'geojson', data: fc });
+    if (l.type === 'heatmap') map.addLayer({ id, type: 'heatmap', source: l.source, paint: { 'heatmap-radius': l.style.radius, 'heatmap-intensity': l.style.intensity, 'heatmap-opacity': l.opacity } });
+    else map.addLayer({ id, type: 'circle', source: l.source, paint: { 'circle-radius': l.style.size, 'circle-color': l.style.fill, 'circle-opacity': l.opacity } });
+  } else if (s.shape === 'boundaries' && l.type === 'line') {
+    map.addLayer({ id, type: 'line', source: 'admin', 'source-layer': s.source_layer, paint: { 'line-color': l.style.stroke.color, 'line-width': l.style.stroke.width } });
+  } else if (s.shape === 'boundaries' && l.type === 'label') {
+    const lvl = Number(s.source_layer.slice(3));
+    map.addLayer({ id, type: 'symbol', source: 'admin', 'source-layer': 'centroids', filter: ['==', ['get', 'level'], lvl],
+      layout: { 'text-field': ['get', 'name_en'], 'text-size': l.style.label.size, 'text-font': ['Open Sans Semibold'] },
+      paint: { 'text-halo-color': l.style.label.halo, 'text-halo-width': 1.2 } });
+  } else { result.errors.push(`unhandled ${id} ${s.shape}`); }
+}
+// frames: one fetch each, then feature-state on the shared admin tileset
+for (const { l, s, colours } of frames) {
+  count('frame'); const f = (await (await fetch(API + s.frame)).json()).payload;
+  const vals = f.columns[0].values; const key = `${l.source}.c0`;
+  f.codes.forEach((code, i) => { if (vals[i] != null) map.setFeatureState({ source: 'admin', sourceLayer: s.source_layer, id: code }, { [key]: vals[i] }); });
+  result.layers[l.id + ':codes'] = f.codes.length;
+  const before = doc.layers.find(x => S[x.source].shape === 'values')?.id;
+  map.addLayer({ id: l.id, type: 'fill', source: 'admin', 'source-layer': s.source_layer,
+    paint: { 'fill-color': stepExpr(key, quantiles(vals, 5), colours), 'fill-opacity': l.opacity } }, before);
+}
+await new Promise(r => map.once('idle', r));
+result.idle_ms = Math.round(performance.now() - t0);
+for (const l of doc.layers) {
+  const s = S[l.source];
+  if (s.shape === 'values') result.layers[l.id] = result.valid_pixels[l.source] || 0;
+  else if (s.shape === 'dem') result.layers[l.id] = result.dem_tiles;
+  else if (s.shape === 'frame') {
+    const fs = map.queryRenderedFeatures({ layers: [l.id] });
+    result.layers[l.id] = fs.filter(x => map.getFeatureState({ source: 'admin', sourceLayer: s.source_layer, id: x.id })[`${l.source}.c0`] != null).length;
+  } else if (l.type === 'heatmap') {
+    // heatmap layers are not queryable: count the source's points inside the viewport
+    const b = map.getBounds();
+    result.layers[l.id] = map.querySourceFeatures(l.source).filter(f => b.contains(f.geometry.coordinates)).length;
+  } else result.layers[l.id] = map.queryRenderedFeatures({ layers: [l.id] }).length;
+}
+result.drawn = Object.entries(result.layers).filter(([k, v]) => !k.includes(':') && v > 0).length;
+result.ok = result.drawn === doc.layers.length && result.errors.length === 0;
+result.attribution = R.attribution.map(a => a.publisher);
+document.getElementById('out').textContent = JSON.stringify({ ok: result.ok, drawn: result.drawn, idle_ms: result.idle_ms, layers: result.layers, errors: result.errors }, null, 1);
+document.title = result.ok ? 'SMOKE OK' : 'SMOKE FAIL';
+</script>
+</body>
+</html>

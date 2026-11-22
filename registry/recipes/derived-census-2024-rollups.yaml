@@ -1,0 +1,34 @@
+id: derived-census-2024-rollups
+output: derived-census-2024-rollups
+title: Census 2024 district figures summed to provinces
+stability: stable
+inputs:
+  pop: { dataset: dcs-census-2024-population, indicators: [census24.pop_total, census24.pop_age_sex] }
+  ethrel: { dataset: dcs-census-2024-ethnicity-religion }
+steps:
+  - id: up
+    method: rollup@^1
+    with: { input: [pop, ethrel], levels: [1] }
+  - id: sex_ratio
+    method: ratio@^1
+    with:
+      terms:
+        m: { from: [{ port: up, indicator: census24.pop_total }], select: "sex=male" }
+        f: { from: [{ port: up, indicator: census24.pop_total }], select: "sex=female" }
+      formula: m / f * 100
+      indicator: rollup.census24.sex_ratio
+emit:
+  - from: up
+    map:
+      census24.pop_total: rollup.census24.pop_total
+      census24.pop_age_sex: rollup.census24.pop_age_sex
+      census24.pop_by_ethnicity: rollup.census24.pop_by_ethnicity
+      census24.pop_by_religion: rollup.census24.pop_by_religion
+  - { from: sex_ratio }
+qa:
+  - { check: sum_matches, indicator: rollup.census24.pop_total, level: 1, input: pop,
+      input_indicator: census24.pop_total, input_level: 0, tol_pct: 0.5 }
+  - { check: sum_matches, indicator: rollup.census24.pop_by_religion, level: 1, input: ethrel,
+      input_indicator: census24.pop_by_religion, input_level: 0, tol_pct: 0.5 }
+  - { check: non_negative }
+  - { check: no_missing }

@@ -1,0 +1,43 @@
+id: wb-sldu-outlook
+title: World Bank macro outlook and poverty nowcasts
+description: Growth forecasts, fiscal/external projections and poverty nowcasts (national and provincial) from each Development
+  Update.
+source_ids:
+- worldbank-sldu
+indicators:
+- id: wbsldu.gdp_growth_forecast
+  label: Real GDP growth forecast
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - edition
+  geo_levels:
+  - national
+  period_type: year
+- id: wbsldu.poverty_nowcast
+  label: Poverty rate nowcast ($4.20/day)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - edition
+  geo_levels:
+  - national
+  - adm1
+  period_type: year
+time_coverage:
+  from: '2021'
+  to: '2027'
+method: PDF table extraction per edition, vintage-stamped.
+limits:
+- Forecasts and nowcasts, not outturns; each edition supersedes the last.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  - province names -> ADM1 p-codes (9 fixed provinces; trivial crosswalk)
+  aggregations:
+  - vintage comparison across editions
+publication_class: B

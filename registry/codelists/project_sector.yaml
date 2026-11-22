@@ -1,0 +1,18 @@
+# Major project sector
+# Source/authority: Lanka Data Layer curated major projects register (lk-major-projects).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: lk-major-projects
+id: project_sector
+title: Major project sector
+codes:
+  - { code: total, label: All projects, total: true, sdmx: _T }
+  - { code: transport, label: "Transport (roads, expressways, rail)", parent: total }
+  - { code: ports_aviation, label: Ports and aviation, parent: total }
+  - { code: urban_development, label: Urban development, parent: total }
+  - { code: energy, label: Energy, parent: total }
+  - { code: irrigation_water, label: Irrigation and water, parent: total }
+  - { code: industrial_zone, label: Industrial / investment zones, parent: total }
+  - { code: other, label: Other, parent: total }

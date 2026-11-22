@@ -1,0 +1,68 @@
+id: derived-transit-access
+title: Public transport access and walksheds
+description: Island-wide walksheds around rail stations and GTFS stops, frequency-weighted transit access per GN, and scenario
+  analysis for proposed lines (e.g. Colombo metro).
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: acc.pop_in_walkshed
+  label: Population within walkshed of transit
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - mode
+  - id: walk_minutes
+    codelist: threshold
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: acc.transit_access_index
+  label: Frequency-weighted transit access index
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: acc.scenario_new_coverage
+  label: Additional population covered by scenario line
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - scenario
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Walk isochrones on OSM foot graph, intersected with population; scenario stops added to compute marginal coverage
+  and stop uniqueness.
+limits:
+- Bus service outside GTFS feeds is unknown; scenarios are hypothetical.
+enrichment:
+  derived_from:
+  - osm-routing-graph
+  - osm-rail-network
+  - lk-gtfs-feeds
+  - slr-timetable
+  - lk-metro-proposed-lines
+  - worldpop-pop-grid
+  - dcs-census-2024-gnd
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - decile tables of access by GN; gap clusters
+publication_class: A

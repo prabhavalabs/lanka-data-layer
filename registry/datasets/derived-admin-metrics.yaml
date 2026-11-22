@@ -1,0 +1,44 @@
+id: derived-admin-metrics
+title: Admin unit area and number of child units
+description: Geodesic land area of every admin unit of the reference boundary set and the number of units one level below
+  it, computed from the boundary geometry by the unit_metrics method.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: admin.area_km2
+  label: Land area of admin unit
+  unit: km2
+  measure_type: sum
+  aggregation: sum
+  class: derived
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: admin.child_count
+  label: Number of child units
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  geo_levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: 'Recipe derived-admin-metrics: unit_metrics@1 over cod-ab-lka-boundaries — ST_Area(geom::geography) of the reference
+  boundary set in km2; child count from the p-code hierarchy.'
+limits:
+- Areas are of the administrative polygons as published in COD-AB (including inland water), not surveyed land areas.
+- Boundaries are updated in place until boundary vintages are release-pinned (WP-10); an area always describes the current
+  reference set.
+enrichment:
+  derived_from:
+  - cod-ab-lka-boundaries
+publication_class: A

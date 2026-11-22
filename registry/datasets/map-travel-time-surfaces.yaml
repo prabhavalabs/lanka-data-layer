@@ -1,0 +1,45 @@
+id: map-travel-time-surfaces
+title: Travel time to healthcare and cities (MAP)
+description: 1 km travel time to nearest healthcare facility (motorised, walking) and to cities of 50k+.
+source_ids:
+- map-accessibility
+indicators:
+- id: acc.map_tt_healthcare
+  label: Travel time to healthcare
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  dims:
+  - mode
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: acc.map_tt_city
+  label: Travel time to city 50k+
+  unit: min
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2015'
+  to: '2020'
+method: GeoTIFF; population-weighted zonal means.
+limits:
+- Global model, older facility data; use as benchmark for our OSM-based product.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - population-weighted means per unit using worldpop-pop-grid as weights (cell value x cell population / unit population)
+publication_class: A

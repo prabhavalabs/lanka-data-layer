@@ -1,0 +1,23 @@
+# Land cover class (ESA WorldCover 10 m, official class codes)
+# Source/authority: ESA WorldCover 10 m 2020 v100 / 2021 v200 Product User Manual, Table 1 (class values 10-100).
+# Note: The platform reference land-cover scheme. derived-land-cover-zonal shares (cropland, tree cover, built-up, water) map to 40/10/50/80; 'protected area' is not a land-cover class and belongs in its own indicator.
+# Note: Dynamic World uses a different scheme: see dynamic_world_class.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-land-cover-zonal, worldcover-land-cover
+id: lc_class
+title: "Land cover class (ESA WorldCover 10 m, official class codes)"
+codes:
+  - { code: total, label: All land cover, total: true, sdmx: _T }
+  - { code: "10", label: Tree cover, parent: total }
+  - { code: "20", label: Shrubland, parent: total }
+  - { code: "30", label: Grassland, parent: total }
+  - { code: "40", label: Cropland, parent: total }
+  - { code: "50", label: Built-up, parent: total }
+  - { code: "60", label: Bare / sparse vegetation, parent: total }
+  - { code: "70", label: Snow and ice, parent: total }
+  - { code: "80", label: Permanent water bodies, parent: total }
+  - { code: "90", label: Herbaceous wetland, parent: total }
+  - { code: "95", label: Mangroves, parent: total }
+  - { code: "100", label: Moss and lichen, parent: total }

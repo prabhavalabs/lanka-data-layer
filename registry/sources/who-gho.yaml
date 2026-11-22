@@ -1,0 +1,28 @@
+id: who-gho
+publisher: World Health Organization
+title: Global Health Observatory OData API
+homepage: https://www.who.int/data/gho
+access:
+  method: api
+  endpoint: https://ghoapi.azureedge.net/api/
+  auth: none
+licence:
+  id: cc-by-nc-sa-3.0-igo
+  status: restricted
+  url: https://www.who.int/about/policies/publishing/copyright
+  attribution: World Health Organization
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- HEAL
+datasets:
+- who-gho-lka
+priority: P3
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'CC BY-NC-SA 3.0 IGO: non-commercial; show metadata and link, do not include in bulk open bundles.'

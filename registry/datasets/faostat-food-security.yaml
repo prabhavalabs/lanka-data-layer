@@ -1,0 +1,29 @@
+id: faostat-food-security
+title: Food security indicators (FAOSTAT)
+description: Prevalence of undernourishment, food insecurity (FIES), dietary energy supply.
+source_ids:
+- faostat
+indicators:
+- id: fao.food_security
+  label: Food security indicator
+  unit: '{various}'
+  measure_type: score
+  aggregation: none
+  class: third_party
+  dims:
+  - indicator
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2000'
+  to: '2024'
+method: FS domain.
+limits:
+- 3-year averages.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

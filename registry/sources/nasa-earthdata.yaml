@@ -1,0 +1,31 @@
+id: nasa-earthdata
+publisher: NASA Earthdata (LP DAAC, GES DISC, LAADS)
+title: 'NASA Earthdata: NASADEM, GPM IMERG, MODIS, Black Marble'
+homepage: https://www.earthdata.nasa.gov/
+access:
+  method: raster
+  endpoint: https://cmr.earthdata.nasa.gov/search/collections.json?keyword=IMERG
+  auth: key
+licence:
+  id: nasa-open-data
+  status: open
+  url: https://www.earthdata.nasa.gov/engage/open-data-services-software-policies/data-use-guidance
+  attribution: NASA EOSDIS
+cadence:
+  frequency: daily
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- ENVI
+datasets:
+- gpm-imerg-precipitation
+- modis-ndvi
+- black-marble-ntl-daily
+- nasadem
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Free Earthdata login (token) required for downloads.

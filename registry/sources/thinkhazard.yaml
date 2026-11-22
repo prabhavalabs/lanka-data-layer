@@ -1,0 +1,29 @@
+id: thinkhazard
+publisher: GFDRR (World Bank)
+title: ThinkHazard! hazard levels
+homepage: https://thinkhazard.org/en/report/231-sri-lanka
+access:
+  method: api
+  endpoint: https://thinkhazard.org/en/report/231-sri-lanka.json
+  auth: none
+licence:
+  id: thinkhazard-terms
+  status: attribution
+  url: https://thinkhazard.org/en/about
+  attribution: GFDRR ThinkHazard!
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  join: name_match
+themes:
+- ENVI
+datasets:
+- thinkhazard-levels
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'

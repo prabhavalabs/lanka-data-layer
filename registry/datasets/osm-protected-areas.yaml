@@ -1,0 +1,41 @@
+id: osm-protected-areas
+title: Protected areas (OSM)
+description: National parks, forest reserves, sanctuaries mapped in OSM (open substitute for WDPA).
+source_ids:
+- osm-geofabrik
+indicators:
+- id: env.protected_area_ha
+  label: Protected area
+  unit: har
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - protect_class
+  geo_levels:
+  - polygon
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: boundary=protected_area / leisure=nature_reserve.
+limits:
+- 'Completeness varies: dense in Colombo/Kandy/Galle, thinner in the North, East and estate areas; volunteered data.'
+- Not the legal gazette boundary.
+enrichment:
+  joins:
+  - 'polygon overlay with ADM4 units: area share per unit; values allocated area- or population-weighted'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - share of unit protected
+publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: protect_class, type: string, label: IUCN / OSM protect class}
+- {name: protection_title, type: string, label: Protection title}
+- {name: operator, type: string, label: Operator}
+tiles: {minzoom: 5, maxzoom: 14, attrs: [protect_class, protection_title]}

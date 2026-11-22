@@ -1,0 +1,30 @@
+id: ilostat
+publisher: International Labour Organization
+title: ILOSTAT data API
+homepage: https://ilostat.ilo.org/
+access:
+  method: api
+  endpoint: https://rplumber.ilo.org/data/indicator/?id=UNE_DEAP_SEX_AGE_RT_A&ref_area=LKA
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: ILO, ILOSTAT
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  join: none
+themes:
+- ECON
+- SOCI
+datasets:
+- ilostat-lka
+priority: P2
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: 'ilostat.ilo.org returns 403 to scripts; rplumber.ilo.org API answers 200. Verification 2026-11-21: https://ilostat.ilo.org/
+  -> HTTP 403 to scripted clients (bot protection). Other access point(s) reachable.'

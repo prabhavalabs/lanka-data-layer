@@ -1,0 +1,25 @@
+# Main source of drinking water
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing 2012 and 2024 - principal source of drinking water.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-basic-services
+id: drinking_water_source
+title: Main source of drinking water
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: piped, label: Pipe-borne water, parent: total }
+  - { code: well, label: Well, parent: total }
+  - { code: tap_within_unit, label: Tap within the unit (main line), parent: piped }
+  - { code: tap_within_premises, label: Tap within premises but outside the unit, parent: piped }
+  - { code: tap_outside_premises, label: Tap outside the premises, parent: piped }
+  - { code: rural_water_project, label: Rural water supply project, parent: piped }
+  - { code: protected_well_within, label: Protected well within premises, parent: well }
+  - { code: protected_well_outside, label: Protected well outside premises, parent: well }
+  - { code: unprotected_well, label: Unprotected well, parent: well }
+  - { code: tube_well, label: Tube well, parent: total }
+  - { code: bottled_water, label: Bottled water, parent: total }
+  - { code: bowser, label: Bowser, parent: total }
+  - { code: surface_water, label: River / tank / stream / spring, parent: total }
+  - { code: other, label: Other, parent: total }

@@ -1,0 +1,28 @@
+id: nuuuwan-lk-moh-regions
+publisher: Nuwan Senaratna (nuuuwan) - data from Ministry of Health
+title: 'lk_moh_regions: MOH area boundaries'
+homepage: https://github.com/nuuuwan/lk_moh_regions
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/lk_moh_regions
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Ministry of Health, Sri Lanka. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - polygon
+  join: spatial
+themes:
+- HEAL
+- REGI
+datasets:
+- moh-area-boundaries
+priority: P1
+effort: S
+status: planned
+verified_at: '2026-11-21'
+notes: MOH areas are the health service units for dengue/epidemiology reporting; needed to map NDCU and Epid Unit data.

@@ -1,0 +1,63 @@
+id: dcs-abstract-education-health
+title: Schools, teachers, hospitals and beds by district (Abstract)
+description: District counts of schools, students, teachers, government hospitals, beds and medical officers.
+source_ids:
+- dcs-statistical-abstract
+indicators:
+- id: educ.schools_district
+  label: Government schools
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - school_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: educ.pupil_teacher_ratio
+  label: Pupil-teacher ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: heal.hospital_beds
+  label: Government hospital beds
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+- id: heal.beds_per_1000
+  label: Beds per 1,000 population
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2024'
+method: Abstract ch.12-13 tables.
+limits:
+- Government sector only.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: B

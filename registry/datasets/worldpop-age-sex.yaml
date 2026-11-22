@@ -1,0 +1,62 @@
+id: worldpop-age-sex
+title: Population by age and sex (WorldPop grid)
+description: Gridded counts by sex and 5-year age group (0, 1-4, 5-9 ... 80+), 100 m, annual 2015-2030.
+source_ids:
+- worldpop
+indicators:
+- id: pop.grid_age_sex
+  label: Population by age group and sex
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  dims:
+  - sex
+  - age_group
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: pop.grid_dependency_ratio
+  label: Age dependency ratio
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: pop.grid_under5
+  label: Children under 5
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '2015'
+  to: '2030'
+method: 36 rasters per year (18 age groups x 2 sexes) zonal-summed to ADM4; ratios recomputed after roll-up.
+limits:
+- Age structure is distributed from census tables using covariates, not observed per cell.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'derive: school-age, working-age, elderly counts per unit and per facility catchment'
+publication_class: A

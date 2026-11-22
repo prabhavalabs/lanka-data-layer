@@ -1,0 +1,24 @@
+# IMF WEO subject code
+# Source/authority: IMF World Economic Outlook database, WEO subject codes.
+# Note: Series are not additive: no total. Complete from the WEO download for the vintage.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: imf-weo-lka
+id: weo_subject
+title: IMF WEO subject code
+codes:
+  - { code: NGDP_RPCH, label: "Gross domestic product, constant prices (percent change)" }
+  - { code: NGDPD, label: "Gross domestic product, current prices (U.S. dollars)" }
+  - { code: NGDPDPC, label: "Gross domestic product per capita, current prices (U.S. dollars)" }
+  - { code: PCPIPCH, label: "Inflation, average consumer prices (percent change)" }
+  - { code: PCPIEPCH, label: "Inflation, end of period consumer prices (percent change)" }
+  - { code: LUR, label: Unemployment rate }
+  - { code: LP, label: Population }
+  - { code: GGR_NGDP, label: General government revenue (percent of GDP) }
+  - { code: GGX_NGDP, label: General government total expenditure (percent of GDP) }
+  - { code: GGXCNL_NGDP, label: General government net lending/borrowing (percent of GDP) }
+  - { code: GGXWDG_NGDP, label: General government gross debt (percent of GDP) }
+  - { code: BCA_NGDPD, label: Current account balance (percent of GDP) }

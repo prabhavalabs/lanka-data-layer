@@ -1,0 +1,69 @@
+id: derived-flood-exposure
+title: Population and buildings exposed to river floods
+description: Population, buildings, schools, hospitals and cropland in modelled flood zones by return period, per GN.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: exp.flood_pop
+  label: Population in flood zone
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - return_period
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: exp.flood_buildings
+  label: Buildings in flood zone
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - return_period
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: exp.flood_facilities
+  label: Facilities in flood zone
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - facility_type
+  - return_period
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: Overlay depth > 0.15 m with exposure grids; validated against observed-flood-extents and desinventar-losses.
+limits:
+- River flooding only; model ignores defences and local drainage.
+enrichment:
+  derived_from:
+  - jrc-river-flood-hazard
+  - worldpop-pop-grid
+  - google-open-buildings
+  - osm-pois-amenities
+  - worldcover-land-cover
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - share of unit population exposed
+publication_class: A

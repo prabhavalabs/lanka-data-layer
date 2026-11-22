@@ -1,0 +1,37 @@
+id: dcs-census-2024-disability
+title: 'Census 2024: functional difficulties'
+description: Population with functional difficulty (seeing, hearing, walking, cognition, self-care, communication) by district.
+source_ids:
+- dcs-census-2024
+indicators:
+- id: census24.functional_difficulty
+  label: Population with functional difficulty
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: domain
+    codelist: functional_domain
+  - id: severity
+    codelist: difficulty_degree
+  - sex
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: PDF extraction.
+limits:
+- Census reference night 2024; no intercensal updates.
+- Washington Group short set; not clinical disability.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - per-capita and per-100k rates using the matching-year population denominator (dcs-midyear-population-district; cod-ps-lka-population
+    below district)
+publication_class: B

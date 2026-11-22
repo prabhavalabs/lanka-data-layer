@@ -1,0 +1,102 @@
+{
+  "spec": "ldl-map/1",
+  "id": "m_7k2q9x4w8n1c",
+  "title": { "en": "Flood exposure vs property prices — Western Province" },
+  "description": "Where modelled 1-in-100-year river flooding coincides with lower asking prices. Associations, not causes.",
+  "pin": { "release": "20270315.1" },
+  "extent": { "geo": "LK1" },
+  "view": { "center": [79.98, 6.86], "zoom": 9.2, "bounds": [79.80, 6.38, 80.25, 7.30] },
+  "basemap": { "style": "ldl-light", "labels": "top", "hillshade": { "on": true, "exaggeration": 0.5 } },
+  "time": null,
+
+  "sources": {
+    "flood":    { "kind": "grid", "grid": "haz.flood_depth", "dims": { "return_period": "RP100" }, "period": "latest" },
+    "exposure": { "kind": "indicator", "indicator": "exp.flood_pop_share", "dims": { "return_period": "RP100" },
+                  "level": 4, "parent": "LK1", "period": "latest" },
+    "prices":   { "kind": "indicator", "indicator": "@demo/re.asking_price_per_perch_median",
+                  "level": 4, "parent": "LK1", "period": "2026", "version": { "dsv": "dsv_0d7e55aa91c3b672" } },
+    "listings": { "kind": "features", "dataset": "@demo/property-asking-prices-sample",
+                  "fields": ["price_per_perch", "land_use", "listed_month"], "within": "LK1",
+                  "version": { "dsv": "dsv_3a91f0e2c7d45b10" } },
+    "rel_biv":  { "kind": "analysis", "ref": "rel",  "output": "bivariate" },
+    "rel_lee":  { "kind": "analysis", "ref": "rel",  "output": "local_lee" },
+    "zone_pts": { "kind": "analysis", "ref": "zone", "output": "points" },
+    "dsd":      { "kind": "boundaries", "scheme": "admin", "level": 3, "parent": "LK1" }
+  },
+
+  "analyses": {
+    "rel": {
+      "spec": "ldl-analysis/1", "method": "relate",
+      "support": { "kind": "admin", "level": 4, "within": "LK1" },
+      "variables": {
+        "x": { "source": "exposure" },
+        "y": { "source": "prices", "transform": "log" },
+        "controls": [
+          { "indicator": "est.pop_density", "period": "2026", "transform": "log" },
+          { "indicator": "acc.travel_time_city", "dims": { "city": "colombo", "mode": "car" } }
+        ]
+      },
+      "params": { "correlation": ["pearson", "spearman"], "regression": "ols", "robust": true,
+                  "spatial": { "weights": "queen", "local": "lee", "permutations": 999 },
+                  "bivariate": { "classes": 3, "method": "quantile" }, "scale_sensitivity": [3, 4] },
+      "result": "an_5e1f0c22ab904d71"
+    },
+    "zone": {
+      "spec": "ldl-analysis/1", "method": "group_compare",
+      "support": { "kind": "points", "source": "listings" },
+      "variables": { "y": { "field": "price_per_perch", "transform": "log" } },
+      "params": { "zone": { "source": "flood", "where": { "op": ">=", "args": [{ "property": "value" }, 0.15] } },
+                  "rings_m": [0, 250, 500], "compare": "inside_vs_ring", "within_groups": { "level": 3 },
+                  "tests": ["welch", "mann_whitney"], "bootstrap": 2000 },
+      "result": "an_9b40d6e1173c2a58"
+    }
+  },
+
+  "layers": [
+    { "id": "l_flood", "type": "raster", "name": "Flood depth, 1-in-100-year (m)", "source": "flood",
+      "visible": true, "opacity": 0.9, "blend": "multiply",
+      "style": { "fill": { "field": "value", "scale": { "type": "manual", "breaks": [0.15, 0.5, 1, 2],
+                                                         "ramp": "ldl.seq.blue", "nodata": "transparent" } },
+                 "range": [0.15, null], "resample": "linear" } },
+
+    { "id": "g_relationship", "type": "group", "name": "Exposure × price", "visible": true, "opacity": 1, "children": [
+      { "id": "l_biv", "type": "bivariate", "name": "Flood exposure × median asking price", "source": "rel_biv",
+        "visible": true, "opacity": 0.8, "blend": "normal", "zoom": [5, 22],
+        "style": { "fill": { "bivariate": {
+                     "x": { "field": "x", "scale": { "type": "quantile", "classes": 3, "breaks": [0.4, 6.9] } },
+                     "y": { "field": "y", "scale": { "type": "quantile", "classes": 3, "breaks": [1450000, 3900000] } },
+                     "palette": "ldl.biv.blue-orange" } },
+                   "stroke": { "color": "#ffffff", "width": 0.3 }, "uncertainty": "hatch" },
+        "interaction": { "hover": true, "select": true, "tooltip": ["name", "x", "y", "n_listings", "basis"] } },
+
+      { "id": "l_lee", "type": "polygon", "name": "Significant local association (Lee's L, FDR 5 %)", "source": "rel_lee",
+        "visible": true, "opacity": 1, "blend": "normal",
+        "filter": { "op": "<=", "args": [{ "property": "p_fdr" }, 0.05] },
+        "style": { "fill": "none",
+                   "stroke": { "width": 1.6, "color": { "field": "cluster", "scale": { "type": "categorical",
+                     "mapping": { "HH": "#b2182b", "HL": "#7b3294", "LH": "#008837", "LL": "#2166ac" } } } } } }
+    ] },
+
+    { "id": "l_listings", "type": "point", "name": "Sample listings: inside / near / outside flood zone",
+      "source": "zone_pts", "visible": false, "opacity": 0.9, "blend": "normal", "zoom": [11, 22],
+      "style": { "size": 4,
+                 "fill": { "field": "ring", "scale": { "type": "categorical",
+                   "mapping": { "inside": "#08519c", "0-250": "#6baed6", "250-500": "#c6dbef" } } } } },
+
+    { "id": "l_dsd", "type": "line", "name": "DS divisions", "source": "dsd", "visible": true, "opacity": 0.7,
+      "style": { "stroke": { "color": "#3a3a3a", "width": 0.8 } } },
+    { "id": "l_dsd_labels", "type": "label", "name": "DS division names", "source": "dsd", "visible": true,
+      "zoom": [9, 12], "style": { "label": { "text": "{name}", "size": 11, "halo": "#ffffff" } } }
+  ],
+
+  "panels": [
+    { "id": "p_legend",  "type": "legend" },
+    { "id": "p_scatter", "type": "chart", "chart": "scatter", "analysis": "rel", "linked": "l_biv",
+      "options": { "fit": ["ols", "robust"], "density": "hexbin", "brush": true } },
+    { "id": "p_stats",   "type": "stats", "analysis": "rel" },
+    { "id": "p_zone",    "type": "stats", "analysis": "zone" }
+  ],
+
+  "meta": { "author": "@demo", "licence": "CC-BY-4.0", "created_at": "2027-03-16T04:12:00Z",
+            "forked_from": null, "generator": "lanka-web 2.3.0" }
+}

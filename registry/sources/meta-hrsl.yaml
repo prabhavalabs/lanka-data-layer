@@ -1,0 +1,28 @@
+id: meta-hrsl
+publisher: Meta Data for Good & CIESIN
+title: High Resolution Population Density Maps + Demographic Estimates (HRSL)
+homepage: https://data.humdata.org/dataset/sri-lanka-high-resolution-population-density-maps-demographic-estimates
+access:
+  method: api
+  endpoint: https://data.humdata.org/api/3/action/package_show?id=sri-lanka-high-resolution-population-density-maps-demographic-estimates
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Facebook Connectivity Lab and CIESIN, High Resolution Settlement Layer
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- SOCI
+- REGI
+datasets:
+- hrsl-population-30m
+priority: P0
+effort: S
+status: planned
+verified_at: '2026-11-21'

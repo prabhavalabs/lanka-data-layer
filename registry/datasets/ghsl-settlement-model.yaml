@@ -1,0 +1,45 @@
+id: ghsl-settlement-model
+title: Degree of urbanisation (GHS-SMOD)
+description: Settlement typology per 1 km cell (urban centre, dense/semi-dense urban cluster, suburban, rural, etc.) for each
+  epoch.
+source_ids:
+- ghsl
+indicators:
+- id: urban.smod_class_share
+  label: Population share by settlement class
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  dims:
+  - smod_class
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: year
+- id: urban.degurba_class
+  label: Degree of urbanisation of unit
+  unit: '{class}'
+  measure_type: category
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - adm3
+  - adm4
+  period_type: year
+time_coverage:
+  from: '1975'
+  to: '2030'
+method: Zonal majority class and population share per class (weights from worldpop-pop-grid).
+limits:
+- Harmonised global definition, differs from Sri Lanka's administrative urban definition (MC/UC areas).
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - population-weighted means per unit using worldpop-pop-grid as weights (cell value x cell population / unit population)
+  - 'derive: consistent urban/rural flag per GN for all other indicators'
+publication_class: A

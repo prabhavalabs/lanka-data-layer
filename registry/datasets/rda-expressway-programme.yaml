@@ -1,0 +1,50 @@
+id: rda-expressway-programme
+title: Expressway network and programme status
+description: Expressway (E-class) sections with status (open, under construction, proposed), opening date, length, interchanges,
+  funder and cost.
+source_ids:
+- rda
+- osm-geofabrik
+indicators:
+- id: tran.expressway_km
+  label: Expressway length
+  unit: km
+  measure_type: sum
+  aggregation: sum
+  class: official
+  dims:
+  - id: status
+    codelist: project_status
+  - id: route
+    codelist: expressway
+  geo_levels:
+  - line
+  - national
+  - adm2
+  period_type: snapshot
+- id: tran.expressway_interchanges
+  label: Interchanges
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: status
+    codelist: project_status
+  geo_levels:
+  - point
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: 2011
+  to: 2026
+method: OSM highway=motorway/construction/proposed + RDA project map GeoJSON + RDA/press sources for status and dates (class
+  C).
+limits:
+- Proposed alignments are indicative; cost figures mix contract and estimated values.
+enrichment:
+  joins:
+  - lines split at ADM boundaries; km per unit
+  aggregations:
+  - km per district by status
+publication_class: C

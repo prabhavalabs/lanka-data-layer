@@ -1,0 +1,28 @@
+id: meta-rwi-wealth-index
+title: Relative Wealth Index (internal QA)
+description: Meta 2.4 km relative wealth tiles, aggregated population-weighted to DS/GN for validating small-area poverty;
+  not redistributed.
+source_ids:
+- meta-rwi
+indicators:
+- id: pov.rwi_mean
+  label: Population-weighted RWI
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm3
+  - adm4
+  period_type: snapshot
+time_coverage:
+  from: 2021
+method: Tile centroids to grid; population-weighted mean with WorldPop.
+limits:
+- 'CC BY-NC: internal only; relative (not absolute) wealth; ML model of 2018-2021 inputs.'
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+publication_class: A

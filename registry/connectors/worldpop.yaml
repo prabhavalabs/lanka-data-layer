@@ -1,0 +1,33 @@
+# WorldPop Global2 R2024B, 2025, constrained, 100 m (3 arc-sec) — the product the dataset card
+# names (worldpop-pop-grid.yaml). Every valid pixel is redistributed over the canonical 0.001 deg
+# cells it overlaps by overlap area (area_sum), so a cell holds the population of its own ~110 m
+# square and native-zoom value tiles show the grid, not 1 km blocks. Then summed per unit through
+# gnd_idx. Until 1.1.0 this loaded the ~1 km unconstrained UN-adjusted file with split_sum (the v1
+# `cells` input), which put the same value on every 8 x 8 block of cells.
+source: worldpop
+driver: raster
+version: 1.1.0
+description: WorldPop 2025 population on the canonical 0.001 deg grid and per admin unit (ADM1-ADM4).
+dataset: worldpop-pop-grid
+discover:
+  files:
+    - key: pop-2025
+      url: https://data.worldpop.org/GIS/Population/Global_2015_2030/R2024B/2025/LKA/v1/100m/constrained/lka_pop_2025_CN_100m_R2024B_v1.tif
+layers:
+  - id: worldpop.population
+    period: "2025"
+    indicator: pop.grid_total
+    resample: area_sum
+    encoding: { dtype: f32 }
+    unit: "{person}"
+    zonal: sum
+    overview: sum
+    source_res_m: 100
+    serve: true
+    style: { ramp: viridis.magma, scale: log, domain: [0.05, 400], transparent_at_or_below: 0 }
+zonal:
+  # Modelled input (04 §2: estimated when the grid is itself modelled); no interval yet (back-cast, WP-11).
+  - { indicator: pop.grid_total, layer: worldpop.population, stat: sum, basis: estimated }
+  # Persons per km2 of the unit's land cells (centre inside); ADM1-ADM4, including GN divisions
+  # where the census GN tables are not loaded. Third-party modelled, never spliced into census24.*.
+  - { indicator: pop.grid_density, layer: worldpop.population, stat: density, basis: estimated }

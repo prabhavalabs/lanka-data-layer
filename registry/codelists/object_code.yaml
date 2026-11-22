@@ -1,0 +1,26 @@
+# Budget object code (economic classification)
+# Source/authority: Ministry of Finance, Budget Estimates and Financial Regulations - object code classification (4-digit objects grouped under 2-digit categories).
+# Note: 4-digit object codes (e.g. 1001 salaries and wages) go in as children of the 2-digit groups from the budget extract.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: budget-estimates-heads
+id: object_code
+title: Budget object code (economic classification)
+codes:
+  - { code: total, label: All objects, total: true, sdmx: _T }
+  - { code: recurrent, label: Recurrent expenditure, parent: total }
+  - { code: capital, label: Capital expenditure, parent: total }
+  - { code: "10", label: "10 Personal emoluments", parent: recurrent }
+  - { code: "11", label: "11 Travelling expenses", parent: recurrent }
+  - { code: "12", label: "12 Supplies", parent: recurrent }
+  - { code: "13", label: "13 Maintenance expenditure", parent: recurrent }
+  - { code: "14", label: "14 Services", parent: recurrent }
+  - { code: "15", label: "15 Transfers", parent: recurrent }
+  - { code: "20", label: "20 Rehabilitation and improvement of capital assets", parent: capital }
+  - { code: "21", label: "21 Acquisition of capital assets", parent: capital }
+  - { code: "22", label: "22 Capital transfers", parent: capital }
+  - { code: "23", label: "23 Acquisition of financial assets", parent: capital }
+  - { code: "24", label: "24 Capacity building", parent: capital }
+  - { code: "25", label: "25 Other capital expenditure", parent: capital }

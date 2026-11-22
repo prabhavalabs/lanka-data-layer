@@ -1,0 +1,32 @@
+# Road class (OpenStreetMap highway=* values)
+# Source/authority: OpenStreetMap wiki, Key:highway; Sri Lanka tagging: A roads usually trunk/primary, B roads secondary/tertiary (OSM Sri Lanka road tagging guidelines).
+# Note: Official RDA/provincial classes are in `road_class`; OSM classes are not a 1:1 match.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: osm-road-network
+id: highway_class
+title: "Road class (OpenStreetMap highway=* values)"
+codes:
+  - { code: total, label: All roads and paths, total: true, sdmx: _T }
+  - { code: motorway, label: Motorway (expressway), parent: total }
+  - { code: trunk, label: Trunk, parent: total }
+  - { code: primary, label: Primary, parent: total }
+  - { code: secondary, label: Secondary, parent: total }
+  - { code: tertiary, label: Tertiary, parent: total }
+  - { code: unclassified, label: Unclassified (minor public road), parent: total }
+  - { code: residential, label: Residential, parent: total }
+  - { code: living_street, label: Living street, parent: total }
+  - { code: service, label: Service, parent: total }
+  - { code: track, label: Track, parent: total }
+  - { code: pedestrian, label: Pedestrian, parent: total }
+  - { code: footway, label: Footway, parent: total }
+  - { code: path, label: Path, parent: total }
+  - { code: cycleway, label: Cycleway, parent: total }
+  - { code: steps, label: Steps, parent: total }
+  - { code: road, label: Road (unknown class), parent: total }
+  - { code: motorway_link, label: Motorway link, parent: motorway }
+  - { code: trunk_link, label: Trunk link, parent: trunk }
+  - { code: primary_link, label: Primary link, parent: primary }
+  - { code: secondary_link, label: Secondary link, parent: secondary }
+  - { code: tertiary_link, label: Tertiary link, parent: tertiary }

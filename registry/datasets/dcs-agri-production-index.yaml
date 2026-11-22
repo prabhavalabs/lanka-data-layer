@@ -1,0 +1,31 @@
+id: dcs-agri-production-index
+title: Agricultural production volume index
+description: Annual volume index of agricultural production (2002=100) for ten crop/product groups.
+source_ids:
+- dcs-agriculture
+indicators:
+- id: agri.production_index
+  label: Agricultural production volume index
+  unit: '{index}'
+  base_period: '2002=100'
+  measure_type: index
+  aggregation: none
+  class: official
+  dims:
+  - id: group
+    codelist: agri_index_group
+  geo_levels:
+  - national
+  period_type: year
+time_coverage:
+  from: '2014'
+  to: '2025'
+method: HTML table.
+limits:
+- Index, not quantities.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+publication_class: A

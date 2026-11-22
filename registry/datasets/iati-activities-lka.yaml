@@ -1,0 +1,60 @@
+id: iati-activities-lka
+title: Aid and development activities (IATI)
+description: 'Development projects in Sri Lanka from all IATI publishers: budgets, transactions, sectors, implementing orgs
+  and sub-national locations.'
+source_ids:
+- iati-datastore
+indicators:
+- id: aid.iati_commitments
+  label: Commitments
+  unit: USD
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - publisher
+  - id: sector
+    codelist: dac_sector
+  geo_levels:
+  - national
+  period_type: year
+- id: aid.iati_disbursements
+  label: Disbursements
+  unit: USD
+  measure_type: sum
+  aggregation: sum
+  class: third_party
+  dims:
+  - publisher
+  - id: sector
+    codelist: dac_sector
+  geo_levels:
+  - national
+  period_type: year
+- id: aid.iati_activity_locations
+  label: Activities with location
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: third_party
+  geo_levels:
+  - point
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2010'
+  to: '2026'
+method: Datastore pull; currency-normalise; geocode location names/points to p-codes.
+limits:
+- Only what donors publish; Chinese and Indian bilateral finance largely absent.
+enrichment:
+  joins:
+  - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - aid per district per capita by sector
+  - 'cross-source: compare with erd-foreign-financing'
+publication_class: A

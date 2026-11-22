@@ -1,0 +1,29 @@
+id: cbsl-annual-reports
+publisher: Central Bank of Sri Lanka (archive mirrored by nuuuwan)
+title: CBSL Annual Report / Annual Economic Review
+homepage: https://github.com/nuuuwan/cbsl
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/cbsl
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Central Bank of Sri Lanka. Parsed/scraped by Nuwan Senaratna (nuuuwan), code MIT.'
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - adm1
+  join: name_match
+themes:
+- ECON
+datasets:
+- cbsl-annual-review-tables
+priority: P2
+effort: L
+status: planned
+verified_at: '2026-11-21'
+notes: 1,137 documents (3.5 GB) of annual reports; post-2023 split into Annual Economic Review. Statistical appendix tables
+  need extraction.

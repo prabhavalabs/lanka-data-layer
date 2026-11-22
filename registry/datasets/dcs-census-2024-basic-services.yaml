@@ -1,0 +1,81 @@
+id: dcs-census-2024-basic-services
+title: 'Census 2024: water, sanitation, lighting, cooking fuel, waste'
+description: Households by drinking-water source, toilet facility, lighting source, cooking fuel and waste disposal method.
+source_ids:
+- dcs-census-2024
+indicators:
+- id: census24.hh_water_source
+  label: Households by drinking water source
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: water_source
+    codelist: drinking_water_source
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.hh_toilet
+  label: Households by toilet facility
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - toilet_type
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.hh_lighting
+  label: Households by lighting source
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - lighting
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.hh_cooking_fuel
+  label: Households by cooking fuel
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: fuel
+    codelist: cooking_fuel
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.hh_waste_disposal
+  label: Households by waste disposal method
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: method
+    codelist: waste_disposal
+  geo_levels:
+  - national
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: PDF table extraction, reviewed.
+limits:
+- Census reference night 2024; no intercensal updates.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - 'derive: service-gap shares; cross-check with nwsdb-connections-coverage and ceb-statistical-digest'
+publication_class: B

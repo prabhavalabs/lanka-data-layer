@@ -1,0 +1,265 @@
+id,title,sources,theme,geo_levels,cadence,licence_status,priority,effort,publication_class
+aboveground-biomass,Aboveground biomass carbon,ctrees,ENVI,raster adm1 adm2,annual,attribution,P3,S,A
+acled-events-lka,Political violence and protest events (link-only),acled,JUST,point adm2,weekly,restricted,P3,S,A
+adb-key-indicators-lka,ADB Key Indicators (Sri Lanka),adb-kidb,ECON,national,annual,attribution,P3,S,A
+admin-region-history,"Admin unit change history (splits, renames)",nuuuwan-lk-admin-regions,REGI GOVE,adm2 adm3,irregular,permission_unclear,P1,S,B
+aqueduct-water-risk,Water stress and risk indicators,wri-aqueduct,ENVI,polygon adm1 adm2 adm3,one_off,attribution,P3,S,A
+aswesuma-beneficiaries,Welfare (Aswesuma) beneficiaries by DS division,wbb-aswesuma,SOCI,national adm2 adm3,irregular,permission_unclear,P1,M,B
+auditor-general-findings,Audit findings by entity (incl. local authorities),naosl,GOVE JUST,national polygon,annual,permission_unclear,P2,L,C
+aw3d30-dsm,ALOS World 3D DSM 30 m,jaxa-aw3d30,ENVI,raster adm1 adm2 adm3,irregular,attribution,P3,S,A
+bia-flight-arrivals,International flight arrivals at BIA,aasl-airport caasl,TRAN INTR,point,daily,permission_unclear,P2,S,A
+black-marble-ntl-daily,Daily night lights (NASA Black Marble VNP46A2),nasa-earthdata,ENER ECON,raster adm1 adm2 adm3,daily,open,P2,M,A
+boi-enterprises,BOI enterprises and available industrial land,boi,ECON,adm2 adm3 point polygon,irregular,permission_unclear,P2,M,C
+boi-fdi-inflows,BOI foreign direct investment and project approvals,boi,ECON,national adm2 polygon,monthly,permission_unclear,P1,M,B
+boi-zones,Export processing zones and industrial parks,boi osm-geofabrik,ECON,polygon,irregular,permission_unclear,P1,S,B
+budget-capital-projects,Capital projects in budget estimates (geocoded),treasury-budget-estimates erd,GOVE ECON,national adm2,annual,permission_unclear,P2,L,C
+budget-estimates-heads,Budget estimates by ministry head and programme,treasury-budget-estimates,GOVE,national,annual,permission_unclear,P1,L,B
+cabinet-decisions-geotagged,Cabinet decisions (geotagged index),nuuuwan-lk-cabinet-decisions,GOVE,national adm2,weekly,permission_unclear,P3,M,C
+cbsl-annual-review-tables,CBSL Annual Report statistical appendix,cbsl-annual-reports,ECON,national adm1,annual,permission_unclear,P2,L,C
+cbsl-bank-branches,Bank branches and banking density by district,cbsl-ess,ECON,national adm2,annual,permission_unclear,P1,M,A
+cbsl-condominium-prices,Condominium asking-price indices (Colombo),cbsl-real-estate,ECON,national,quarterly,permission_unclear,P3,S,B
+cbsl-ess-provincial-indicators,Provincial socio-economic indicators (CBSL ESS),cbsl-ess,ECON SOCI,adm1,annual,permission_unclear,P2,M,B
+cbsl-exchange-rates,"Exchange rates (daily indicative, monthly average, end-month)",cbsl-exchange-rates,ECON,national,daily,permission_unclear,P1,S,A
+cbsl-fiscal-operations,"Government fiscal operations, revenue and debt (CBSL)",cbsl-statistical-tables,ECON GOVE,national,monthly,permission_unclear,P1,M,A
+cbsl-land-valuation-indicator,Land Valuation Indicator (Colombo district),cbsl-real-estate,ECON,national,quarterly,permission_unclear,P2,S,B
+cbsl-merchandise-trade,Merchandise exports and imports,cbsl-statistical-tables,ECON INTR,national,monthly,permission_unclear,P1,M,A
+cbsl-neer-reer,Nominal and real effective exchange rate indices,cbsl-exchange-rates,ECON,national,daily,permission_unclear,P2,S,A
+cbsl-pmi,Purchasing Managers' Index,cbsl-economic-indicators,ECON,national,weekly,permission_unclear,P3,M,B
+cbsl-tourism-earnings,Earnings from tourism,cbsl-statistical-tables,ECON,national,monthly,permission_unclear,P1,M,A
+cbsl-weekly-indicators,"Weekly economic indicators (rates, reserves, money)",cbsl-economic-indicators,ECON,national,weekly,permission_unclear,P2,M,B
+cbsl-workers-remittances,Workers' remittances,cbsl-statistical-tables,ECON INTR,national,monthly,permission_unclear,P1,M,A
+cckp-climate-projections,Climate projections by province (CMIP6 ensembles),wb-cckp,ENVI,national adm1,irregular,attribution,P2,S,A
+ceb-statistical-digest,"Electricity customers, sales and plants (CEB)",ceb,ENER,national adm1 point,annual,permission_unclear,P1,M,B
+chirps-rainfall,"Rainfall daily to monthly (CHIRPS, 0.05 deg)",chirps,ENVI AGRI,raster adm1 adm2 adm3 adm4,daily,open,P0,S,A
+climate-trace-emissions,Greenhouse gas emissions by sector and asset,climate-trace,ENVI,national point,annual,attribution,P2,S,A
+cod-ab-lka-boundaries,Administrative boundaries ADM0-ADM4 with p-codes,hdx-cod-ab-lka geoboundaries-lka,REGI GOVE,national adm1 adm2 adm3 adm4,irregular,attribution,P0,S,A
+colombo-bus-rail-network,Colombo bus routes and rail network (community),nuuuwan-cmb-transit,TRAN,line adm1 adm2 adm3,irregular,permission_unclear,P2,M,B
+company-registrations,Company registrations (business formation),nuuuwan-lk-eroc,ECON,national,daily,permission_unclear,P3,S,A
+copernicus-dem-terrain,Elevation and slope (Copernicus DEM 30 m),copernicus-dem,ENVI,raster adm1 adm2 adm3 adm4,one_off,attribution,P0,S,A
+courthouses,Courts and courthouses,moj-courts osm-geofabrik,GOVE JUST,adm2 adm3 point,irregular,permission_unclear,P3,S,B
+cyclone-tracks,Cyclone tracks affecting Sri Lanka,ibtracs,ENVI,line,weekly,open,P2,S,A
+dcs-abstract-education-health,"Schools, teachers, hospitals and beds by district (Abstract)",dcs-statistical-abstract,EDUC HEAL,national adm2,annual,permission_unclear,P1,M,B
+dcs-abstract-justice,"Crime, courts and prisons (Abstract)",dcs-statistical-abstract police-lk,JUST,national polygon,annual,permission_unclear,P2,M,B
+dcs-abstract-transport,"Transport statistics: roads, vehicles, ports, crashes",dcs-statistical-abstract,TRAN,national adm1 point adm2,annual,permission_unclear,P1,M,B
+dcs-agri-production-index,Agricultural production volume index,dcs-agriculture,AGRI,national,irregular,permission_unclear,P2,M,A
+dcs-building-construction,Building approvals/construction by district,dcs-statistical-abstract,ECON REGI,national adm2,annual,permission_unclear,P2,M,B
+dcs-ccpi,"Colombo Consumer Price Index (CCPI, base 2021)",dcs-prices nuuuwan-lk-dcs,ECON,national,monthly,permission_unclear,P1,S,A
+dcs-census-2012,Census 2012 profile (GN level),nuuuwan-lk-census-2012 nuuuwan-gig-data,SOCI,national adm1 adm2 adm3 adm4,one_off,permission_unclear,P1,M,B
+dcs-census-2024-basic-services,"Census 2024: water, sanitation, lighting, cooking fuel, waste",dcs-census-2024,SOCI ENER,national adm2,one_off,permission_unclear,P1,L,B
+dcs-census-2024-disability,Census 2024: functional difficulties,dcs-census-2024,HEAL SOCI,national adm2,one_off,permission_unclear,P1,L,B
+dcs-census-2024-education-literacy,"Census 2024: literacy, language, digital literacy",dcs-census-2024,EDUC TECH,national adm2,one_off,permission_unclear,P1,L,B
+dcs-census-2024-ethnicity-religion,Census 2024: ethnicity and religion,dcs-census-2024 nuuuwan-lk-census-2024,SOCI,national adm1 adm2 adm3,one_off,permission_unclear,P0,L,B
+dcs-census-2024-gnd,Census 2024 GN-division profile,nuuuwan-lk-census-2024 dcs-census-2024,SOCI,adm4,one_off,permission_unclear,P0,M,B
+dcs-census-2024-household-assets,Census 2024: household equipment and assets,dcs-census-2024,SOCI TECH,national adm2,one_off,permission_unclear,P1,L,B
+dcs-census-2024-households,Census 2024: households and household size,dcs-census-2024 nuuuwan-lk-census-2024,SOCI,national adm1 adm2 adm3 adm4,one_off,permission_unclear,P0,L,B
+dcs-census-2024-housing,"Census 2024: housing structure, materials, tenure, occupancy",dcs-census-2024,SOCI REGI,national adm2,one_off,permission_unclear,P1,L,B
+dcs-census-2024-population,"Census 2024: population by age, sex, DS division",dcs-census-2024 nuuuwan-lk-census-2024,SOCI,national adm1 adm2 adm3 adm4,one_off,permission_unclear,P0,L,B
+dcs-census-historic,Census 1971 and 2001 summary tables,nuuuwan-lk-census-2001 nuuuwan-lk-census-1971,SOCI,national adm1 adm2 adm3,one_off,permission_unclear,P3,M,B
+dcs-census-of-agriculture,Census of Agriculture 2013/14 (holdings),dcs-agriculture,AGRI,national adm2 adm3,irregular,permission_unclear,P3,M,B
+dcs-dhs-2016-district,DHS 2016 district indicators,dcs-dhs dhs-program,HEAL,national adm2,irregular,permission_unclear,P2,M,B
+dcs-economic-census-establishments,Non-agricultural establishments and employment,dcs-economic-census,ECON,national adm2 adm3,one_off,permission_unclear,P3,M,B
+dcs-gdp-by-industry,GDP by industry (current and constant prices),dcs-national-accounts,ECON,national,quarterly,permission_unclear,P1,M,B
+dcs-gdp-expenditure,GDP by expenditure,dcs-national-accounts dcs-pocketbook,ECON,national,quarterly,permission_unclear,P2,M,B
+dcs-hies-income-expenditure,"Household income, expenditure and inequality",dcs-hies dcs-pocketbook,SOCI ECON,national adm2,irregular,permission_unclear,P1,M,B
+dcs-hies-poverty,"Poverty headcount, depth and severity by district",dcs-hies dcs-pocketbook,SOCI,national adm2,irregular,permission_unclear,P0,M,B
+dcs-lfs-annual-subnational,Labour force by district and province (annual),dcs-lfs dcs-statistical-abstract dcs-pocketbook,ECON SOCI,national adm1 adm2,quarterly,permission_unclear,P1,M,B
+dcs-lfs-quarterly,"Labour force indicators, quarterly",dcs-lfs,ECON SOCI,national,quarterly,permission_unclear,P1,M,B
+dcs-local-government-finance,Local authority revenue and expenditure,dcs-statistical-abstract,GOVE,national polygon,annual,permission_unclear,P1,M,B
+dcs-midyear-population-district,Mid-year population estimates by district,dcs-population-vital,SOCI,national adm2,annual,permission_unclear,P0,M,B
+dcs-mpi,Multidimensional Poverty Index by district,dcs-hies ophi-mpi,SOCI,national adm2,irregular,permission_unclear,P1,M,B
+dcs-ncpi,National Consumer Price Index (NCPI),dcs-prices nuuuwan-lk-dcs,ECON,national,monthly,permission_unclear,P1,S,A
+dcs-other-field-crops,Other field crops extent and production by district,dcs-agriculture,AGRI,national adm2,irregular,permission_unclear,P2,M,B
+dcs-paddy-statistics,"Paddy sown, harvested, production and yield by district and season",dcs-agriculture,AGRI,national adm2,irregular,permission_unclear,P0,M,B
+dcs-pocketbook-agriculture,"Agriculture compendium: crops, livestock, fisheries, food balance",dcs-pocketbook,AGRI,national,annual,permission_unclear,P2,M,B
+dcs-pocketbook-prices-wages,Building material prices and minimum wage indices,dcs-pocketbook,ECON,national,annual,permission_unclear,P2,M,B
+dcs-pocketbook-sector-services,"Energy, telecom, transport and tourism summary (Pocket Book)",dcs-pocketbook,ENER TECH TRAN,national,annual,permission_unclear,P2,M,B
+dcs-pocketbook-social-services,"Health services, schools, exams, local services, disasters (Pocket Book)",dcs-pocketbook,HEAL EDUC GOVE,national,annual,permission_unclear,P2,M,B
+dcs-pocketbook-trade-indices,External trade volume/price indices,dcs-pocketbook,ECON,national,annual,permission_unclear,P2,M,B
+dcs-ppi,Producer Price Index (PPI),dcs-prices,ECON,national,monthly,permission_unclear,P2,S,B
+dcs-provincial-gdp,Provincial GDP,dcs-national-accounts cbsl-ess,ECON REGI,adm1,quarterly,permission_unclear,P1,M,B
+dcs-survey-catalogue,Official survey metadata catalogue,dcs-nada,GOVE,national,irregular,permission_unclear,P2,S,A
+dcs-vital-statistics,"Births, deaths, marriages (vital registration)",dcs-population-vital dcs-pocketbook,HEAL SOCI,national adm2,annual,permission_unclear,P1,M,B
+dengue-weekly-cases,"Dengue cases by district and MOH area, weekly",ndcu-dengue nuuuwan-lk-dengue,HEAL,adm2 polygon,weekly,permission_unclear,P1,S,A
+derived-agri-season-monitor,Crop-season monitor by district,lanka-data-layer-derived,AGRI,adm2,monthly,permission_unclear,P2,L,A
+derived-attractions-register,Conflated visitor attractions register,lanka-data-layer-derived,SOCI ECON,adm1 adm2 adm3 adm4 point,monthly,permission_unclear,P1,M,A
+derived-building-density,Building density and growth,lanka-data-layer-derived,REGI,adm1 adm2 adm3 adm4,monthly,attribution,P1,L,A
+derived-dasymetric-disaggregation,Dasymetric disaggregation of district/DS statistics to GN and grid,lanka-data-layer-derived,SOCI ECON,adm4 raster,annual,permission_unclear,P1,M,A
+derived-dengue-risk,Dengue incidence and risk context,lanka-data-layer-derived,HEAL,adm2 polygon,monthly,permission_unclear,P2,L,A
+derived-development-index,Composite local development index (GN/DS),lanka-data-layer-derived,SOCI ECON,adm3 adm4,annual,permission_unclear,P1,M,A
+derived-electoral-demographics,Election results joined to demographics,lanka-data-layer-derived,GOVE SOCI,polygon,monthly,permission_unclear,P2,L,A
+derived-facility-coverage,Population within 15/30/60 minutes of services,lanka-data-layer-derived,HEAL EDUC,adm1 adm2 adm3 adm4,monthly,attribution,P1,L,A
+derived-flood-exposure,Population and buildings exposed to river floods,lanka-data-layer-derived,ENVI SOCI,adm1 adm2 adm3 adm4,monthly,attribution,P1,L,A
+derived-forest-loss-zonal,Forest loss in and around protected areas,lanka-data-layer-derived,ENVI,adm1 adm2 adm3,monthly,attribution,P2,L,A
+derived-harmonised-boundary-series,Series harmonised to 2024 admin boundaries,lanka-data-layer-derived,REGI,adm2 adm3 adm4,annual,permission_unclear,P0,M,A
+derived-heat-exposure,Heat exposure,lanka-data-layer-derived,ENVI HEAL,adm1 adm2 adm3,monthly,attribution,P2,L,A
+derived-intercensal-population,Intercensal and projected population by GN (2012-2030),lanka-data-layer-derived,SOCI REGI,adm1 adm2 adm3 adm4 raster,annual,permission_unclear,P0,M,A
+derived-investment-density,"Investment density (BOI, aid, public capital) by district/DS",lanka-data-layer-derived,ECON,adm2 adm3,annual,permission_unclear,P2,S,A
+derived-land-cover-zonal,"Land cover, tree cover and water by admin unit",lanka-data-layer-derived,ENVI,adm1 adm2 adm3 adm4,monthly,attribution,P1,L,A
+derived-landslide-exposure,Landslide susceptibility and exposure,lanka-data-layer-derived,ENVI,raster adm3 adm4 adm1 adm2,monthly,permission_unclear,P2,L,A
+derived-market-access,Travel time to towns and markets,lanka-data-layer-derived,TRAN ECON,adm2 adm3 adm4 raster,monthly,attribution,P1,M,A
+derived-multi-hazard-exposure,"Multi-hazard exposure (flood, landslide, cyclone, drought, coastal)",lanka-data-layer-derived,ENVI SOCI,adm2 adm3 adm4,monthly,attribution,P1,M,A
+derived-nightlights-growth,Night-light growth as economic activity proxy,lanka-data-layer-derived,ECON,adm1 adm2 adm3 adm4,monthly,permission_unclear,P1,L,A
+derived-per-capita-indicators,Per-capita and density versions of count indicators,lanka-data-layer-derived,SOCI,national adm1 adm2 adm3 adm4,monthly,permission_unclear,P0,L,A
+derived-rainfall-anomaly,Rainfall anomalies and drought index by unit,lanka-data-layer-derived,ENVI AGRI,adm1 adm2 adm3,monthly,attribution,P1,L,A
+derived-service-gap-index,Composite service-gap index per GN,lanka-data-layer-derived,SOCI REGI,adm3 adm4,monthly,permission_unclear,P2,L,A
+derived-small-area-poverty,Small-area poverty estimates (DS/GN),lanka-data-layer-derived,SOCI,adm3 adm4,monthly,permission_unclear,P2,L,A
+derived-terrain-zonal,Terrain profile by admin unit,lanka-data-layer-derived,ENVI,adm1 adm2 adm3 adm4,monthly,attribution,P1,L,A
+derived-tourism-pressure-index,Tourism pressure index by DS,lanka-data-layer-derived,ECON SOCI,adm2 adm3,annual,permission_unclear,P2,S,A
+derived-transit-access,Public transport access and walksheds,lanka-data-layer-derived,TRAN,adm1 adm2 adm3 adm4,monthly,permission_unclear,P2,L,A
+derived-travel-time-facilities,Travel time to nearest facility (walk/drive),lanka-data-layer-derived,TRAN HEAL EDUC,raster adm1 adm2 adm3 adm4,monthly,permission_unclear,P1,L,A
+derived-urban-growth,Urban expansion 1975-2030,lanka-data-layer-derived,REGI,adm1 adm2 adm3 adm4,monthly,attribution,P1,L,A
+derived-zonal-population,Harmonised population by admin unit (all grids),lanka-data-layer-derived,SOCI,adm1 adm2 adm3 adm4,monthly,permission_unclear,P0,L,A
+desinventar-losses,Historical disaster losses by DS division (DesInventar),desinventar,ENVI SOCI,national adm2 adm3,irregular,attribution,P0,S,A
+dmc-landslide-warnings,Landslide early warnings by DS division,nuuuwan-lk-dmc dmc,ENVI,adm3,daily,permission_unclear,P1,M,A
+dmc-situation-report-impacts,Disaster impacts from DMC situation reports,nuuuwan-lk-dmc dmc dcs-pocketbook,ENVI SOCI,national adm2 adm3,daily,permission_unclear,P1,M,C
+dmt-vehicle-registrations,Vehicle registrations and fleet,dmt dcs-pocketbook,TRAN,national,monthly,permission_unclear,P1,S,A
+dynamic-world-annual,Annual land cover composites (Dynamic World),dynamic-world,ENVI,raster adm1 adm2 adm3 adm4,daily,attribution,P2,M,A
+earthquakes-near-lka,Earthquakes in the region,usgs-earthquakes,ENVI,point,realtime,open,P3,S,A
+ec-local-authority-results,Local authority election results 2018 and 2025,nuuuwan-lg-election-2025 elections-commission,GOVE,polygon,one_off,permission_unclear,P1,S,A
+ec-parliamentary-results,Parliamentary election results 1989-2024,nuuuwan-lk-elections elections-commission,GOVE,national adm2 polygon,irregular,permission_unclear,P0,S,A
+ec-presidential-results,Presidential election results 1982-2024,nuuuwan-lk-elections elections-commission,GOVE,national adm2 polygon,irregular,permission_unclear,P0,S,A
+ec-provincial-council-results,Provincial council election results,elections-commission nuuuwan-lk-elections,GOVE,national adm1 adm2,irregular,permission_unclear,P2,M,B
+electoral-boundaries,Electoral districts and polling divisions,nuuuwan-sl-topojson,GOVE REGI,polygon,irregular,permission_unclear,P0,S,A
+emdat-lka,EM-DAT disasters (link-only),emdat,ENVI,national,irregular,restricted,P3,S,A
+epid-notifiable-diseases,"Notifiable disease cases by RDHS, weekly",epid-unit,HEAL,adm2,weekly,permission_unclear,P1,M,B
+era5-land-climate,"Temperature, humidity, soil moisture (ERA5-Land, 0.1 deg)",copernicus-cds,ENVI HEAL,raster adm1 adm2 adm3,monthly,attribution,P1,M,A
+erd-foreign-financing,Foreign financing commitments and disbursements,erd,ECON GOVE INTR,national,annual,permission_unclear,P2,M,B
+exam-results-district,GCE O/L and A/L performance by district,doenets dcs-pocketbook,EDUC,national adm1 adm2,annual,permission_unclear,P2,M,B
+faostat-crops-livestock,Crop and livestock production (FAOSTAT),faostat,AGRI,national,annual,attribution,P1,S,A
+faostat-food-security,Food security indicators (FAOSTAT),faostat,AGRI SOCI,national,annual,attribution,P2,S,A
+faostat-land-inputs,"Land use, fertiliser and pesticide use (FAOSTAT)",faostat,AGRI ENVI,national,annual,attribution,P2,S,A
+fewsnet-food-insecurity,Acute food insecurity phases,fewsnet,AGRI SOCI,polygon adm2,irregular,attribution,P3,S,A
+fhb-maternal-child-health,Maternal and child health and nutrition (FHB),fhb,HEAL,national adm2,annual,permission_unclear,P2,M,B
+firms-active-fires,Active fire detections (MODIS/VIIRS),nasa-firms,ENVI,point adm1 adm2 adm3,daily,open,P2,S,A
+fisheries-statistics,"Fish production, fleet and fisher population by district",fisheries-ministry dcs-pocketbook,AGRI,national adm2,annual,permission_unclear,P2,M,B
+forest-cover-loss,Tree cover and annual tree cover loss,hansen-gfc,ENVI,raster adm1 adm2 adm3 adm4,annual,attribution,P1,S,A
+gadm-gid-crosswalk,GADM GID to p-code crosswalk (internal),gadm-lka,REGI,national adm1 adm2 adm3 polygon,one_off,restricted,P3,S,B
+gbif-biodiversity,Species occurrence records,gbif,ENVI,point adm1 adm2 adm3,weekly,attribution,P3,M,A
+gdacs-alerts,"Disaster alerts (cyclones, floods, earthquakes)",gdacs,ENVI,point polygon,realtime,attribution,P2,S,A
+geonames-gazetteer,Place-name gazetteer (multilingual),geonames,REGI,adm1 adm2 adm3 adm4,daily,attribution,P1,S,A
+geonames-postal-codes,Postal codes,geonames,REGI,adm1 adm2 adm3,daily,attribution,P0,S,A
+ghcnd-stations,Daily station weather records (GHCN-D),noaa-ghcnd,ENVI,point,daily,open,P2,S,A
+ghsl-built-up,Built-up surface and volume 1975-2030 (GHSL),ghsl,REGI ENVI,raster adm1 adm2 adm3 adm4,irregular,attribution,P0,M,A
+ghsl-population-grid,GHS-POP population grid 1975-2030,ghsl,SOCI,raster adm1 adm2 adm3 adm4,irregular,attribution,P1,M,A
+ghsl-settlement-model,Degree of urbanisation (GHS-SMOD),ghsl,REGI SOCI,adm1 adm2 adm3 adm4,irregular,attribution,P1,M,A
+giga-schools,School locations and connectivity,giga-schools,EDUC TECH,point adm1 adm2 adm3 adm4,irregular,attribution,P0,S,A
+gnd-id-crosswalk,DCS GN id <-> COD-AB p-code crosswalk,nuuuwan-gig-data hdx-cod-ab-lka nuuuwan-lk-admin-regions,REGI,adm2,irregular,permission_unclear,P0,M,B
+google-open-buildings,Building footprints and annual building presence (Google),google-open-buildings,REGI,raster adm1 adm2 adm3 adm4,irregular,attribution,P0,M,A
+gpm-imerg-precipitation,"Satellite precipitation, half-hourly to monthly (GPM IMERG)",nasa-earthdata,ENVI,raster adm1 adm2 adm3,daily,open,P2,M,A
+grid-lookups,"Canonical grid lookup arrays (gnd_idx, land_mask)",lanka-data-layer-derived,REGI,raster,monthly,attribution,P0,S,A
+harti-food-prices,Daily food commodity prices (HARTI),harti,AGRI ECON,point,daily,permission_unclear,P1,M,B
+healthsites-facilities,Health facilities (healthsites.io),healthsites,HEAL,point adm1 adm2 adm3 adm4,monthly,attribution,P1,S,A
+heigit-accessibility,Accessibility to health and education (HeiGIT),heigit,HEAL EDUC,adm1 adm2 adm3,irregular,attribution,P2,S,A
+heigit-road-surface,Road surface (paved/unpaved) prediction,heigit,TRAN,line adm1 adm2 adm3 adm4,irregular,attribution,P2,S,A
+hrsl-population-30m,"High-resolution population, 30 m (Meta/CIESIN HRSL)",meta-hrsl,SOCI,raster adm1 adm2 adm3 adm4,one_off,attribution,P0,S,A
+hydrosheds-rivers-basins,River network and catchments,hydrosheds,ENVI,polygon line,one_off,attribution,P2,S,A
+iati-activities-lka,Aid and development activities (IATI),iati-datastore,ECON GOVE INTR,national point adm1 adm2 adm3,daily,attribution,P1,M,A
+idmc-displacements,Internal displacements (disasters and conflict),idmc,SOCI,national point,annual,attribution,P2,S,A
+ilostat-lka,ILO labour statistics,ilostat,ECON,national,annual,attribution,P2,S,A
+imf-portwatch-lka,Port activity and trade estimates (IMF PortWatch),imf-portwatch,TRAN ECON INTR,point,weekly,attribution,P1,S,A
+imf-weo-lka,IMF World Economic Outlook series (Sri Lanka),imf-data,ECON,national,quarterly,permission_unclear,P2,S,A
+irrigation-reservoir-levels,Major reservoir storage,irrigation-dept,ENVI AGRI ENER,point,realtime,permission_unclear,P2,S,B
+irrigation-river-water-levels,River water levels and flood alert status,nuuuwan-lk-irrigation irrigation-dept,ENVI,point,realtime,permission_unclear,P1,S,A
+jrc-river-flood-hazard,River flood depth by return period (JRC),jrc-flood-hazard,ENVI,raster adm1 adm2 adm3 adm4,irregular,attribution,P0,S,A
+jrc-surface-water,Surface water occurrence and change 1984-2021,jrc-gsw,ENVI,raster adm1 adm2 adm3 adm4,irregular,attribution,P1,S,A
+kontur-population-h3,Population on H3 hexagons (Kontur),kontur-population,SOCI,raster adm1 adm2 adm3 adm4,annual,attribution,P3,S,A
+landscan-ambient-population,"Ambient (24-hour average) population, LandScan",landscan,SOCI,raster adm1 adm2 adm3,annual,attribution,P2,S,A
+lk-gtfs-feeds,Public transit schedules (GTFS),transitland-lmt mobilitydb-lk,TRAN,point adm1 adm2 adm3 adm4,weekly,permission_unclear,P1,S,A
+lk-major-projects,Major infrastructure and development projects,rda slpa uda boi aasl-airport,TRAN ECON,point polygon adm2,irregular,permission_unclear,P1,M,C
+lk-metro-proposed-lines,Proposed Colombo metro lines and stations,nuuuwan-lk-metro,TRAN,point,irregular,attribution,P3,S,A
+local-authority-boundaries,Local authority areas (MC/UC/PS) and wards,elections-commission hdx-cod-ab-lka nuuuwan-lg-election-2025,GOVE REGI,national adm1 adm2,irregular,permission_unclear,P1,M,B
+mangrove-extent,Mangrove extent 1996-2020,global-mangrove-watch,ENVI,polygon adm1 adm2 adm3,irregular,attribution,P2,S,A
+map-travel-time-surfaces,Travel time to healthcare and cities (MAP),map-accessibility,HEAL TRAN,raster adm1 adm2 adm3,one_off,attribution,P1,S,A
+meta-rwi-wealth-index,Relative Wealth Index (internal QA),meta-rwi,SOCI ECON,adm3 adm4 raster,one_off,restricted,P3,S,A
+meteo-climate-normals,Station climate normals,meteo dcs-pocketbook,ENVI,point,daily,permission_unclear,P2,M,B
+meteo-daily-station-weather,Daily station rainfall and temperature (Met Dept),meteo nuuuwan-weather-lk,ENVI,point,daily,permission_unclear,P1,M,A
+modis-ndvi,Vegetation index 250 m (MODIS NDVI/EVI),nasa-earthdata,ENVI AGRI,raster adm1 adm2 adm3 adm4,daily,open,P2,M,A
+moe-school-census,"Schools, students and teachers by district and zone",moe-school-census,EDUC,national adm1 adm2,annual,permission_unclear,P1,M,B
+moh-area-boundaries,Medical Officer of Health (MOH) areas,nuuuwan-lk-moh-regions,HEAL REGI,adm2,irregular,permission_unclear,P1,S,B
+moh-health-bulletin-rdhs,Health service indicators by RDHS (Annual Health Bulletin),moh-health,HEAL,national adm2,annual,permission_unclear,P1,M,B
+moh-health-institutions,Government health institution registry (geocoded),moh-health osm-geofabrik healthsites,HEAL,point adm1 adm2 adm3 adm4,annual,permission_unclear,P1,M,C
+moh-immr,Hospital morbidity and mortality (IMMR),moh-health,HEAL,national adm2,annual,permission_unclear,P1,M,A
+ms-building-footprints,Building footprints (Microsoft),ms-buildings,REGI,adm1 adm2 adm3 adm4,irregular,attribution,P2,S,A
+nasadem,NASADEM elevation (SRTM reprocessed),nasa-earthdata,ENVI,raster adm1 adm2 adm3,daily,open,P3,M,A
+nbro-landslide-hazard-zones,"Landslide hazard zonation (NBRO, pending access)",nbro,ENVI,polygon adm1 adm2 adm3 adm4,irregular,permission_unclear,P2,L,B
+noise-control-zones,Silent zones and noise-control zone rules,cea osm-geofabrik,ENVI GOVE,national adm3 adm4 polygon,irregular,permission_unclear,P3,S,B
+nso-electricity-generation,Electricity generation by source (daily and 15-minute),nso-gensum,ENER,national,realtime,permission_unclear,P1,S,A
+ntc-bus-statistics,"Bus fleet, routes, passengers and crashes (NTC)",ntc,TRAN,national adm1 adm2,annual,permission_unclear,P1,M,B
+nwsdb-water-supply,"Piped water connections, coverage and performance",nwsdb,ENVI SOCI,national adm1 adm2,annual,permission_unclear,P1,M,B
+observed-flood-extents,Observed flood extents and damage proxies (satellite),copernicus-ems unosat eos-rs,ENVI,polygon adm1 adm2 adm3 adm4,irregular,attribution,P2,S,A
+ookla-speed-tiles,Internet speeds (link-only),ookla-open-data,TECH,raster adm1 adm2 adm3,quarterly,restricted,P3,S,A
+open-meteo-forecast,Weather forecasts for admin centroids,open-meteo,ENVI,point adm3,daily,attribution,P3,S,A
+openaq-air-quality,"Air quality measurements (PM2.5, NO2)",openaq,ENVI HEAL,point,realtime,attribution,P2,S,A
+opencellid-towers,Mobile cell sites (crowd-sourced),opencellid,TECH,point adm1 adm2 adm3 adm4,daily,attribution,P2,S,A
+osm-buildings,Building footprints (OSM),osm-geofabrik,REGI,adm1 adm2 adm3 adm4,daily,attribution,P1,M,A
+osm-parks-greenspace,Parks and green space (OSM),osm-geofabrik,ENVI SOCI,polygon adm1 adm2 adm3 adm4,daily,attribution,P1,M,A
+osm-places,Populated places (OSM),osm-geofabrik,REGI,point adm1 adm2 adm3 adm4,daily,attribution,P0,M,A
+osm-pois-amenities,Facilities and amenities (OSM),osm-geofabrik,SOCI HEAL EDUC,point adm1 adm2 adm3 adm4,daily,attribution,P0,M,A
+osm-protected-areas,Protected areas (OSM),osm-geofabrik,ENVI,polygon adm1 adm2 adm3,daily,attribution,P1,M,A
+osm-rail-network,Railway lines and stations (OSM),osm-geofabrik,TRAN,national adm1 adm2 line point adm3 adm4,daily,attribution,P0,M,A
+osm-road-network,Road network by class (OSM),osm-geofabrik,TRAN,national adm1 adm2 adm3 adm4 line,daily,attribution,P0,M,A
+osm-routing-graph,Walk and drive routing graph (OSM),osm-geofabrik,TRAN,national,daily,attribution,P0,M,A
+osm-tourism-attractions,"Attractions, viewpoints, waterfalls, heritage (OSM)",osm-geofabrik,SOCI ECON,point adm1 adm2 adm3,daily,attribution,P1,M,A
+osm-trails-cycling,Walking trails and cycle routes (OSM),osm-geofabrik,TRAN SOCI,line adm1 adm2 adm3,daily,attribution,P2,M,A
+osm-waterways-waterbodies,"Rivers, canals, tanks and reservoirs (OSM)",osm-geofabrik,ENVI AGRI,line adm1 adm2 adm3 polygon,daily,attribution,P1,M,A
+ourairports-lka,Airports and airstrips,ourairports,TRAN,point adm1 adm2,daily,open,P2,S,A
+overture-buildings,Conflated building footprints (Overture),overture-maps,REGI,adm1 adm2 adm3 adm4,monthly,attribution,P1,M,A
+overture-places,Places of business and services (Overture),overture-maps,ECON,point adm1 adm2 adm3 adm4,monthly,attribution,P0,M,A
+parliament-members,Members of Parliament by electoral district,parliament-lk,GOVE,national adm2,irregular,permission_unclear,P3,M,B
+police-road-accidents,Road traffic accidents by police division,police-lk dcs-statistical-abstract,TRAN JUST,national polygon adm2,annual,permission_unclear,P2,M,B
+power-plants,"Power plants by technology, capacity and status",gem-power-tracker osm-geofabrik,ENER,adm1 adm2 adm3 point,quarterly,attribution,P1,S,B
+prisons-daily-population,Prison population (daily),prisons,JUST,national,daily,permission_unclear,P3,S,A
+protected-monuments,Gazetted archaeological protected monuments,archaeology-dept osm-geofabrik wikidata,SOCI,adm2 adm3 point,irregular,permission_unclear,P2,M,C
+pucsl-supply-reliability,Electricity supply interruptions (SAIDI/SAIFI),pucsl,ENER,adm1 polygon,quarterly,permission_unclear,P1,S,A
+rda-expressway-programme,Expressway network and programme status,rda osm-geofabrik,TRAN,national adm2 point line,irregular,permission_unclear,P1,M,C
+rda-national-roads,National road register (A/B class) and expressways,rda osm-geofabrik,TRAN,national adm1,irregular,permission_unclear,P2,M,B
+searoute-shipping-lanes,Indicative shipping lanes to Sri Lankan ports,eurostat-searoute,TRAN INTR,line,irregular,attribution,P3,S,A
+slbfe-labour-migration,Foreign employment departures,slbfe dcs-pocketbook,SOCI ECON INTR,national adm2,annual,permission_unclear,P1,M,B
+slpa-port-statistics,"Port traffic, containers and cargo by port",slpa,TRAN ECON,point,monthly,permission_unclear,P2,S,B
+slr-timetable,Railway timetable (derived GTFS),slr osm-geofabrik,TRAN,point,irregular,permission_unclear,P1,M,B
+slsea-energy-balance,National energy balance,slsea,ENER,national,annual,permission_unclear,P2,M,B
+sltda-accommodation,Tourist accommodation capacity and occupancy by region,sltda,ECON,national adm2,monthly,permission_unclear,P2,M,B
+sltda-registered-establishments,Registered tourist establishments (geocoded),sltda osm-geofabrik overture-maps,ECON,point adm1 adm2 adm3 adm4,monthly,permission_unclear,P2,M,C
+sltda-tourist-arrivals,Tourist arrivals by source country,sltda nuuuwan-lk-tourism,ECON INTR,national,monthly,permission_unclear,P1,M,A
+soilgrids-properties,Soil properties 250 m,soilgrids,AGRI,raster adm1 adm2 adm3,one_off,attribution,P3,S,A
+solar-pv-potential,Solar irradiation and PV potential,global-solar-atlas,ENER,raster adm1 adm2 adm3 adm4,one_off,attribution,P2,S,A
+survey-topographic-layers,Official topographic layers (blocked),survey-dept-lk,REGI,line polygon raster,irregular,permission_unclear,P3,L,B
+tea-production-exports,Tea production by elevation and exports,tea-board,AGRI,national,monthly,permission_unclear,P3,S,B
+thinkhazard-levels,Hazard levels by district (ThinkHazard!),thinkhazard,ENVI,national adm1 adm2,irregular,attribution,P2,S,A
+ti-cpi-lka,Corruption Perceptions Index,transparency-intl,GOVE,national,annual,attribution,P3,S,A
+trcsl-telecom-indicators,"Telecom subscriptions (fixed, mobile, broadband)",trcsl,TECH,national,quarterly,permission_unclear,P2,S,A
+treasury-fiscal-performance,"Fiscal performance, in-year outturn and financial soundness",treasury-fiscal-reports,ECON GOVE,national,annual,permission_unclear,P2,M,B
+treasury-guarantees,Government guarantees and letters of comfort,treasury-debt,ECON GOVE,national,quarterly,permission_unclear,P2,M,B
+treasury-procurement,"Public procurement: bids, competitiveness, status",treasury-procurement,GOVE,national,annual,permission_unclear,P2,M,B
+treasury-province-transfers,Transfers to provincial councils,treasury-annual-report,GOVE,adm1,annual,permission_unclear,P1,M,B
+treasury-provincial-debt,Provincial council debt,treasury-debt,GOVE,adm1,quarterly,permission_unclear,P2,M,B
+treasury-public-debt,Public debt stock and creditor composition,treasury-debt,ECON INTR,national,quarterly,permission_unclear,P1,M,B
+treasury-revenue-outturn,Revenue outturn by tax and budget head,treasury-annual-report,ECON,national,annual,permission_unclear,P2,M,B
+treasury-soe-finances,State-owned enterprise finances,treasury-annual-report,ECON GOVE,national,annual,permission_unclear,P2,M,B
+treasury-women-msme-finance,Women-led MSME finance indicators,treasury-publications,ECON SOCI,national,irregular,permission_unclear,P3,M,B
+ucdp-ged-lka,Conflict events 1989-present (UCDP GED),ucdp,JUST,point adm1 adm2 adm3,annual,attribution,P2,S,A
+uda-zoning-plans,Urban development plan zones,uda,REGI,polygon,irregular,permission_unclear,P3,L,C
+ugc-admissions-district,University admissions by district,ugc,EDUC,national adm2,annual,permission_unclear,P2,M,B
+un-sdg-lka,SDG indicators for Sri Lanka,un-sdg,SOCI,national,annual,attribution,P2,S,A
+un-wpp-lka,National population estimates and projections (UN WPP),un-wpp,SOCI,national,irregular,attribution,P2,S,A
+undp-hdi-lka,Human development indices,undp-hdr,SOCI,national,annual,attribution,P3,S,A
+unicef-lka,Child and maternal indicators (UNICEF),unicef-data,HEAL SOCI,national,annual,attribution,P2,S,A
+viirs-nightlights,Night-time lights annual and monthly (VIIRS VNL),eog-viirs,ECON ENER,raster adm1 adm2 adm3 adm4,monthly,attribution,P0,S,A
+wb-pip-poverty,International poverty and inequality (PIP),worldbank-pip,SOCI,national,irregular,attribution,P1,S,A
+wb-projects-lka,World Bank projects in Sri Lanka (geocoded),worldbank-projects,ECON GOVE INTR,national point adm1 adm2 adm3 adm4,weekly,attribution,P1,S,A
+wb-sldu-outlook,World Bank macro outlook and poverty nowcasts,worldbank-sldu,ECON SOCI,national adm1,irregular,attribution,P2,M,B
+wdi-lka,"World Development Indicators for Sri Lanka (~1,500 series)",worldbank-wdi,ECON SOCI,national,quarterly,attribution,P0,S,A
+wdpa-protected-areas,"Protected areas (WDPA, link-only)",wdpa,ENVI,polygon adm1 adm2,monthly,restricted,P3,S,A
+wfp-food-prices,Market food prices (WFP),wfp-vam,AGRI ECON,point adm2,monthly,attribution,P0,S,A
+wfp-rainfall-ndvi-subnational,Dekadal rainfall and NDVI by district (WFP),wfp-vam,ENVI AGRI,adm2,monthly,attribution,P1,S,A
+who-gho-lka,WHO health indicators (link-only),who-gho,HEAL,national,annual,restricted,P3,S,A
+wikidata-admin-crosswalk,Wikidata admin crosswalk and multilingual names,wikidata,REGI,national adm1 adm2 adm3,weekly,open,P0,S,A
+wikidata-places-entities,"Wikidata places, landmarks and institutions",wikidata,REGI SOCI,adm1 adm2 adm3 adm4,weekly,open,P1,S,A
+wind-power-density,Wind speed and power density,global-wind-atlas,ENER,raster adm1 adm2 adm3,one_off,attribution,P3,S,A
+wits-trade-partners,Trade by partner and product (WITS),wits-comtrade,ECON INTR,national,annual,permission_unclear,P2,S,A
+world-heritage-sites,UNESCO World Heritage sites and buffer zones,unesco-whc osm-geofabrik,SOCI ECON,adm2 point polygon,annual,attribution,P2,S,B
+worldclim-climate-normals,Climate normals 1970-2000 (WorldClim 2.1),worldclim,ENVI,adm1 adm2 adm3 adm4 raster,one_off,attribution,P2,S,A
+worldcover-land-cover,Land cover 10 m (ESA WorldCover),esa-worldcover,ENVI AGRI,raster adm1 adm2 adm3 adm4,one_off,attribution,P0,S,A
+worldpop-age-sex,Population by age and sex (WorldPop grid),worldpop,SOCI HEAL,raster adm1 adm2 adm3 adm4,annual,attribution,P0,S,A
+worldpop-births-pregnancies,Estimated births and pregnancies (WorldPop),worldpop,HEAL SOCI,raster adm1 adm2 adm3 adm4,annual,attribution,P2,S,A
+worldpop-pop-grid,"Gridded population (WorldPop, 100 m, 2015-2030)",worldpop,SOCI REGI,raster adm1 adm2 adm3 adm4,annual,attribution,P0,S,A

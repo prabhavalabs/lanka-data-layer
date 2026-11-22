@@ -1,0 +1,15 @@
+# Destination type for market access
+# Source/authority: Lanka Data Layer derived-market-access method; town populations from Census 2024 / GHSL urban centres; HARTI dedicated economic centres.
+# Note: Alternative destinations: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-market-access
+id: town_size
+title: Destination type for market access
+codes:
+  - { code: town_20k, label: "Nearest town of 20,000+ people" }
+  - { code: town_50k, label: "Nearest town of 50,000+ people" }
+  - { code: economic_centre, label: Nearest dedicated economic centre }
+  - { code: district_capital, label: Nearest district capital }

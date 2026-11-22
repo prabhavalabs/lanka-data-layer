@@ -1,0 +1,27 @@
+id: slsea
+publisher: Sri Lanka Sustainable Energy Authority
+title: Energy balance and energy statistics
+homepage: https://www.energy.gov.lk/
+access:
+  method: pdf
+  endpoint: https://www.energy.gov.lk/en/energy-data
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Sri Lanka Sustainable Energy Authority
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - national
+  - point
+  join: none
+themes:
+- ENER
+datasets:
+- slsea-energy-balance
+priority: P2
+effort: M
+status: planned
+verified_at: '2026-11-21'

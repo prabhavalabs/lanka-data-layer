@@ -1,0 +1,20 @@
+# Building material (price statistics)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Pocket Book - average retail prices of building materials; ICTAD/CIDA building material price indices.
+# Note: Prices: no total.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-prices-wages
+id: building_material
+title: Building material (price statistics)
+codes:
+  - { code: cement, label: Cement (50 kg bag) }
+  - { code: steel_bars, label: Steel reinforcement bars }
+  - { code: bricks, label: Bricks }
+  - { code: sand, label: Sand }
+  - { code: metal_aggregate, label: Metal (aggregate) }
+  - { code: timber, label: Timber }
+  - { code: roofing_sheets, label: Roofing sheets }
+  - { code: paint, label: Paint }

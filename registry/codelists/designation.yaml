@@ -1,0 +1,17 @@
+# Heritage / protection designation of a site
+# Source/authority: UNESCO World Heritage Centre lists; Antiquities Ordinance No. 9 of 1940 (Department of Archaeology); Fauna and Flora Protection Ordinance (DWC) and Forest Conservation Ordinance (Forest Department).
+# Note: A site can hold several designations; counts by designation are not additive.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-attractions-register
+id: designation
+title: Heritage / protection designation of a site
+codes:
+  - { code: total, label: All sites, total: true, sdmx: _T }
+  - { code: world_heritage, label: UNESCO World Heritage property }
+  - { code: world_heritage_tentative, label: UNESCO tentative list }
+  - { code: protected_monument, label: Protected monument (Antiquities Ordinance) }
+  - { code: archaeological_reserve, label: Archaeological reserve (Antiquities Ordinance) }
+  - { code: protected_area, label: Protected area (DWC / Forest Department) }
+  - { code: none, label: No designation }

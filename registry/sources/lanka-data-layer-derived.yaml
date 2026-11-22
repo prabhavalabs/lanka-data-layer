@@ -1,0 +1,82 @@
+id: lanka-data-layer-derived
+publisher: Lanka Data Layer
+title: Lanka Data Layer derived analytics
+homepage: https://github.com/prabhavalabs/lanka-data-layer
+access:
+  method: git
+  endpoint: https://github.com/prabhavalabs/lanka-data-layer
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: Lanka Data Layer derived product (inputs keep their own licences; OSM-derived layers ODbL)
+cadence:
+  frequency: monthly
+geo:
+  levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  - raster
+  join: grid
+themes:
+- REGI
+- SOCI
+- HEAL
+- TRAN
+- ENVI
+- ECON
+datasets:
+- grid-lookups
+- derived-zonal-population
+- derived-travel-time-facilities
+- derived-facility-coverage
+- derived-transit-access
+- derived-flood-exposure
+- derived-landslide-exposure
+- derived-urban-growth
+- derived-nightlights-growth
+- derived-rainfall-anomaly
+- derived-heat-exposure
+- derived-per-capita-indicators
+- derived-land-cover-zonal
+- derived-terrain-zonal
+- derived-building-density
+- derived-electoral-demographics
+- derived-dengue-risk
+- derived-small-area-poverty
+- derived-service-gap-index
+- derived-agri-season-monitor
+- derived-forest-loss-zonal
+- derived-intercensal-population
+- derived-harmonised-boundary-series
+- derived-dasymetric-disaggregation
+- derived-tourism-pressure-index
+- derived-investment-density
+- derived-development-index
+- derived-market-access
+- derived-multi-hazard-exposure
+- derived-attractions-register
+- derived-admin-metrics
+- derived-census-2024-rollups
+- derived-facility-counts
+priority: P1
+effort: L
+status: planned
+verified_at: '2026-11-21'
+notes: Our own Tier-2 products computed by the engine from registered inputs; method pages per dataset. OSM-derived outputs
+  carry ODbL.
+dc_refs:
+- metro-coverage-deciles
+- metro-coverage-facilities
+- metro-coverage-gnd
+- metro-coverage-lines
+- metro-coverage-stops
+- metro-gap-clusters
+- metro-route-candidates
+- metro-route-scenarios
+- metro-stop-uniqueness
+- metro_walksheds
+- land-cover-district

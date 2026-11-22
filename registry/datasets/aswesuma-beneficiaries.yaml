@@ -1,0 +1,45 @@
+id: aswesuma-beneficiaries
+title: Welfare (Aswesuma) beneficiaries by DS division
+description: Number of beneficiary families by category (transitional, vulnerable, poor, extreme poor) per DS division.
+source_ids:
+- wbb-aswesuma
+indicators:
+- id: soc.aswesuma_families
+  label: Beneficiary families
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: category
+    codelist: aswesuma_category
+  geo_levels:
+  - national
+  - adm2
+  - adm3
+  period_type: snapshot
+- id: soc.aswesuma_share
+  label: Beneficiary families per 100 households
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  geo_levels:
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2023'
+  to: '2025'
+method: PDF/HTML tables; DS names crosswalked.
+limits:
+- Eligibility rules and appeals change counts; aggregate counts only.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at DS (ADM3) level: registry/crosswalks/ (ds-name-aliases.csv and siblings); DS renames/splits
+    since 2012 handled by effective-dated rows'
+  aggregations:
+  - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
+    average rates)'
+  - 'cross-source: targeting vs HIES poverty and small-area poverty model'
+publication_class: B

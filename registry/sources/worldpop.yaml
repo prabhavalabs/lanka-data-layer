@@ -1,0 +1,33 @@
+id: worldpop
+publisher: WorldPop, University of Southampton
+title: WorldPop Global2 (2015-2030) population, age/sex, births, pregnancies
+homepage: https://hub.worldpop.org/
+access:
+  method: raster
+  endpoint: https://hub.worldpop.org/rest/data/age_structures/aswpgp?iso3=LKA
+  auth: none
+licence:
+  id: cc-by-4.0
+  status: attribution
+  url: https://creativecommons.org/licenses/by/4.0/
+  attribution: WorldPop (www.worldpop.org)
+cadence:
+  frequency: annual
+geo:
+  levels:
+  - raster
+  join: grid
+themes:
+- SOCI
+- HEAL
+- REGI
+datasets:
+- worldpop-pop-grid
+- worldpop-age-sex
+- worldpop-births-pregnancies
+priority: P0
+effort: S
+status: active
+verified_at: '2026-11-21'
+notes: 'REST catalogue gives GeoTIFF URLs per year; HDX mirrors: worldpop-population-counts-2015-2030-lka, worldpop-age-and-gender-structures-2015-2030-lka,
+  worldpop-births-for-sri-lanka, worldpop-pregnancies-for-sri-lanka.'

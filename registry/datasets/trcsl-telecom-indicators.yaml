@@ -1,0 +1,31 @@
+id: trcsl-telecom-indicators
+title: Telecom subscriptions (fixed, mobile, broadband)
+description: Subscriptions by service type, quarterly.
+source_ids:
+- trcsl
+indicators:
+- id: tech.subscriptions
+  label: Telecom subscriptions
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - id: service
+    codelist: telecom_service
+  geo_levels:
+  - national
+  period_type: quarter
+time_coverage:
+  from: 2010-Q1
+  to: 2026-Q2
+method: HTML tables.
+limits:
+- National only; SIMs not people.
+enrichment:
+  joins:
+  - 'national series: no spatial join; joins to other national series by period'
+  aggregations:
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - per 100 people
+publication_class: A

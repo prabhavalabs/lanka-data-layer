@@ -1,0 +1,18 @@
+# Principal source of lighting
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing - principal type of lighting.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-basic-services
+id: lighting
+title: Principal source of lighting
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: electricity, label: Electricity, parent: total }
+  - { code: national_grid, label: Electricity - national grid, parent: electricity }
+  - { code: rural_hydro, label: Electricity - rural hydro project, parent: electricity }
+  - { code: solar, label: Solar power, parent: total }
+  - { code: kerosene, label: Kerosene, parent: total }
+  - { code: biogas, label: Biogas, parent: total }
+  - { code: other, label: Other, parent: total }

@@ -1,0 +1,17 @@
+# Expressway route (RDA E-class)
+# Source/authority: Road Development Authority, Expressway Operation Maintenance and Management Division - expressway route numbers.
+# Note: Add new E-routes (and sections such as E01 Hambantota extension) from the RDA programme list.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: rda-expressway-programme
+id: expressway
+title: Expressway route (RDA E-class)
+codes:
+  - { code: total, label: All expressways, total: true, sdmx: _T }
+  - { code: E01, label: E01 Southern Expressway, parent: total }
+  - { code: E02, label: E02 Outer Circular Highway, parent: total }
+  - { code: E03, label: E03 Colombo - Katunayake Expressway, parent: total }
+  - { code: E04, label: E04 Central Expressway, parent: total }
+  - { code: E06, label: E06 Ruwanpura Expressway, parent: total }

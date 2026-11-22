@@ -1,0 +1,33 @@
+id: dcs-midyear-population-district
+title: Mid-year population estimates by district
+description: Annual mid-year population by district and sex; official denominator for per-capita rates between censuses.
+source_ids:
+- dcs-population-vital
+indicators:
+- id: pop.midyear_district
+  label: Mid-year population
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  - adm2
+  period_type: year
+time_coverage:
+  from: '1981'
+  to: '2025'
+method: Statistical Abstract chapter 2 tables (PDF) parsed and reviewed.
+limits:
+- Projections from census base + registrations; revised after CPH 2024.
+- District level only.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv and siblings) (English/Sinhala/Tamil
+    spellings, renamed units)'
+  aggregations:
+  - roll-up ADM2->ADM1->ADM0 by p-code (sum counts; recompute ratios)
+  - denominator for all district per-capita indicators
+publication_class: B

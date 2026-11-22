@@ -1,0 +1,21 @@
+# UDA development plan zone
+# Source/authority: Urban Development Authority (UDA), development plans for declared urban areas (zoning plans and regulations).
+# Note: Each plan names zones differently (e.g. 'Primary Residential Zone'); map plan-specific names here in a crosswalk.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: uda-zoning-plans
+id: uda_zone
+title: UDA development plan zone
+codes:
+  - { code: total, label: All zones, total: true, sdmx: _T }
+  - { code: residential, label: Residential, parent: total }
+  - { code: commercial, label: Commercial, parent: total }
+  - { code: mixed_development, label: Mixed development, parent: total }
+  - { code: industrial, label: Industrial, parent: total }
+  - { code: institutional, label: Institutional, parent: total }
+  - { code: tourism, label: Tourism, parent: total }
+  - { code: green_conservation, label: Green / conservation / wetland, parent: total }
+  - { code: agriculture, label: Agriculture, parent: total }
+  - { code: other, label: Other, parent: total }

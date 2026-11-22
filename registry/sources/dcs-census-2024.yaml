@@ -1,0 +1,57 @@
+id: dcs-census-2024
+publisher: Department of Census and Statistics, Sri Lanka
+title: Census of Population and Housing 2024
+homepage: https://www.statistics.gov.lk/Population/StaticalInformation/CPH2024
+access:
+  method: pdf
+  endpoint: https://www.statistics.gov.lk/Resource/en/Population/CPH_2024/CPH2024_Final_Eng.pdf
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Census of Population and Housing 2024
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - national
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  join: name_match
+themes:
+- SOCI
+- REGI
+datasets:
+- dcs-census-2024-population
+- dcs-census-2024-households
+- dcs-census-2024-ethnicity-religion
+- dcs-census-2024-housing
+- dcs-census-2024-basic-services
+- dcs-census-2024-education-literacy
+- dcs-census-2024-disability
+- dcs-census-2024-household-assets
+- dcs-census-2024-gnd
+priority: P0
+effort: L
+status: active
+verified_at: '2026-11-21'
+notes: Final report PDF + HTML/XLS tables (HousingA/A1 etc.). DS tables A5-A7 already ingested. Request written reuse permission
+  (decision D4).
+dc_refs:
+- census-age-sex-dsd
+- population-change
+- population-change-district
+- census-households-dsd
+- census-ethnicity-district
+- census-religion-district
+- census-housing-structure-district
+- housing-condition-materials
+- housing-occupancy-tenure
+- census-basic-services-district
+- household-waste-disposal
+- language-literacy
+- computer-digital-literacy
+- functional-difficulties-disability
+- household-equipment-use

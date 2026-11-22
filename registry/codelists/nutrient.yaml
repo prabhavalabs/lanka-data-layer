@@ -1,0 +1,13 @@
+# Fertiliser nutrient
+# Source/authority: FAOSTAT Fertilizers by Nutrient domain (items 3102 N, 3103 P2O5, 3104 K2O).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: faostat-land-inputs
+id: nutrient
+title: Fertiliser nutrient
+codes:
+  - { code: total, label: All nutrients, total: true, sdmx: _T }
+  - { code: "n", label: Nitrogen (N), parent: total }
+  - { code: p2o5, label: Phosphate (P2O5), parent: total }
+  - { code: k2o, label: Potash (K2O), parent: total }

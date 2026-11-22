@@ -1,0 +1,16 @@
+# Source boundary vintage (harmonised series)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka census GN/DS boundary vintages; reference boundary set cod-ab-lka (country/lk/profile.yaml).
+# Note: Non-additive selector: no total.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-harmonised-boundary-series
+id: source_boundary_vintage
+title: Source boundary vintage (harmonised series)
+codes:
+  - { code: "1981", label: "1981 census boundaries" }
+  - { code: "2001", label: "2001 census boundaries" }
+  - { code: "2012", label: "2012 census boundaries" }
+  - { code: "2024", label: "2024 reference boundaries (cod-ab-lka)" }

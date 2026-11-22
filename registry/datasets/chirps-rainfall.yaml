@@ -1,0 +1,69 @@
+id: chirps-rainfall
+title: Rainfall daily to monthly (CHIRPS, 0.05 deg)
+description: 'Gauge-blended satellite rainfall 1981-present: daily, dekadal and monthly totals plus anomalies vs 1991-2020.'
+source_ids:
+- chirps
+indicators:
+- id: clim.rain_daily
+  label: Daily rainfall
+  unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  period_type: day
+- id: clim.rain_monthly
+  label: Monthly rainfall
+  unit: mm
+  measure_type: mean
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - raster
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: month
+- id: clim.rain_anomaly
+  label: Monthly rainfall anomaly vs 1991-2020
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: month
+- id: clim.spi_3
+  label: Standardised Precipitation Index (3-month)
+  unit: '{index}'
+  measure_type: index
+  aggregation: none
+  class: third_party
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  period_type: month
+time_coverage:
+  from: 1981-01
+  to: 2026-11
+method: Clip global rasters; bilinear to canonical grid; area-weighted zonal means.
+limits:
+- ~5.5 km cells; smooths orographic extremes; uses few Sri Lankan gauges.
+enrichment:
+  joins:
+  - 'zonal statistics: raster resampled to the canonical 0.001 deg grid, grid cell -> ADM4 via the reverse-geocode lookup;
+    ADM4 values roll up by p-code'
+  aggregations:
+  - area-weighted means and area shares per unit (cells weighted by cell area)
+  - 'time series derivations: year-on-year change, 3-period moving average, index to base year'
+  - 'derive: drought (SPI), monsoon onset, crop-season rainfall per district'
+publication_class: A

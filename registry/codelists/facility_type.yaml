@@ -1,0 +1,31 @@
+# Service facility type
+# Source/authority: Lanka Data Layer accessibility products; OpenStreetMap / healthsites.io facility types; HeiGIT accessibility facility categories.
+# Note: Shared by derived-facility-coverage, derived-flood-exposure, derived-travel-time-facilities, healthsites-facilities and heigit-accessibility (facility). Hospital tiers use `hospital_type` as a second dimension.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-facility-coverage, derived-flood-exposure, derived-travel-time-facilities, healthsites-facilities, heigit-accessibility
+id: facility_type
+title: Service facility type
+codes:
+  - { code: total, label: All facilities, total: true, sdmx: _T }
+  - { code: health, label: Health facilities, parent: total }
+  - { code: education, label: Education facilities, parent: total }
+  - { code: finance, label: Financial services, parent: total }
+  - { code: transport, label: Transport nodes, parent: total }
+  - { code: public_service, label: Public services, parent: total }
+  - { code: settlement, label: Settlement destinations, parent: total }
+  - { code: hospital, label: Hospital, parent: health }
+  - { code: primary_health_care, label: Primary health care (PMCU / clinic / MOH), parent: health }
+  - { code: clinic, label: Clinic, parent: health }
+  - { code: doctors, label: Doctors / GP practice, parent: health }
+  - { code: dentist, label: Dentist, parent: health }
+  - { code: pharmacy, label: Pharmacy, parent: health }
+  - { code: school, label: School, parent: education }
+  - { code: university, label: University, parent: education }
+  - { code: bank, label: Bank branch, parent: finance }
+  - { code: atm, label: ATM, parent: finance }
+  - { code: railway_station, label: Railway station, parent: transport }
+  - { code: bus_stop, label: Bus stop / GTFS stop, parent: transport }
+  - { code: police_station, label: Police station, parent: public_service }
+  - { code: district_town, label: District capital / town, parent: settlement }

@@ -1,0 +1,35 @@
+id: nuuuwan-gig-data
+publisher: Nuwan Senaratna (nuuuwan) - data from DCS / Survey Department
+title: 'gig-data: Sri Lanka geo + census data store'
+homepage: https://github.com/nuuuwan/gig-data
+access:
+  method: git
+  endpoint: https://github.com/nuuuwan/gig-data
+  auth: none
+licence:
+  id: mit-code+lk-gov-unstated
+  status: permission_unclear
+  attribution: 'Data: Department of Census and Statistics; Survey Department. Parsed/scraped by Nuwan Senaratna (nuuuwan),
+    code MIT.'
+cadence:
+  frequency: irregular
+geo:
+  levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  - polygon
+  join: pcode
+themes:
+- REGI
+- SOCI
+datasets:
+- gnd-id-crosswalk
+- dcs-census-2012
+priority: P1
+effort: M
+status: planned
+verified_at: '2026-11-21'
+notes: Uses DCS-style region ids (LK-1103015 etc.). dc reached 97.43% GN id match to boundaries; crosswalk to COD-AB p-codes
+  is the work. Mirrors census 2012 GN tables.
