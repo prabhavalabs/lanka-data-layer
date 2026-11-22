@@ -42,3 +42,8 @@ enrichment:
     below district)
   - 'derive: population within 10-min walk of a park'
 publication_class: A
+kind: features
+fields:
+- {name: operator, type: string, label: Operator}
+- {name: access, type: string, label: Access}
+tiles: {minzoom: 9, maxzoom: 14, attrs: [access]}

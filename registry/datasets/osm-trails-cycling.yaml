@@ -31,3 +31,18 @@ enrichment:
   - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
     average rates)'
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: network, type: string, label: Route network}
+- {name: ref, type: string, label: Route reference}
+- {name: distance, type: string, label: Distance (as tagged)}
+- {name: surface, type: string, label: Surface}
+- {name: sac_scale, type: string, label: Hiking difficulty (SAC scale)}
+- {name: trail_visibility, type: string, label: Trail visibility}
+tiles:
+  minzoom: 6
+  maxzoom: 14
+  attrs: [network, ref, sac_scale]
+  drop_densest: true
+  minzoom_by_kind: {bicycle_route: 6, hiking_route: 6, cycleway: 10, path: 11, bridleway: 11, footway: 12}

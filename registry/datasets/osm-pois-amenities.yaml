@@ -50,3 +50,14 @@ enrichment:
     below district)
   - destinations for derived-travel-time-facilities
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: category, type: string, label: Category, enum: [health, education, finance, public_service, transport, community]}
+- {name: operator, type: string, label: Operator}
+- {name: beds, type: integer, label: Beds, unit: '{count}', measure_type: count}
+- {name: healthcare, type: string, label: Healthcare type}
+- {name: iata, type: string, label: IATA code}
+- {name: icao, type: string, label: ICAO code}
+- {name: religion, type: string, label: Religion}
+tiles: {minzoom: 6, maxzoom: 14, attrs: [category, operator]}

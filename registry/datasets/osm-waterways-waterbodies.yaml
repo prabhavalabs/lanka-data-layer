@@ -44,3 +44,9 @@ enrichment:
   - 'roll-up ADM4->ADM3->ADM2->ADM1->ADM0 by p-code: sum counts, recompute ratios from numerators and denominators (never
     average rates)'
 publication_class: A
+kind: features
+tiles:
+  minzoom: 6
+  maxzoom: 14
+  drop_densest: true
+  minzoom_by_kind: {river: 7, reservoir: 6, lake: 6, lagoon: 6, river_area: 8, canal: 9, stream: 11}

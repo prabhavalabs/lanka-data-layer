@@ -32,3 +32,10 @@ enrichment:
     average rates)'
   - share of unit protected
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: protect_class, type: string, label: IUCN / OSM protect class}
+- {name: protection_title, type: string, label: Protection title}
+- {name: operator, type: string, label: Operator}
+tiles: {minzoom: 5, maxzoom: 14, attrs: [protect_class, protection_title]}

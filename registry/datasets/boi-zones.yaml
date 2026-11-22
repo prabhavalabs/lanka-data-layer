@@ -36,3 +36,7 @@ enrichment:
   - jobs within commuting distance
 kind: features
 publication_class: B
+searchable: true
+fields:
+- {name: operator, type: string, label: Operator}
+tiles: {minzoom: 6, maxzoom: 14, attrs: [operator]}
