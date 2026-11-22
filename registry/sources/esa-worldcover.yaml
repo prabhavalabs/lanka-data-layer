@@ -24,7 +24,7 @@ datasets:
 - worldcover-land-cover
 priority: P0
 effort: S
-status: planned
+status: active
 verified_at: '2026-11-21'
 dc_refs:
 - land-cover-grid

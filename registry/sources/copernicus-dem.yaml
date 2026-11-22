@@ -25,5 +25,5 @@ datasets:
 - copernicus-dem-terrain
 priority: P0
 effort: S
-status: planned
+status: active
 verified_at: '2026-11-21'

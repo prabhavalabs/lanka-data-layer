@@ -27,7 +27,7 @@ datasets:
 - worldclim-climate-normals
 priority: P2
 effort: S
-status: planned
+status: active
 verified_at: '2026-11-21'
 notes: 1970-2000 monthly normals (tmin/tmax/tavg/prec/srad/wind/vapr) + 19 bioclim variables at 30 arc-sec. dc 'climate' explore
   layer uses it.

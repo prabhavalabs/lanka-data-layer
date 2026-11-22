@@ -1,0 +1,27 @@
+# WorldPop Global2 R2024B, 2025, unconstrained, UN-adjusted, ~1 km (30 arc-sec) — the v1 `cells`
+# input. Every positive pixel is split evenly over the canonical cells whose centre it contains
+# (split_sum = v1 foundry/src/steps/cells.ts), then summed per unit through gnd_idx.
+source: worldpop
+driver: raster
+version: 1.0.0
+description: WorldPop 2025 population on the canonical 0.001 deg grid and per admin unit (ADM1-ADM4).
+dataset: worldpop-pop-grid
+discover:
+  files:
+    - key: pop-2025
+      url: https://data.worldpop.org/GIS/Population/Global_2015_2030/R2024B/2025/LKA/v1/1km_ua/unconstrained/lka_pop_2025_UC_1km_R2024B_UA_v1.tif
+layers:
+  - id: worldpop.population
+    period: "2025"
+    indicator: pop.grid_total
+    resample: split_sum
+    encoding: { dtype: f32 }
+    unit: "{person}"
+    zonal: sum
+    overview: sum
+    source_res_m: 1000
+    serve: true
+    style: { ramp: viridis.magma, scale: log, domain: [0.05, 400], transparent_at_or_below: 0 }
+zonal:
+  # Modelled input (04 §2: estimated when the grid is itself modelled); no interval yet (back-cast, WP-11).
+  - { indicator: pop.grid_total, layer: worldpop.population, stat: sum, basis: estimated }

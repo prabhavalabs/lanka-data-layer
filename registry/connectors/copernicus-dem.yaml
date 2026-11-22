@@ -1,0 +1,60 @@
+# Copernicus DEM GLO-30 (DSM, 1 arc-sec, PixelIsPoint tiles of 1 x 1 deg; N05E079, N05E081 and
+# N09E081 do not exist: open sea). Elevation is the mean of the 30 m pixels whose centre falls in a
+# canonical cell; slope is Horn's kernel on the 30 m pixels with latitude-correct pixel widths, then
+# averaged per cell; steep share = fraction of 30 m pixels steeper than 30 deg.
+source: copernicus-dem
+driver: raster
+version: 1.0.0
+description: Copernicus GLO-30 elevation and slope on the canonical grid; zonal means per admin unit (ADM1-ADM4).
+dataset: copernicus-dem-terrain
+discover:
+  files:
+    - { key: N05E080, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N05_00_E080_00_DEM/Copernicus_DSM_COG_10_N05_00_E080_00_DEM.tif }
+    - { key: N06E079, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N06_00_E079_00_DEM/Copernicus_DSM_COG_10_N06_00_E079_00_DEM.tif }
+    - { key: N06E080, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N06_00_E080_00_DEM/Copernicus_DSM_COG_10_N06_00_E080_00_DEM.tif }
+    - { key: N06E081, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N06_00_E081_00_DEM/Copernicus_DSM_COG_10_N06_00_E081_00_DEM.tif }
+    - { key: N07E079, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N07_00_E079_00_DEM/Copernicus_DSM_COG_10_N07_00_E079_00_DEM.tif }
+    - { key: N07E080, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N07_00_E080_00_DEM/Copernicus_DSM_COG_10_N07_00_E080_00_DEM.tif }
+    - { key: N07E081, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N07_00_E081_00_DEM/Copernicus_DSM_COG_10_N07_00_E081_00_DEM.tif }
+    - { key: N08E079, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N08_00_E079_00_DEM/Copernicus_DSM_COG_10_N08_00_E079_00_DEM.tif }
+    - { key: N08E080, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N08_00_E080_00_DEM/Copernicus_DSM_COG_10_N08_00_E080_00_DEM.tif }
+    - { key: N08E081, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N08_00_E081_00_DEM/Copernicus_DSM_COG_10_N08_00_E081_00_DEM.tif }
+    - { key: N09E079, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N09_00_E079_00_DEM/Copernicus_DSM_COG_10_N09_00_E079_00_DEM.tif }
+    - { key: N09E080, url: https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N09_00_E080_00_DEM/Copernicus_DSM_COG_10_N09_00_E080_00_DEM.tif }
+layers:
+  - id: terrain.elevation
+    period: "2015"
+    indicator: terrain.elevation_mean
+    resample: centre_mean
+    encoding: { dtype: i16, scale: 0.1, nodata: -32768 }
+    unit: m
+    zonal: mean
+    overview: mean
+    source_res_m: 30
+    serve: true
+    style: { ramp: viridis.viridis, domain: [0, 2400], transparent_at_or_below: 0 }
+  - id: terrain.slope
+    period: "2015"
+    indicator: terrain.slope_mean
+    resample: slope_mean
+    encoding: { dtype: u16, scale: 0.01, nodata: 65535 }
+    unit: deg
+    zonal: mean
+    overview: mean
+    source_res_m: 30
+    serve: true
+    style: { ramp: ldl.seq.orange, domain: [0, 40] }
+  - id: terrain.steep
+    period: "2015"
+    indicator: terrain.steep_share
+    resample: slope_share
+    threshold_deg: 30
+    encoding: { dtype: u8, scale: 0.004, nodata: 255 }
+    unit: "1"
+    zonal: mean
+    overview: mean
+    source_res_m: 30
+zonal:
+  - { indicator: terrain.elevation_mean, layer: terrain.elevation, stat: mean }
+  - { indicator: terrain.slope_mean, layer: terrain.slope, stat: mean }
+  - { indicator: terrain.steep_share, layer: terrain.steep, stat: mean, factor: 100 }
