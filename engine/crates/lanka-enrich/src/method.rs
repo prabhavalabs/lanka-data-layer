@@ -472,6 +472,18 @@ impl Inputs for MemInputs {
             .cloned()
             .with_context(|| format!("no grid input {port:?}"))
     }
+    /// `"<port>/<layer>"` when bound (several layers of one port), else the port's grid.
+    async fn grid_layer(
+        &self,
+        port: &str,
+        layer: &str,
+        _period: Option<&str>,
+    ) -> Result<Arc<GridInput>> {
+        match self.grids.get(&format!("{port}/{layer}")) {
+            Some(g) => Ok(g.clone()),
+            None => self.grid(port).await,
+        }
+    }
     fn indicator(&self, id: &str) -> Option<IndicatorMeta> {
         self.indicators.get(id).cloned()
     }

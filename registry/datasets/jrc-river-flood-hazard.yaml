@@ -35,7 +35,7 @@ indicators:
   period_type: snapshot
 time_coverage:
   from: '2024'
-method: GeoTIFF per return period, resampled to canonical grid (max depth).
+method: 'JRC/CEMS v2.1.2 GeoTIFF tiles per return period (3 arc-sec), resampled to the canonical grid (deepest pixel per cell; wet share per cell); area share = area-weighted mean wet share over cells inside the unit.'
 limits:
 - River (fluvial) only; no pluvial/coastal; no flood defences.
 enrichment:

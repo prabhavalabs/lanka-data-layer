@@ -27,6 +27,7 @@ pub mod polygon;
 pub mod resample;
 pub mod slope;
 pub mod tile;
+pub mod values;
 pub mod zonal;
 
 pub use array::{Dtype, GridArray, GridData, LayerEncoding};

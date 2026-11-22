@@ -1,0 +1,176 @@
+# EC-JRC / Copernicus EMS Global river flood hazard maps v2.1.2 (2026-01-12; Baugh et al. 2024),
+# water depth in metres at 3 arc-sec (~90 m) for river floods of return periods 10-500 years.
+# Sri Lanka lies on two 10 x 10 deg tiles (ID186 N10_E70, ID194 N10_E80; 256 x 256 deflate tiles,
+# float32, nodata -9999 = dry or sea). Only the 256-px chunks over the canonical grid are read.
+# Per return period two layers are built:
+#   haz.flood_depth.rpN - deepest 90 m pixel whose centre falls in the 0.001 deg cell (u16, 1 cm),
+#                         NaN where dry; served as value tiles (max overviews).
+#   haz.flood_frac.rpN  - share of the cell's 90 m pixels that are wet (depth > 0), dry = 0.
+# Zonal: haz.flood_area_share = area-weighted mean of the wet share over cells whose centre is
+# inside the unit (land_mask 1/2), x 100 -> % of the unit's area in the modelled flood extent.
+# Limits: fluvial only (no pluvial/coastal), no flood defences; permanent water bodies are part of
+# the patched depth maps, so reservoirs and lagoons count as flooded.
+source: jrc-flood-hazard
+driver: raster
+version: 1.0.0
+description: JRC river flood depth for return periods 10-500 years on the canonical grid; flooded area share per admin unit (ADM1-ADM4).
+dataset: jrc-river-flood-hazard
+discover:
+  files:
+    - { key: rp10-id186, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP10/ID186_N10_E70_RP10_depth.tif }
+    - { key: rp10-id194, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP10/ID194_N10_E80_RP10_depth.tif }
+    - { key: rp20-id186, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP20/ID186_N10_E70_RP20_depth.tif }
+    - { key: rp20-id194, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP20/ID194_N10_E80_RP20_depth.tif }
+    - { key: rp50-id186, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP50/ID186_N10_E70_RP50_depth.tif }
+    - { key: rp50-id194, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP50/ID194_N10_E80_RP50_depth.tif }
+    - { key: rp100-id186, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP100/ID186_N10_E70_RP100_depth.tif }
+    - { key: rp100-id194, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP100/ID194_N10_E80_RP100_depth.tif }
+    - { key: rp200-id186, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP200/ID186_N10_E70_RP200_depth.tif }
+    - { key: rp200-id194, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP200/ID194_N10_E80_RP200_depth.tif }
+    - { key: rp500-id186, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP500/ID186_N10_E70_RP500_depth.tif }
+    - { key: rp500-id194, url: https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-GLOFAS/flood_hazard/RP500/ID194_N10_E80_RP500_depth.tif }
+layers:
+  - id: haz.flood_depth.rp10
+    period: "2024"
+    indicator: haz.flood_depth
+    dims: return_period=rp10
+    resample: centre_max
+    files: [rp10-id186, rp10-id194]
+    encoding: { dtype: u16, scale: 0.01, nodata: 65535 }
+    unit: m
+    zonal: max
+    overview: max
+    source_res_m: 90
+    serve: true
+    style: { ramp: ldl.seq.blue, domain: [0, 5] }
+  - id: haz.flood_frac.rp10
+    period: "2024"
+    resample: centre_share
+    threshold: 0
+    files: [rp10-id186, rp10-id194]
+    encoding: { dtype: u8, scale: 0.004, nodata: 255 }
+    unit: "1"
+    zonal: mean
+    overview: mean
+    source_res_m: 90
+  - id: haz.flood_depth.rp20
+    period: "2024"
+    indicator: haz.flood_depth
+    dims: return_period=rp20
+    resample: centre_max
+    files: [rp20-id186, rp20-id194]
+    encoding: { dtype: u16, scale: 0.01, nodata: 65535 }
+    unit: m
+    zonal: max
+    overview: max
+    source_res_m: 90
+    serve: true
+    style: { ramp: ldl.seq.blue, domain: [0, 5] }
+  - id: haz.flood_frac.rp20
+    period: "2024"
+    resample: centre_share
+    threshold: 0
+    files: [rp20-id186, rp20-id194]
+    encoding: { dtype: u8, scale: 0.004, nodata: 255 }
+    unit: "1"
+    zonal: mean
+    overview: mean
+    source_res_m: 90
+  - id: haz.flood_depth.rp50
+    period: "2024"
+    indicator: haz.flood_depth
+    dims: return_period=rp50
+    resample: centre_max
+    files: [rp50-id186, rp50-id194]
+    encoding: { dtype: u16, scale: 0.01, nodata: 65535 }
+    unit: m
+    zonal: max
+    overview: max
+    source_res_m: 90
+    serve: true
+    style: { ramp: ldl.seq.blue, domain: [0, 5] }
+  - id: haz.flood_frac.rp50
+    period: "2024"
+    resample: centre_share
+    threshold: 0
+    files: [rp50-id186, rp50-id194]
+    encoding: { dtype: u8, scale: 0.004, nodata: 255 }
+    unit: "1"
+    zonal: mean
+    overview: mean
+    source_res_m: 90
+  - id: haz.flood_depth.rp100
+    period: "2024"
+    indicator: haz.flood_depth
+    dims: return_period=rp100
+    resample: centre_max
+    files: [rp100-id186, rp100-id194]
+    encoding: { dtype: u16, scale: 0.01, nodata: 65535 }
+    unit: m
+    zonal: max
+    overview: max
+    source_res_m: 90
+    serve: true
+    style: { ramp: ldl.seq.blue, domain: [0, 5] }
+  - id: haz.flood_frac.rp100
+    period: "2024"
+    resample: centre_share
+    threshold: 0
+    files: [rp100-id186, rp100-id194]
+    encoding: { dtype: u8, scale: 0.004, nodata: 255 }
+    unit: "1"
+    zonal: mean
+    overview: mean
+    source_res_m: 90
+  - id: haz.flood_depth.rp200
+    period: "2024"
+    indicator: haz.flood_depth
+    dims: return_period=rp200
+    resample: centre_max
+    files: [rp200-id186, rp200-id194]
+    encoding: { dtype: u16, scale: 0.01, nodata: 65535 }
+    unit: m
+    zonal: max
+    overview: max
+    source_res_m: 90
+    serve: true
+    style: { ramp: ldl.seq.blue, domain: [0, 5] }
+  - id: haz.flood_frac.rp200
+    period: "2024"
+    resample: centre_share
+    threshold: 0
+    files: [rp200-id186, rp200-id194]
+    encoding: { dtype: u8, scale: 0.004, nodata: 255 }
+    unit: "1"
+    zonal: mean
+    overview: mean
+    source_res_m: 90
+  - id: haz.flood_depth.rp500
+    period: "2024"
+    indicator: haz.flood_depth
+    dims: return_period=rp500
+    resample: centre_max
+    files: [rp500-id186, rp500-id194]
+    encoding: { dtype: u16, scale: 0.01, nodata: 65535 }
+    unit: m
+    zonal: max
+    overview: max
+    source_res_m: 90
+    serve: true
+    style: { ramp: ldl.seq.blue, domain: [0, 5] }
+  - id: haz.flood_frac.rp500
+    period: "2024"
+    resample: centre_share
+    threshold: 0
+    files: [rp500-id186, rp500-id194]
+    encoding: { dtype: u8, scale: 0.004, nodata: 255 }
+    unit: "1"
+    zonal: mean
+    overview: mean
+    source_res_m: 90
+zonal:
+  - indicator: haz.flood_area_share
+    stat: mean
+    cells: inside
+    factor: 100
+    layers: { "return_period=rp10": haz.flood_frac.rp10, "return_period=rp20": haz.flood_frac.rp20, "return_period=rp50": haz.flood_frac.rp50, "return_period=rp100": haz.flood_frac.rp100, "return_period=rp200": haz.flood_frac.rp200, "return_period=rp500": haz.flood_frac.rp500 }

@@ -81,6 +81,9 @@ pub struct GeoTiff {
     /// Palette (class-coded) images are read chunk by chunk here: the
     /// `tiff` crate refuses `RGBPalette`, but the samples are just u8 codes.
     raw: Option<RawChunks>,
+    /// Byte count of every chunk: GDAL writes sparse files (`SPARSE_OK`)
+    /// whose empty chunks have no bytes; they read as nodata.
+    chunk_bytes: Vec<u64>,
 }
 
 #[derive(Debug, Clone)]
@@ -223,6 +226,14 @@ impl GeoTiff {
             .find_tag_unsigned_vec::<u16>(Tag::BitsPerSample)?
             .and_then(|v| v.first().copied())
             .unwrap_or(8);
+        let chunk_bytes = if dec.find_tag(Tag::TileByteCounts)?.is_some() {
+            dec.get_tag_u64_vec(Tag::TileByteCounts)?
+        } else {
+            dec.find_tag(Tag::StripByteCounts)?
+                .map(|_| dec.get_tag_u64_vec(Tag::StripByteCounts))
+                .transpose()?
+                .unwrap_or_default()
+        };
         let raw = if photometric == 3 {
             ensure!(
                 bits == 8 && bands == 1,
@@ -262,6 +273,7 @@ impl GeoTiff {
             pixel_scale: [scale[0], scale[1], scale.get(2).copied().unwrap_or(0.0)],
             tiepoint: t6,
             raw,
+            chunk_bytes,
         })
     }
 
@@ -324,6 +336,20 @@ impl GeoTiff {
     /// Decodes chunk `i`.
     pub fn read_chunk(&mut self, i: u32) -> Result<Block> {
         let (x, y, w, h) = self.chunk_rect(i);
+        if self.chunk_bytes.get(i as usize) == Some(&0) {
+            // A sparse (absent) chunk: every sample is nodata.
+            #[allow(clippy::cast_possible_truncation)]
+            let fill = self.nodata.map_or(f32::NAN, |n| n as f32);
+            return Ok(Block {
+                x,
+                y,
+                width: w,
+                height: h,
+                stride: w,
+                bands: self.bands,
+                data: vec![fill; (w * h) as usize * self.bands as usize],
+            });
+        }
         if let Some(r) = &self.raw {
             return read_raw_chunk(r, i, (x, y, w, h));
         }
