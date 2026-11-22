@@ -1,0 +1,26 @@
+# Public debt (gross) component
+# Source/authority: Ministry of Finance, Public Debt Management Office, Quarterly Statistical Debt Bulletin, section 2
+#   (outstanding public debt: debt of the government, sub-national (provincial council and local government) debt and
+#   government-guaranteed debt of state-owned enterprises).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-public-debt
+id: public_debt_component
+title: Public debt (gross) component
+codes:
+  - { code: total, label: Total public debt (gross), total: true, sdmx: _T }
+  - { code: gov, label: Total debt of the government, parent: total }
+  - { code: gov_domestic, label: Domestic debt of the government, parent: gov }
+  - { code: gov_domestic_lkr, label: Domestic debt - LKR denominated, parent: gov_domestic }
+  - { code: gov_domestic_fx, label: Domestic debt - FX denominated, parent: gov_domestic }
+  - { code: gov_external, label: External debt of the government, parent: gov }
+  - { code: gov_external_bilateral, label: External debt - bilateral, parent: gov_external }
+  - { code: gov_external_multilateral, label: External debt - multilateral, parent: gov_external }
+  - { code: gov_external_market, label: External debt - market borrowings, parent: gov_external }
+  - { code: pclg, label: Provincial council and local government debt, parent: total }
+  - { code: pclg_pc, label: Provincial councils, parent: pclg }
+  - { code: pclg_lg, label: Local governments, parent: pclg }
+  - { code: soe, label: Government-guaranteed debt of state-owned enterprises, parent: total }
+  - { code: soe_lkr, label: SOE guaranteed debt - LKR denominated, parent: soe }
+  - { code: soe_fx, label: SOE guaranteed debt - FX denominated, parent: soe }

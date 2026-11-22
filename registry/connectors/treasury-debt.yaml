@@ -1,46 +1,166 @@
 source: treasury-debt
 driver: pdf_table
-version: 1.0.0
+version: 1.1.0
 description: >-
-  Quarterly Statistical Debt Bulletin (Public Debt Management Office).
-  Class B: every version is reviewed against its evidence sheet before release.
+  Quarterly Statistical Debt Bulletin (Public Debt Management Office): section 2,
+  outstanding public debt at the end of the previous and the current quarter, and
+  section 3, outstanding domestic debt by source. Three bulletins on the current layout:
+  2025 Q3 (2025 Q2 and Q3), 2026 Q1 (2025 Q4 and 2026 Q1; the 2025 Q4 bulletin itself
+  is a scan) and 2026 Q2 (current quarter only: its previous quarter is the 2026 Q1
+  bulletin's current quarter). Class B: every version is reviewed against its evidence
+  sheet before release.
 discover:
   files:
     # "Quarterly Statistical Debt Bulletin – 2026 Second Quarter" (issued 2026-08-28).
     - key: debt-bulletin-2026-q2
       url: https://www.treasury.gov.lk/api/file/004e9b55-d20c-4359-8a3a-1ba66bfb65fa
       edition: "2026-Q2"
+    # "Quarterly Statistical Debt Bulletin - 2026 First Quarter".
+    - key: debt-bulletin-2026-q1
+      url: https://www.treasury.gov.lk/api/file/b7e6c6d1-b30d-460b-906d-b9a54e240bf8
+      edition: "2026-Q1"
+    # "Statistical Debt Bulletin - Third Quarter 2025".
+    - key: debt-bulletin-2025-q3
+      url: https://www.treasury.gov.lk/api/file/3a624fa9-143b-4ccb-a42a-ecf42efbc1e5
+      edition: "2025-Q3"
 extract:
   tables:
-    - id: outstanding
-      file: debt-bulletin-2026-q2
-      template: treasury-debt/bulletin-outstanding-public-debt
+    - { id: outstanding, file: debt-bulletin-2026-q2, template: treasury-debt/bulletin-outstanding-public-debt }
+    - { id: outstanding_2026q1, file: debt-bulletin-2026-q1, template: treasury-debt/bulletin-outstanding-public-debt }
+    - { id: outstanding_2025q3, file: debt-bulletin-2025-q3, template: treasury-debt/bulletin-outstanding-public-debt }
+    - { id: domestic_2026q2, file: debt-bulletin-2026-q2, template: treasury-debt/bulletin-domestic-debt }
+    - { id: domestic_2026q1, file: debt-bulletin-2026-q1, template: treasury-debt/bulletin-domestic-debt }
+    - { id: domestic_2025q3, file: debt-bulletin-2025-q3, template: treasury-debt/bulletin-domestic-debt }
 standardise:
   dataset: treasury-public-debt
   vintage: "Quarterly Statistical Debt Bulletin {edition}"
   outputs:
+    # ── 2026 Q2 bulletin: current quarter only ──
     # Central government debt stock, LKR billion → LKR million (unit_mult 6).
     - table: outstanding
       indicator: debt.total
       geo: { fixed: root }
       period: { from_header: quarter_end }
-      columns: { lkr_prev: {}, lkr_curr: {} }
-      rows:
+      columns: { lkr_curr: {} }
+      rows: &total_rows
         "Total Debt of the Government": { instrument: total }
         "Domestic Debt": { instrument: domestic }
         "External Debt": { instrument: foreign }
       scale: 1000
-      # Note 1 of the table: both quarter-end columns are provisional.
+      # Note 1 of the table: the quarter-end columns are provisional.
       status: { default: provisional }
     # External debt by creditor category, USD million (unit_mult 6).
     - table: outstanding
       indicator: debt.external_by_creditor
       geo: { fixed: root }
       period: { from_header: quarter_end }
-      columns: { usd_prev: {}, usd_curr: {} }
-      rows:
+      columns: { usd_curr: {} }
+      rows: &creditor_rows
         "External Debt": { creditor: total }
         "Bilateral": { creditor: bilateral }
         "Multilateral": { creditor: multilateral }
         "Market Borrowings": { creditor: commercial }
       status: { default: provisional }
+    - table: outstanding
+      indicator: debt.public_gross
+      geo: { fixed: root }
+      period: { from_header: quarter_end }
+      columns: { lkr_curr: {} }
+      rows: &component_rows
+        "Total Public Debt (Gross)": { public_debt_component: total }
+        "Total Debt of the Government": { public_debt_component: gov }
+        "Domestic Debt": { public_debt_component: gov_domestic }
+        "LKR Denominated#1": { public_debt_component: gov_domestic_lkr }
+        "FX Denominated#1": { public_debt_component: gov_domestic_fx }
+        "External Debt": { public_debt_component: gov_external }
+        "Bilateral": { public_debt_component: gov_external_bilateral }
+        "Multilateral": { public_debt_component: gov_external_multilateral }
+        "Market Borrowings": { public_debt_component: gov_external_market }
+        "Total PC and LG Debt": { public_debt_component: pclg }
+        "Provincial Councils (PCs)": { public_debt_component: pclg_pc }
+        "Local Governments (LGs)": { public_debt_component: pclg_lg }
+        "Total Debt of SOEs": { public_debt_component: soe }
+        "LKR Denominated#2": { public_debt_component: soe_lkr }
+        "FX Denominated#2": { public_debt_component: soe_fx }
+      scale: 1000
+      status: { default: provisional }
+    - table: outstanding
+      indicator: debt.public_gross_usd
+      geo: { fixed: root }
+      period: { from_header: quarter_end }
+      columns: { usd_curr: {} }
+      rows: *component_rows
+      status: { default: provisional }
+    # ── 2026 Q1 and 2025 Q3 bulletins: previous and current quarter ──
+    - { table: outstanding_2026q1, indicator: debt.total, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { lkr_prev: {}, lkr_curr: {} }, rows: *total_rows, scale: 1000, status: { default: provisional } }
+    - { table: outstanding_2026q1, indicator: debt.external_by_creditor, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { usd_prev: {}, usd_curr: {} }, rows: *creditor_rows, status: { default: provisional } }
+    - { table: outstanding_2026q1, indicator: debt.public_gross, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { lkr_prev: {}, lkr_curr: {} }, rows: *component_rows, scale: 1000, status: { default: provisional } }
+    - { table: outstanding_2026q1, indicator: debt.public_gross_usd, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { usd_prev: {}, usd_curr: {} }, rows: *component_rows, status: { default: provisional } }
+    - { table: outstanding_2025q3, indicator: debt.total, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { lkr_prev: {}, lkr_curr: {} }, rows: *total_rows, scale: 1000, status: { default: provisional } }
+    - { table: outstanding_2025q3, indicator: debt.external_by_creditor, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { usd_prev: {}, usd_curr: {} }, rows: *creditor_rows, status: { default: provisional } }
+    - { table: outstanding_2025q3, indicator: debt.public_gross, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { lkr_prev: {}, lkr_curr: {} }, rows: *component_rows, scale: 1000, status: { default: provisional } }
+    - { table: outstanding_2025q3, indicator: debt.public_gross_usd, geo: { fixed: root }, period: { from_header: quarter_end },
+        columns: { usd_prev: {}, usd_curr: {} }, rows: *component_rows, status: { default: provisional } }
+    # ── section 3: domestic debt by source, at the bulletin's quarter end ──
+    - table: domestic_2026q2
+      indicator: debt.domestic_by_instrument
+      geo: { fixed: root }
+      period: { from_edition: true }
+      columns: { lkr: {} }
+      rows: &domestic_rows
+        "Treasury Bills": { instrument: treasury_bills }
+        "Treasury Bonds": { instrument: treasury_bonds }
+        "Domestic Dollar Bond": { instrument: domestic_dollar_bond }
+        "Term Loan - BOC": { instrument: term_loan_boc }
+        "Term Loan - PB": { instrument: term_loan_pb }
+        "Suhurupaya Loan Account of Ministry of Defense": { instrument: suhurupaya_loan }
+        "Retirement Gratuity Loan Account": { instrument: retirement_gratuity_loan }
+        "Development Project Loans": { instrument: domestic_project_loans }
+        "Total": { instrument: domestic }
+      scale: 1000
+      status: { default: provisional }
+    - { table: domestic_2026q2, indicator: debt.domestic_by_instrument_usd, geo: { fixed: root }, period: { from_edition: true },
+        columns: { usd: {} }, rows: *domestic_rows, status: { default: provisional } }
+    - { table: domestic_2026q1, indicator: debt.domestic_by_instrument, geo: { fixed: root }, period: { from_edition: true },
+        columns: { lkr: {} }, rows: *domestic_rows, scale: 1000, status: { default: provisional } }
+    - { table: domestic_2026q1, indicator: debt.domestic_by_instrument_usd, geo: { fixed: root }, period: { from_edition: true },
+        columns: { usd: {} }, rows: *domestic_rows, status: { default: provisional } }
+    # The 2025 Q3 bulletin has no domestic dollar bond line.
+    - table: domestic_2025q3
+      indicator: debt.domestic_by_instrument
+      geo: { fixed: root }
+      period: { from_edition: true }
+      columns: { lkr: {} }
+      rows: &domestic_rows_2025
+        "Treasury Bills": { instrument: treasury_bills }
+        "Treasury Bonds": { instrument: treasury_bonds }
+        "Term Loan - BOC": { instrument: term_loan_boc }
+        "Term Loan - PB": { instrument: term_loan_pb }
+        "Suhurupaya Loan Account of Ministry of Defense": { instrument: suhurupaya_loan }
+        "Retirement Gratuity Loan Account": { instrument: retirement_gratuity_loan }
+        "Development Project Loans": { instrument: domestic_project_loans }
+        "Total": { instrument: domestic }
+      scale: 1000
+      status: { default: provisional }
+    - { table: domestic_2025q3, indicator: debt.domestic_by_instrument_usd, geo: { fixed: root }, period: { from_edition: true },
+        columns: { usd: {} }, rows: *domestic_rows_2025, status: { default: provisional } }
+expect:
+  - { check: no_future }
+  - { check: row_count, min: 150 }
+  - { check: range, min: 0, max: 100000000 }
+  - { check: period_continuity, indicator: debt.public_gross }
+  - check: sql
+    note: "Domestic debt by source (section 3) totals the domestic debt of section 2 (LKR, within 0.5 %)."
+    query: >-
+      SELECT d.period_start FROM stage_obs d
+      JOIN stage_obs s ON s.period_start = d.period_start AND s.indicator_id = 'debt.public_gross'
+        AND s.dims = 'public_debt_component=gov_domestic'
+      WHERE d.indicator_id = 'debt.domestic_by_instrument' AND d.dims = 'instrument=domestic'
+        AND abs(d.value - s.value) > 0.005 * s.value

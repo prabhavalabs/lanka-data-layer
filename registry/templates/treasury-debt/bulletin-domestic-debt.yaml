@@ -1,0 +1,21 @@
+# Quarterly Statistical Debt Bulletin (Public Debt Management Office),
+# section 3: "Summary of Outstanding Domestic Debt" by source (instrument)
+# at the end of the bulletin's quarter, USD million and LKR billion. The
+# table prints no date: the period is the bulletin's edition. The 2025 first
+# and second-quarter bulletins print the USD column only (not read here).
+id: treasury-debt/bulletin-domestic-debt
+title: Outstanding domestic debt of the government by source
+editions:
+  - match: { edition: "2025..2027" }
+    locate:
+      page: { find_text: "Summary of Outstanding Domestic Debt" }
+    label: { key: source, whole: true }
+    columns:
+      - { key: usd, header: "(USD million)" }
+      - { key: lkr, header: "(LKR billion)" }
+    rows: { stop_at: ["Notes"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: all_but_last, equals_row: "Total", tol: 3 }
+      - { rows_present: ["Treasury Bills", "Treasury Bonds", "Total"] }
+      - { row_count: { min: 7, max: 12 } }

@@ -1,26 +1,65 @@
 # Quarterly Statistical Debt Bulletin (Public Debt Management Office),
 # section 2: outstanding public debt at the end of the previous and the
 # current quarter, USD million and LKR billion. Footnote markers are
-# superscripts and are dropped from labels.
+# superscripts and are dropped from labels. One edition per quarter of the
+# year: the quarter-end months in the header differ ("End March" / "End
+# June" in a second-quarter bulletin). This layout is used from the 2025
+# third-quarter bulletin; the 2025 first- and second-quarter bulletins print
+# a different header ("Public Debt (Gross) (including Guarantees)") and the
+# 2025 fourth-quarter bulletin is a scan with no text layer. From 2026 the
+# "SOE Guaranteed Debt" heading carries no figures (15 rows, else 16).
 id: treasury-debt/bulletin-outstanding-public-debt
 title: Outstanding public debt (gross) by component
 editions:
-  - match: { edition: "2025..2027" }
-    locate:
+  - match: { edition: "2025-Q3..2027-Q3" }
+    locate: &locate
       page: { find_text: "Outstanding Public Debt as of", then_text: "Composition of Public Debt" }
-    label: { key: component, header: "Composition of Public Debt" }
+    label: &label { key: component, header: "Composition of Public Debt" }
     columns:
-      - { key: usd_prev, header: "USD million", under: "End March" }
-      - { key: lkr_prev, header: "LKR billion", under: "End March" }
-      - { key: usd_curr, header: "USD million", under: "End June" }
-      - { key: lkr_curr, header: "LKR billion", under: "End June" }
-    rows: { stop_at: ["Sources:"] }
-    number: { thousands: "," }
-    checks:
+      - { key: usd_prev, header: "USD million", under: "End June" }
+      - { key: lkr_prev, header: "LKR billion", under: "End June" }
+      - { key: usd_curr, header: "USD million", under: "End September" }
+      - { key: lkr_curr, header: "LKR billion", under: "End September" }
+    rows: &rows { stop_at: ["Sources:"] }
+    number: &number { thousands: "," }
+    checks: &checks
       - { sum_rows: ["LKR Denominated#1", "FX Denominated#1"], equals_row: "Domestic Debt", tol: 1 }
       - { sum_rows: ["Bilateral", "Multilateral", "Market Borrowings"], equals_row: "External Debt", tol: 1 }
       - { sum_rows: ["Domestic Debt", "External Debt"], equals_row: "Total Debt of the Government", tol: 1 }
       - { sum_rows: ["Provincial Councils (PCs)", "Local Governments (LGs)"], equals_row: "Total PC and LG Debt", tol: 1 }
       - { sum_rows: ["LKR Denominated#2", "FX Denominated#2"], equals_row: "Total Debt of SOEs", tol: 1 }
       - { sum_rows: ["Total Debt of the Government", "Total PC and LG Debt", "Total Debt of SOEs"], equals_row: "Total Public Debt (Gross)", tol: 2 }
-      - { row_count: { min: 15, max: 15 } }
+      - { row_count: { min: 15, max: 16 } }
+  - match: { edition: "2025-Q4..2027-Q4" }
+    locate: *locate
+    label: *label
+    columns:
+      - { key: usd_prev, header: "USD million", under: "End September" }
+      - { key: lkr_prev, header: "LKR billion", under: "End September" }
+      - { key: usd_curr, header: "USD million", under: "End December" }
+      - { key: lkr_curr, header: "LKR billion", under: "End December" }
+    rows: *rows
+    number: *number
+    checks: *checks
+  - match: { edition: "2026-Q1..2027-Q1" }
+    locate: *locate
+    label: *label
+    columns:
+      - { key: usd_prev, header: "USD million", under: "End December" }
+      - { key: lkr_prev, header: "LKR billion", under: "End December" }
+      - { key: usd_curr, header: "USD million", under: "End March" }
+      - { key: lkr_curr, header: "LKR billion", under: "End March" }
+    rows: *rows
+    number: *number
+    checks: *checks
+  - match: { edition: "2026-Q2..2027-Q2" }
+    locate: *locate
+    label: *label
+    columns:
+      - { key: usd_prev, header: "USD million", under: "End March" }
+      - { key: lkr_prev, header: "LKR billion", under: "End March" }
+      - { key: usd_curr, header: "USD million", under: "End June" }
+      - { key: lkr_curr, header: "LKR billion", under: "End June" }
+    rows: *rows
+    number: *number
+    checks: *checks
