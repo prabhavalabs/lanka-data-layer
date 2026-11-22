@@ -22,6 +22,7 @@ pub mod registry;
 pub mod registry_migrate;
 pub mod run;
 pub mod scheduler;
+pub mod template;
 pub mod train;
 pub mod worker;
 

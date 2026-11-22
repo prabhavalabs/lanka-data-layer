@@ -15,7 +15,11 @@ use clap::{Parser, Subcommand};
 use lanka_extractd::{Limits, Op, Tools, ops, server};
 
 #[derive(Parser)]
-#[command(name = "lanka-extractd", version, about = "Sandboxed document tools for the Lanka Data Layer")]
+#[command(
+    name = "lanka-extractd",
+    version,
+    about = "Sandboxed document tools for the Lanka Data Layer"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -25,7 +29,11 @@ struct Cli {
 enum Cmd {
     /// Listen on a Unix socket (inside the `tools` container).
     Serve {
-        #[arg(long, env = "LANKA_EXTRACTD_SOCKET", default_value = "/run/lanka/extractd.sock")]
+        #[arg(
+            long,
+            env = "LANKA_EXTRACTD_SOCKET",
+            default_value = "/run/lanka/extractd.sock"
+        )]
         socket: PathBuf,
         #[arg(long, env = "LANKA_EXTRACTD_CONCURRENCY", default_value_t = 2)]
         concurrency: usize,
@@ -69,7 +77,8 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Cmd::Run { op, file } => {
             let op: Op = serde_json::from_str(&op).context("op JSON")?;
-            let input = std::fs::read(&file).with_context(|| format!("reading {}", file.display()))?;
+            let input =
+                std::fs::read(&file).with_context(|| format!("reading {}", file.display()))?;
             let out = ops::run(&op, &input, &limits, &tools).await?;
             std::io::stdout().write_all(&out)?;
             Ok(())

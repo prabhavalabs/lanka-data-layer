@@ -1,0 +1,26 @@
+# Quarterly Statistical Debt Bulletin (Public Debt Management Office),
+# section 2: outstanding public debt at the end of the previous and the
+# current quarter, USD million and LKR billion. Footnote markers are
+# superscripts and are dropped from labels.
+id: treasury-debt/bulletin-outstanding-public-debt
+title: Outstanding public debt (gross) by component
+editions:
+  - match: { edition: "2025..2027" }
+    locate:
+      page: { find_text: "Outstanding Public Debt as of", then_text: "Composition of Public Debt" }
+    label: { key: component, header: "Composition of Public Debt" }
+    columns:
+      - { key: usd_prev, header: "USD million", under: "End March" }
+      - { key: lkr_prev, header: "LKR billion", under: "End March" }
+      - { key: usd_curr, header: "USD million", under: "End June" }
+      - { key: lkr_curr, header: "LKR billion", under: "End June" }
+    rows: { stop_at: ["Sources:"] }
+    number: { thousands: "," }
+    checks:
+      - { sum_rows: ["LKR Denominated#1", "FX Denominated#1"], equals_row: "Domestic Debt", tol: 1 }
+      - { sum_rows: ["Bilateral", "Multilateral", "Market Borrowings"], equals_row: "External Debt", tol: 1 }
+      - { sum_rows: ["Domestic Debt", "External Debt"], equals_row: "Total Debt of the Government", tol: 1 }
+      - { sum_rows: ["Provincial Councils (PCs)", "Local Governments (LGs)"], equals_row: "Total PC and LG Debt", tol: 1 }
+      - { sum_rows: ["LKR Denominated#2", "FX Denominated#2"], equals_row: "Total Debt of SOEs", tol: 1 }
+      - { sum_rows: ["Total Debt of the Government", "Total PC and LG Debt", "Total Debt of SOEs"], equals_row: "Total Public Debt (Gross)", tol: 2 }
+      - { row_count: { min: 15, max: 15 } }

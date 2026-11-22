@@ -16,9 +16,11 @@ use crate::proto::{Reply, read_frame, write_frame};
 /// Serves until the process is stopped.
 pub async fn serve(socket: &Path, tools: Tools, limits: Limits, concurrency: usize) -> Result<()> {
     if socket.exists() {
-        std::fs::remove_file(socket).with_context(|| format!("removing stale {}", socket.display()))?;
+        std::fs::remove_file(socket)
+            .with_context(|| format!("removing stale {}", socket.display()))?;
     }
-    let listener = UnixListener::bind(socket).with_context(|| format!("binding {}", socket.display()))?;
+    let listener =
+        UnixListener::bind(socket).with_context(|| format!("binding {}", socket.display()))?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -60,7 +62,13 @@ async fn handle(mut s: UnixStream, tools: &Tools, limits: &Limits) -> Result<()>
         Err(e) => Err(anyhow::anyhow!("bad request: {e}")),
     };
     let (reply, payload) = match result {
-        Ok(out) => (Reply { ok: true, error: None }, out),
+        Ok(out) => (
+            Reply {
+                ok: true,
+                error: None,
+            },
+            out,
+        ),
         Err(e) => (
             Reply {
                 ok: false,

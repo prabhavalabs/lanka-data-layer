@@ -3,6 +3,7 @@ title: Mid-year population estimates by district
 description: Annual mid-year population by district and sex; official denominator for per-capita rates between censuses.
 source_ids:
 - dcs-population-vital
+- dcs-statistical-abstract
 indicators:
 - id: pop.midyear_district
   label: Mid-year population

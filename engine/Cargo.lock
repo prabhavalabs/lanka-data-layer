@@ -1862,6 +1862,7 @@ dependencies = [
  "jsonschema",
  "lanka-core",
  "lanka-enrich",
+ "lanka-extractd",
  "lanka-grid",
  "lanka-server",
  "lanka-store",

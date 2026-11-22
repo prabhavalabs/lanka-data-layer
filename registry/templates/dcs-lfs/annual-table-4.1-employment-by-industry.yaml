@@ -1,0 +1,25 @@
+# Labour Force Survey annual report, table 4.1: employed population by
+# major industry group (number and share), one row per year.
+id: dcs-lfs/annual-table-4.1-employment-by-industry
+title: Employed population by major industry group
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      # "Total employed" only appears on the table itself, not in the list of tables.
+      page: { find_text: "Table 4.1:", then_text: "Total employed" }
+    label: { key: year, header: "Year" }
+    columns:
+      - { key: total_no,    header: "No.", under: "Total employed" }
+      - { key: total_pct,   header: "%",   under: "Total employed" }
+      - { key: agri_no,     header: "No.", under: "Agriculture" }
+      - { key: agri_pct,    header: "%",   under: "Agriculture" }
+      - { key: industry_no, header: "No.", under: "Industries" }
+      - { key: industry_pct, header: "%",  under: "Industries" }
+      - { key: services_no, header: "No.", under: "Services" }
+      - { key: services_pct, header: "%",  under: "Services" }
+    rows: { stop_at: ["Figure 4.2"] }
+    number: { thousands: ",", strip: ["*"] }
+    checks:
+      - { sum: [agri_no, industry_no, services_no], equals: total_no, tol: 1 }
+      - { sum: [agri_pct, industry_pct, services_pct], equals: total_pct, tol: 0.15 }
+      - { row_count: { min: 5, max: 12 } }

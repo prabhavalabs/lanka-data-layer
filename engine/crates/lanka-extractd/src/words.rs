@@ -93,7 +93,9 @@ pub fn decode_entities(s: &str) -> String {
             "quot" => Some('"'),
             "apos" => Some('\''),
             _ if ent.starts_with("#x") || ent.starts_with("#X") => {
-                u32::from_str_radix(&ent[2..], 16).ok().and_then(char::from_u32)
+                u32::from_str_radix(&ent[2..], 16)
+                    .ok()
+                    .and_then(char::from_u32)
             }
             _ if ent.starts_with('#') => ent[1..].parse::<u32>().ok().and_then(char::from_u32),
             _ => None,
@@ -312,6 +314,9 @@ mod tests {
 
     #[test]
     fn entities_are_bounded_and_lenient() {
-        assert_eq!(decode_entities("a &lt; b &#x41; &bogus; &"), "a < b A &bogus; &");
+        assert_eq!(
+            decode_entities("a &lt; b &#x41; &bogus; &"),
+            "a < b A &bogus; &"
+        );
     }
 }

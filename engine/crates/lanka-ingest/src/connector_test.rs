@@ -154,8 +154,16 @@ pub async fn run(
             }
         }
     }
+    let sandbox = lanka_extractd::Sandbox::from_env()?;
     let outs = c
-        .extract(&ExtractCtx { registry, profile }, &fetched)
+        .extract(
+            &ExtractCtx {
+                registry,
+                profile,
+                sandbox: &sandbox,
+            },
+            &fetched,
+        )
         .await
         .context("extract")?;
     let artifacts: Vec<ExtractArtifact> = fetched

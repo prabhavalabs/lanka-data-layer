@@ -129,6 +129,9 @@ async fn call(path: &Path, op: &Op, input: &[u8]) -> Result<Vec<u8>> {
     if reply.ok {
         Ok(payload)
     } else {
-        bail!("{}", reply.error.unwrap_or_else(|| "unknown error".to_owned()))
+        bail!(
+            "{}",
+            reply.error.unwrap_or_else(|| "unknown error".to_owned())
+        )
     }
 }

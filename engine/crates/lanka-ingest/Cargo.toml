@@ -12,6 +12,7 @@ lanka-core.workspace = true
 lanka-enrich.workspace = true
 lanka-grid.workspace = true
 lanka-store.workspace = true
+lanka-extractd.workspace = true
 async-trait.workspace = true
 arrow-array.workspace = true
 arrow-schema.workspace = true

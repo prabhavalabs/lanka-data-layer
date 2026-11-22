@@ -203,8 +203,8 @@ struct WorkDir(PathBuf);
 
 impl WorkDir {
     fn new() -> Result<Self> {
-        let base = std::env::var_os("LANKA_EXTRACTD_WORK")
-            .map_or_else(std::env::temp_dir, PathBuf::from);
+        let base =
+            std::env::var_os("LANKA_EXTRACTD_WORK").map_or_else(std::env::temp_dir, PathBuf::from);
         let nanos = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_or(0, |d| d.as_nanos());
@@ -232,7 +232,13 @@ struct ToolOut {
 /// Runs `bin args…` in `work` under the limits: environment cleared,
 /// stdin closed, `ulimit -t/-f/-v` applied by a fixed `/bin/sh` prologue,
 /// killed at the wall-clock limit.
-async fn run_tool(bin: &Path, args: &[String], work: &Path, lim: &Limits, tools: &Tools) -> Result<ToolOut> {
+async fn run_tool(
+    bin: &Path,
+    args: &[String],
+    work: &Path,
+    lim: &Limits,
+    tools: &Tools,
+) -> Result<ToolOut> {
     let name = bin
         .file_name()
         .map_or_else(|| "tool".to_owned(), |n| n.to_string_lossy().into_owned());
@@ -261,15 +267,13 @@ async fn run_tool(bin: &Path, args: &[String], work: &Path, lim: &Limits, tools:
         cmd.env("TESSDATA_PREFIX", t);
     }
     let child = cmd.spawn().with_context(|| format!("starting {name}"))?;
-    let out = match tokio::time::timeout(
-        Duration::from_secs(lim.wall_secs),
-        child.wait_with_output(),
-    )
-    .await
-    {
-        Ok(r) => r.with_context(|| format!("waiting for {name}"))?,
-        Err(_) => bail!("{name} timed out after {}s (killed)", lim.wall_secs),
-    };
+    let out =
+        match tokio::time::timeout(Duration::from_secs(lim.wall_secs), child.wait_with_output())
+            .await
+        {
+            Ok(r) => r.with_context(|| format!("waiting for {name}"))?,
+            Err(_) => bail!("{name} timed out after {}s (killed)", lim.wall_secs),
+        };
     if !out.status.success() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         let tail: String = stderr
@@ -296,7 +300,10 @@ async fn run_tool(bin: &Path, args: &[String], work: &Path, lim: &Limits, tools:
                 }
             }
         };
-        bail!("{name} failed: {why}: {}", tail.chars().take(400).collect::<String>());
+        bail!(
+            "{name} failed: {why}: {}",
+            tail.chars().take(400).collect::<String>()
+        );
     }
     Ok(ToolOut { stdout: out.stdout })
 }
@@ -363,14 +370,24 @@ pub async fn run(op: &Op, input: &[u8], lim: &Limits, tools: &Tools) -> Result<V
         input.len(),
         lim.max_input_mb
     );
-    ensure!(looks_like_pdf(input), "input is not a PDF (no %PDF- header)");
+    ensure!(
+        looks_like_pdf(input),
+        "input is not a PDF (no %PDF- header)"
+    );
     let work = WorkDir::new()?;
     let pdf = work.0.join("input.pdf");
     std::fs::write(&pdf, input)?;
     let a = |s: &str| s.to_owned();
     match op {
         Op::PdfInfo => {
-            let out = run_tool(Tools::get(&tools.pdfinfo, "pdfinfo")?, &[a("input.pdf")], &work.0, lim, tools).await?;
+            let out = run_tool(
+                Tools::get(&tools.pdfinfo, "pdfinfo")?,
+                &[a("input.pdf")],
+                &work.0,
+                lim,
+                tools,
+            )
+            .await?;
             parse_pdfinfo(&String::from_utf8_lossy(&out.stdout), None)?;
             Ok(out.stdout)
         }
@@ -380,7 +397,14 @@ pub async fn run(op: &Op, input: &[u8], lim: &Limits, tools: &Tools) -> Result<V
                 args.extend([a("-f"), first.to_string(), a("-l"), last.to_string()]);
             }
             args.extend([a("input.pdf"), a("words.html")]);
-            run_tool(Tools::get(&tools.pdftotext, "pdftotext")?, &args, &work.0, lim, tools).await?;
+            run_tool(
+                Tools::get(&tools.pdftotext, "pdftotext")?,
+                &args,
+                &work.0,
+                lim,
+                tools,
+            )
+            .await?;
             read_capped(&work.0.join("words.html"), lim)
         }
         Op::PdfRender { page, dpi } => {
@@ -398,7 +422,14 @@ pub async fn run(op: &Op, input: &[u8], lim: &Limits, tools: &Tools) -> Result<V
                 dpi.to_string(),
                 a("hocr"),
             ];
-            run_tool(Tools::get(&tools.tesseract, "tesseract")?, &args, &work.0, lim, tools).await?;
+            run_tool(
+                Tools::get(&tools.tesseract, "tesseract")?,
+                &args,
+                &work.0,
+                lim,
+                tools,
+            )
+            .await?;
             read_capped(&work.0.join("ocr.hocr"), lim)
         }
         Op::Versions => Err(anyhow!("unreachable")),
@@ -410,7 +441,13 @@ async fn render(work: &Path, page: u32, dpi: u32, lim: &Limits, tools: &Tools) -
     let p = page.to_string();
     let info = run_tool(
         Tools::get(&tools.pdfinfo, "pdfinfo")?,
-        &["-f".into(), p.clone(), "-l".into(), p.clone(), "input.pdf".into()],
+        &[
+            "-f".into(),
+            p.clone(),
+            "-l".into(),
+            p.clone(),
+            "input.pdf".into(),
+        ],
         work,
         lim,
         tools,
@@ -474,8 +511,17 @@ async fn versions(tools: &Tools) -> Result<Vec<u8>> {
                     .output();
                 match tokio::time::timeout(Duration::from_secs(lim.wall_secs), out).await {
                     Ok(Ok(o)) => {
-                        let s = if o.stdout.is_empty() { o.stderr } else { o.stdout };
-                        String::from_utf8_lossy(&s).lines().next().unwrap_or("").trim().to_owned()
+                        let s = if o.stdout.is_empty() {
+                            o.stderr
+                        } else {
+                            o.stdout
+                        };
+                        String::from_utf8_lossy(&s)
+                            .lines()
+                            .next()
+                            .unwrap_or("")
+                            .trim()
+                            .to_owned()
                     }
                     _ => "unavailable".to_owned(),
                 }
@@ -514,7 +560,10 @@ mod tests {
             (34, Some((595.5, 842.25)))
         );
         let t = "Pages: 1\nPage size:       841.89 x 595.276 pts (A4)\n";
-        assert_eq!(parse_pdfinfo(t, Some(1)).expect("parse").1, Some((841.89, 595.276)));
+        assert_eq!(
+            parse_pdfinfo(t, Some(1)).expect("parse").1,
+            Some((841.89, 595.276))
+        );
         assert!(parse_pdfinfo("nothing", None).is_err());
     }
 

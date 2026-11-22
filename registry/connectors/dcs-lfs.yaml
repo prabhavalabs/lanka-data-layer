@@ -1,0 +1,30 @@
+source: dcs-lfs
+driver: pdf_table
+version: 1.0.0
+description: >-
+  Labour Force Survey annual report tables. Class B: every version is
+  reviewed against its evidence sheet before release.
+discover:
+  files:
+    - key: lfs-annual-2025
+      url: https://www.statistics.gov.lk/Resource/en/LabourForce/Annual_Reports/LFS2025.pdf
+      edition: "2025"
+extract:
+  tables:
+    - id: t4_1
+      file: lfs-annual-2025
+      template: dcs-lfs/annual-table-4.1-employment-by-industry
+standardise:
+  dataset: dcs-lfs-annual-subnational
+  vintage: "Labour Force Survey annual report {edition}, table 4.1"
+  outputs:
+    - table: t4_1
+      indicator: lab.employment_by_industry
+      geo: { fixed: root }
+      period: { from_label: year }
+      columns:
+        total_no: { industry: total }
+        agri_no: { industry: agriculture }
+        industry_no: { industry: industry }
+        services_no: { industry: services }
+      status: { label_markers: { "*": provisional } }

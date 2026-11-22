@@ -372,9 +372,11 @@ async fn execute(
     }
 
     // ── extract (L1) ──
+    let sandbox = lanka_extractd::Sandbox::from_env()?;
     let ectx = ExtractCtx {
         registry: env.registry,
         profile: env.profile,
+        sandbox: &sandbox,
     };
     let outs = c.extract(&ectx, &fetched).await.context("extract")?;
     let artifacts: Vec<ExtractArtifact> = fetched
