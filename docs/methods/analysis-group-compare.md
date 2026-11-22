@@ -11,9 +11,20 @@ and within-parent comparisons arrive with point layers (WP-27/WP-33). Code:
   of all pairwise differences; a seeded sample of 4 M pairs above that), Cohen's d (pooled sd), percentile
   bootstrap intervals (seeded, `bootstrap` resamples, default 999) of each group's median and of the median
   difference.
+- **Spatial adjustment** (areal support; the headline): neighbouring units are not independent, so the
+  difference of means is tested as the point-biserial correlation of y with the inside indicator on Dutilleul's
+  effective n of that pair (`p_adjusted`, `n_effective`; F = (M − 1) r²/(1 − r²) on (1, M − 2)), and the Welch
+  interval is widened to `ci_adjusted` = diff ± t₀.₉₇₅,M−2 · se_Welch · √((n − 2)/(M − 2)) (never narrower
+  than `ci`). `estimates.significance` is `adjusted` (`naive` when M could not be estimated, `hidden` below 30
+  per group). The naive `p_welch` / `p_mann_whitney` stay beside it. `effective_n: false` skips it; it is
+  skipped above 20,000 units.
+- **Group labels**: `zone.label` names the zone ("flood zone"): `inside flood zone (≥20 %)` /
+  `outside flood zone (<20 %)`; without it the condition on the zone variable: `flood area share ≥20 %` /
+  `flood area share <20 %` (threshold 0: `>0` / `=0`). The `units` frame carries them as `group_labels` and
+  the suggested layer's categorical scale as `labels`.
 - **Min n**: 10 per group (block), 30 per group for p-values.
 - **Outputs**: `units` frame (group label, y, zone value) with a categorical layer; `groups` chart.
 - **Guards**: `NOT_CAUSAL`, `MIN_N`, `SMALL_N`, `MAUP`, `ECOLOGICAL`, `ESTIMATED_INPUT`, `MODEL_ON_MODEL`,
   `PERIOD_MISMATCH`, `LOW_COVERAGE`, `SUPPRESSED_CELLS`, `SYNTHETIC_INPUT`, `COMMUNITY_INPUT`.
-- **Validation**: scipy `ttest_ind(equal_var=False)`, `mannwhitneyu`, numpy Hodges–Lehmann, Cohen's d to 1e-8;
+- **Validation**: effective n and the adjusted F test as in `relate`; scipy `ttest_ind(equal_var=False)`, `mannwhitneyu`, numpy Hodges–Lehmann, Cohen's d to 1e-8;
   bootstrap bit-exact against the ported RNG stream.

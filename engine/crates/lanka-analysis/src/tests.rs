@@ -680,3 +680,74 @@ fn results_validate_against_the_result_schema() {
         assert!(errs.is_empty(), "{errs:?}");
     }
 }
+
+#[test]
+fn controls_make_the_partial_correlation_the_headline() {
+    // x and y both follow z: the zero-order r is strong, the partial one is not
+    let mut s = Stream::new(31, 2);
+    let z: Vec<f64> = (0..80).map(|_| s.unit() * 10.0).collect();
+    let x: Vec<f64> = z.iter().map(|v| v + s.unit()).collect();
+    let y: Vec<f64> = z.iter().map(|v| 2.0 * v + s.unit()).collect();
+    let d = Case::new(
+        "relate",
+        vec![column("x", x), column("y", y), column("control:0", z)],
+    )
+    .run();
+    assert_eq!(d["state"], "ready", "{}", d["guards"]);
+    let e = &d["estimates"];
+    assert!(e["pearson"]["r"].as_f64().expect("r") > 0.9);
+    let pr = &e["partial"]["pearson"];
+    assert!(pr["r"].as_f64().expect("partial r").abs() < 0.3, "{pr}");
+    assert_eq!(e["partial"]["k"], 1);
+    assert_eq!(pr["df"], 77);
+    assert!(pr.get("n_effective").is_some() && pr.get("p_adjusted").is_some());
+    assert!(e["partial"]["spearman"].get("rho").is_some());
+    assert_eq!(e["correlation_headline"], "partial");
+    assert_eq!(e["significance"], "adjusted");
+    let summary = d["interpretation"]["summary"].as_str().expect("summary");
+    assert!(
+        summary.contains("partial r =") && summary.contains("holding"),
+        "{summary}"
+    );
+    // without controls nothing partial is reported
+    let d = Case::relate(60).run();
+    assert!(d["estimates"].get("partial").is_none());
+    assert!(d["estimates"].get("correlation_headline").is_none());
+}
+
+#[test]
+fn group_compare_reports_spatially_adjusted_significance() {
+    let (_, y) = xy(80, 11);
+    let group: Vec<f64> = (0..80)
+        .map(|i| if i % 2 == 0 { 30.0 } else { 5.0 })
+        .collect();
+    let mut g = Case::new(
+        "group_compare",
+        vec![column("y", y), column("group", group)],
+    );
+    g.params = json!({"zone": {"threshold": 20, "label": "flood zone"}, "bootstrap": 100});
+    let d = g.run();
+    assert_eq!(d["state"], "ready", "{}", d["guards"]);
+    let e = &d["estimates"];
+    let c = &e["contrasts"][0];
+    assert!(
+        c.get("p_adjusted").is_some() && c.get("p_welch").is_some(),
+        "{c}"
+    );
+    assert!(c["n_effective"].as_f64().expect("m") <= 80.0);
+    let (lo, hi) = (
+        c["ci"][0].as_f64().expect("lo"),
+        c["ci"][1].as_f64().expect("hi"),
+    );
+    let (alo, ahi) = (
+        c["ci_adjusted"][0].as_f64().expect("lo"),
+        c["ci_adjusted"][1].as_f64().expect("hi"),
+    );
+    assert!(
+        alo <= lo + 1e-12 && ahi >= hi - 1e-12,
+        "adjusted interval is not narrower"
+    );
+    assert_eq!(e["significance"], "adjusted");
+    assert_eq!(e["groups"][0]["label"], "inside flood zone (≥20)");
+    assert_eq!(e["groups"][1]["label"], "outside flood zone (<20)");
+}

@@ -13,7 +13,7 @@ Implementation: `engine/crates/lanka-analysis/src/methods/relate.rs` over the ke
 |---|---|---|
 | `x` | yes | indicator, grid layer (`grid_zonal`) or features dataset (`features_zonal`) |
 | `y` | yes | as `x` |
-| `controls` | no | up to 8; enter the OLS/Huber fits only |
+| `controls` | no | up to 8; enter the OLS/Huber fits and the partial correlations |
 
 Support: admin units at one level (`support: "auto"` = the coarsest native level among the indicators, 11 §3.2
 rule 1). Transforms per variable: `identity | log | log1p | sqrt | zscore | rank`; values a transform cannot take
@@ -28,16 +28,26 @@ rule 1). Transforms per variable: `identity | log | log1p | sqrt | zscore | rank
    `B = PΣ̂P`, Σ̂ the autocovariance per distance class — 13 equal-width classes of great-circle distance between
    unit centroids. `p_adjusted` from F = (M − 1) r²/(1 − r²) on (1, M − 2) df. **On areal support the adjusted
    p is the headline** (`significance: "adjusted"`); the naive p is reported beside it.
-4. **OLS** `T(y) ~ T(x) [+ controls]` by Householder QR, classical and **HC3** standard errors (MacKinnon &
+4. **Partial correlation** (with controls only): x and y (ranks for ρ) are residualised by OLS on
+   `[1, controls]`; Pearson of the residuals with *t* on n − 2 − k df and a Fisher-z interval with √(n − 3 − k)
+   (`pingouin.partial_corr`). Its effective n is estimated on the two residual vectors and each control costs
+   one more degree of freedom: F = (M − 1 − k) r²/(1 − r²) on (1, M − 2 − k). **With controls the partial r is the
+   headline** (`estimates.partial`, `correlation_headline: "partial"`, summary "… holding <controls> constant
+   (partial r = …)"); the zero-order `pearson`/`spearman` stay beside it. Without controls neither field is
+   present.
+5. **OLS** `T(y) ~ T(x) [+ controls]` by Householder QR, classical and **HC3** standard errors (MacKinnon &
    White 1985), intervals b ± t₀.₉₇₅,ₙ₋ₚ · se_HC3, leverage, Cook's D, VIF, studentised Breusch–Pagan; **Huber**
    M-estimate (t = 1.345, MAD scale, IRLS to the fixed point). The robust fit becomes the headline when
    `OUTLIER_LEVERAGE` fires.
-5. **Residual Moran's I** on k-nearest-neighbour weights (`knn4|6|8`, row-standardised; default `knn6`), pseudo-p
+6. **Residual Moran's I** on k-nearest-neighbour weights (`knn4|6|8`, row-standardised; default `knn6`), pseudo-p
    from seeded permutations (`permutations`, default 999; seed = first 8 bytes of the fingerprint).
-6. **Bivariate classes** (`classes` 3|4 by `quantile|equal|jenks`) on the transformed values; class code =
+7. **Bivariate classes** (`classes` 3|4 by `quantile|equal|jenks`) on the transformed values; class code =
    `class_y · k + class_x`.
-7. **Scale sensitivity**: the same pair at the adjacent levels where both are published (identity alignment),
+8. **Scale sensitivity**: the same pair at the adjacent levels where both are published (identity alignment),
    or at `scale_sensitivity: [levels]`.
+
+`estimates.partial` = `{controls: [labels], k, pearson: {r, ci, ci_level, n, df, p?, n_effective?, p_adjusted?},
+spearman: {rho, …}}`.
 
 ## Outputs
 
@@ -58,7 +68,8 @@ result at all**), `MAUP`, `MAUP_UNSTABLE` (sign flip or |Δr| > 0.2 across level
 Reference fixtures (`lanka-stats/tests/fixtures/reference.json`, generator `gen_reference.py`; numpy 2.5.5,
 scipy 1.18.1, statsmodels 0.15.0 — R is not available on the build machine) agree to 1e-8: Anscombe's quartet,
 Stack loss, Longley (1e-5, condition number ~5e9), a 400-row t₃ sample; effective n against the explicit n×n
-matrix formula; seeded permutations and bootstraps bit-exact against the ported counter RNG.
+matrix formula; partial Pearson/Spearman (k = 1, 2) and the k-adjusted F test against numpy/scipy
+(`fixtures/partial.json`, generator `gen_partial.py`); seeded permutations and bootstraps bit-exact against the ported counter RNG.
 Golden test: built-up share vs population density, ADM3, island (`lanka-analysis/tests/golden/`):
 r = 0.637 (0.569–0.696), n_effective 62.2, adjusted p 2.0e-8, ρ = 0.825, residual Moran's I 0.63.
 

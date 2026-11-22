@@ -2,12 +2,15 @@
 //! Spearman with intervals, the spatially adjusted p (effective n after
 //! Dutilleul) as the headline significance on areal support, OLS (HC3) and
 //! Huber fits on the chosen transforms (+ controls), residual Moran's I on
-//! kNN weights, bivariate classes, a scale-sensitivity table.
+//! kNN weights, bivariate classes, a scale-sensitivity table. With controls
+//! the headline correlation is the partial one (x and y residualised on the
+//! controls), its adjusted p on the effective n of the residuals less one
+//! degree of freedom per control; the zero-order r stays beside it.
 //! Lee's L and contiguity weights arrive with WP-30.
 
 use anyhow::{Result, bail};
 use lanka_stats::classify::{self, Method as ClassMethod};
-use lanka_stats::correlate::{p_adjusted, pearson, spearman};
+use lanka_stats::correlate::{p_adjusted, p_adjusted_k, partial, pearson, spearman};
 use lanka_stats::describe::{hexbin, ranks};
 use lanka_stats::effn::{DEFAULT_CLASSES, effective_n};
 use serde_json::{Value, json};
@@ -32,6 +35,7 @@ pub static INFO: MethodInfo = MethodInfo {
         "MacKinnon & White 1985, J. Econometrics 29 (HC3)",
         "Huber 1964, Ann. Math. Statist. 35",
         "Fieller, Hartley & Pearson 1957, Biometrika 44",
+        "Fisher 1924, Metron 3 (partial correlation)",
     ],
     roles: &[
         RoleSpec {
@@ -70,7 +74,8 @@ pub static INFO: MethodInfo = MethodInfo {
       }
     }"#,
     estimates: r#"{"type": "object", "properties": {
-      "pearson": {"type": "object"}, "spearman": {"type": "object"}, "ols": {"type": "object"},
+      "pearson": {"type": "object"}, "spearman": {"type": "object"}, "partial": {"type": "object"},
+      "correlation_headline": {"enum": ["zero_order", "partial"]}, "ols": {"type": "object"},
       "robust": {"type": "object"}, "residual_moran": {"type": "object"}, "scale_sensitivity": {"type": "array"},
       "headline": {"enum": ["ols", "robust"]}, "significance": {"enum": ["adjusted", "naive", "hidden"]}}}"#,
     min_n: Some(MinN {
@@ -210,6 +215,61 @@ impl AnalysisMethod for Relate {
                 }
             }
             est["spearman"] = e;
+        }
+        // partial correlations given the controls (the headline when there are any)
+        let mut partial_r: Option<f64> = None;
+        if !controls.is_empty() {
+            let ctl: Vec<Vec<f64>> = controls
+                .iter()
+                .map(|c| {
+                    let t = c.transformed();
+                    rows.iter().map(|&i| t[i]).collect()
+                })
+                .collect();
+            let refs: Vec<&[f64]> = ctl.iter().map(Vec::as_slice).collect();
+            let k = refs.len();
+            let mut pe = json!({
+                "controls": controls.iter().map(|c| json!(c.input.label)).collect::<Vec<_>>(),
+                "k": k,
+            });
+            for (name, rank) in [("pearson", false), ("spearman", true)] {
+                if !corr.contains(&name) {
+                    continue;
+                }
+                let Some(pc) = partial(&xs, &ys, &refs, 0.95, rank) else {
+                    continue;
+                };
+                let key = if rank { "rho" } else { "r" };
+                let mut e = json!({key: num(pc.c.r), "ci": [num(pc.c.ci[0]), num(pc.c.ci[1])], "ci_level": 0.95, "n": n, "df": n.saturating_sub(2 + k)});
+                if show_p {
+                    e["p"] = num(pc.c.p);
+                    if !rank {
+                        significance = "naive";
+                    }
+                }
+                if use_effn
+                    && let Some(m) = effective_n(&pc.ex, &pc.ey, &lon, &lat, DEFAULT_CLASSES)
+                {
+                    e["n_effective"] = num(m.m);
+                    if show_p {
+                        e["p_adjusted"] = num(p_adjusted_k(pc.c.r, m.m, k));
+                        if !rank {
+                            significance = "adjusted";
+                        }
+                    }
+                }
+                if !rank {
+                    partial_r = Some(pc.c.r);
+                }
+                pe[name] = e;
+            }
+            est["partial"] = pe;
+            // present only with controls, so results without them are unchanged
+            est["correlation_headline"] = json!(if partial_r.is_some() {
+                "partial"
+            } else {
+                "zero_order"
+            });
         }
 
         let spatial = match &p["spatial"] {
@@ -412,45 +472,72 @@ impl AnalysisMethod for Relate {
         });
 
         // summary (templated)
-        let strength = match pr.r.abs() {
+        let hr = partial_r.unwrap_or(pr.r);
+        let head = if partial_r.is_some() {
+            &est["partial"]["pearson"]
+        } else {
+            &est["pearson"]
+        };
+        let held = if partial_r.is_some() {
+            format!(
+                " holding {} constant",
+                controls
+                    .iter()
+                    .map(|c| c.input.label.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" and ")
+            )
+        } else {
+            String::new()
+        };
+        let rname = if partial_r.is_some() {
+            "partial r"
+        } else {
+            "r"
+        };
+        let strength = match hr.abs() {
             a if a < 0.1 => "no clear",
             a if a < 0.3 => "a weak",
             a if a < 0.5 => "a moderate",
             _ => "a strong",
         };
-        let dir = if pr.r >= 0.0 { "higher" } else { "lower" };
+        let dir = if hr >= 0.0 { "higher" } else { "lower" };
         let within = f
             .support
             .within
             .as_deref()
             .map(|w| format!(" of {w}"))
             .unwrap_or_default();
-        let sig = match (est["pearson"].get("p_adjusted"), est["pearson"].get("p")) {
+        let (ci_lo, ci_hi) = (
+            head["ci"][0].as_f64().unwrap_or(f64::NAN),
+            head["ci"][1].as_f64().unwrap_or(f64::NAN),
+        );
+        let sig = match (head.get("p_adjusted"), head.get("p")) {
             (Some(pa), _) => format!(", adjusted p {}", p_phrase(pa.as_f64().unwrap_or(f64::NAN))),
             (None, Some(pp)) => format!(", p {}", p_phrase(pp.as_f64().unwrap_or(f64::NAN))),
             _ => format!(
                 ", 95 % interval {} to {}",
-                fmt_num(pr.ci[0], 2),
-                fmt_num(pr.ci[1], 2)
+                fmt_num(ci_lo, 2),
+                fmt_num(ci_hi, 2)
             ),
         };
         out.summary = if strength == "no clear" {
             format!(
-                "Across {} {}{within}, {} and {} show no clear association (r = {}{sig}).",
+                "Across {} {}{within}, {} and {} show no clear association{held} ({rname} = {}{sig}).",
                 thousands(n),
                 ctx.noun,
                 x.input.label,
                 y.input.label,
-                fmt_num(pr.r, 2)
+                fmt_num(hr, 2)
             )
         } else {
             format!(
-                "Across {} {}{within}, a higher {} is associated with {dir} {} ({strength} association, r = {}{sig}).",
+                "Across {} {}{within}, a higher {} is associated with {dir} {}{held} ({strength} association, {rname} = {}{sig}).",
                 thousands(n),
                 ctx.noun,
                 x.input.label,
                 y.input.label,
-                fmt_num(pr.r, 2)
+                fmt_num(hr, 2)
             )
         };
         out.estimates = est;
