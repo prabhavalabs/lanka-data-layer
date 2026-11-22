@@ -188,6 +188,69 @@ pub struct DatasetSpec {
     /// Intraday release cuts allowed (ADR 0012).
     #[serde(default)]
     pub live: bool,
+    /// Typed feature attributes (`features` datasets, 10 §3.3): only these
+    /// `attrs` keys are stored and served.
+    #[serde(default)]
+    pub fields: Vec<FieldSpec>,
+    /// Vector tileset of a `features` dataset (05 §9).
+    #[serde(default)]
+    pub tiles: Option<TilesSpec>,
+    /// Name search (`q=`) is served: a trigram index on `name_en`.
+    #[serde(default)]
+    pub searchable: bool,
+}
+
+/// A declared feature field.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FieldSpec {
+    pub name: String,
+    /// string | integer | number | boolean
+    #[serde(rename = "type")]
+    pub ty: FieldType,
+    #[serde(default)]
+    pub label: Option<String>,
+    /// UCUM code (numbers).
+    #[serde(default)]
+    pub unit: Option<String>,
+    #[serde(default)]
+    pub measure_type: Option<MeasureType>,
+    /// Allowed values (strings).
+    #[serde(default, rename = "enum")]
+    pub values: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FieldType {
+    String,
+    Integer,
+    Number,
+    Boolean,
+}
+
+/// `tiles:` of a features dataset.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TilesSpec {
+    /// Tileset id (default: the dataset id).
+    #[serde(default)]
+    pub tileset: Option<String>,
+    /// Layer name inside the tileset (default: the dataset id).
+    #[serde(default)]
+    pub layer: Option<String>,
+    pub minzoom: u8,
+    pub maxzoom: u8,
+    /// Feature properties in the tiles, besides `key`, `kind` and `name`:
+    /// declared field names (or `name_si`, `name_ta`).
+    #[serde(default)]
+    pub attrs: Vec<String>,
+    /// Per-kind minimum zoom (e.g. motorways from z5, residential from z12).
+    #[serde(default)]
+    pub minzoom_by_kind: BTreeMap<String, u8>,
+    /// tippecanoe `--drop-densest-as-needed` (dense point/line layers).
+    #[serde(default)]
+    pub drop_densest: bool,
 }
 
 impl DatasetSpec {
@@ -606,6 +669,7 @@ impl Registry {
 
     fn check_references(&mut self, errors: &mut Vec<String>) {
         self.check_semantics(errors);
+        self.check_feature_specs(errors);
         // Indicator ids are global.
         let mut seen: HashMap<&str, &str> = HashMap::new();
         for d in self.datasets.values() {
@@ -677,6 +741,79 @@ impl Registry {
                 }
             } else {
                 lic.insert(&l.id, (&s.spec.id, l));
+            }
+        }
+    }
+
+    /// `fields` / `tiles` / `searchable` belong to `features` datasets; tile
+    /// attributes must be declared fields; field units must be known.
+    fn check_feature_specs(&self, errors: &mut Vec<String>) {
+        let mut tile_layers: HashMap<(String, String), &str> = HashMap::new();
+        for d in self.datasets.values() {
+            let ds = &d.spec;
+            let is_features = ds.kind() == "features";
+            if !is_features && (!ds.fields.is_empty() || ds.tiles.is_some() || ds.searchable) {
+                errors.push(format!(
+                    "dataset {:?}: fields/tiles/searchable need kind: features",
+                    ds.id
+                ));
+            }
+            let mut names = HashSet::new();
+            for f in &ds.fields {
+                if !names.insert(f.name.as_str()) {
+                    errors.push(format!("dataset {:?}: field {:?} twice", ds.id, f.name));
+                }
+                if matches!(
+                    f.name.as_str(),
+                    "key"
+                        | "kind"
+                        | "name"
+                        | "name_en"
+                        | "name_si"
+                        | "name_ta"
+                        | "unit"
+                        | "cell"
+                        | "flags"
+                ) {
+                    errors.push(format!(
+                        "dataset {:?}: field name {:?} is reserved",
+                        ds.id, f.name
+                    ));
+                }
+                if let Some(u) = &f.unit
+                    && !self.units.contains_key(u)
+                {
+                    errors.push(format!(
+                        "dataset {:?}: field {:?} has unit {u:?}, not in units.yaml",
+                        ds.id, f.name
+                    ));
+                }
+            }
+            if let Some(t) = &ds.tiles {
+                if t.minzoom > t.maxzoom || t.maxzoom > 16 {
+                    errors.push(format!(
+                        "dataset {:?}: tiles zooms {}..{} out of order or > 16",
+                        ds.id, t.minzoom, t.maxzoom
+                    ));
+                }
+                for a in &t.attrs {
+                    if !names.contains(a.as_str()) && a != "name_si" && a != "name_ta" {
+                        errors.push(format!(
+                            "dataset {:?}: tiles attr {a:?} is not a declared field",
+                            ds.id
+                        ));
+                    }
+                }
+                let key = (
+                    t.tileset.clone().unwrap_or_else(|| ds.id.clone()),
+                    t.layer.clone().unwrap_or_else(|| ds.id.clone()),
+                );
+                if let Some(prev) = tile_layers.insert(key.clone(), &ds.id) {
+                    errors.push(format!(
+                        "tileset {:?} layer {:?} is declared by both {prev:?} and {:?}",
+                        key.0, key.1, ds.id
+                    ));
+                }
             }
         }
     }
@@ -1142,6 +1279,13 @@ impl Registry {
                 .bind(&d.id)
                 .execute(&mut *tx)
                 .await?;
+            if d.kind() == "features" {
+                sqlx::query("SELECT geo.ensure_feature_partition($1, $2)")
+                    .bind(&d.id)
+                    .bind(d.searchable)
+                    .execute(&mut *tx)
+                    .await?;
+            }
         }
         report.datasets = self.datasets.len();
         tx.commit().await?;

@@ -11,15 +11,20 @@ use anyhow::{Result, bail};
 use crate::connector::Connector;
 use crate::registry::{ConnectorSpec, Loaded};
 
+pub mod feature_rules;
+pub mod geo_file;
 pub mod http_json;
 pub mod json_path;
+pub mod osm_pbf;
 
 /// The driver a connector spec names.
 pub fn driver_for(spec: &Loaded<ConnectorSpec>) -> Result<Arc<dyn Connector>> {
     match spec.spec.driver.as_str() {
         "http_json" => Ok(Arc::new(http_json::HttpJson::from_spec(spec)?)),
+        "osm_pbf" => Ok(Arc::new(osm_pbf::OsmPbf::from_spec(spec)?)),
+        "geo_file" => Ok(Arc::new(geo_file::GeoFile::from_spec(spec)?)),
         d => bail!(
-            "{}: driver {d:?} is not implemented (available: http_json)",
+            "{}: driver {d:?} is not implemented (available: http_json, osm_pbf, geo_file)",
             spec.path.display()
         ),
     }

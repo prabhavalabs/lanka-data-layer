@@ -31,6 +31,8 @@ hex.workspace = true
 calamine.workspace = true
 tracing.workspace = true
 nix.workspace = true
+osmpbf.workspace = true
+rayon.workspace = true
 
 [lints]
 workspace = true
