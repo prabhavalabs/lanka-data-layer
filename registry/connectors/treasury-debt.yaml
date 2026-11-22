@@ -1,0 +1,46 @@
+source: treasury-debt
+driver: pdf_table
+version: 1.0.0
+description: >-
+  Quarterly Statistical Debt Bulletin (Public Debt Management Office).
+  Class B: every version is reviewed against its evidence sheet before release.
+discover:
+  files:
+    # "Quarterly Statistical Debt Bulletin – 2026 Second Quarter" (issued 2026-08-28).
+    - key: debt-bulletin-2026-q2
+      url: https://www.treasury.gov.lk/api/file/004e9b55-d20c-4359-8a3a-1ba66bfb65fa
+      edition: "2026-Q2"
+extract:
+  tables:
+    - id: outstanding
+      file: debt-bulletin-2026-q2
+      template: treasury-debt/bulletin-outstanding-public-debt
+standardise:
+  dataset: treasury-public-debt
+  vintage: "Quarterly Statistical Debt Bulletin {edition}"
+  outputs:
+    # Central government debt stock, LKR billion → LKR million (unit_mult 6).
+    - table: outstanding
+      indicator: debt.total
+      geo: { fixed: root }
+      period: { from_header: quarter_end }
+      columns: { lkr_prev: {}, lkr_curr: {} }
+      rows:
+        "Total Debt of the Government": { instrument: total }
+        "Domestic Debt": { instrument: domestic }
+        "External Debt": { instrument: foreign }
+      scale: 1000
+      # Note 1 of the table: both quarter-end columns are provisional.
+      status: { default: provisional }
+    # External debt by creditor category, USD million (unit_mult 6).
+    - table: outstanding
+      indicator: debt.external_by_creditor
+      geo: { fixed: root }
+      period: { from_header: quarter_end }
+      columns: { usd_prev: {}, usd_curr: {} }
+      rows:
+        "External Debt": { creditor: total }
+        "Bilateral": { creditor: bilateral }
+        "Multilateral": { creditor: multilateral }
+        "Market Borrowings": { creditor: commercial }
+      status: { default: provisional }

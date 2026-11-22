@@ -103,9 +103,120 @@
       "then": {
         "$ref": "#/$defs/tabular"
       }
+    },
+    {
+      "if": { "properties": { "driver": { "const": "pdf_table" } } },
+      "then": {
+        "required": ["discover", "extract", "standardise"],
+        "properties": {
+          "discover": {
+            "type": "object",
+            "required": ["files"],
+            "additionalProperties": false,
+            "properties": {
+              "files": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["key", "url"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$" },
+                    "url": { "type": "string", "pattern": "^https?://" },
+                    "edition": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "extract": {
+            "type": "object",
+            "required": ["tables"],
+            "additionalProperties": false,
+            "properties": {
+              "tables": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["id", "file", "template"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_]*$" },
+                    "file": { "type": "string" },
+                    "template": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9.-]*$" }
+                  }
+                }
+              }
+            }
+          },
+          "standardise": {
+            "type": "object",
+            "required": ["dataset", "outputs"],
+            "additionalProperties": false,
+            "properties": {
+              "dataset": { "type": "string" },
+              "vintage": { "type": "string" },
+              "outputs": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["table", "indicator", "geo", "period", "columns"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "table": { "type": "string" },
+                    "indicator": { "type": "string" },
+                    "geo": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "fixed": { "type": "string" },
+                        "from_label": {
+                          "type": "object",
+                          "required": ["level"],
+                          "additionalProperties": false,
+                          "properties": {
+                            "level": { "type": "integer", "minimum": 1, "maximum": 4 },
+                            "root": { "type": "array", "items": { "type": "string" } }
+                          }
+                        }
+                      }
+                    },
+                    "period": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "from_header": { "enum": ["year", "quarter_end"] },
+                        "from_label": { "enum": ["year", "quarter_end"] },
+                        "fixed": { "type": "string" }
+                      }
+                    },
+                    "columns": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/dims" } },
+                    "rows": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/dims" } },
+                    "scale": { "type": "number", "exclusiveMinimum": 0 },
+                    "status": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "default": { "$ref": "#/$defs/status" },
+                        "header_markers": { "type": "object", "additionalProperties": { "$ref": "#/$defs/status" } },
+                        "label_markers": { "type": "object", "additionalProperties": { "$ref": "#/$defs/status" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {
+    "dims": { "type": "object", "additionalProperties": { "type": "string" } },
+    "status": { "enum": ["normal", "provisional", "break", "low_reliability", "missing", "nil", "suppressed"] },
     "table": {
       "type": "object",
       "required": [

@@ -7,7 +7,10 @@
 //! lanka ingest restandardise <source>
 //! lanka ingest status
 //! lanka connector test <source> [--from DIR] [--rows N] [--json] | list
-//! lanka review list | approve <dsv> --by NAME | reject <dsv> --by NAME --note TEXT
+//! lanka review list | approve <dsv|x<extract>> --by NAME | reject … --note TEXT
+//! lanka review open <dsv|x<extract>> [--bind 127.0.0.1:8790] | evidence … | sign … | status x<extract>
+//! lanka template test <id> <pdf> [--edition E] | propose <pdf> --page N …
+//! lanka extract propose <source> --artifact <sha> --table <hint> (class C, operator-run)
 //! lanka release cut [--note TEXT] | list
 //! lanka worker [--lane batch|interactive] [--slots 4] [--once]
 //! lanka jobs list | show <id> | enqueue ingest|restandardise|release … | cancel <id>
@@ -37,7 +40,10 @@ use lanka_store::FsStore;
 use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
 
+mod doc_cmd;
 mod grid_cmd;
+mod propose;
+mod review_cmd;
 mod tiles_cmd;
 
 #[derive(Parser)]
@@ -94,7 +100,7 @@ enum Cmd {
     Connector(ConnectorCmd),
     /// Review gate for class B/C dataset versions.
     #[command(subcommand)]
-    Review(ReviewCmd),
+    Review(review_cmd::ReviewCmd),
     /// Release trains: approved versions become visible in one release.
     #[command(subcommand)]
     Release(ReleaseCmd),
@@ -133,6 +139,12 @@ enum Cmd {
     /// Vector tilesets (PMTiles) from the current release.
     #[command(subcommand)]
     Tiles(tiles_cmd::TilesCmd),
+    /// PDF table templates: test one against a document, propose a new one.
+    #[command(subcommand)]
+    Template(doc_cmd::TemplateCmd),
+    /// Class C (operator-run): propose an anchored extract from two model readings.
+    #[command(subcommand)]
+    Extract(ExtractCmd),
     /// Grid engine: lookup arrays, layers, v1 parity, reverse-geocoding check.
     #[command(subcommand)]
     Grid(grid_cmd::GridCmd),
@@ -380,25 +392,9 @@ enum ConnectorCmd {
 }
 
 #[derive(Subcommand)]
-enum ReviewCmd {
-    /// Dataset versions waiting for sign-off.
-    List,
-    /// Approve a version: it is released by the next train.
-    Approve {
-        dsv: String,
-        #[arg(long)]
-        by: String,
-        #[arg(long)]
-        note: Option<String>,
-    },
-    /// Reject a version (it stays archived, never published).
-    Reject {
-        dsv: String,
-        #[arg(long)]
-        by: String,
-        #[arg(long)]
-        note: String,
-    },
+enum ExtractCmd {
+    /// Two readings → anchored class-C `cells` extract + review with evidence.
+    Propose(propose::ExtractProposeArgs),
 }
 
 fn init_tracing(json: bool) {
@@ -812,6 +808,13 @@ async fn run(cli: Cli) -> Result<()> {
                 IngestCmd::Status { .. } => unreachable!("matched above"),
             };
             print_json(&report)?;
+            let in_review: Vec<String> = report
+                .published
+                .iter()
+                .filter(|p| p.outcome == "in_review")
+                .map(|p| p.dsv.clone())
+                .collect();
+            review_cmd::after_run(g, &pool, &in_review).await;
             if report.published.iter().any(|p| p.outcome == "approved") {
                 eprintln!(
                     "approved version(s) are released by the next train (daily, or `lanka release cut`)"
@@ -827,19 +830,7 @@ async fn run(cli: Cli) -> Result<()> {
                 .unwrap_or_default();
             ingest_status(&pool(g, PoolRole::Api).await?, json, &implemented).await?
         }
-        Cmd::Review(cmd) => {
-            let pool = pool(g, PoolRole::Ingest).await?;
-            match cmd {
-                ReviewCmd::List => print_json(&publish::pending_reviews(&pool).await?)?,
-                ReviewCmd::Approve { dsv, by, note } => {
-                    print_json(&publish::approve(&pool, &dsv, &by, note.as_deref()).await?)?
-                }
-                ReviewCmd::Reject { dsv, by, note } => {
-                    publish::reject(&pool, &dsv, &by, &note).await?;
-                    println!("{dsv} rejected");
-                }
-            }
-        }
+        Cmd::Review(cmd) => review_cmd::run(g, cmd).await?,
         Cmd::Serve {
             action: Some(ServeCmd::Rebuild),
             ..
@@ -1035,6 +1026,8 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Cmd::Probe { url } => probe(&url).await?,
         Cmd::Tiles(cmd) => tiles_cmd::run(g, cmd).await?,
+        Cmd::Template(cmd) => doc_cmd::template(g, cmd).await?,
+        Cmd::Extract(ExtractCmd::Propose(a)) => propose::extract_propose(g, a).await?,
         Cmd::Map(cmd) => map_cmd(g, cmd).await?,
         Cmd::Grid(cmd) => {
             let dir = find_registry(g.registry.as_deref())?;

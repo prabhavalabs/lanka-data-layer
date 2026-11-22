@@ -1276,6 +1276,26 @@ pub async fn approve(
     .await?
     .with_context(|| format!("no dataset version {dsv}"))?;
     ensure!(status == "in_review", "{dsv} is {status}, not in_review");
+    // Class C (WP-08): an LLM/OCR reading must be signed cell by cell
+    // (`lanka review open x<extract>`) before a version built on it can pass.
+    let unsigned: Vec<i64> = sqlx::query_scalar(
+        "SELECT e.id FROM data.dataset_version_extracts ve JOIN ops.extracts e ON e.id = ve.extract_id
+         WHERE ve.version_id = $1 AND e.reader = ANY($2) AND e.approved_at IS NULL ORDER BY e.id",
+    )
+    .bind(version_id)
+    .bind(
+        crate::review::CLASS_C_READERS
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect::<Vec<_>>(),
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    ensure!(
+        unsigned.is_empty(),
+        "{dsv} is built on class-C extract(s) {unsigned:?} without per-cell sign-off: \
+         run `lanka review open x<id>` and approve the extract first"
+    );
     lock_dataset(&mut tx, dataset_key).await?;
     let reviewed = sqlx::query(
         "UPDATE data.obs_provenance p SET review = $3

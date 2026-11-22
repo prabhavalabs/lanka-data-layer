@@ -1737,19 +1737,25 @@ name = "lanka-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "axum",
+ "bytes",
  "chrono",
  "clap",
  "futures",
  "lanka-core",
  "lanka-enrich",
  "lanka-export",
+ "lanka-extractd",
  "lanka-grid",
  "lanka-ingest",
  "lanka-mapdoc",
  "lanka-server",
  "lanka-store",
+ "reqwest",
  "serde",
  "serde_json",
+ "serde_yaml_ng",
+ "sha2",
  "sqlx",
  "tokio",
  "tracing",
@@ -1800,10 +1806,12 @@ name = "lanka-export"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "flate2",
  "futures",
  "hex",
  "lanka-core",
+ "lanka-extractd",
  "lanka-grid",
  "lanka-ingest",
  "lanka-store",
@@ -1813,6 +1821,20 @@ dependencies = [
  "sqlx",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "lanka-extractd"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1848,6 +1870,7 @@ dependencies = [
  "jsonschema",
  "lanka-core",
  "lanka-enrich",
+ "lanka-extractd",
  "lanka-grid",
  "lanka-server",
  "lanka-store",

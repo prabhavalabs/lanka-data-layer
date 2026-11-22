@@ -3,6 +3,7 @@
 //! feed, validation, range-versioned staging and approval, the job queue,
 //! the scheduler, the release train and the worker.
 
+pub mod classc;
 pub mod connector;
 pub mod connector_test;
 pub mod connectors;
@@ -20,8 +21,10 @@ pub mod pipeline;
 pub mod publish;
 pub mod registry;
 pub mod registry_migrate;
+pub mod review;
 pub mod run;
 pub mod scheduler;
+pub mod template;
 pub mod train;
 pub mod worker;
 

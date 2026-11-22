@@ -4,6 +4,7 @@
 //! and release distributions (Parquet, CSV, GeoParquet) come with WP-09.
 
 pub mod dem;
+pub mod evidence;
 pub mod pmtiles;
 pub mod tiles;
 pub mod tippecanoe;

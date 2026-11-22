@@ -768,6 +768,7 @@ mod tests {
                 &ExtractCtx {
                     registry: reg,
                     profile: p,
+                    sandbox: &lanka_extractd::Sandbox::local(),
                 },
                 f,
             )

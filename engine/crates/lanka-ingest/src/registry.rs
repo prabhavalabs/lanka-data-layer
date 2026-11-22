@@ -480,6 +480,8 @@ pub struct Registry {
     pub datasets: BTreeMap<String, Loaded<DatasetSpec>>,
     pub codelists: BTreeMap<String, Loaded<CodelistSpec>>,
     pub units: BTreeMap<String, UnitSpec>,
+    /// PDF table templates by id (`templates/<source>/<table>.yaml`, WP-08).
+    pub templates: BTreeMap<String, Loaded<crate::template::Template>>,
     /// Non-fatal findings (dangling cross-references, licence conflicts).
     pub warnings: Vec<String>,
 }
@@ -668,6 +670,35 @@ impl Registry {
                         ));
                     }
                     reg.connectors.insert(l.spec.source.clone(), l);
+                }
+            }
+        }
+
+        // PDF table templates: one directory per source, id = relative path.
+        let tdir = root.join("templates");
+        if tdir.is_dir() {
+            let v = compile_schema(&root.join("schema/template.schema.json"))?;
+            for sub in std::fs::read_dir(&tdir)?.filter_map(|e| e.ok().map(|e| e.path())) {
+                if !sub.is_dir() {
+                    continue;
+                }
+                for path in yaml_files(&sub)? {
+                    let id = format!("{}/{}", file_stem(&sub), file_stem(&path));
+                    if let Some(l) = load_one::<crate::template::Template>(&path, &v, &mut errors) {
+                        if l.spec.id != id {
+                            errors.push(format!(
+                                "{}: id {:?} does not match its path ({id})",
+                                path.display(),
+                                l.spec.id
+                            ));
+                        }
+                        if let Err(e) = crate::template::Template::from_yaml(
+                            &String::from_utf8_lossy(&std::fs::read(&path).unwrap_or_default()),
+                        ) {
+                            errors.push(format!("{}: {e:#}", path.display()));
+                        }
+                        reg.templates.insert(id, l);
+                    }
                 }
             }
         }

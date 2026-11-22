@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lankadata.org/schema/template.schema.json",
+  "title": "PDF table template (registry/templates/<source>/<table>.yaml)",
+  "description": "Where a table is in a PDF and how to read it (docs/architecture-v2/03-ingestion.md §3.2). Column x-ranges come from header text, never from page coordinates. A layout change is a new edition entry, not a new connector.",
+  "type": "object",
+  "required": ["id", "editions"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9.-]*$" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "editions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["locate", "columns"],
+        "additionalProperties": false,
+        "properties": {
+          "match": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": { "edition": { "type": "string", "pattern": "^[0-9]{4}[^.]*(\\.\\.[0-9]{4}.*)?$" } }
+          },
+          "locate": {
+            "type": "object",
+            "required": ["page"],
+            "additionalProperties": false,
+            "properties": {
+              "page": {
+                "type": "object",
+                "required": ["find_text"],
+                "additionalProperties": false,
+                "properties": {
+                  "find_text": { "type": "string", "minLength": 1 },
+                  "then_text": { "type": "string", "minLength": 1 }
+                }
+              },
+              "span_pages": { "type": "integer", "minimum": 1, "maximum": 20 }
+            }
+          },
+          "label": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "key": { "$ref": "#/$defs/key" },
+              "header": { "type": "string", "minLength": 1 },
+              "slack": { "type": "number", "minimum": 0, "maximum": 50 }
+            }
+          },
+          "columns": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["key", "header"],
+              "additionalProperties": false,
+              "properties": {
+                "key": { "$ref": "#/$defs/key" },
+                "header": { "type": "string", "minLength": 1 },
+                "under": { "type": "string", "minLength": 1 },
+                "nth": { "type": "integer", "minimum": 1 }
+              }
+            }
+          },
+          "rows": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "start_after": { "type": "string" },
+              "stop_at": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "min_cells": { "type": "integer", "minimum": 1 }
+            }
+          },
+          "number": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "thousands": { "type": "string", "maxLength": 1 },
+              "decimal": { "type": "string", "minLength": 1, "maxLength": 1 },
+              "missing": { "type": "array", "items": { "type": "string" } },
+              "strip": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+              "align": { "enum": ["right", "center"] }
+            }
+          },
+          "superscript_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+          "checks": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": ["sum", "equals"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "sum": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/key" } },
+                    "equals": { "$ref": "#/$defs/key" },
+                    "tol": { "type": "number", "minimum": 0 }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": ["sum_rows", "equals_row"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "sum_rows": {
+                      "oneOf": [
+                        { "enum": ["all", "all_but_first", "all_but_last"] },
+                        { "type": "array", "minItems": 1, "items": { "type": "string" } }
+                      ]
+                    },
+                    "equals_row": { "type": "string" },
+                    "columns": { "type": "array", "items": { "$ref": "#/$defs/key" } },
+                    "tol": { "type": "number", "minimum": 0 }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": ["row_count"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "row_count": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": { "min": { "type": "integer", "minimum": 0 }, "max": { "type": "integer", "minimum": 0 } }
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": ["rows_present"],
+                  "additionalProperties": false,
+                  "properties": { "rows_present": { "type": "array", "items": { "type": "string" } } }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+  }
+}

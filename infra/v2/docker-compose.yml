@@ -135,7 +135,11 @@ services:
       # sources that read local exports for now, e.g. hdx-cod-ab-lka=/inputs/layers
       LANKA_LOCAL_INPUTS: ${LANKA_LOCAL_INPUTS:-}
       LANKA_WORKER_GRACE: "50"
+      # Documents go through the tools sidecar only (ADR 0009).
+      LANKA_EXTRACTD_SOCKET: /run/lanka/extractd.sock
+      LANKA_EXTRACTD: require
     volumes:
+      - lanka_extractd:/run/lanka
       - ${LANKA_STORE_HOST:-/srv/lanka/store}:/store:rw
       - ${LANKA_REPO_DIR:-../..}/registry:/app/registry:ro
       - ${LANKA_REPO_DIR:-../..}/country:/app/country:ro
@@ -147,10 +151,47 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      tools:
+        condition: service_started
     deploy:
       resources:
         limits: { memory: 2g, cpus: "5" }
 
+  # Document sandbox (ADR 0009, 07 §5): poppler + tesseract behind
+  # lanka-extractd on a Unix socket. No network at all, read-only root, no
+  # capabilities, no credentials, nothing mounted but the socket volume and
+  # a tmpfs work directory. Test: engine/crates/lanka-extractd/tests/sandbox.rs.
+  tools:
+    image: ${LANKA_TOOLS_IMAGE:-lanka-tools:dev}
+    build:
+      context: ../../engine
+      dockerfile: ../infra/v2/tools.Dockerfile
+    network_mode: none
+    user: "10001:10001"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    restart: unless-stopped
+    environment:
+      LANKA_EXTRACTD_SOCKET: /run/lanka/extractd.sock
+      LANKA_EXTRACTD_WORK: /tmp
+      LANKA_EXTRACTD_CONCURRENCY: "2"
+      LANKA_EXTRACTD_WALL_SECS: "60"
+      LANKA_EXTRACTD_MEM_MB: "1024"
+    volumes:
+      - lanka_extractd:/run/lanka
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+    deploy:
+      resources:
+        limits: { memory: 1536m, cpus: "2" }
+
 volumes:
+  lanka_extractd:
+    name: lanka_v2_extractd
   lanka_pgdata:
     name: lanka_v2_pgdata

@@ -1,0 +1,39 @@
+# Statistical Abstract, chapter 2, table 2.1a: estimated mid-year population
+# by district and sex, five years, thousands. Trilingual (Sinhala / Tamil /
+# English) labels; the English district column is the label column.
+id: dcs-statistical-abstract/table-2.1a-midyear-population-district
+title: Estimated mid year population by district (thousands)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 2.1a", then_text: "mid year population by district" }
+      span_pages: 1
+    label: { key: district, header: "District" }
+    columns:
+      - { key: total_y1,  header: "Total",  under: "2020" }
+      - { key: male_y1,   header: "Male",   under: "2020" }
+      - { key: female_y1, header: "Female", under: "2020" }
+      - { key: total_y2,  header: "Total",  under: "2021" }
+      - { key: male_y2,   header: "Male",   under: "2021" }
+      - { key: female_y2, header: "Female", under: "2021" }
+      - { key: total_y3,  header: "Total",  under: "2022" }
+      - { key: male_y3,   header: "Male",   under: "2022" }
+      - { key: female_y3, header: "Female", under: "2022" }
+      - { key: total_y4,  header: "Total",  under: "2023" }
+      - { key: male_y4,   header: "Male",   under: "2023" }
+      - { key: female_y4, header: "Female", under: "2023" }
+      - { key: total_y5,  header: "Total",  under: "2024" }
+      - { key: male_y5,   header: "Male",   under: "2024" }
+      - { key: female_y5, header: "Female", under: "2024" }
+    rows: { stop_at: ["Provisional", "Note :"] }
+    number: { thousands: ",", missing: ["..", "-"] }
+    checks:
+      - { sum: [male_y1, female_y1], equals: total_y1, tol: 1 }
+      - { sum: [male_y2, female_y2], equals: total_y2, tol: 1 }
+      - { sum: [male_y3, female_y3], equals: total_y3, tol: 1 }
+      - { sum: [male_y4, female_y4], equals: total_y4, tol: 1 }
+      - { sum: [male_y5, female_y5], equals: total_y5, tol: 1 }
+      # 25 districts, each rounded to the nearest thousand.
+      - { sum_rows: all_but_first, equals_row: "Sri Lanka", tol: 13 }
+      - { row_count: { min: 26, max: 26 } }
+      - { rows_present: ["Sri Lanka", "Colombo", "Nuwara - Eliya", "Kegalle"] }

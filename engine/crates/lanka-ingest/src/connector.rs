@@ -381,10 +381,12 @@ pub struct DiscoverCtx<'a> {
     pub run: Option<&'a RunTracker>,
 }
 
-/// `extract` reads archived files only: no network, no database.
+/// `extract` reads archived files only: no network, no database. Document
+/// tools (poppler, tesseract) run only through `sandbox` (ADR 0009).
 pub struct ExtractCtx<'a> {
     pub registry: &'a Registry,
     pub profile: &'a Profile,
+    pub sandbox: &'a lanka_extractd::Sandbox,
 }
 
 /// A coded geography in the lookup snapshot.

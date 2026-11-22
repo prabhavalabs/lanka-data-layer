@@ -1,0 +1,44 @@
+source: dcs-statistical-abstract
+driver: pdf_table
+version: 1.0.0
+description: >-
+  Statistical Abstract chapter tables (one PDF per table). Class B: every
+  version is reviewed against its evidence sheet before release.
+discover:
+  files:
+    - key: abstract-2025-2.1a
+      url: https://www.statistics.gov.lk/abstract2025/CHAP2/2.1a.pdf
+      edition: "2025"
+extract:
+  tables:
+    - id: t2_1a
+      file: abstract-2025-2.1a
+      template: dcs-statistical-abstract/table-2.1a-midyear-population-district
+standardise:
+  dataset: dcs-midyear-population-district
+  vintage: "Statistical Abstract {edition}, table 2.1a"
+  outputs:
+    - table: t2_1a
+      indicator: pop.midyear_district
+      geo: { from_label: { level: 2, root: ["Sri Lanka"] } }
+      period: { from_header: year }
+      columns:
+        total_y1: { sex: total }
+        male_y1: { sex: male }
+        female_y1: { sex: female }
+        total_y2: { sex: total }
+        male_y2: { sex: male }
+        female_y2: { sex: female }
+        total_y3: { sex: total }
+        male_y3: { sex: male }
+        female_y3: { sex: female }
+        total_y4: { sex: total }
+        male_y4: { sex: male }
+        female_y4: { sex: female }
+        total_y5: { sex: total }
+        male_y5: { sex: male }
+        female_y5: { sex: female }
+      # The table is in thousands.
+      scale: 1000
+      # "(1) Provisional" marks the year headers.
+      status: { header_markers: { "(1)": provisional } }

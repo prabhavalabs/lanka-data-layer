@@ -26,6 +26,7 @@ themes:
 - GOVE
 - TRAN
 datasets:
+- dcs-midyear-population-district
 - dcs-lfs-annual-subnational
 - dcs-building-construction
 - dcs-local-government-finance
