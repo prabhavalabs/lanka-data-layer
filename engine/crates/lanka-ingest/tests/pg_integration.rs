@@ -602,6 +602,87 @@ async fn run_cycle(url: String) {
         Err(lanka_core::CoreError::NotInCoverage)
     ));
 
+    // ── bulk units and unit geometry ──
+    use lanka_core::geo_units::{self, Simplify, UnitsQuery};
+    let l2 = geo_units::units(
+        &pool,
+        &cat,
+        &UnitsQuery {
+            level: 2,
+            ..Default::default()
+        },
+    )
+    .await
+    .expect("units level 2");
+    assert_eq!(
+        (l2.total, l2.units.len(), l2.next_cursor.as_deref()),
+        (1, 1, None)
+    );
+    let u = &l2.units[0];
+    assert_eq!(
+        (u.pcode.as_str(), u.parent.as_deref()),
+        ("ZZ11", Some("ZZ1"))
+    );
+    assert!(u.area_km2.is_some_and(|a| a > 0.0));
+    let c = u.centroid.expect("centroid");
+    assert!(
+        (80.0..80.25).contains(&c[0]) && (7.0..7.25).contains(&c[1]),
+        "[lon, lat]: {c:?}"
+    );
+    let below = geo_units::units(
+        &pool,
+        &cat,
+        &UnitsQuery {
+            level: 2,
+            parent: Some("ZZ".into()),
+            limit: Some(1),
+            ..Default::default()
+        },
+    )
+    .await
+    .expect("units below the root");
+    assert_eq!(below.units.len(), 1);
+    let after = geo_units::units(
+        &pool,
+        &cat,
+        &UnitsQuery {
+            level: 2,
+            cursor: Some("ZZ11".into()),
+            ..Default::default()
+        },
+    )
+    .await
+    .expect("past the last page");
+    assert!(after.units.is_empty());
+    assert!(matches!(
+        geo_units::units(
+            &pool,
+            &cat,
+            &UnitsQuery {
+                level: 2,
+                parent: Some("ZZ2".into()),
+                ..Default::default()
+            }
+        )
+        .await,
+        Err(lanka_core::CoreError::NotFound(_))
+    ));
+    let full = geo_units::unit_geometry(&pool, &cat, "ZZ11", Simplify::Full)
+        .await
+        .expect("geometry");
+    assert_eq!((full.kind.as_str(), full.id.as_str()), ("Feature", "ZZ11"));
+    assert_eq!(full.geometry["type"], "MultiPolygon");
+    let coarse = geo_units::unit_geometry(&pool, &cat, "ZZ11", Simplify::Tolerance(0.01))
+        .await
+        .expect("simplified geometry");
+    assert!((coarse.properties.simplify_tolerance - 0.01).abs() < 1e-12);
+    for x in full.geometry["coordinates"][0][0].as_array().expect("ring") {
+        for v in x.as_array().expect("pair") {
+            let t = v.to_string();
+            assert!(t.split('.').nth(1).is_none_or(|d| d.len() <= 6), "{t}");
+        }
+    }
+
     let p = query::provenance(&pool, &cat, s.series[0].points[0].obs_id)
         .await
         .expect("provenance");

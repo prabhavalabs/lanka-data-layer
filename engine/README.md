@@ -61,6 +61,8 @@ curl -s 'localhost:8601/v2/r/20261122.1/frame?indicators=wdi.ny_gdp_mktp_cd&leve
 lanka map validate my-map.json && lanka map resolve my-map.json
 curl -s localhost:8601/v2/observations/<obs_id>/provenance
 curl -s 'localhost:8601/v2/reverse?lat=6.9344&lon=79.8428'
+curl -s 'localhost:8601/v2/units?level=3&parent=LK1' | jq '.payload.total, .payload.units[0]'
+curl -s 'localhost:8601/v2/units/LK11/geometry?simplify=display&format=geojson'
 curl -s localhost:8601/v2/openapi.json
 
 # CLI queries use the same core

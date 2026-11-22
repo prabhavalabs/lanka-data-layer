@@ -16,6 +16,7 @@ pub mod features;
 pub mod flags;
 pub mod frame;
 pub mod geo_code;
+pub mod geo_units;
 pub mod grid;
 pub mod period;
 pub mod profile;

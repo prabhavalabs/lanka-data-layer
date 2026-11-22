@@ -74,7 +74,7 @@ Attribution is **per source, never per licence**: a source's text is its registr
 | | `GET /v2/datasets/{id}/quality` | expectations, cross-source checks, validation scores |
 | | `GET /v2/datasets/{id}/attribution?format=text\|html\|json` | ready-made credit line |
 | | `GET /v2/indicators?q=&dataset=&level=&class=&sdg=` · `GET /v2/indicators/{id}` | definition, unit, dims with codelists, aggregation rule, coverage per level, related (`estimates_of`) |
-| | `GET /v2/codelists/{id}` · `GET /v2/units` · `GET /v2/sources/{id}` · `GET /v2/methods/{id}` · `GET /v2/recipes/{id}` | reference data |
+| | `GET /v2/codelists/{id}` · `GET /v2/units-of-measure` · `GET /v2/sources/{id}` · `GET /v2/methods/{id}` · `GET /v2/recipes/{id}` | reference data |
 | | `GET /v2/catalog.jsonld` | DCAT-AP 3 |
 | **Data** | `GET /v2/indicators/{id}/series?geo=LK11,LK12&from=&to=&dims=sex:F&basis=&format=` | ≤ 25 geographies; `dims` accepts `key:code` pairs, omitted dimension = `_T` |
 | | `GET /v2/indicators/{id}/map?level=3&parent=LK1&period=latest&dims=` | columnar `{codes[], values[], lo[], hi[], basis[], status[], breaks[]}`; no geometry |
@@ -84,6 +84,8 @@ Attribution is **per source, never per licence**: a source's text is its registr
 | **Places** | `GET /v2/areas/{code}` | unit, hierarchy, children, area, bbox, xrefs, values grouped `official / third_party / derived / estimated` from `serve.area_latest` |
 | | `GET /v2/areas/{code}/geometry?simplified=1` · `/children?level=` · `/neighbours` · `/history` | geometry (GeoJSON, 6 dp); vintage history + successors |
 | | `GET /v2/areas?scheme=&level=&parent=&q=` · `GET /v2/schemes` · `GET /v2/crosswalks?from_set=&to_set=&code=` | |
+| | `GET /v2/units?level=&parent=&cursor=&limit=` (**implemented**) | every unit of one level, optionally below any ancestor `parent`: `pcode`, `level`, `parent`, `name_en/si/ta`, `centroid` `[lon, lat]` (point on surface, 6 dp), `area_km2`; ordered by code, keyset pages (`cursor` = last code, `limit` 1–20,000, default 2,000; `total` and `next_cursor` in the payload, `meta.next` rel `next`); reference boundary set; `meta` cites the boundary dataset, so the ETag follows the release and the boundary dsv. The bulk form of `/v2/areas?level=&parent=` above |
+| | `GET /v2/units/{code}/geometry?simplify=full\|display\|coarse\|<degrees>&format=json\|geojson` (**implemented**) | one GeoJSON Feature (`id` = code, `bbox`, properties `pcode`, `level`, `parent`, names, `boundary_set`, `area_km2`, `simplify_tolerance`), coordinates ≤ 6 dp; `display` = the stored 0.0005° simplification, `coarse` = 0.005°, a number = `ST_SimplifyPreserveTopology` tolerance (0 < t ≤ 0.1); `format=geojson` returns the bare Feature as `application/geo+json`. Same resource as the planned `/v2/areas/{code}/geometry` |
 | | `GET /v2/reverse?lat=&lon=&schemes=admin,ed,la,moh` | deepest unit per scheme + chain + cell; `match: contains\|nearest` (kept) |
 | | `GET /v2/lookup?q=&suggest=1` | universal lookup (v1 semantics: coordinate / postal / p-code / fuzzy), over `serve.search` |
 | | `GET /v2/compare?geo=LK11,LK12,LK13&indicators=` | side-by-side with ranks within level |
@@ -96,6 +98,8 @@ Attribution is **per source, never per licence**: a source's text is its registr
 | **Releases** | `GET /v2/releases` · `/v2/releases/{data_version}` · `/v2/releases/{data_version}/changelog` | manifest and changelog |
 | **Ops** | `GET /v2/health` · `/v2/status` · `/v2/status/sources` · `/v2/status/datasets` · `/v2/status/runs` · `/v2/status/events` | [07 §4](07-operations.md#4-health-and-status-apis) |
 | **Meta** | `GET /v2/openapi.json` · `/v2/docs` · `/llms.txt` · `/v2/conformance` | |
+
+*Naming note (2026-11-22):* `/v2/units` names **geographic units** (`geo.units`); the units-of-measure reference list planned under that path earlier is `GET /v2/units-of-measure`.
 
 ### 2.2 Conventions
 

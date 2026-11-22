@@ -38,6 +38,7 @@ pub mod frame_codec;
 pub mod grids;
 pub mod openapi;
 pub mod points;
+pub mod units_api;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -1206,6 +1207,7 @@ async fn oembed(State(st): State<AppState>, Query(p): Query<OEmbedParams>) -> Ap
 async fn openapi_json() -> Response {
     let mut doc = openapi::ApiDoc::openapi();
     doc.merge(features_api::FeaturesDoc::openapi());
+    doc.merge(units_api::UnitsDoc::openapi());
     let mut res = axum::Json(doc).into_response();
     res.headers_mut().insert(
         header::CACHE_CONTROL,
@@ -1257,6 +1259,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v2/grids/{id}/values/{z}/{x}/{y}", get(grids::values_tile))
         .route("/v2/openapi.json", get(openapi_json))
         .merge(features_api::routes())
+        .merge(units_api::routes())
         .fallback(fallback)
         .with_state(state)
         .layer(
@@ -1619,6 +1622,8 @@ mod tests {
             "/v2/observations/{id}/provenance",
             "/v2/reverse",
             "/v2/oembed",
+            "/v2/units",
+            "/v2/units/{pcode}/geometry",
         ] {
             assert!(v["paths"].get(p).is_some(), "missing {p}");
         }
@@ -1663,5 +1668,26 @@ mod tests {
     async fn reverse_validates_coordinates() {
         let (status, _) = get("/v2/reverse?lat=abc&lon=80").await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn units_validate_before_the_database() {
+        for (uri, needle) in [
+            ("/v2/units", "level is required"),
+            ("/v2/units?level=9", "expected 0"),
+            ("/v2/units?level=2&limit=0", "limit"),
+            ("/v2/units?level=2&parent=LK11", "must be above"),
+            ("/v2/units?level=2&parent=nope", ""),
+            ("/v2/units/LK11/geometry?simplify=0.5", "simplify"),
+            ("/v2/units/LK11/geometry?format=kml", "format"),
+            ("/v2/units/not-a-code/geometry", ""),
+        ] {
+            let (status, v) = get(uri).await;
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{uri}: {v}");
+            assert!(
+                v["message"].as_str().is_some_and(|m| m.contains(needle)),
+                "{uri}: {v}"
+            );
+        }
     }
 }
