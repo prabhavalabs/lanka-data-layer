@@ -1,0 +1,45 @@
+id: dcs-census-2024-tables
+publisher: Department of Census and Statistics, Sri Lanka
+title: Census of Population and Housing 2024 - housing and household workbooks
+homepage: https://www.statistics.gov.lk/Population/StaticalInformation/CPH2024
+access:
+  method: xlsx
+  endpoint: http://www.statistics.gov.lk/Population/StaticalInformation/CPH2024/{table}
+  auth: none
+licence:
+  id: lk-gov-unstated
+  status: permission_unclear
+  attribution: Department of Census and Statistics, Census of Population and Housing 2024
+cadence:
+  frequency: one_off
+geo:
+  levels:
+  - national
+  - adm2
+  - adm3
+  - adm4
+  join: pcode
+themes:
+- SOCI
+- REGI
+datasets:
+- dcs-census-2024-households
+- dcs-census-2024-housing
+- dcs-census-2024-basic-services
+priority: P0
+effort: M
+status: active
+verified_at: '2026-11-22'
+notes: >-
+  The CPH 2024 web pages serve Excel workbooks directly: HousingA/A1-A8 (district, trilingual labels),
+  HH_DS_excel / OHU_DS_excel (DS division, BIFF .xls with DCS province, district and DS codes) and
+  HH_GND_excel (GN division, with GN codes). The DS and GN workbooks carry DCS codes, which are the
+  COD-AB p-code digits (LK + district + 2-digit DS + 3-digit GN), so no name matching is needed below
+  district. Same publisher and licence as dcs-census-2024 (whose code connector reads the population
+  tables A5-A7); kept as a separate source so the declarative xlsx_table driver can read these tables.
+  Request written reuse permission (decision D4).
+dc_refs:
+- census-households-dsd
+- census-housing-structure-district
+- census-basic-services-district
+- housing-condition-materials

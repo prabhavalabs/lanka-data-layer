@@ -3,6 +3,7 @@ title: 'Census 2024: households and household size'
 description: Number of households, household population and average household size by DS and GN.
 source_ids:
 - dcs-census-2024
+- dcs-census-2024-tables
 - nuuuwan-lk-census-2024
 indicators:
 - id: census24.households

@@ -3,6 +3,7 @@ title: 'Census 2024: water, sanitation, lighting, cooking fuel, waste'
 description: Households by drinking-water source, toilet facility, lighting source, cooking fuel and waste disposal method.
 source_ids:
 - dcs-census-2024
+- dcs-census-2024-tables
 indicators:
 - id: census24.hh_water_source
   label: Households by drinking water source
@@ -16,6 +17,8 @@ indicators:
   geo_levels:
   - national
   - adm2
+  - adm3
+  - adm4
   period_type: snapshot
 - id: census24.hh_toilet
   label: Households by toilet facility
@@ -28,6 +31,8 @@ indicators:
   geo_levels:
   - national
   - adm2
+  - adm3
+  - adm4
   period_type: snapshot
 - id: census24.hh_lighting
   label: Households by lighting source
@@ -40,6 +45,8 @@ indicators:
   geo_levels:
   - national
   - adm2
+  - adm3
+  - adm4
   period_type: snapshot
 - id: census24.hh_cooking_fuel
   label: Households by cooking fuel
@@ -53,6 +60,8 @@ indicators:
   geo_levels:
   - national
   - adm2
+  - adm3
+  - adm4
   period_type: snapshot
 - id: census24.hh_waste_disposal
   label: Households by waste disposal method

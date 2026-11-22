@@ -3,6 +3,7 @@ title: 'Census 2024: housing structure, materials, tenure, occupancy'
 description: Housing units by type, wall/roof/floor materials, tenure, occupancy status and rooms, by district.
 source_ids:
 - dcs-census-2024
+- dcs-census-2024-tables
 indicators:
 - id: census24.housing_units
   label: Housing units by structure type
@@ -15,6 +16,7 @@ indicators:
   geo_levels:
   - national
   - adm2
+  - adm3
   period_type: snapshot
 - id: census24.housing_material
   label: Housing units by principal material
@@ -30,6 +32,7 @@ indicators:
   geo_levels:
   - national
   - adm2
+  - adm3
   period_type: snapshot
 - id: census24.housing_tenure
   label: Households by tenure
