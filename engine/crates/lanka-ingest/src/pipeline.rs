@@ -639,6 +639,23 @@ async fn standardise_and_publish(
     )
     .await;
     let extract_ids: Vec<i64> = extracts.iter().map(|e| e.id).collect();
+    // Grid unit assignment for features (WP-05 lookups), when built.
+    let grid_units = if outputs.iter().any(|o| matches!(o, Output::Features { .. })) {
+        match crate::features::load_grid_units(env.pool, env.store, env.profile).await {
+            Ok(g) => g,
+            Err(e) => {
+                run.warn(
+                    Stage::Validate,
+                    &format!("grid unit lookup not used (polygon path only): {e:#}"),
+                    None,
+                )
+                .await;
+                None
+            }
+        }
+    } else {
+        None
+    };
 
     let mut published = Vec::new();
     let mut crosswalks = 0;
@@ -729,6 +746,7 @@ async fn standardise_and_publish(
                         artifact_ids,
                         extract_ids: &extract_ids,
                         coverage: lookup.coverage.as_deref(),
+                        grid_units: grid_units.as_ref(),
                     },
                 )
                 .await

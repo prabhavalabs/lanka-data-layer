@@ -773,9 +773,10 @@ bytes (`tests/pmtiles_reader.rs`).
 
 ### Decision note: WP-04 deviations
 
-- *Unit assignment uses the polygon path* (`ST_Intersects` on the reference set's deepest level, KNN fallback),
-  not 05 §4's grid (`cell_id → gnd_idx`): the grid store is WP-05. Swapping in `lanka-grid::assign` changes only
-  `features::write_rows`; boundary-straddling cells keep the polygon path there anyway.
+- *Unit assignment*: when WP-05's `grid.gnd_idx`/`grid.land_mask` exist for the boundary set, a representative
+  point in an interior cell (`land_mask` 1, no unit boundary crosses it) takes the cell's unit (05 §4,
+  `features::GridUnits`); every other point keeps the polygon path (`ST_Intersects` on the deepest level, KNN
+  fallback). Lookups are never built by a features run; without them everything uses polygons.
 - *Coverage drop instead of `UNIT_NULL`*: a feature whose representative point is not in the country (Geofabrik's
   polygon includes sea and the Palk Strait) is not the country's, so it is not published (counted in the run log
   and `validation.outside_coverage`); everything published has a unit.

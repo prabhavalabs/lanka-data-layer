@@ -216,6 +216,7 @@ async fn stage(
             artifact_ids: &[],
             extract_ids: &[],
             coverage: cov.as_deref(),
+            grid_units: None,
         },
     )
     .await

@@ -17,7 +17,10 @@
 //! Derived per row at insert, outside the hash: the canonical grid `cell_id`
 //! of the representative point, and `unit_key` — the deepest admin unit of
 //! the reference boundary set containing it, else the nearest one
-//! (`unit_match` 1 within 2 km, 2 beyond). Features whose representative
+//! (`unit_match` 1 within 2 km, 2 beyond). When WP-05's lookup arrays exist
+//! for the boundary set, a point in an *interior* cell (`land_mask` 1: no unit
+//! boundary crosses it) takes the cell's unit from `gnd_idx` (05 §4); every
+//! other point keeps the polygon path. Features whose representative
 //! point lies outside the grid or the country (coverage = land buffered by
 //! 2 km) are not the country's and are dropped with a warning.
 
@@ -105,6 +108,95 @@ pub struct FeatureStageInput<'a> {
     pub extract_ids: &'a [i64],
     /// Country land area buffered by [`SNAP_M`]; `None` = grid bounds only.
     pub coverage: Option<&'a Coverage>,
+    /// `gnd_idx`/`land_mask` of the boundary set (WP-05); `None` = polygons only.
+    pub grid_units: Option<&'a GridUnits>,
+}
+
+/// Cell → unit for interior cells, from WP-05's `grid.gnd_idx` and
+/// `grid.land_mask` of one boundary set.
+pub struct GridUnits {
+    pub boundary_set: String,
+    gnd_idx: Vec<u16>,
+    land_mask: Vec<u8>,
+    /// `slot_unit[s]` = `geo.units.key` of slot `s` (0 unused).
+    slot_unit: Vec<i32>,
+}
+
+impl std::fmt::Debug for GridUnits {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GridUnits")
+            .field("boundary_set", &self.boundary_set)
+            .field("cells", &self.gnd_idx.len())
+            .field("slots", &self.slot_unit.len().saturating_sub(1))
+            .finish()
+    }
+}
+
+impl GridUnits {
+    /// The unit of `cell` when the whole cell lies inside it.
+    #[must_use]
+    pub fn interior_unit(&self, cell: u32) -> Option<i32> {
+        let i = cell as usize;
+        if self.land_mask.get(i).copied() != Some(lanka_grid::lookup::MASK_INTERIOR) {
+            return None;
+        }
+        let s = usize::from(*self.gnd_idx.get(i)?);
+        (s > 0).then(|| self.slot_unit.get(s).copied()).flatten()
+    }
+}
+
+/// Loads the lookup arrays of the profile's reference set when they were
+/// built (`lanka grid lookups`, or the first raster run); never builds them.
+pub async fn load_grid_units(
+    pool: &PgPool,
+    store: &dyn lanka_store::BlobStore,
+    profile: &Profile,
+) -> Result<Option<GridUnits>> {
+    use lanka_grid::{GridArray, GridData};
+    let set = profile.reference_boundary_set().to_owned();
+    let paths: Vec<(String, String)> = sqlx::query_as(
+        "SELECT id, bin_path FROM geo.grid_layers WHERE id IN ('grid.gnd_idx', 'grid.land_mask') AND period = $1",
+    )
+    .bind(&set)
+    .fetch_all(pool)
+    .await?;
+    let get = |id: &str| paths.iter().find(|p| p.0 == id).map(|p| p.1.clone());
+    let (Some(g), Some(m)) = (get("grid.gnd_idx"), get("grid.land_mask")) else {
+        return Ok(None);
+    };
+    let root = crate::grid::local_root(store)?;
+    let cells = lanka_grid::cells(&profile.grid);
+    let (gnd_idx, land_mask) =
+        tokio::task::spawn_blocking(move || -> Result<(Vec<u16>, Vec<u8>)> {
+            let (ga, _) = GridArray::read_bin(&root.join(&g))?;
+            let (ma, _) = GridArray::read_bin(&root.join(&m))?;
+            let (GridData::U16(gi), GridData::U8(mk)) = (ga.data, ma.data) else {
+                bail!("gnd_idx/land_mask have unexpected dtypes");
+            };
+            ensure!(
+                gi.len() == cells && mk.len() == cells,
+                "lookup arrays do not match the profile grid"
+            );
+            Ok((gi, mk))
+        })
+        .await??;
+    let slots: Vec<(i32, i32)> = sqlx::query_as(
+        "SELECT idx, unit_key FROM geo.grid_lookup_units WHERE layer_id = 'grid.gnd_idx' AND period = $1 ORDER BY idx",
+    )
+    .bind(&set)
+    .fetch_all(pool)
+    .await?;
+    let n = usize::try_from(slots.last().map_or(0, |s| s.0))?;
+    let mut slot_unit = vec![0; n + 1];
+    for (i, k) in slots {
+        slot_unit[usize::try_from(i)?] = k;
+    }
+    Ok(Some(GridUnits {
+        boundary_set: set,
+        gnd_idx,
+        land_mask,
+        slot_unit,
+    }))
 }
 
 /// Rows kept after validation, with their hash and grid cell.
@@ -304,7 +396,9 @@ async fn write_rows(
     kept: &[Kept<'_>],
     artifact_ids: &[i64],
     extract_ids: &[i64],
+    grid_units: Option<&GridUnits>,
 ) -> Result<i64> {
+    let grid_units = grid_units.filter(|g| g.boundary_set == boundary_set);
     let rns: Vec<i64> =
         sqlx::query_scalar("SELECT rn FROM feat_diff WHERE change <> 's' ORDER BY rn")
             .fetch_all(&mut *conn)
@@ -313,7 +407,8 @@ async fn write_rows(
         "CREATE TEMP TABLE feat_full (
             rn int8, feature_key text, kind text, name_en text, name_si text, name_ta text,
             geojson text, lon float8, lat float8, cell_id int4, attrs jsonb, flags int4,
-            entity_id text, sha bytea, artifact_id int8, extract_id int8, extract_row int4
+            entity_id text, sha bytea, artifact_id int8, extract_id int8, extract_row int4,
+            grid_unit int4
          ) ON COMMIT DROP",
     )
     .execute(&mut *conn)
@@ -328,7 +423,7 @@ async fn write_rows(
                 .get(usize::try_from(*rn)?)
                 .context("staged feature number out of range")?;
             let r = k.row;
-            b.row(17);
+            b.row(18);
             b.i64(*rn);
             b.text(Some(&r.key));
             b.text(Some(&r.kind));
@@ -346,6 +441,7 @@ async fn write_rows(
             b.opt_i64(artifact_ids.get(r.artifact).copied());
             b.opt_i64(r.prov.and_then(|p| extract_ids.get(p.extract).copied()));
             b.opt_i32(r.prov.map(|p| i32::try_from(p.row).unwrap_or(i32::MAX)));
+            b.opt_i32(grid_units.and_then(|g| g.interior_unit(k.cell)));
             if b.len() >= COPY_CHUNK {
                 copy.send(b.take()).await?;
             }
@@ -364,16 +460,18 @@ async fn write_rows(
     .await?;
     let base = i64::from(dataset_key) << OBS_KEY_SHIFT;
     // Geometry: as delivered when valid, else ST_MakeValid reduced to the
-    // delivered dimension. Unit: containing unit at the deepest level of the
-    // reference set, else the nearest (KNN on the GiST index).
+    // delivered dimension. Unit: the interior cell's unit from gnd_idx, else
+    // the containing unit at the deepest level of the reference set, else
+    // the nearest (KNN on the GiST index).
     let written = sqlx::query(
         "INSERT INTO geo.features (feature_id, dataset_key, feature_key, kind, vfrom, vto, name_en, name_si,
             name_ta, geom, rep, cell_id, unit_key, unit_match, attrs, flags, entity_id, content_sha256,
             artifact_id, extract_id, extract_row)
          SELECT $1::int8 + $2::int8 + row_number() OVER (ORDER BY s.rn), $3, s.feature_key, s.kind, $4,
                 2147483647, s.name_en, s.name_si, s.name_ta, v.g, p.rep, s.cell_id,
-                coalesce(c.unit_key, n.unit_key),
-                CASE WHEN c.unit_key IS NOT NULL THEN 0 WHEN n.unit_key IS NULL THEN NULL
+                coalesce(s.grid_unit, c.unit_key, n.unit_key),
+                CASE WHEN s.grid_unit IS NOT NULL OR c.unit_key IS NOT NULL THEN 0
+                     WHEN n.unit_key IS NULL THEN NULL
                      WHEN n.dist <= $7 THEN 1 ELSE 2 END,
                 s.attrs, s.flags, s.entity_id, s.sha, s.artifact_id, s.extract_id, s.extract_row
          FROM feat_full s
@@ -385,12 +483,13 @@ async fn write_rows(
                                                   p.raw) END AS g) v
          LEFT JOIN LATERAL (
            SELECT g.unit_key FROM geo.unit_geoms g JOIN geo.units u ON u.key = g.unit_key
-           WHERE g.boundary_set = $5 AND u.level = $6 AND ST_Intersects(g.geom, p.rep)
+           WHERE s.grid_unit IS NULL AND g.boundary_set = $5 AND u.level = $6
+             AND ST_Intersects(g.geom, p.rep)
            ORDER BY g.unit_key LIMIT 1) c ON true
          LEFT JOIN LATERAL (
            SELECT k.unit_key, ST_Distance(k.geom::geography, p.rep::geography) AS dist
            FROM (SELECT g.unit_key, g.geom FROM geo.unit_geoms g JOIN geo.units u ON u.key = g.unit_key
-                 WHERE c.unit_key IS NULL AND g.boundary_set = $5 AND u.level = $6
+                 WHERE s.grid_unit IS NULL AND c.unit_key IS NULL AND g.boundary_set = $5 AND u.level = $6
                  ORDER BY g.geom <-> p.rep LIMIT 1) k) n ON true
          ORDER BY s.rn",
     )
@@ -625,6 +724,7 @@ pub async fn publish_features(
         &kept,
         input.artifact_ids,
         input.extract_ids,
+        input.grid_units,
     )
     .await?;
     let unassigned: i64 = sqlx::query_scalar(
@@ -745,6 +845,25 @@ pub async fn publish_features(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn grid_units_answer_only_interior_cells() {
+        use lanka_grid::lookup::{MASK_EDGE, MASK_INTERIOR, MASK_NEAR, MASK_NONE};
+        let g = GridUnits {
+            boundary_set: "s".into(),
+            gnd_idx: vec![1, 1, 2, 0, 2],
+            land_mask: vec![
+                MASK_INTERIOR,
+                MASK_EDGE,
+                MASK_INTERIOR,
+                MASK_NONE,
+                MASK_NEAR,
+            ],
+            slot_unit: vec![0, 101, 202],
+        };
+        let got: Vec<Option<i32>> = (0..6).map(|c| g.interior_unit(c)).collect();
+        assert_eq!(got, [Some(101), None, Some(202), None, None, None]);
+    }
 
     fn f(key: &str, geom: &str) -> FeatureIn {
         FeatureIn {
