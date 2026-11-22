@@ -1,0 +1,19 @@
+# Airport (IATA location identifier)
+# Source/authority: IATA location identifiers (IATA Airline Coding Directory); Airport and Aviation Services (Sri Lanka) (Private) Limited.
+# Note: Shared by bia-flight-arrivals `airport` and `origin` (origin airport): add foreign origin airports by IATA code from the BIA schedule extract.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: bia-flight-arrivals
+id: airport
+title: Airport (IATA location identifier)
+codes:
+  - { code: total, label: All airports, total: true, sdmx: _T }
+  - { code: CMB, label: "Bandaranaike International Airport, Katunayake", parent: total }
+  - { code: HRI, label: Mattala Rajapaksa International Airport, parent: total }
+  - { code: JAF, label: "Jaffna International Airport, Palaly", parent: total }
+  - { code: RML, label: "Colombo International Airport, Ratmalana", parent: total }
+  - { code: BTC, label: Batticaloa Airport, parent: total }
+  - { code: TRR, label: "China Bay Airport, Trincomalee", parent: total }
+  - { code: other, label: Other airports, parent: total }

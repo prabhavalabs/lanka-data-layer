@@ -1,0 +1,21 @@
+# IUCN protected area management category (WDPA IUCN_CAT)
+# Source/authority: Dudley (ed.) 2008, Guidelines for Applying Protected Area Management Categories, IUCN; UNEP-WCMC WDPA User Manual 1.6, field IUCN_CAT (values incl. 'Not Reported', 'Not Applicable', 'Not Assigned').
+# Note: National designations (DWC national park, sanctuary, strict natural reserve; Forest Department forest reserve, conservation forest) are WDPA DESIG values, not IUCN categories.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: wdpa-protected-areas
+id: iucn_cat
+title: IUCN protected area management category (WDPA IUCN_CAT)
+codes:
+  - { code: total, label: All protected areas, total: true, sdmx: _T }
+  - { code: Ia, label: Ia Strict nature reserve, parent: total }
+  - { code: Ib, label: Ib Wilderness area, parent: total }
+  - { code: II, label: II National park, parent: total }
+  - { code: III, label: III Natural monument or feature, parent: total }
+  - { code: IV, label: IV Habitat/species management area, parent: total }
+  - { code: V, label: V Protected landscape/seascape, parent: total }
+  - { code: VI, label: VI Protected area with sustainable use of natural resources, parent: total }
+  - { code: not_reported, label: Not reported, parent: total }
+  - { code: not_applicable, label: Not applicable, parent: total }
+  - { code: not_assigned, label: Not assigned, parent: total }

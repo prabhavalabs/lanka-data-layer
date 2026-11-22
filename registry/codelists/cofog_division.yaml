@@ -1,0 +1,21 @@
+# Function of government (COFOG divisions)
+# Source/authority: UN Classification of the Functions of Government (COFOG, UNSD 1999 / IMF GFSM 2014), divisions 01-10.
+# Note: Used as the topic scheme for cabinet decisions (cabinet-decisions-geotagged `topic`); one decision may carry several topics, so counts by topic are not additive.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cabinet-decisions-geotagged
+id: cofog_division
+title: Function of government (COFOG divisions)
+codes:
+  - { code: total, label: All functions, total: true, sdmx: _T }
+  - { code: "01", label: General public services, parent: total }
+  - { code: "02", label: Defence, parent: total }
+  - { code: "03", label: Public order and safety, parent: total }
+  - { code: "04", label: Economic affairs, parent: total }
+  - { code: "05", label: Environmental protection, parent: total }
+  - { code: "06", label: Housing and community amenities, parent: total }
+  - { code: "07", label: Health, parent: total }
+  - { code: "08", label: "Recreation, culture and religion", parent: total }
+  - { code: "09", label: Education, parent: total }
+  - { code: "10", label: Social protection, parent: total }

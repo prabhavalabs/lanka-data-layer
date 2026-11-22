@@ -1,0 +1,30 @@
+# Bioclimatic variable (WorldClim BIO1-BIO19)
+# Source/authority: WorldClim 2.1 bioclimatic variables (worldclim.org/data/bioclim.html); Fick & Hijmans (2017).
+# Note: Units differ by variable (degC, %, mm) - clim.wc_bio needs per-variable units (see review CSV).
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: worldclim-climate-normals
+id: bio_var
+title: Bioclimatic variable (WorldClim BIO1-BIO19)
+codes:
+  - { code: BIO1, label: Annual mean temperature }
+  - { code: BIO2, label: Mean diurnal range (mean of monthly (max temp - min temp)) }
+  - { code: BIO3, label: Isothermality (BIO2/BIO7 x 100) }
+  - { code: BIO4, label: Temperature seasonality (standard deviation x 100) }
+  - { code: BIO5, label: Max temperature of warmest month }
+  - { code: BIO6, label: Min temperature of coldest month }
+  - { code: BIO7, label: Temperature annual range (BIO5-BIO6) }
+  - { code: BIO8, label: Mean temperature of wettest quarter }
+  - { code: BIO9, label: Mean temperature of driest quarter }
+  - { code: BIO10, label: Mean temperature of warmest quarter }
+  - { code: BIO11, label: Mean temperature of coldest quarter }
+  - { code: BIO12, label: Annual precipitation }
+  - { code: BIO13, label: Precipitation of wettest month }
+  - { code: BIO14, label: Precipitation of driest month }
+  - { code: BIO15, label: Precipitation seasonality (coefficient of variation) }
+  - { code: BIO16, label: Precipitation of wettest quarter }
+  - { code: BIO17, label: Precipitation of driest quarter }
+  - { code: BIO18, label: Precipitation of warmest quarter }
+  - { code: BIO19, label: Precipitation of coldest quarter }

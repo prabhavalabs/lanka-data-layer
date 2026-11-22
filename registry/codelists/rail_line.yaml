@@ -1,0 +1,21 @@
+# Railway line (Sri Lanka Railways)
+# Source/authority: Sri Lanka Railways, network map and timetable line names.
+# Note: Proposed metro lines (lk-metro-proposed-lines) are not SLR lines and need their own list once the proposal's line ids are known.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: slr-timetable
+id: rail_line
+title: Railway line (Sri Lanka Railways)
+codes:
+  - { code: total, label: All lines, total: true, sdmx: _T }
+  - { code: main, label: Main Line (Colombo Fort - Badulla), parent: total }
+  - { code: matale, label: Matale Line, parent: total }
+  - { code: coast, label: Coastal Line (Colombo - Matara - Beliatta), parent: total }
+  - { code: puttalam, label: Puttalam Line, parent: total }
+  - { code: kelani_valley, label: Kelani Valley Line, parent: total }
+  - { code: northern, label: Northern Line (Polgahawela - Kankesanthurai), parent: total }
+  - { code: mannar, label: Mannar Line (Medawachchiya - Talaimannar), parent: total }
+  - { code: trincomalee, label: Trincomalee Line, parent: total }
+  - { code: batticaloa, label: Batticaloa Line, parent: total }
+  - { code: mihintale, label: Mihintale Line, parent: total }

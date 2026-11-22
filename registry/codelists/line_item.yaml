@@ -1,0 +1,22 @@
+# Fiscal outturn line item
+# Source/authority: Ministry of Finance, Fiscal Management Report / mid-year fiscal position report - summary of fiscal operations.
+# Note: Balances are not additive with flows: no total.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-fiscal-performance
+id: line_item
+title: Fiscal outturn line item
+codes:
+  - { code: total_revenue, label: Total revenue and grants }
+  - { code: tax_revenue, label: Tax revenue }
+  - { code: non_tax_revenue, label: Non-tax revenue }
+  - { code: grants, label: Grants }
+  - { code: total_expenditure, label: Total expenditure and net lending }
+  - { code: recurrent_expenditure, label: Recurrent expenditure }
+  - { code: capital_expenditure, label: Capital expenditure and net lending }
+  - { code: interest, label: Interest payments }
+  - { code: primary_balance, label: Primary balance }
+  - { code: overall_balance, label: Overall (budget) balance }

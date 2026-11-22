@@ -1,0 +1,32 @@
+# Development partner (lender / donor)
+# Source/authority: Department of External Resources (ERD), Ministry of Finance - foreign financing by development partner.
+# Note: Bilateral partners use ISO 3166-1 alpha-2 (as in `country`); agencies of one country (JICA, KEXIM) roll up to the country.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: erd-foreign-financing
+id: development_partner
+title: Development partner (lender / donor)
+codes:
+  - { code: total, label: All development partners, total: true, sdmx: _T }
+  - { code: multilateral, label: Multilateral, parent: total }
+  - { code: bilateral, label: Bilateral, parent: total }
+  - { code: adb, label: Asian Development Bank, parent: multilateral }
+  - { code: ida, label: World Bank - IDA, parent: multilateral }
+  - { code: ibrd, label: World Bank - IBRD, parent: multilateral }
+  - { code: aiib, label: Asian Infrastructure Investment Bank, parent: multilateral }
+  - { code: eu, label: European Union, parent: multilateral }
+  - { code: un, label: United Nations agencies, parent: multilateral }
+  - { code: ifad, label: International Fund for Agricultural Development, parent: multilateral }
+  - { code: opec_fund, label: OPEC Fund, parent: multilateral }
+  - { code: JP, label: Japan, parent: bilateral }
+  - { code: CN, label: China, parent: bilateral }
+  - { code: IN, label: India, parent: bilateral }
+  - { code: KR, label: "Korea, Republic of", parent: bilateral }
+  - { code: DE, label: Germany, parent: bilateral }
+  - { code: FR, label: France, parent: bilateral }
+  - { code: US, label: United States of America, parent: bilateral }
+  - { code: SA, label: Saudi Arabia (Saudi Fund), parent: bilateral }
+  - { code: KW, label: Kuwait (Kuwait Fund), parent: bilateral }
+  - { code: other, label: Other, parent: total }

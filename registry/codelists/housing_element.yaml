@@ -1,0 +1,14 @@
+# Housing structural element
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing - principal material of wall, roof and floor.
+# Note: Each element is a separate breakdown; no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-housing
+id: housing_element
+title: Housing structural element
+codes:
+  - { code: wall, label: Wall }
+  - { code: roof, label: Roof }
+  - { code: floor, label: Floor }

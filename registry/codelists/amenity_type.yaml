@@ -1,0 +1,42 @@
+# Amenity type (OpenStreetMap amenity=* values, grouped)
+# Source/authority: OpenStreetMap wiki, Key:amenity (codes are the tag values); `government_office` is office=government.
+# Note: Places of worship are not split by religion here; use the existing `religion` codelist as a second dimension if needed (OSM religion=*).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: osm-pois-amenities
+id: amenity_type
+title: "Amenity type (OpenStreetMap amenity=* values, grouped)"
+codes:
+  - { code: total, label: All amenities, total: true, sdmx: _T }
+  - { code: health, label: Health, parent: total }
+  - { code: education, label: Education, parent: total }
+  - { code: finance, label: Finance, parent: total }
+  - { code: public_service, label: Public services, parent: total }
+  - { code: transport, label: Transport, parent: total }
+  - { code: community, label: Community and worship, parent: total }
+  - { code: hospital, label: Hospital, parent: health }
+  - { code: clinic, label: Clinic, parent: health }
+  - { code: doctors, label: Doctors, parent: health }
+  - { code: dentist, label: Dentist, parent: health }
+  - { code: pharmacy, label: Pharmacy, parent: health }
+  - { code: kindergarten, label: Kindergarten / preschool, parent: education }
+  - { code: school, label: School, parent: education }
+  - { code: college, label: College, parent: education }
+  - { code: university, label: University, parent: education }
+  - { code: library, label: Library, parent: education }
+  - { code: bank, label: Bank, parent: finance }
+  - { code: atm, label: ATM, parent: finance }
+  - { code: bureau_de_change, label: Bureau de change, parent: finance }
+  - { code: police, label: Police, parent: public_service }
+  - { code: fire_station, label: Fire station, parent: public_service }
+  - { code: post_office, label: Post office, parent: public_service }
+  - { code: townhall, label: Town hall, parent: public_service }
+  - { code: courthouse, label: Courthouse, parent: public_service }
+  - { code: government_office, label: "Government office (office=government)", parent: public_service }
+  - { code: fuel, label: Fuel station, parent: transport }
+  - { code: bus_station, label: Bus station, parent: transport }
+  - { code: marketplace, label: Marketplace, parent: community }
+  - { code: place_of_worship, label: Place of worship, parent: community }
+  - { code: community_centre, label: Community centre, parent: community }
+  - { code: other, label: Other amenity, parent: total }

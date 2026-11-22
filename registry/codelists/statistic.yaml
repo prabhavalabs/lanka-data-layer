@@ -1,0 +1,18 @@
+# Zonal statistic
+# Source/authority: Lanka Data Layer derived-terrain-zonal method (zonal statistics over Copernicus DEM GLO-30).
+# Note: No total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-terrain-zonal
+id: statistic
+title: Zonal statistic
+codes:
+  - { code: mean, label: Mean }
+  - { code: min, label: Minimum }
+  - { code: max, label: Maximum }
+  - { code: median, label: Median }
+  - { code: std, label: Standard deviation }
+  - { code: range, label: Range }
+  - { code: tri, label: Terrain ruggedness index (Riley) }

@@ -1,0 +1,20 @@
+# Government expenditure type (economic classification)
+# Source/authority: Central Bank of Sri Lanka, Annual Report - economic classification of government expenditure; DCS local government finance (recurrent / capital).
+# Note: Shared by cbsl-fiscal-operations and dcs-local-government-finance (which reports only recurrent / capital).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-fiscal-operations, dcs-local-government-finance
+id: expenditure_type
+title: Government expenditure type (economic classification)
+codes:
+  - { code: total, label: Total expenditure and net lending, total: true, sdmx: _T }
+  - { code: recurrent, label: Recurrent expenditure, parent: total }
+  - { code: capital, label: Capital expenditure and net lending, parent: total }
+  - { code: salaries_wages, label: Salaries and wages, parent: recurrent }
+  - { code: other_goods_services, label: Other goods and services, parent: recurrent }
+  - { code: interest, label: Interest payments, parent: recurrent }
+  - { code: transfers_subsidies, label: Subsidies and transfers, parent: recurrent }
+  - { code: public_investment, label: Public investment / acquisition of capital assets, parent: capital }
+  - { code: capital_transfers, label: Capital transfers, parent: capital }
+  - { code: net_lending, label: Net lending, parent: capital }

@@ -1,0 +1,48 @@
+# Currency (ISO 4217)
+# Source/authority: ISO 4217 currency codes (SIX, ISO 4217 Maintenance Agency); member set = currencies quoted in CBSL indicative/exchange-rate releases plus SDR.
+# Note: Quote currency of an exchange-rate observation (LKR per unit of <code>). Extend from the CBSL release when a new currency appears.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-exchange-rates
+id: currency
+title: Currency (ISO 4217)
+sdmx_ref: "SDMX:CL_CURRENCY"
+codes:
+  - { code: USD, label: US dollar }
+  - { code: EUR, label: Euro }
+  - { code: GBP, label: Pound sterling }
+  - { code: JPY, label: Yen }
+  - { code: CNY, label: Yuan renminbi }
+  - { code: INR, label: Indian rupee }
+  - { code: AUD, label: Australian dollar }
+  - { code: CAD, label: Canadian dollar }
+  - { code: CHF, label: Swiss franc }
+  - { code: SGD, label: Singapore dollar }
+  - { code: HKD, label: Hong Kong dollar }
+  - { code: NZD, label: New Zealand dollar }
+  - { code: SEK, label: Swedish krona }
+  - { code: DKK, label: Danish krone }
+  - { code: NOK, label: Norwegian krone }
+  - { code: MYR, label: Malaysian ringgit }
+  - { code: THB, label: Baht }
+  - { code: KRW, label: Won }
+  - { code: RUB, label: Russian ruble }
+  - { code: ZAR, label: Rand }
+  - { code: AED, label: UAE dirham }
+  - { code: SAR, label: Saudi riyal }
+  - { code: KWD, label: Kuwaiti dinar }
+  - { code: QAR, label: Qatari riyal }
+  - { code: BHD, label: Bahraini dinar }
+  - { code: OMR, label: Rial Omani }
+  - { code: JOD, label: Jordanian dinar }
+  - { code: PKR, label: Pakistan rupee }
+  - { code: BDT, label: Taka }
+  - { code: MVR, label: Rufiyaa }
+  - { code: NPR, label: Nepalese rupee }
+  - { code: IDR, label: Rupiah }
+  - { code: PHP, label: Philippine peso }
+  - { code: LKR, label: Sri Lanka rupee }
+  - { code: XDR, label: SDR (Special Drawing Right) }

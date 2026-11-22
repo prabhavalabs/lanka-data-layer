@@ -1,0 +1,24 @@
+# Waterway / water body type (OpenStreetMap waterway=* and water=*)
+# Source/authority: OpenStreetMap wiki, Key:waterway and Key:water.
+# Note: Ancient irrigation tanks are tagged water=reservoir (or landuse=reservoir) in Sri Lanka.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: osm-waterways-waterbodies
+id: waterway_type
+title: "Waterway / water body type (OpenStreetMap waterway=* and water=*)"
+codes:
+  - { code: total, label: All waterways and water bodies, total: true, sdmx: _T }
+  - { code: linear, label: Waterways (lines), parent: total }
+  - { code: area, label: Water bodies (areas), parent: total }
+  - { code: river, label: River, parent: linear }
+  - { code: stream, label: Stream, parent: linear }
+  - { code: canal, label: Canal (incl. irrigation channels), parent: linear }
+  - { code: drain, label: Drain, parent: linear }
+  - { code: ditch, label: Ditch, parent: linear }
+  - { code: lake, label: "Lake (water=lake)", parent: area }
+  - { code: reservoir, label: "Reservoir / tank (water=reservoir)", parent: area }
+  - { code: pond, label: Pond, parent: area }
+  - { code: lagoon, label: Lagoon, parent: area }
+  - { code: river_area, label: "River area (water=river)", parent: area }
+  - { code: wetland, label: "Wetland (natural=wetland)", parent: area }

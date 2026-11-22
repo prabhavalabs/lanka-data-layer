@@ -1,0 +1,15 @@
+# Residential sector (urban / rural / estate)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka: sector definition used in the Census of Population and Housing, HIES and LFS (urban = MC/UC areas; estate = plantations of 20+ acres with 10+ resident labourers; rural = remainder).
+# Note: 02-standard-model.md section 3 reserves `sector` for this country codelist; economic sectors use `industry` (and the source-specific *_sector lists).
+# Note: si labels are the standard DCS Sinhala terms (native sign-off requested); ta labels pending native-speaker review.
+# Status: complete for the classification as cited.
+# Labels: si/ta given only where certain; remaining si/ta pending native-speaker review.
+# Order: codes are listed in display order.
+# Used by: dcs-hies-income-expenditure, dcs-hies-poverty
+id: sector
+title: Residential sector (urban / rural / estate)
+codes:
+  - { code: total, label: All sectors, total: true, sdmx: _T }
+  - { code: urban, label: { en: Urban, si: "නාගරික" }, parent: total }
+  - { code: rural, label: { en: Rural, si: "ග්‍රාමීය" }, parent: total }
+  - { code: estate, label: { en: Estate, si: "වතු" }, parent: total }

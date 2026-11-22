@@ -1,0 +1,18 @@
+# Fishing craft type (Ministry of Fisheries codes)
+# Source/authority: Ministry of Fisheries and Aquatic Resources, Fisheries Statistics - fishing fleet by craft type (IMUL, IDAY, OFRP, MTRB, NTRB, NBSB).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: fisheries-statistics
+id: boat_type
+title: Fishing craft type (Ministry of Fisheries codes)
+codes:
+  - { code: total, label: All fishing craft, total: true, sdmx: _T }
+  - { code: motorised, label: Motorised craft, parent: total }
+  - { code: non_motorised, label: Non-motorised craft, parent: total }
+  - { code: IMUL, label: IMUL - inboard multi-day boats, parent: motorised }
+  - { code: IDAY, label: IDAY - inboard single-day boats, parent: motorised }
+  - { code: OFRP, label: OFRP - outboard FRP boats, parent: motorised }
+  - { code: MTRB, label: MTRB - motorised traditional boats, parent: motorised }
+  - { code: NTRB, label: NTRB - non-motorised traditional boats, parent: non_motorised }
+  - { code: NBSB, label: NBSB - beach seine craft, parent: non_motorised }

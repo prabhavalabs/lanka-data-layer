@@ -1,0 +1,13 @@
+# Noise regulation period
+# Source/authority: National Environmental (Noise Control) Regulations No. 1 of 1996 (Gazette 924/12), Central Environmental Authority.
+# Note: No total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: noise-control-zones
+id: time_of_day
+title: Noise regulation period
+codes:
+  - { code: day, label: "Day time (06:00-18:00)" }
+  - { code: night, label: "Night time (18:00-06:00)" }

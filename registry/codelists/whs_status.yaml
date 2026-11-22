@@ -1,0 +1,12 @@
+# World Heritage listing status
+# Source/authority: UNESCO World Heritage Centre - World Heritage List and Tentative Lists.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: world-heritage-sites
+id: whs_status
+title: World Heritage listing status
+codes:
+  - { code: total, label: All properties, total: true, sdmx: _T }
+  - { code: inscribed, label: Inscribed, parent: total }
+  - { code: tentative, label: Tentative list, parent: total }

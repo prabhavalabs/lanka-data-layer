@@ -1,0 +1,18 @@
+# Solid waste disposal method
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing - method of disposal of solid waste.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-basic-services
+id: waste_disposal
+title: Solid waste disposal method
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: collected_by_la, label: Collected by local authority, parent: total }
+  - { code: burnt, label: Occupants burn, parent: total }
+  - { code: buried, label: Occupants bury, parent: total }
+  - { code: composted, label: Occupants compost, parent: total }
+  - { code: dumped_within, label: Dumped within the premises, parent: total }
+  - { code: dumped_outside, label: Dumped outside the premises, parent: total }
+  - { code: other, label: Other, parent: total }

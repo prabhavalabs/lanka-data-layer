@@ -1,0 +1,18 @@
+# Trail and cycleway type (OpenStreetMap)
+# Source/authority: OpenStreetMap wiki, Key:highway and Tag:route=hiking / route=bicycle.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: osm-trails-cycling
+id: trail_type
+title: Trail and cycleway type (OpenStreetMap)
+codes:
+  - { code: total, label: All trails and cycleways, total: true, sdmx: _T }
+  - { code: footway, label: "Footway (highway=footway)", parent: total }
+  - { code: path, label: "Path (highway=path)", parent: total }
+  - { code: bridleway, label: "Bridleway (highway=bridleway)", parent: total }
+  - { code: track, label: "Track (highway=track)", parent: total }
+  - { code: cycleway, label: "Cycleway (highway=cycleway)", parent: total }
+  - { code: steps, label: "Steps (highway=steps)", parent: total }
+  - { code: hiking_route, label: "Hiking route relation (route=hiking)", parent: total }
+  - { code: bicycle_route, label: "Cycle route relation (route=bicycle)", parent: total }

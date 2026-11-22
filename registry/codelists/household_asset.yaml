@@ -1,0 +1,28 @@
+# Household durable / item
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing 2024 - availability of household items.
+# Note: Households may own several items: `total` means all households (the denominator), not a sum.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-household-assets
+id: household_asset
+title: Household durable / item
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: radio, label: Radio }
+  - { code: television, label: Television }
+  - { code: fixed_telephone, label: Fixed telephone }
+  - { code: mobile_phone, label: Mobile phone }
+  - { code: computer, label: Desktop / laptop computer }
+  - { code: internet, label: Internet facility }
+  - { code: refrigerator, label: Refrigerator }
+  - { code: washing_machine, label: Washing machine }
+  - { code: gas_cooker, label: Gas cooker }
+  - { code: electric_fan, label: Electric fan }
+  - { code: bicycle, label: Bicycle }
+  - { code: motorcycle, label: Motor cycle / scooter }
+  - { code: three_wheeler, label: Three-wheeler }
+  - { code: car_van, label: Motor car / van }
+  - { code: lorry, label: Lorry / tractor }
+  - { code: boat, label: Boat }

@@ -1,0 +1,18 @@
+# Hazard level (ordinal)
+# Source/authority: GFDRR ThinkHazard! hazard levels (very low, low, medium, high); NBRO Landslide Hazard Zonation Mapping Project 1:10,000 zone legend (four classes).
+# Note: Shared by thinkhazard-levels, nbro-landslide-hazard-zones (hazard_class) and derived-multi-hazard-exposure (intensity).
+# Note: NBRO uses four classes with no 'very low'; ThinkHazard has no 'very high'.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-multi-hazard-exposure, nbro-landslide-hazard-zones
+id: hazard_level
+title: Hazard level (ordinal)
+codes:
+  - { code: total, label: All levels, total: true, sdmx: _T }
+  - { code: very_low, label: Very low, parent: total }
+  - { code: low, label: "Low (NBRO: landslides not likely to occur)", parent: total }
+  - { code: medium, label: "Medium / moderate (NBRO: modest level of landslide hazard)", parent: total }
+  - { code: high, label: "High (NBRO: landslides are to be expected)", parent: total }
+  - { code: very_high, label: "Very high (NBRO: landslides most likely to occur)", parent: total }
+  - { code: no_data, label: No data, parent: total }

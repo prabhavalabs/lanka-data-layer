@@ -1,0 +1,19 @@
+# Court type
+# Source/authority: Constitution of Sri Lanka (1978) Chapter XV; Judicature Act No. 2 of 1978; Ministry of Justice - courts by judicial zone.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: courthouses
+id: court_type
+title: Court type
+codes:
+  - { code: total, label: All courts, total: true, sdmx: _T }
+  - { code: supreme, label: Supreme Court, parent: total }
+  - { code: appeal, label: Court of Appeal, parent: total }
+  - { code: high, label: High Court (incl. Provincial High Courts), parent: total }
+  - { code: commercial_high, label: Commercial High Court, parent: total }
+  - { code: district, label: District Court, parent: total }
+  - { code: magistrate, label: "Magistrate's Court", parent: total }
+  - { code: primary, label: Primary Court, parent: total }
+  - { code: labour_tribunal, label: Labour Tribunal, parent: total }
+  - { code: other, label: "Other (e.g. Quazi courts, tribunals)", parent: total }

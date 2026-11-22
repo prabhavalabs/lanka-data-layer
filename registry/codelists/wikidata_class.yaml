@@ -1,0 +1,27 @@
+# Wikidata item class (instance of, grouped)
+# Source/authority: Wikidata (P31 instance of) - classes grouped for Sri Lanka items.
+# Note: Crosswalk group -> Wikidata class QIDs (incl. subclasses via P279) to be stored with the connector.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: wikidata-places-entities
+id: wikidata_class
+title: "Wikidata item class (instance of, grouped)"
+codes:
+  - { code: total, label: All items, total: true, sdmx: _T }
+  - { code: city, label: City, parent: total }
+  - { code: town, label: Town, parent: total }
+  - { code: village, label: Village, parent: total }
+  - { code: buddhist_temple, label: Buddhist temple, parent: total }
+  - { code: hindu_temple, label: Hindu temple, parent: total }
+  - { code: mosque, label: Mosque, parent: total }
+  - { code: church, label: Church, parent: total }
+  - { code: school, label: School, parent: total }
+  - { code: hospital, label: Hospital, parent: total }
+  - { code: university, label: University, parent: total }
+  - { code: heritage_site, label: Heritage site, parent: total }
+  - { code: museum, label: Museum, parent: total }
+  - { code: mountain, label: Mountain / hill, parent: total }
+  - { code: lake_reservoir, label: Lake / reservoir, parent: total }
+  - { code: other, label: Other, parent: total }

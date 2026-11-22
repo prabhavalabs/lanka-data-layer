@@ -1,0 +1,16 @@
+# Land cover input source
+# Source/authority: Lanka Data Layer derived-land-cover-zonal method inputs.
+# Note: Alternative sources: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-land-cover-zonal
+id: land_cover_source
+title: Land cover input source
+codes:
+  - { code: esa_worldcover, label: ESA WorldCover }
+  - { code: hansen_gfc, label: Hansen Global Forest Change }
+  - { code: jrc_gsw, label: JRC Global Surface Water }
+  - { code: osm, label: OpenStreetMap }
+  - { code: wdpa, label: WDPA protected areas }

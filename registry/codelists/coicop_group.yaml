@@ -1,0 +1,29 @@
+# Consumption purpose (COICOP 2018 divisions, with food / non-food)
+# Source/authority: UN Classification of Individual Consumption According to Purpose (COICOP 2018), divisions 01-13 (UNSD).
+# Source/authority: DCS CCPI (2021=100) and NCPI (2021=100) publish group indices by COICOP division and a food / non-food split.
+# Note: DCS NCPI 'group' (food / non-food) reuses this list via the `food` and `nonfood` aggregates.
+# Note: HIES expenditure categories are COICOP-like but not identical (see review CSV); map them here before ingest.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-ccpi, dcs-hies-income-expenditure, dcs-ncpi
+id: coicop_group
+title: "Consumption purpose (COICOP 2018 divisions, with food / non-food)"
+sdmx_ref: "UN:COICOP_2018"
+codes:
+  - { code: total, label: All items (headline), total: true, sdmx: _T }
+  - { code: food, label: Food and non-alcoholic beverages (food group), parent: total }
+  - { code: nonfood, label: Non-food items, parent: total }
+  - { code: "01", label: Food and non-alcoholic beverages, parent: food }
+  - { code: "02", label: "Alcoholic beverages, tobacco and narcotics", parent: nonfood }
+  - { code: "03", label: Clothing and footwear, parent: nonfood }
+  - { code: "04", label: "Housing, water, electricity, gas and other fuels", parent: nonfood }
+  - { code: "05", label: "Furnishings, household equipment and routine household maintenance", parent: nonfood }
+  - { code: "06", label: Health, parent: nonfood }
+  - { code: "07", label: Transport, parent: nonfood }
+  - { code: "08", label: Information and communication, parent: nonfood }
+  - { code: "09", label: "Recreation, sport and culture", parent: nonfood }
+  - { code: "10", label: Education services, parent: nonfood }
+  - { code: "11", label: Restaurants and accommodation services, parent: nonfood }
+  - { code: "12", label: Insurance and financial services, parent: nonfood }
+  - { code: "13", label: "Personal care, social protection and miscellaneous goods and services", parent: nonfood }

@@ -1,0 +1,17 @@
+# International poverty line (World Bank PIP)
+# Source/authority: World Bank Poverty and Inequality Platform (PIP) - global poverty lines (June 2025 update to 2021 PPPs; 2017 PPP lines for earlier vintages).
+# Note: Lines are alternative thresholds: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: wb-pip-poverty
+id: poverty_line
+title: International poverty line (World Bank PIP)
+codes:
+  - { code: usd3_00_ppp2021, label: "$3.00 a day (2021 PPP) - extreme poverty" }
+  - { code: usd4_20_ppp2021, label: "$4.20 a day (2021 PPP) - lower-middle-income line" }
+  - { code: usd8_30_ppp2021, label: "$8.30 a day (2021 PPP) - upper-middle-income line" }
+  - { code: usd2_15_ppp2017, label: "$2.15 a day (2017 PPP)" }
+  - { code: usd3_65_ppp2017, label: "$3.65 a day (2017 PPP)" }
+  - { code: usd6_85_ppp2017, label: "$6.85 a day (2017 PPP)" }

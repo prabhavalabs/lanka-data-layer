@@ -1,0 +1,26 @@
+# Census of Population year (Sri Lanka)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, history of the census in Sri Lanka (censuses 1871-2024; 1991 not held; 2001 partial - 18 districts).
+# Note: The census year is normally the observation period; a dimension is only justified where one release mixes census rounds (see review CSV).
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-historic
+id: census_year
+title: Census of Population year (Sri Lanka)
+codes:
+  - { code: "1871", label: Census 1871 }
+  - { code: "1881", label: Census 1881 }
+  - { code: "1891", label: Census 1891 }
+  - { code: "1901", label: Census 1901 }
+  - { code: "1911", label: Census 1911 }
+  - { code: "1921", label: Census 1921 }
+  - { code: "1931", label: Census 1931 }
+  - { code: "1946", label: Census 1946 }
+  - { code: "1953", label: Census 1953 }
+  - { code: "1963", label: Census 1963 }
+  - { code: "1971", label: Census 1971 }
+  - { code: "1981", label: Census 1981 }
+  - { code: "2001", label: Census 2001 }
+  - { code: "2012", label: Census 2012 }
+  - { code: "2024", label: Census 2024 }

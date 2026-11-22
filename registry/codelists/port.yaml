@@ -1,0 +1,19 @@
+# Sri Lankan seaport
+# Source/authority: Sri Lanka Ports Authority (SLPA) - ports administered; IMF PortWatch port list for Sri Lanka.
+# Note: UN/LOCODE crosswalk (e.g. LKCMB for Colombo) to be added in registry/crosswalks.
+# Note: Shared by slpa-port-statistics, imf-portwatch-lka, dcs-abstract-transport and searoute-shipping-lanes (origin).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport, imf-portwatch-lka, searoute-shipping-lanes, slpa-port-statistics
+id: port
+title: Sri Lankan seaport
+codes:
+  - { code: total, label: All ports, total: true, sdmx: _T }
+  - { code: colombo, label: Port of Colombo, parent: total }
+  - { code: hambantota, label: Hambantota International Port, parent: total }
+  - { code: galle, label: Port of Galle, parent: total }
+  - { code: trincomalee, label: Port of Trincomalee, parent: total }
+  - { code: kankesanthurai, label: Kankesanthurai Port, parent: total }
+  - { code: oluvil, label: Oluvil Port, parent: total }
+  - { code: point_pedro, label: Point Pedro Port, parent: total }

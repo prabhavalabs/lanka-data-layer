@@ -1,0 +1,19 @@
+# GeoNames feature class
+# Source/authority: GeoNames feature codes (geonames.org/export/codes.html), feature classes A, H, L, P, R, S, T, U, V.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: geonames-gazetteer
+id: feature_class
+title: GeoNames feature class
+codes:
+  - { code: total, label: All feature classes, total: true, sdmx: _T }
+  - { code: A, label: "A: country, state, region (administrative)", parent: total }
+  - { code: H, label: "H: stream, lake (hydrographic)", parent: total }
+  - { code: L, label: "L: parks, area", parent: total }
+  - { code: P, label: "P: city, village (populated place)", parent: total }
+  - { code: R, label: "R: road, railroad", parent: total }
+  - { code: S, label: "S: spot, building, farm", parent: total }
+  - { code: T, label: "T: mountain, hill, rock (hypsographic)", parent: total }
+  - { code: U, label: "U: undersea", parent: total }
+  - { code: V, label: "V: forest, heath (vegetation)", parent: total }

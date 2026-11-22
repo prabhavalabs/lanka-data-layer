@@ -1,0 +1,22 @@
+# Return period
+# Source/authority: EC-JRC Global River Flood Hazard Maps (return periods 10, 20, 50, 100, 200, 500 years); other periods for other hazard models.
+# Note: Return periods are alternative scenarios, never additive: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-flood-exposure, jrc-river-flood-hazard
+id: return_period
+title: Return period
+codes:
+  - { code: rp2, label: "1-in-2-year (return period 2 years)" }
+  - { code: rp5, label: "1-in-5-year (return period 5 years)" }
+  - { code: rp10, label: "1-in-10-year (return period 10 years)" }
+  - { code: rp20, label: "1-in-20-year (return period 20 years)" }
+  - { code: rp25, label: "1-in-25-year (return period 25 years)" }
+  - { code: rp50, label: "1-in-50-year (return period 50 years)" }
+  - { code: rp100, label: "1-in-100-year (return period 100 years)" }
+  - { code: rp200, label: "1-in-200-year (return period 200 years)" }
+  - { code: rp250, label: "1-in-250-year (return period 250 years)" }
+  - { code: rp500, label: "1-in-500-year (return period 500 years)" }
+  - { code: rp1000, label: "1-in-1000-year (return period 1000 years)" }

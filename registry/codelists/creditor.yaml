@@ -1,0 +1,14 @@
+# External creditor category
+# Source/authority: Ministry of Finance, Public Debt Management Office - external debt by creditor category; World Bank IDS creditor types.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-public-debt
+id: creditor
+title: External creditor category
+codes:
+  - { code: total, label: All external creditors, total: true, sdmx: _T }
+  - { code: multilateral, label: Multilateral, parent: total }
+  - { code: bilateral, label: Bilateral, parent: total }
+  - { code: commercial, label: "Commercial (ISB holders, commercial banks)", parent: total }
+  - { code: other, label: Other, parent: total }

@@ -1,0 +1,21 @@
+# World seaport (UN/LOCODE)
+# Source/authority: UNECE UN/LOCODE (code list for trade and transport locations).
+# Note: Destination ports of generated sea routes: complete from the searoute destination list. Routes are alternatives: no total.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: searoute-shipping-lanes
+id: world_port
+title: World seaport (UN/LOCODE)
+codes:
+  - { code: SGSIN, label: Singapore }
+  - { code: NLRTM, label: Rotterdam }
+  - { code: CNSHA, label: Shanghai }
+  - { code: AEJEA, label: Jebel Ali }
+  - { code: DEHAM, label: Hamburg }
+  - { code: INMAA, label: Chennai }
+  - { code: INBOM, label: Mumbai }
+  - { code: MYPKG, label: Port Klang }
+  - { code: HKHKG, label: Hong Kong }

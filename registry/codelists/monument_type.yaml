@@ -1,0 +1,19 @@
+# Protected monument type
+# Source/authority: Department of Archaeology, gazetted protected monuments (Antiquities Ordinance No. 9 of 1940).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: protected-monuments
+id: monument_type
+title: Protected monument type
+codes:
+  - { code: total, label: All protected monuments, total: true, sdmx: _T }
+  - { code: stupa, label: Stupa / dagoba, parent: total }
+  - { code: temple_shrine, label: Temple / image house / shrine, parent: total }
+  - { code: cave_inscription, label: Cave / rock inscription, parent: total }
+  - { code: fort, label: Fort / fortification, parent: total }
+  - { code: colonial_building, label: Colonial-period building, parent: total }
+  - { code: ancient_tank, label: Ancient tank / irrigation work, parent: total }
+  - { code: ruins, label: Ruins / archaeological site, parent: total }
+  - { code: other, label: Other, parent: total }

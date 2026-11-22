@@ -1,0 +1,23 @@
+# Government debt instrument
+# Source/authority: Ministry of Finance, Public Debt Management Office, Annual Debt Report; CBSL Annual Report - composition of government debt.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-public-debt
+id: instrument
+title: Government debt instrument
+codes:
+  - { code: total, label: Total central government debt, total: true, sdmx: _T }
+  - { code: domestic, label: Domestic debt, parent: total }
+  - { code: foreign, label: Foreign debt, parent: total }
+  - { code: treasury_bills, label: Treasury bills, parent: domestic }
+  - { code: treasury_bonds, label: Treasury bonds, parent: domestic }
+  - { code: rupee_loans, label: Rupee loans, parent: domestic }
+  - { code: sldb, label: Sri Lanka Development Bonds, parent: domestic }
+  - { code: cbsl_provisional_advances, label: CBSL provisional advances, parent: domestic }
+  - { code: other_domestic, label: "Other domestic (overdraft, other)", parent: domestic }
+  - { code: isb, label: International sovereign bonds, parent: foreign }
+  - { code: project_loans, label: Project and programme loans, parent: foreign }
+  - { code: foreign_t_bills_bonds, label: Non-resident holdings of T-bills / T-bonds, parent: foreign }
+  - { code: other_foreign, label: Other foreign, parent: foreign }

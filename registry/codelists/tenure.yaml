@@ -1,0 +1,17 @@
+# Tenure of housing unit
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing - tenure of occupied housing units.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-housing
+id: tenure
+title: Tenure of housing unit
+codes:
+  - { code: total, label: All households, total: true, sdmx: _T }
+  - { code: owned, label: Owned by a household member, parent: total }
+  - { code: rented_government, label: Rented / leased - government, parent: total }
+  - { code: rented_private, label: Rented / leased - private, parent: total }
+  - { code: rent_free, label: Rent free, parent: total }
+  - { code: encroached, label: Encroached, parent: total }
+  - { code: other, label: Other, parent: total }

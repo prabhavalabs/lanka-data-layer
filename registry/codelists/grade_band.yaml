@@ -1,0 +1,15 @@
+# Grade span (general education)
+# Source/authority: Ministry of Education, School Census; National Education Commission key stages (primary 1-5, junior secondary 6-9, senior secondary 10-11 and 12-13).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: moe-school-census
+id: grade_band
+title: Grade span (general education)
+codes:
+  - { code: total, label: All grades, total: true, sdmx: _T }
+  - { code: primary, label: Primary (grades 1-5), parent: total }
+  - { code: secondary, label: Secondary (grades 6-13), parent: total }
+  - { code: junior_secondary, label: Junior secondary (grades 6-9), parent: secondary }
+  - { code: senior_secondary_ol, label: "Senior secondary, O/L (grades 10-11)", parent: secondary }
+  - { code: senior_secondary_al, label: "Senior secondary, A/L (grades 12-13)", parent: secondary }

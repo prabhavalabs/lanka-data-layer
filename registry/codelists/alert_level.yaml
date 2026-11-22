@@ -1,0 +1,13 @@
+# GDACS alert level
+# Source/authority: Global Disaster Alert and Coordination System (GDACS, EC-JRC / UN OCHA) alert levels green / orange / red.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: gdacs-alerts
+id: alert_level
+title: GDACS alert level
+codes:
+  - { code: total, label: All alerts, total: true, sdmx: _T }
+  - { code: green, label: Green, parent: total }
+  - { code: orange, label: Orange, parent: total }
+  - { code: red, label: Red, parent: total }

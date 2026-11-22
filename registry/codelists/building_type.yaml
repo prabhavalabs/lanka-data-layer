@@ -1,0 +1,19 @@
+# Building use (broad)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Building construction statistics (building plans approved by type); OpenStreetMap Key:building values mapped to broad use; GHSL GHS-BUILT-S residential / non-residential split.
+# Note: Shared by dcs-building-construction, osm-buildings and ghsl-built-up (`use`: residential vs non_residential).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-building-construction, ghsl-built-up, osm-buildings
+id: building_type
+title: Building use (broad)
+codes:
+  - { code: total, label: All buildings, total: true, sdmx: _T }
+  - { code: residential, label: Residential, parent: total }
+  - { code: non_residential, label: Non-residential, parent: total }
+  - { code: commercial, label: Commercial / retail / office, parent: non_residential }
+  - { code: industrial, label: Industrial / warehouse, parent: non_residential }
+  - { code: institutional, label: "Institutional (school, hospital, government)", parent: non_residential }
+  - { code: religious, label: Religious, parent: non_residential }
+  - { code: other, label: Other / mixed, parent: non_residential }
+  - { code: unspecified, label: "Unspecified (building=yes)", parent: total }

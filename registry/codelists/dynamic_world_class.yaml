@@ -1,0 +1,19 @@
+# Land cover class (Google/WRI Dynamic World V1 label band)
+# Source/authority: Brown et al. (2022) Dynamic World, Scientific Data 9:251; Earth Engine catalogue GOOGLE/DYNAMICWORLD/V1 'label' band values 0-8.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dynamic-world-annual
+id: dynamic_world_class
+title: Land cover class (Google/WRI Dynamic World V1 label band)
+codes:
+  - { code: total, label: All land cover, total: true, sdmx: _T }
+  - { code: "0", label: Water, parent: total }
+  - { code: "1", label: Trees, parent: total }
+  - { code: "2", label: Grass, parent: total }
+  - { code: "3", label: Flooded vegetation, parent: total }
+  - { code: "4", label: Crops, parent: total }
+  - { code: "5", label: Shrub and scrub, parent: total }
+  - { code: "6", label: Built, parent: total }
+  - { code: "7", label: Bare, parent: total }
+  - { code: "8", label: Snow and ice, parent: total }

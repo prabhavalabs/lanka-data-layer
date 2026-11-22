@@ -1,0 +1,20 @@
+# GDP by expenditure component (SNA 2008)
+# Source/authority: UN System of National Accounts 2008 transaction codes (SDMX STO); DCS national accounts, GDP by expenditure approach.
+# Note: GDP = P3 + P5 + P6 - P7: children of total are not a plain sum (imports carry a minus sign).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-gdp-expenditure
+id: gdp_expenditure_component
+title: GDP by expenditure component (SNA 2008)
+sdmx_ref: "SDMX:CL_TRANSACTION (STO)"
+codes:
+  - { code: total, label: Gross domestic product, total: true, sdmx: _T }
+  - { code: P3, label: Final consumption expenditure, sdmx: P3 }
+  - { code: P31_S14, label: Household final consumption (incl. NPISH), parent: P3 }
+  - { code: P3_S13, label: Government final consumption, parent: P3 }
+  - { code: P5, label: Gross capital formation, sdmx: P5 }
+  - { code: P51G, label: Gross fixed capital formation, parent: P5, sdmx: P51G }
+  - { code: P52, label: Changes in inventories, parent: P5, sdmx: P52 }
+  - { code: P6, label: Exports of goods and services, sdmx: P6 }
+  - { code: P7, label: Imports of goods and services (subtracted), sdmx: P7 }

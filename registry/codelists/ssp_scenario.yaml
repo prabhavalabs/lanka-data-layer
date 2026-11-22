@@ -1,0 +1,16 @@
+# Climate scenario (CMIP6 Shared Socioeconomic Pathways)
+# Source/authority: IPCC AR6 WGI / CMIP6 ScenarioMIP (O'Neill et al. 2016); World Bank Climate Change Knowledge Portal CMIP6 collection.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cckp-climate-projections
+id: ssp_scenario
+title: Climate scenario (CMIP6 Shared Socioeconomic Pathways)
+codes:
+  - { code: historical, label: Historical reference (1995-2014) }
+  - { code: ssp119, label: SSP1-1.9 }
+  - { code: ssp126, label: SSP1-2.6 }
+  - { code: ssp245, label: SSP2-4.5 }
+  - { code: ssp370, label: SSP3-7.0 }
+  - { code: ssp585, label: SSP5-8.5 }

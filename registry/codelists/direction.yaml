@@ -1,0 +1,12 @@
+# Traffic direction
+# Source/authority: Airport and Aviation Services (Sri Lanka) passenger statistics; generic direction concept.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: bia-flight-arrivals
+id: direction
+title: Traffic direction
+codes:
+  - { code: total, label: Arrivals and departures, total: true, sdmx: _T }
+  - { code: arrival, label: Arrivals, parent: total }
+  - { code: departure, label: Departures, parent: total }

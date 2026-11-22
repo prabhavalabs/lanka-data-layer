@@ -1,0 +1,20 @@
+# Travel / transport mode
+# Source/authority: Lanka Data Layer routing profiles (OSM routing graph: walk, drive, two-wheeler); Malaria Atlas Project travel-time surfaces (motorised, walking-only); DCS Pocket Book passenger-km by rail and bus.
+# Note: Travel-time indicators use one mode per observation (total unused there); passenger-km may use total.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-sector-services, derived-facility-coverage, derived-market-access, derived-transit-access, derived-travel-time-facilities, map-travel-time-surfaces, osm-routing-graph
+id: mode
+title: Travel / transport mode
+codes:
+  - { code: total, label: All modes, total: true, sdmx: _T }
+  - { code: walk, label: Walking, parent: total }
+  - { code: cycle, label: Cycling, parent: total }
+  - { code: motorised, label: Motorised (road), parent: total }
+  - { code: drive, label: Car / drive, parent: motorised }
+  - { code: two_wheeler, label: Motorcycle / two-wheeler, parent: motorised }
+  - { code: bus, label: Bus, parent: motorised }
+  - { code: rail, label: Rail, parent: total }
+  - { code: sea, label: Sea, parent: total }
+  - { code: air, label: Air, parent: total }

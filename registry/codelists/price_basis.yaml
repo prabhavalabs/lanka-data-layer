@@ -1,0 +1,13 @@
+# National accounts price basis
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, National Accounts (base year 2015).
+# Note: Alternative valuations: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-gdp-by-industry, dcs-gdp-expenditure
+id: price_basis
+title: National accounts price basis
+codes:
+  - { code: current, label: Current prices }
+  - { code: constant_2015, label: Constant (2015) prices }

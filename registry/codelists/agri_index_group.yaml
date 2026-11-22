@@ -1,0 +1,22 @@
+# Agricultural production index group
+# Source/authority: Department of Census and Statistics, Agricultural production volume index (2002=100) - ten groups.
+# Note: Index groups are not additive: total is the all-agriculture index.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-agri-production-index
+id: agri_index_group
+title: Agricultural production index group
+codes:
+  - { code: total, label: All agriculture, total: true, sdmx: _T }
+  - { code: paddy, label: Paddy, parent: total }
+  - { code: tea, label: Tea, parent: total }
+  - { code: rubber, label: Rubber, parent: total }
+  - { code: coconut, label: Coconut, parent: total }
+  - { code: other_field_crops, label: Other field crops, parent: total }
+  - { code: vegetables, label: Vegetables, parent: total }
+  - { code: fruits, label: Fruits, parent: total }
+  - { code: minor_export_crops, label: Minor export crops, parent: total }
+  - { code: livestock, label: Livestock, parent: total }
+  - { code: fisheries, label: Fisheries, parent: total }

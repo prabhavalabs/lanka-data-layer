@@ -1,0 +1,14 @@
+# Energy end-use sector (SLSEA energy balance)
+# Source/authority: Sri Lanka Sustainable Energy Authority, Sri Lanka Energy Balance - final energy consumption by sector.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: slsea-energy-balance
+id: energy_end_use_sector
+title: Energy end-use sector (SLSEA energy balance)
+codes:
+  - { code: total, label: All final consumption, total: true, sdmx: _T }
+  - { code: household_commercial_other, label: "Household, commercial and other", parent: total }
+  - { code: industry, label: Industry, parent: total }
+  - { code: transport, label: Transport, parent: total }
+  - { code: non_energy, label: Non-energy use, parent: total }

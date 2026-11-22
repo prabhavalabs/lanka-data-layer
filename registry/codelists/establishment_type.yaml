@@ -1,0 +1,23 @@
+# Tourist establishment type (SLTDA registration)
+# Source/authority: Sri Lanka Tourism Development Authority, Tourism Act No. 38 of 2005 registration categories; SLTDA Annual Statistical Report.
+# Note: Shared by sltda-accommodation and sltda-registered-establishments (`type`). Star class (1-5) is a separate breakdown.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: sltda-accommodation, sltda-registered-establishments
+id: establishment_type
+title: Tourist establishment type (SLTDA registration)
+codes:
+  - { code: total, label: All registered establishments, total: true, sdmx: _T }
+  - { code: accommodation, label: Accommodation, parent: total }
+  - { code: other_services, label: Other tourist services, parent: total }
+  - { code: tourist_hotel, label: Classified tourist hotel (star class), parent: accommodation }
+  - { code: boutique, label: Boutique hotel / villa, parent: accommodation }
+  - { code: guest_house, label: Guest house, parent: accommodation }
+  - { code: home_stay, label: Home stay unit, parent: accommodation }
+  - { code: bungalow, label: Bungalow, parent: accommodation }
+  - { code: rented_home, label: Rented home / apartment, parent: accommodation }
+  - { code: travel_agent, label: Travel agent / tour operator, parent: other_services }
+  - { code: restaurant, label: Restaurant, parent: other_services }
+  - { code: other, label: Other, parent: other_services }

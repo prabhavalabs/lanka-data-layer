@@ -1,0 +1,25 @@
+# Grave crime type (Police)
+# Source/authority: Sri Lanka Police, Crime statistics - grave crime abstract by category; DCS Statistical Abstract (justice).
+# Note: Police grave-crime headings change across years; align codes to the exact police abstract headings before ingest.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-justice
+id: crime_type
+title: Grave crime type (Police)
+codes:
+  - { code: total, label: All grave crimes, total: true, sdmx: _T }
+  - { code: homicide, label: Homicide, parent: total }
+  - { code: attempted_homicide, label: Attempted homicide, parent: total }
+  - { code: hurt_by_weapon, label: Hurt by knives / weapons, parent: total }
+  - { code: robbery, label: Robbery, parent: total }
+  - { code: house_breaking_theft, label: House breaking and theft, parent: total }
+  - { code: theft, label: Theft of property, parent: total }
+  - { code: cheating_breach_of_trust, label: Cheating / criminal breach of trust, parent: total }
+  - { code: rape, label: Rape / grave sexual abuse, parent: total }
+  - { code: child_abuse, label: Cruelty to / abuse of children, parent: total }
+  - { code: abduction, label: Abduction / kidnapping, parent: total }
+  - { code: arson, label: Arson, parent: total }
+  - { code: mischief, label: Mischief, parent: total }
+  - { code: other, label: Other grave crimes, parent: total }

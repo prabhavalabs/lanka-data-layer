@@ -1,0 +1,20 @@
+# Electricity tariff category (CEB / PUCSL)
+# Source/authority: Public Utilities Commission of Sri Lanka (PUCSL), approved electricity tariffs; CEB Statistical Digest customer categories.
+# Note: Sub-categories (GP-1/2/3, I-1/2/3, H-1/2/3) can be added as children.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ceb-statistical-digest
+id: tariff_category
+title: Electricity tariff category (CEB / PUCSL)
+codes:
+  - { code: total, label: All customers, total: true, sdmx: _T }
+  - { code: domestic, label: Domestic (D-1), parent: total }
+  - { code: religious, label: Religious and charitable institutions (R-1), parent: total }
+  - { code: general_purpose, label: General purpose (GP), parent: total }
+  - { code: industrial, label: Industrial (I), parent: total }
+  - { code: hotel, label: Hotel (H), parent: total }
+  - { code: government, label: Government (GV), parent: total }
+  - { code: agriculture, label: Agriculture (AGR), parent: total }
+  - { code: street_lighting, label: Street lighting, parent: total }

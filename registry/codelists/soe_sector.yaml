@@ -1,0 +1,18 @@
+# SOE sector grouping (Treasury)
+# Source/authority: Ministry of Finance, Annual Report - SOE sector groupings.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: treasury-soe-finances
+id: soe_sector
+title: SOE sector grouping (Treasury)
+codes:
+  - { code: total, label: All SOEs, total: true, sdmx: _T }
+  - { code: energy, label: Energy, parent: total }
+  - { code: transport_logistics, label: "Transport and logistics (ports, aviation, bus)", parent: total }
+  - { code: water, label: Water supply, parent: total }
+  - { code: banking_finance, label: "Banking, finance and insurance", parent: total }
+  - { code: agriculture_plantation, label: Agriculture and plantations, parent: total }
+  - { code: trade_services, label: Trade and services, parent: total }
+  - { code: other, label: Other, parent: total }

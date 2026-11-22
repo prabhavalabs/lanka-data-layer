@@ -1,0 +1,48 @@
+# Aid sector (OECD DAC sector codes, 3-digit, with DAC groups)
+# Source/authority: OECD DAC and CRS code lists, sector (purpose) codes - 3-digit DAC5 sectors; IATI Sector vocabulary 2 (DAC 3-digit).
+# Note: IATI activities carry 5-digit CRS purpose codes: roll them up to the 3-digit sector (first three digits).
+# Note: Group codes g100-g900 are local roll-ups of the DAC sector groups; sector codes are the official 3-digit DAC codes.
+# Note: ERD foreign-financing sectors are ERD-specific; map them to DAC 3-digit codes in a crosswalk before ingest.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: erd-foreign-financing, iati-activities-lka
+id: dac_sector
+title: "Aid sector (OECD DAC sector codes, 3-digit, with DAC groups)"
+codes:
+  - { code: total, label: All sectors, total: true, sdmx: _T }
+  - { code: g100, label: Social infrastructure and services, parent: total }
+  - { code: g200, label: Economic infrastructure and services, parent: total }
+  - { code: g300, label: Production sectors, parent: total }
+  - { code: g400, label: Multi-sector / cross-cutting, parent: total }
+  - { code: g500, label: Commodity aid and general programme assistance, parent: total }
+  - { code: g600, label: Action relating to debt, parent: total }
+  - { code: g700, label: Humanitarian aid, parent: total }
+  - { code: g900, label: Other / unallocated, parent: total }
+  - { code: "110", label: Education, parent: g100 }
+  - { code: "120", label: Health, parent: g100 }
+  - { code: "130", label: Population policies/programmes and reproductive health, parent: g100 }
+  - { code: "140", label: Water supply and sanitation, parent: g100 }
+  - { code: "150", label: Government and civil society, parent: g100 }
+  - { code: "160", label: Other social infrastructure and services, parent: g100 }
+  - { code: "210", label: Transport and storage, parent: g200 }
+  - { code: "220", label: Communications, parent: g200 }
+  - { code: "230", label: Energy, parent: g200 }
+  - { code: "240", label: Banking and financial services, parent: g200 }
+  - { code: "250", label: Business and other services, parent: g200 }
+  - { code: "310", label: "Agriculture, forestry, fishing", parent: g300 }
+  - { code: "320", label: "Industry, mining, construction", parent: g300 }
+  - { code: "331", label: Trade policies and regulations, parent: g300 }
+  - { code: "332", label: Tourism, parent: g300 }
+  - { code: "410", label: General environment protection, parent: g400 }
+  - { code: "430", label: Other multisector, parent: g400 }
+  - { code: "510", label: General budget support, parent: g500 }
+  - { code: "520", label: Development food assistance, parent: g500 }
+  - { code: "530", label: Other commodity assistance, parent: g500 }
+  - { code: "600", label: Action relating to debt, parent: g600 }
+  - { code: "720", label: Emergency response, parent: g700 }
+  - { code: "730", label: Reconstruction relief and rehabilitation, parent: g700 }
+  - { code: "740", label: Disaster prevention and preparedness, parent: g700 }
+  - { code: "910", label: Administrative costs of donors, parent: g900 }
+  - { code: "930", label: Refugees in donor countries, parent: g900 }
+  - { code: "998", label: Unallocated / unspecified, parent: g900 }

@@ -1,0 +1,20 @@
+# Travel-time threshold
+# Source/authority: Lanka Data Layer accessibility products; HeiGIT accessibility thresholds.
+# Note: Cumulative thresholds: no total. Shared by derived-facility-coverage, heigit-accessibility and derived-transit-access (walk_minutes).
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-facility-coverage, derived-transit-access, heigit-accessibility
+id: threshold
+title: Travel-time threshold
+codes:
+  - { code: min5, label: Within 5 minutes }
+  - { code: min10, label: Within 10 minutes }
+  - { code: min15, label: Within 15 minutes }
+  - { code: min20, label: Within 20 minutes }
+  - { code: min30, label: Within 30 minutes }
+  - { code: min45, label: Within 45 minutes }
+  - { code: min60, label: Within 60 minutes }
+  - { code: min90, label: Within 90 minutes }
+  - { code: min120, label: Within 120 minutes }

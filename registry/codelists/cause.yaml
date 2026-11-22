@@ -1,0 +1,12 @@
+# Displacement cause (IDMC)
+# Source/authority: IDMC Global Internal Displacement Database: displacement associated with conflict and violence vs disasters.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: idmc-displacements
+id: cause
+title: Displacement cause (IDMC)
+codes:
+  - { code: total, label: All causes, total: true, sdmx: _T }
+  - { code: conflict, label: Conflict and violence, parent: total }
+  - { code: disaster, label: Disasters, parent: total }

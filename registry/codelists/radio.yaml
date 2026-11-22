@@ -1,0 +1,15 @@
+# Radio access technology
+# Source/authority: OpenCelliD cell tower database `radio` field (GSM, CDMA, UMTS, LTE, NR); 3GPP generations.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: opencellid-towers
+id: radio
+title: Radio access technology
+codes:
+  - { code: total, label: All cell sites, total: true, sdmx: _T }
+  - { code: GSM, label: GSM (2G), parent: total }
+  - { code: CDMA, label: CDMA, parent: total }
+  - { code: UMTS, label: UMTS (3G), parent: total }
+  - { code: LTE, label: LTE (4G), parent: total }
+  - { code: NR, label: NR (5G), parent: total }

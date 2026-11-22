@@ -1,0 +1,28 @@
+# Sustainable Development Goal
+# Source/authority: UN General Assembly resolution A/RES/70/1 (2015); UN SDG Global Database (unstats.un.org/sdgs) goal codes.
+# Note: Goals are a classification of series, not additive members, so there is no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: un-sdg-lka
+id: goal
+title: Sustainable Development Goal
+codes:
+  - { code: "1", label: "Goal 1: No poverty" }
+  - { code: "2", label: "Goal 2: Zero hunger" }
+  - { code: "3", label: "Goal 3: Good health and well-being" }
+  - { code: "4", label: "Goal 4: Quality education" }
+  - { code: "5", label: "Goal 5: Gender equality" }
+  - { code: "6", label: "Goal 6: Clean water and sanitation" }
+  - { code: "7", label: "Goal 7: Affordable and clean energy" }
+  - { code: "8", label: "Goal 8: Decent work and economic growth" }
+  - { code: "9", label: "Goal 9: Industry, innovation and infrastructure" }
+  - { code: "10", label: "Goal 10: Reduced inequalities" }
+  - { code: "11", label: "Goal 11: Sustainable cities and communities" }
+  - { code: "12", label: "Goal 12: Responsible consumption and production" }
+  - { code: "13", label: "Goal 13: Climate action" }
+  - { code: "14", label: "Goal 14: Life below water" }
+  - { code: "15", label: "Goal 15: Life on land" }
+  - { code: "16", label: "Goal 16: Peace, justice and strong institutions" }
+  - { code: "17", label: "Goal 17: Partnerships for the goals" }

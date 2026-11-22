@@ -1,0 +1,16 @@
+# Conflict event type (ACLED)
+# Source/authority: ACLED Codebook (2023), six event types.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: acled-events-lka
+id: event_type
+title: Conflict event type (ACLED)
+codes:
+  - { code: total, label: All events, total: true, sdmx: _T }
+  - { code: battles, label: Battles, parent: total }
+  - { code: explosions_remote_violence, label: Explosions/Remote violence, parent: total }
+  - { code: violence_against_civilians, label: Violence against civilians, parent: total }
+  - { code: protests, label: Protests, parent: total }
+  - { code: riots, label: Riots, parent: total }
+  - { code: strategic_developments, label: Strategic developments, parent: total }

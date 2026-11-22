@@ -1,0 +1,44 @@
+# Food / market commodity
+# Source/authority: Hector Kobbekaduwa Agrarian Research and Training Institute (HARTI) daily food commodities bulletin; WFP VAM food prices (Sri Lanka).
+# Note: Varieties (e.g. fish species, beans types) must be completed from the HARTI bulletin; WFP commodity names map here in a crosswalk.
+# Note: Prices are not additive: parents are a grouping only.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: harti-food-prices, wfp-food-prices
+id: commodity
+title: Food / market commodity
+codes:
+  - { code: total, label: All commodities, total: true, sdmx: _T }
+  - { code: rice, label: Rice, parent: total }
+  - { code: vegetables, label: Vegetables, parent: total }
+  - { code: fruits, label: Fruits, parent: total }
+  - { code: fish, label: Fish, parent: total }
+  - { code: pulses, label: Pulses, parent: total }
+  - { code: other_food, label: Other food, parent: total }
+  - { code: fuel, label: Fuel, parent: total }
+  - { code: rice_samba, label: Samba rice, parent: rice }
+  - { code: rice_nadu, label: Nadu rice, parent: rice }
+  - { code: rice_kekulu_white, label: Kekulu rice (white), parent: rice }
+  - { code: rice_kekulu_red, label: Kekulu rice (red), parent: rice }
+  - { code: beans, label: Beans, parent: vegetables }
+  - { code: carrot, label: Carrot, parent: vegetables }
+  - { code: cabbage, label: Cabbage, parent: vegetables }
+  - { code: tomato, label: Tomato, parent: vegetables }
+  - { code: brinjal, label: Brinjal, parent: vegetables }
+  - { code: pumpkin, label: Pumpkin, parent: vegetables }
+  - { code: potato, label: Potato, parent: vegetables }
+  - { code: big_onion, label: Big onion, parent: vegetables }
+  - { code: red_onion, label: Red onion, parent: vegetables }
+  - { code: dried_chillies, label: Dried chillies, parent: vegetables }
+  - { code: banana, label: Banana, parent: fruits }
+  - { code: papaya, label: Papaya, parent: fruits }
+  - { code: lentils, label: Lentils (red dhal), parent: pulses }
+  - { code: wheat_flour, label: Wheat flour, parent: other_food }
+  - { code: sugar, label: Sugar, parent: other_food }
+  - { code: coconut, label: Coconut, parent: other_food }
+  - { code: eggs, label: Eggs, parent: other_food }
+  - { code: kerosene, label: Kerosene, parent: fuel }
+  - { code: diesel, label: Diesel, parent: fuel }
+  - { code: petrol, label: Petrol, parent: fuel }

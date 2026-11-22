@@ -1,0 +1,13 @@
+# Container movement type (TEU)
+# Source/authority: Sri Lanka Ports Authority, container throughput statistics (domestic, transhipment, restows).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: slpa-port-statistics
+id: movement_type
+title: Container movement type (TEU)
+codes:
+  - { code: total, label: All TEU handled, total: true, sdmx: _T }
+  - { code: domestic, label: Domestic (import and export), parent: total }
+  - { code: transshipment, label: Transshipment, parent: total }
+  - { code: restow, label: Re-stowing, parent: total }

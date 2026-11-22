@@ -1,0 +1,14 @@
+# Investment project stage (BOI)
+# Source/authority: Board of Investment of Sri Lanka - project pipeline stages (approved, agreements signed, commercial operation).
+# Note: Stages are cumulative pipeline counts: no total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: boi-fdi-inflows
+id: stage
+title: Investment project stage (BOI)
+codes:
+  - { code: approved, label: Approved }
+  - { code: contracted, label: Agreements signed (contracted) }
+  - { code: commercial_operation, label: In commercial operation }

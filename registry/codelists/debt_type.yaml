@@ -1,0 +1,12 @@
+# Central government debt by residence of creditor
+# Source/authority: Central Bank of Sri Lanka, Annual Report - outstanding central government debt (domestic / foreign).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-fiscal-operations
+id: debt_type
+title: Central government debt by residence of creditor
+codes:
+  - { code: total, label: Total central government debt, total: true, sdmx: _T }
+  - { code: domestic, label: Domestic debt, parent: total }
+  - { code: foreign, label: Foreign debt, parent: total }

@@ -1,0 +1,17 @@
+# Airport type (OurAirports `type` field)
+# Source/authority: OurAirports data dictionary, airports.csv field `type` (ourairports.com/help/data-dictionary.html).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ourairports-lka
+id: airport_type
+title: "Airport type (OurAirports `type` field)"
+codes:
+  - { code: total, label: All airports, total: true, sdmx: _T }
+  - { code: large_airport, label: Large airport, parent: total }
+  - { code: medium_airport, label: Medium airport, parent: total }
+  - { code: small_airport, label: Small airport / airstrip, parent: total }
+  - { code: heliport, label: Heliport, parent: total }
+  - { code: seaplane_base, label: Seaplane base, parent: total }
+  - { code: balloonport, label: Balloon port, parent: total }
+  - { code: closed, label: Closed, parent: total }

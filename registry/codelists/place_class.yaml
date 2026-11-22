@@ -1,0 +1,21 @@
+# Place class (OpenStreetMap place=* values)
+# Source/authority: OpenStreetMap wiki, Key:place.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: osm-places
+id: place_class
+title: "Place class (OpenStreetMap place=* values)"
+codes:
+  - { code: total, label: All places, total: true, sdmx: _T }
+  - { code: city, label: City, parent: total }
+  - { code: town, label: Town, parent: total }
+  - { code: village, label: Village, parent: total }
+  - { code: hamlet, label: Hamlet, parent: total }
+  - { code: suburb, label: Suburb, parent: total }
+  - { code: neighbourhood, label: Neighbourhood, parent: total }
+  - { code: quarter, label: Quarter, parent: total }
+  - { code: locality, label: Locality (unpopulated named place), parent: total }
+  - { code: isolated_dwelling, label: Isolated dwelling, parent: total }
+  - { code: island, label: Island, parent: total }
+  - { code: islet, label: Islet, parent: total }

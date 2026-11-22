@@ -1,0 +1,43 @@
+# Election event
+# Source/authority: Election Commission of Sri Lanka (elections.gov.lk), past election results.
+# Note: Code = <type>-<year>. Provincial council and local authority elections were staggered across years: a round may need several codes (e.g. pc-2012 Eastern/Sabaragamuwa/North Central); confirm against EC results before ingest.
+# Note: Events are not additive: no total. The election is arguably the period+indicator, see review CSV.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ec-local-authority-results, ec-parliamentary-results, ec-presidential-results, ec-provincial-council-results
+id: election
+title: Election event
+codes:
+  - { code: "pres-1982", label: Presidential election 1982 }
+  - { code: "pres-1988", label: Presidential election 1988 }
+  - { code: "pres-1994", label: Presidential election 1994 }
+  - { code: "pres-1999", label: Presidential election 1999 }
+  - { code: "pres-2005", label: Presidential election 2005 }
+  - { code: "pres-2010", label: Presidential election 2010 }
+  - { code: "pres-2015", label: Presidential election 2015 }
+  - { code: "pres-2019", label: Presidential election 2019 }
+  - { code: "pres-2024", label: Presidential election 2024 }
+  - { code: "parl-1989", label: Parliamentary election 1989 }
+  - { code: "parl-1994", label: Parliamentary election 1994 }
+  - { code: "parl-2000", label: Parliamentary election 2000 }
+  - { code: "parl-2001", label: Parliamentary election 2001 }
+  - { code: "parl-2004", label: Parliamentary election 2004 }
+  - { code: "parl-2010", label: Parliamentary election 2010 }
+  - { code: "parl-2015", label: Parliamentary election 2015 }
+  - { code: "parl-2020", label: Parliamentary election 2020 }
+  - { code: "parl-2024", label: Parliamentary election 2024 }
+  - { code: "pc-1988", label: Provincial council elections 1988 (round) }
+  - { code: "pc-1993", label: Provincial council elections 1993 (round) }
+  - { code: "pc-1999", label: Provincial council elections 1999 (round) }
+  - { code: "pc-2004", label: Provincial council elections 2004 (round) }
+  - { code: "pc-2008", label: Provincial council elections 2008 (round) }
+  - { code: "pc-2012", label: Provincial council elections 2012 (round) }
+  - { code: "pc-2013", label: Provincial council elections 2013 (round) }
+  - { code: "pc-2014", label: Provincial council elections 2014 (round) }
+  - { code: "lg-2006", label: Local authorities elections 2006 }
+  - { code: "lg-2011", label: Local authorities elections 2011 }
+  - { code: "lg-2018", label: Local authorities elections 2018 }
+  - { code: "lg-2025", label: Local authorities elections 2025 }

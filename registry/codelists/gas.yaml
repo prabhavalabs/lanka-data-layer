@@ -1,0 +1,21 @@
+# Greenhouse gas / pollutant
+# Source/authority: Climate TRACE data release gas fields (co2, ch4, n2o, co2e_100yr, co2e_20yr) and pollutant fields; GWP per IPCC AR6.
+# Note: co2e is itself the aggregate, so there is no separate total; units differ (t CO2e vs t pollutant).
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: climate-trace-emissions
+id: gas
+title: Greenhouse gas / pollutant
+codes:
+  - { code: co2e_100yr, label: "CO2-equivalent, 100-year GWP" }
+  - { code: co2e_20yr, label: "CO2-equivalent, 20-year GWP" }
+  - { code: co2, label: Carbon dioxide (CO2) }
+  - { code: ch4, label: Methane (CH4) }
+  - { code: n2o, label: Nitrous oxide (N2O) }
+  - { code: fgas, label: Fluorinated gases }
+  - { code: pm2_5, label: Fine particulate matter (PM2.5) }
+  - { code: nox, label: Nitrogen oxides (NOx) }
+  - { code: so2, label: Sulphur dioxide (SO2) }
+  - { code: co, label: Carbon monoxide (CO) }

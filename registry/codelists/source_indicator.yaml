@@ -1,0 +1,524 @@
+# Registry indicator (input of a derived indicator)
+# Source/authority: Lanka Data Layer registry: every indicator id declared in registry/datasets/*.yaml (generated).
+# Note: Generated from the registry - regenerate whenever indicators are added or renamed (codes are indicator ids).
+# Note: Shared by derived-per-capita-indicators, derived-dasymetric-disaggregation, derived-electoral-demographics and derived-harmonised-boundary-series (`indicator`). No total.
+# Status: complete for the classification as cited.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: derived-dasymetric-disaggregation, derived-electoral-demographics, derived-harmonised-boundary-series, derived-per-capita-indicators
+id: source_indicator
+title: Registry indicator (input of a derived indicator)
+codes:
+  - { code: "env.agb_density", label: Aboveground biomass density }
+  - { code: "conf.acled_events", label: ACLED events }
+  - { code: "adb.value", label: ADB key indicator }
+  - { code: "admin.changes", label: Admin unit change events }
+  - { code: "water.baseline_stress", label: Baseline water stress }
+  - { code: "soc.aswesuma_families", label: Beneficiary families }
+  - { code: "soc.aswesuma_share", label: Beneficiary families per 100 households }
+  - { code: "audit.opinion", label: Audit opinion type }
+  - { code: "audit.findings_value", label: Value of quantified audit findings }
+  - { code: "terrain.aw3d30_elevation", label: Elevation (AW3D30) }
+  - { code: "air.arrivals_flights", label: Inbound flights }
+  - { code: "air.passengers", label: Air passengers }
+  - { code: "ntl.blackmarble_radiance", label: Daily NTL radiance }
+  - { code: "econ.boi_enterprises", label: BOI enterprises }
+  - { code: "econ.boi_available_land_ha", label: Available BOI land }
+  - { code: "econ.boi_fdi_usd", label: FDI realised (BOI) }
+  - { code: "econ.boi_projects", label: BOI projects approved/contracted }
+  - { code: "econ.boi_employment", label: Employment in BOI enterprises }
+  - { code: "econ.boi_zone_area", label: Zone area }
+  - { code: "econ.boi_zone_employment", label: Zone employment }
+  - { code: "budget.project_allocation", label: Project allocation }
+  - { code: "budget.allocation", label: Budget allocation }
+  - { code: "budget.actual_prev_year", label: Actual expenditure (t-2) }
+  - { code: "gov.cabinet_decisions", label: Cabinet decisions mentioning a unit }
+  - { code: "cbslar.appendix_value", label: Annual Report appendix series }
+  - { code: "fin.bank_branches", label: Bank branches }
+  - { code: "fin.branches_per_100k", label: "Bank branches per 100,000 persons" }
+  - { code: "re.condo_asking_index", label: Condominium asking price index }
+  - { code: "ess.provincial_indicator", label: Provincial indicator value }
+  - { code: "fx.rate_daily", label: Indicative exchange rate }
+  - { code: "fx.rate_monthly_avg", label: Monthly average exchange rate }
+  - { code: "fx.rate_end_month", label: End-of-month exchange rate }
+  - { code: "fisc.revenue", label: Government revenue }
+  - { code: "fisc.expenditure", label: Government expenditure }
+  - { code: "fisc.overall_balance_gdp", label: Overall fiscal balance }
+  - { code: "fisc.cg_debt", label: Central government debt }
+  - { code: "re.lvi", label: Land valuation indicator }
+  - { code: "trade.exports_usd", label: Merchandise exports }
+  - { code: "trade.imports_usd", label: Merchandise imports }
+  - { code: "trade.balance_usd", label: Trade balance }
+  - { code: "fx.neer", label: NEER index }
+  - { code: "fx.reer", label: REER index }
+  - { code: "econ.pmi", label: PMI }
+  - { code: "tour.earnings_usd", label: Tourism earnings }
+  - { code: "mon.policy_rate", label: Overnight policy rate }
+  - { code: "mon.tbill_yield", label: Treasury bill yield }
+  - { code: "mon.gross_official_reserves", label: Gross official reserves }
+  - { code: "mon.broad_money", label: Broad money (M2b) }
+  - { code: "econ.remittances_usd", label: "Workers' remittances" }
+  - { code: "clim.proj_tas_change", label: Projected temperature change }
+  - { code: "clim.proj_pr_change", label: Projected precipitation change }
+  - { code: "ener.customers", label: Electricity customers }
+  - { code: "ener.sales_gwh", label: Electricity sales }
+  - { code: "ener.plant_capacity_mw", label: Installed capacity }
+  - { code: "clim.rain_daily", label: Daily rainfall }
+  - { code: "clim.rain_monthly", label: Monthly rainfall }
+  - { code: "clim.rain_anomaly", label: Monthly rainfall anomaly vs 1991-2020 }
+  - { code: "clim.spi_3", label: Standardised Precipitation Index (3-month) }
+  - { code: "env.ghg_co2e", label: GHG emissions }
+  - { code: "env.asset_emissions", label: Emissions per asset }
+  - { code: "admin.area_km2", label: Land area of admin unit }
+  - { code: "admin.child_count", label: Number of child units }
+  - { code: "tran.bus_routes", label: Bus routes }
+  - { code: "tran.bus_route_km", label: Bus route length }
+  - { code: "econ.new_companies", label: New company registrations }
+  - { code: "terrain.elevation_mean", label: Mean elevation }
+  - { code: "terrain.slope_mean", label: Mean slope }
+  - { code: "terrain.steep_share", label: "Share of area with slope > 30 deg" }
+  - { code: "just.courts", label: Courts }
+  - { code: "haz.cyclone_tracks", label: Cyclone tracks within 300 km }
+  - { code: "haz.max_wind_near_lk", label: Max sustained wind within 300 km }
+  - { code: "educ.schools_district", label: Government schools }
+  - { code: "educ.pupil_teacher_ratio", label: Pupil-teacher ratio }
+  - { code: "heal.hospital_beds", label: Government hospital beds }
+  - { code: "heal.beds_per_1000", label: "Beds per 1,000 population" }
+  - { code: "just.grave_crimes", label: Grave crimes reported }
+  - { code: "just.prison_admissions", label: Prison admissions }
+  - { code: "tran.road_length_km", label: Road length by class }
+  - { code: "tran.new_vehicle_registrations", label: New vehicle registrations }
+  - { code: "tran.port_cargo_tonnes", label: Cargo handled by port }
+  - { code: "tran.road_accidents", label: Road accidents and fatalities }
+  - { code: "agri.production_index", label: Agricultural production volume index }
+  - { code: "constr.buildings_approved", label: Building plans approved }
+  - { code: "constr.floor_area", label: Approved floor area }
+  - { code: "econ.cpi.ccpi_index", label: "CCPI index (2021=100)" }
+  - { code: "econ.cpi.ccpi_yoy", label: "CCPI headline inflation, year-on-year" }
+  - { code: "econ.cpi.ccpi_core_yoy", label: "CCPI core inflation, year-on-year" }
+  - { code: "census12.pop_total", label: Population 2012 }
+  - { code: "census12.pop_by_ethnicity", label: Population by ethnicity 2012 }
+  - { code: "census12.pop_by_religion", label: Population by religion 2012 }
+  - { code: "census12.housing_amenities", label: Households by amenity 2012 }
+  - { code: "census24.hh_water_source", label: Households by drinking water source }
+  - { code: "census24.hh_toilet", label: Households by toilet facility }
+  - { code: "census24.hh_lighting", label: Households by lighting source }
+  - { code: "census24.hh_cooking_fuel", label: Households by cooking fuel }
+  - { code: "census24.hh_waste_disposal", label: Households by waste disposal method }
+  - { code: "census24.functional_difficulty", label: Population with functional difficulty }
+  - { code: "census24.literacy_rate", label: Literacy rate }
+  - { code: "census24.language_ability", label: Population able to speak/read/write language }
+  - { code: "census24.computer_literacy", label: Computer literacy rate }
+  - { code: "census24.digital_literacy", label: Digital literacy rate }
+  - { code: "census24.pop_by_ethnicity", label: Population by ethnicity }
+  - { code: "census24.pop_by_religion", label: Population by religion }
+  - { code: "census24.gnd_pop", label: Population (GN) }
+  - { code: "census24.gnd_age_band", label: Population by broad age band (GN) }
+  - { code: "census24.gnd_households", label: Households (GN) }
+  - { code: "census24.hh_assets", label: Households with item }
+  - { code: "census24.households", label: Households }
+  - { code: "census24.avg_household_size", label: Average household size }
+  - { code: "census24.housing_units", label: Housing units by structure type }
+  - { code: "census24.housing_material", label: Housing units by principal material }
+  - { code: "census24.housing_tenure", label: Households by tenure }
+  - { code: "census24.vacant_units", label: Vacant housing units }
+  - { code: "census24.pop_total", label: Enumerated population }
+  - { code: "census24.pop_age_sex", label: Population by age group and sex }
+  - { code: "census24.pop_change_2012", label: Population change 2012-2024 }
+  - { code: "census24.sex_ratio", label: Males per 100 females }
+  - { code: "census_hist.pop_total", label: Population (historic census) }
+  - { code: "census_hist.pop_by_ethnicity", label: Population by ethnicity (historic census) }
+  - { code: "agri.holdings", label: Agricultural holdings }
+  - { code: "agri.holding_area", label: Area under holdings }
+  - { code: "dhs.tfr", label: Total fertility rate }
+  - { code: "dhs.stunting_u5", label: "Stunting, children under 5" }
+  - { code: "dhs.wasting_u5", label: "Wasting, children under 5" }
+  - { code: "dhs.anc4_coverage", label: "Women with 4+ antenatal visits" }
+  - { code: "econ.establishments", label: Establishments }
+  - { code: "econ.persons_engaged", label: Persons engaged }
+  - { code: "econ.gdp_current", label: GDP at current market prices }
+  - { code: "econ.gva_by_industry", label: Gross value added by industry }
+  - { code: "econ.gdp_growth_real", label: Real GDP growth }
+  - { code: "econ.gdp_expenditure", label: GDP by expenditure component }
+  - { code: "hies.mean_household_income", label: Mean monthly household income }
+  - { code: "hies.mean_household_expenditure", label: Mean monthly household expenditure }
+  - { code: "hies.gini_income", label: Gini coefficient of household income }
+  - { code: "hies.food_share", label: Food share of expenditure }
+  - { code: "pov.headcount_ratio", label: Poverty headcount ratio (official line) }
+  - { code: "pov.poverty_gap", label: Poverty gap index }
+  - { code: "pov.squared_gap", label: Squared poverty gap }
+  - { code: "pov.poor_population", label: Population below poverty line }
+  - { code: "lab.unemployment_rate_sub", label: Unemployment rate }
+  - { code: "lab.informal_share", label: Informal sector share of employment }
+  - { code: "lab.employment_by_industry", label: Employment by industry }
+  - { code: "lab.employment_by_occupation", label: Employment by occupation }
+  - { code: "lab.lfpr", label: Labour force participation rate }
+  - { code: "lab.unemployment_rate", label: Unemployment rate }
+  - { code: "lab.employed", label: Employed population }
+  - { code: "lgov.revenue", label: Local authority revenue }
+  - { code: "lgov.expenditure", label: Local authority expenditure }
+  - { code: "lgov.revenue_per_capita", label: LA revenue per resident }
+  - { code: "pop.midyear_district", label: Mid-year population }
+  - { code: "pov.mpi", label: Multidimensional Poverty Index }
+  - { code: "pov.mpi_headcount", label: MPI headcount ratio }
+  - { code: "pov.mpi_indicator_deprivation", label: Censored headcount by indicator }
+  - { code: "econ.cpi.ncpi_index", label: NCPI index }
+  - { code: "econ.cpi.ncpi_yoy", label: "NCPI inflation, year-on-year" }
+  - { code: "agri.ofc_extent", label: OFC extent }
+  - { code: "agri.ofc_production", label: OFC production }
+  - { code: "agri.paddy_sown_ha", label: Paddy extent sown }
+  - { code: "agri.paddy_harvested_ha", label: Paddy extent harvested }
+  - { code: "agri.paddy_production_t", label: Paddy production }
+  - { code: "agri.paddy_yield", label: Average paddy yield }
+  - { code: "agri.crop_extent", label: Crop extent }
+  - { code: "agri.crop_production", label: Crop production }
+  - { code: "agri.cost_of_production", label: Cost of production per hectare }
+  - { code: "agri.livestock_production", label: Livestock product output }
+  - { code: "agri.fish_production", label: Fish production }
+  - { code: "agri.paddy_irrigation_share", label: Paddy area by water source }
+  - { code: "agri.calorie_availability", label: Per-capita calorie availability }
+  - { code: "econ.building_material_price", label: Average building material price }
+  - { code: "econ.minimum_wage_index", label: Minimum wage rate index }
+  - { code: "pb.energy_supply", label: Primary energy supply }
+  - { code: "pb.telecom_subscriptions", label: Telecom subscriptions }
+  - { code: "pb.passenger_km", label: Passenger kilometres }
+  - { code: "pb.tourist_arrivals", label: Tourist arrivals }
+  - { code: "pb.health_institutions", label: Government health institutions }
+  - { code: "pb.exam_pass_rate", label: GCE O/L and A/L pass rates }
+  - { code: "pb.vocational_trainees", label: Vocational trainees }
+  - { code: "pb.local_services", label: Local authority service counts }
+  - { code: "pb.disaster_affected", label: Persons affected by natural disasters }
+  - { code: "trade.terms_of_trade", label: Terms of trade index }
+  - { code: "trade.volume_index", label: Trade volume index }
+  - { code: "econ.ppi_index", label: Producer price index }
+  - { code: "econ.pgdp", label: "Provincial GDP, current prices" }
+  - { code: "econ.pgdp_per_capita", label: Provincial GDP per capita }
+  - { code: "econ.pgdp_share", label: Province share of national GDP }
+  - { code: "meta.surveys_catalogued", label: Surveys in catalogue }
+  - { code: "vital.births", label: Registered live births }
+  - { code: "vital.deaths", label: Registered deaths }
+  - { code: "vital.infant_deaths", label: Infant deaths }
+  - { code: "vital.crude_birth_rate", label: Crude birth rate }
+  - { code: "vital.marriages", label: Registered marriages }
+  - { code: "heal.dengue_cases", label: Dengue cases }
+  - { code: "heal.dengue_incidence", label: "Dengue incidence per 100,000" }
+  - { code: "agri.season_stress_index", label: Season stress index }
+  - { code: "tour.attractions", label: Attractions }
+  - { code: "built.density", label: Buildings per km2 }
+  - { code: "built.osm_completeness", label: OSM building completeness }
+  - { code: "dasy.value", label: Disaggregated value }
+  - { code: "dasy.quality_flag", label: Disaggregation quality class }
+  - { code: "heal.dengue_incidence_lagged_rain", label: Incidence vs 4-week lagged rainfall }
+  - { code: "heal.dengue_risk_class", label: Dengue risk class }
+  - { code: "dev.composite_index", label: Composite development index }
+  - { code: "dev.domain_index", label: Domain sub-index }
+  - { code: "dev.rank_ci", label: "Rank 90% interval" }
+  - { code: "elec.pd_profile", label: Polling division demographic profile }
+  - { code: "acc.pop_within", label: Population within threshold }
+  - { code: "acc.share_within", label: Share of population within threshold }
+  - { code: "exp.flood_pop", label: Population in flood zone }
+  - { code: "exp.flood_buildings", label: Buildings in flood zone }
+  - { code: "exp.flood_facilities", label: Facilities in flood zone }
+  - { code: "env.loss_in_protected", label: Tree cover loss inside protected areas }
+  - { code: "harm.value", label: Harmonised value }
+  - { code: "harm.allocation_share", label: Crosswalk allocation share }
+  - { code: "exp.heat_person_days", label: Person-days of extreme heat }
+  - { code: "exp.heat_elderly_days", label: "Elderly (60+) person-days of extreme heat" }
+  - { code: "pop.intercensal_total", label: Population (intercensal / projected) }
+  - { code: "pop.intercensal_ci", label: Interval half-width }
+  - { code: "econ.investment_per_capita", label: Investment per capita }
+  - { code: "econ.boi_jobs_per_1000", label: "BOI jobs per 1,000 working-age residents" }
+  - { code: "lc.unit_profile_share", label: Land cover profile share }
+  - { code: "exp.landslide_susceptibility", label: Landslide susceptibility class }
+  - { code: "exp.landslide_pop", label: Population in high susceptibility }
+  - { code: "acc.market_minutes", label: Travel time to nearest town }
+  - { code: "acc.pop_within_market_60", label: Population within 60 min of a 50k town }
+  - { code: "haz.multi_exposed_pop", label: Population exposed }
+  - { code: "haz.multi_exposed_buildings", label: Buildings exposed }
+  - { code: "haz.multi_index", label: Multi-hazard exposure index }
+  - { code: "ntl.growth_yoy", label: Sum-of-lights change year-on-year }
+  - { code: "ntl.lights_per_capita", label: Lights per capita }
+  - { code: "ntl.modelled_gdp_share", label: Modelled share of provincial GDP }
+  - { code: "derived.per_capita", label: Per-capita value of a count indicator }
+  - { code: "derived.per_km2", label: Density of a count indicator }
+  - { code: "clim.season_rain_anomaly", label: Seasonal rainfall anomaly }
+  - { code: "clim.drought_months", label: "Months in drought (SPI-3 < -1)" }
+  - { code: "idx.service_gap", label: Service gap index }
+  - { code: "idx.service_gap_rank", label: Rank within district }
+  - { code: "pov.sae_headcount", label: Modelled poverty headcount }
+  - { code: "pov.sae_ci_width", label: "95% interval width" }
+  - { code: "terrain.unit_profile", label: Terrain statistic }
+  - { code: "tour.pressure_index", label: Tourism pressure index }
+  - { code: "tour.beds_per_1000", label: "Registered beds per 1,000 residents" }
+  - { code: "acc.pop_in_walkshed", label: Population within walkshed of transit }
+  - { code: "acc.transit_access_index", label: Frequency-weighted transit access index }
+  - { code: "acc.scenario_new_coverage", label: Additional population covered by scenario line }
+  - { code: "acc.tt_nearest", label: Travel time to nearest facility }
+  - { code: "acc.pop_mean_tt", label: Population-weighted mean travel time }
+  - { code: "urb.builtup_growth", label: Built-up surface growth per 5-year epoch }
+  - { code: "urb.land_consumption_ratio", label: Land consumption rate / population growth rate (SDG 11.3.1) }
+  - { code: "pop.best_estimate", label: Best-estimate population }
+  - { code: "pop.model_disagreement", label: Coefficient of variation across population models }
+  - { code: "dis.di_events", label: Disaster records }
+  - { code: "dis.di_deaths", label: Deaths }
+  - { code: "dis.di_houses_destroyed", label: Houses destroyed }
+  - { code: "dis.di_affected", label: Persons affected }
+  - { code: "dis.landslide_warning_level", label: Landslide warning level }
+  - { code: "dis.affected_persons", label: Persons affected }
+  - { code: "dis.deaths", label: Deaths }
+  - { code: "dis.houses_damaged", label: Houses damaged }
+  - { code: "dis.displaced_in_safe_centres", label: Persons in safe centres }
+  - { code: "tran.new_registrations", label: New vehicle registrations }
+  - { code: "tran.registered_fleet", label: Cumulative registered vehicles }
+  - { code: "lc.dw_class_share", label: Land cover class share (Dynamic World) }
+  - { code: "haz.earthquakes", label: "Earthquakes M4+" }
+  - { code: "elec.lg_votes", label: Votes by party (LA) }
+  - { code: "elec.lg_seats", label: Seats by party (LA) }
+  - { code: "elec.lg_turnout", label: Turnout (LA) }
+  - { code: "elec.parl_votes", label: Votes by party }
+  - { code: "elec.parl_seats", label: Seats won }
+  - { code: "elec.parl_turnout", label: Turnout }
+  - { code: "elec.pres_votes", label: Votes by candidate }
+  - { code: "elec.pres_turnout", label: Turnout }
+  - { code: "elec.pres_vote_share", label: Vote share }
+  - { code: "elec.pc_votes", label: Votes by party (PC) }
+  - { code: "elec.pd_count", label: Polling divisions per electoral district }
+  - { code: "dis.emdat_events", label: Disaster events }
+  - { code: "heal.notified_cases", label: Notified cases }
+  - { code: "heal.notified_rate", label: "Notified cases per 100,000" }
+  - { code: "clim.t2m_mean", label: Mean 2 m air temperature }
+  - { code: "clim.t2m_max_days_35", label: "Days with Tmax >= 35 C" }
+  - { code: "clim.soil_moisture", label: Volumetric soil moisture (top layer) }
+  - { code: "aid.commitments", label: Foreign financing commitments }
+  - { code: "aid.disbursements", label: Foreign financing disbursements }
+  - { code: "educ.ol_pass_rate", label: O/L qualified for A/L }
+  - { code: "educ.al_eligible_rate", label: A/L eligible for university }
+  - { code: "fao.crop_production", label: Crop production }
+  - { code: "fao.food_security", label: Food security indicator }
+  - { code: "fao.land_use", label: Land use area }
+  - { code: "fao.fertilizer_use", label: Fertiliser nutrient use }
+  - { code: "food.ipc_phase", label: Acute food insecurity phase }
+  - { code: "heal.maternal_mortality_ratio", label: Maternal mortality ratio }
+  - { code: "heal.low_birth_weight", label: Low birth weight }
+  - { code: "heal.child_underweight", label: Underweight children under 5 (growth monitoring) }
+  - { code: "env.fire_detections", label: Active fire detections }
+  - { code: "agri.fish_production_district", label: Fish production }
+  - { code: "agri.fishing_boats", label: Fishing boats }
+  - { code: "agri.fisher_population", label: Active fishers }
+  - { code: "env.treecover_2000", label: "Tree cover 2000 (>30% canopy) area" }
+  - { code: "env.treecover_loss", label: Tree cover loss }
+  - { code: "env.species_records", label: Occurrence records }
+  - { code: "env.species_richness", label: Observed species richness }
+  - { code: "dis.gdacs_alerts", label: GDACS alerts }
+  - { code: "places.geonames_features", label: Named features per unit }
+  - { code: "postal.code_count", label: Postal codes per unit }
+  - { code: "wx.station_prcp", label: Daily station precipitation }
+  - { code: "wx.station_tmax", label: Daily max temperature }
+  - { code: "built.surface_m2", label: Built-up surface }
+  - { code: "built.volume_m3", label: Built-up volume }
+  - { code: "built.share_pct", label: Built-up share of land }
+  - { code: "pop.ghsl_total", label: Population (GHS-POP) }
+  - { code: "urban.smod_class_share", label: Population share by settlement class }
+  - { code: "urban.degurba_class", label: Degree of urbanisation of unit }
+  - { code: "educ.school_points", label: Schools (geolocated) }
+  - { code: "educ.schools_connected_share", label: Schools with internet connectivity }
+  - { code: "xwalk.gnd_match_rate", label: Share of GN ids matched to a p-code }
+  - { code: "built.gob_count", label: Buildings (Google) }
+  - { code: "built.gob_area_m2", label: Building footprint area (Google) }
+  - { code: "built.gob_temporal_presence", label: Building presence fraction (2.5D) }
+  - { code: "clim.imerg_precip_daily", label: Daily precipitation (IMERG) }
+  - { code: "price.harti_daily", label: Commodity price }
+  - { code: "heal.healthsites_count", label: Health facilities }
+  - { code: "acc.heigit_share_within", label: Population within threshold of facility }
+  - { code: "tran.paved_share", label: Share of road length paved }
+  - { code: "pop.hrsl_total", label: Population (HRSL) }
+  - { code: "pop.hrsl_group", label: Population by demographic group (HRSL) }
+  - { code: "water.basin_area", label: Basin area }
+  - { code: "water.river_discharge", label: Long-term average discharge }
+  - { code: "aid.iati_commitments", label: Commitments }
+  - { code: "aid.iati_disbursements", label: Disbursements }
+  - { code: "aid.iati_activity_locations", label: Activities with location }
+  - { code: "disp.new_displacements", label: New internal displacements }
+  - { code: "ilo.value", label: ILOSTAT indicator }
+  - { code: "port.daily_calls", label: Port calls }
+  - { code: "port.est_trade_volume", label: Estimated trade volume }
+  - { code: "imf.weo_value", label: WEO series value }
+  - { code: "water.reservoir_storage_pct", label: Reservoir storage (percent of capacity) }
+  - { code: "water.river_level", label: River water level }
+  - { code: "water.flood_alert_level", label: Flood alert status }
+  - { code: "haz.flood_depth", label: Flood depth }
+  - { code: "haz.flood_area_share", label: Share of area flooded }
+  - { code: "water.occurrence", label: Water occurrence }
+  - { code: "water.permanent_area", label: Permanent water area }
+  - { code: "pop.kontur_h3", label: Population per H3 r8 cell }
+  - { code: "pop.landscan_ambient", label: Ambient population }
+  - { code: "tran.gtfs_stops", label: Transit stops }
+  - { code: "tran.gtfs_trips_per_day", label: Scheduled trips per stop per weekday }
+  - { code: "proj.major_projects", label: Major projects }
+  - { code: "tran.metro_stops", label: Proposed metro stops }
+  - { code: "gov.la_count", label: Local authorities }
+  - { code: "env.mangrove_area", label: Mangrove area }
+  - { code: "acc.map_tt_healthcare", label: Travel time to healthcare }
+  - { code: "acc.map_tt_city", label: "Travel time to city 50k+" }
+  - { code: "pov.rwi_mean", label: Population-weighted RWI }
+  - { code: "wx.normal_rain", label: Normal monthly rainfall }
+  - { code: "wx.normal_temp", label: Normal monthly mean temperature }
+  - { code: "wx.met_rain_24h", label: "24-hour rainfall" }
+  - { code: "wx.met_tmax", label: Maximum temperature }
+  - { code: "wx.met_rh", label: Relative humidity (3-hourly) }
+  - { code: "env.ndvi", label: NDVI }
+  - { code: "educ.gov_schools", label: Government schools }
+  - { code: "educ.students", label: Students }
+  - { code: "educ.teachers", label: Teachers }
+  - { code: "educ.small_schools", label: Schools with fewer than 50 students }
+  - { code: "health.moh_area_count", label: MOH areas per district }
+  - { code: "heal.mo_per_100k", label: "Medical officers per 100,000" }
+  - { code: "heal.beds_by_rdhs", label: Hospital beds }
+  - { code: "heal.opd_visits", label: OPD visits }
+  - { code: "heal.gov_institutions", label: Government health institutions }
+  - { code: "heal.inpatient_discharges", label: Inpatient discharges }
+  - { code: "heal.hospital_deaths", label: Hospital deaths }
+  - { code: "built.ms_count", label: Buildings (Microsoft) }
+  - { code: "terrain.nasadem_elevation", label: Elevation (NASADEM) }
+  - { code: "haz.landslide_zone_area", label: Area by landslide hazard class }
+  - { code: "envi.silent_zone_area", label: Silent-zone area }
+  - { code: "envi.noise_limit_db", label: Permissible noise level }
+  - { code: "ener.generation_mwh", label: Electricity generation }
+  - { code: "ener.demand_mw_15min", label: System demand (15-min) }
+  - { code: "ener.renewable_share", label: Renewable share of generation }
+  - { code: "tran.bus_fleet", label: Buses in operation }
+  - { code: "tran.route_permits", label: Route permits }
+  - { code: "tran.bus_crashes", label: Bus-involved crashes }
+  - { code: "water.connections", label: Water supply connections }
+  - { code: "water.pipe_borne_coverage", label: Pipe-borne water coverage }
+  - { code: "water.non_revenue_water", label: Non-revenue water }
+  - { code: "dis.flooded_area", label: Observed flooded area }
+  - { code: "dis.pop_in_observed_flood", label: Population in observed flood extent }
+  - { code: "tech.ookla_download_mbps", label: Average download speed }
+  - { code: "wx.forecast_rain", label: Forecast precipitation }
+  - { code: "wx.forecast_tmax", label: Forecast max temperature }
+  - { code: "env.pm25", label: PM2.5 concentration }
+  - { code: "tech.cell_sites", label: Cell sites }
+  - { code: "built.osm_buildings", label: OSM buildings }
+  - { code: "env.osm_park_area", label: Park area }
+  - { code: "env.park_area_per_capita", label: Park area per resident }
+  - { code: "places.osm_places", label: Named places }
+  - { code: "fac.osm_count", label: Facilities by type }
+  - { code: "fac.osm_per_10k", label: "Facilities per 10,000 population" }
+  - { code: "env.protected_area_ha", label: Protected area }
+  - { code: "tran.osm_rail_km", label: Railway length }
+  - { code: "tran.osm_rail_stations", label: Railway stations }
+  - { code: "tran.osm_road_km", label: Road length by class }
+  - { code: "tran.osm_road_density", label: Road density }
+  - { code: "tran.graph_edges", label: Routable edges }
+  - { code: "tour.osm_attractions", label: Attractions by type }
+  - { code: "tran.osm_trail_km", label: Trail and cycleway length }
+  - { code: "env.osm_waterway_km", label: Waterway length }
+  - { code: "env.osm_tank_count", label: Tanks/reservoirs }
+  - { code: "air.airports", label: Airports and airfields }
+  - { code: "built.overture_buildings", label: Buildings }
+  - { code: "built.overture_footprint_m2", label: Building footprint area }
+  - { code: "biz.overture_places", label: Places by category }
+  - { code: "biz.places_per_1000", label: "Places per 1,000 population" }
+  - { code: "gov.mps", label: Members of Parliament }
+  - { code: "tran.accidents_fatal", label: Fatal road accidents }
+  - { code: "tran.fatalities_per_100k", label: "Road fatalities per 100,000" }
+  - { code: "ener.gem_plant_capacity_mw", label: Installed capacity }
+  - { code: "ener.gem_plant_count", label: Power plants }
+  - { code: "just.prisoners", label: Prison population }
+  - { code: "just.occupancy_rate", label: Prison occupancy rate }
+  - { code: "heritage.protected_monuments", label: Protected monuments }
+  - { code: "ener.saidi", label: SAIDI }
+  - { code: "ener.saifi", label: SAIFI }
+  - { code: "tran.expressway_km", label: Expressway length }
+  - { code: "tran.expressway_interchanges", label: Interchanges }
+  - { code: "tran.rda_road_km", label: National road length }
+  - { code: "tran.sea_route_km", label: Sea route distance }
+  - { code: "migr.departures", label: Departures for foreign employment }
+  - { code: "migr.departures_per_1000", label: "Departures per 1,000 working-age population" }
+  - { code: "port.teu", label: Container throughput }
+  - { code: "port.ship_arrivals", label: Ship arrivals }
+  - { code: "tran.train_services_per_day", label: Scheduled trains per station per day }
+  - { code: "ener.primary_supply_ktoe", label: Primary energy supply }
+  - { code: "ener.final_consumption_ktoe", label: Final energy consumption }
+  - { code: "tour.rooms", label: Registered rooms }
+  - { code: "tour.occupancy_rate", label: Room occupancy rate }
+  - { code: "tour.establishments", label: Registered establishments }
+  - { code: "tour.arrivals", label: Tourist arrivals }
+  - { code: "tour.arrivals_weekly", label: Tourist arrivals (weekly) }
+  - { code: "soil.soc", label: Soil organic carbon (0-30 cm) }
+  - { code: "soil.ph", label: Soil pH (0-5 cm) }
+  - { code: "ener.pvout", label: Specific PV output }
+  - { code: "ener.ghi", label: Global horizontal irradiation }
+  - { code: "agri.tea_production", label: Tea production }
+  - { code: "agri.tea_exports", label: Tea exports }
+  - { code: "haz.th_level", label: Hazard level }
+  - { code: "gov.cpi_score", label: CPI score }
+  - { code: "tech.subscriptions", label: Telecom subscriptions }
+  - { code: "fisc.outturn_vs_budget", label: Outturn vs budget estimate }
+  - { code: "fisc.in_year_revenue", label: In-year revenue (cumulative) }
+  - { code: "debt.guarantees", label: Outstanding guarantees }
+  - { code: "debt.letters_of_comfort", label: Letters of comfort issued }
+  - { code: "proc.bids_per_tender", label: Average bids per tender }
+  - { code: "proc.single_bid_share", label: Share of single-bid tenders }
+  - { code: "proc.contract_value", label: Contract value }
+  - { code: "fisc.pc_transfers", label: Transfers to provincial councils }
+  - { code: "fisc.pc_transfers_per_capita", label: Transfers per capita }
+  - { code: "debt.provincial", label: Provincial council debt }
+  - { code: "debt.total", label: Central government debt stock }
+  - { code: "debt.external_by_creditor", label: External debt by creditor }
+  - { code: "debt.domestic_by_instrument", label: Domestic debt by instrument }
+  - { code: "fisc.revenue_outturn", label: Revenue outturn }
+  - { code: "soe.profit", label: SOE profit/loss }
+  - { code: "soe.liabilities", label: SOE total liabilities }
+  - { code: "fin.women_msme_credit", label: Credit to women-led MSMEs }
+  - { code: "conf.events", label: Organised violence events }
+  - { code: "conf.fatalities_best", label: Fatalities (best estimate) }
+  - { code: "urb.zone_area", label: Zoned area by zone type }
+  - { code: "educ.univ_admissions", label: University admissions }
+  - { code: "educ.univ_admission_rate", label: Admissions per eligible candidate }
+  - { code: "sdg.value", label: SDG series value }
+  - { code: "pop.wpp_total", label: Total population (UN WPP) }
+  - { code: "pop.wpp_tfr", label: Total fertility rate }
+  - { code: "pop.wpp_life_expectancy", label: Life expectancy at birth }
+  - { code: "hdr.hdi", label: Human Development Index }
+  - { code: "hdr.gii", label: Gender Inequality Index }
+  - { code: "unicef.value", label: UNICEF indicator }
+  - { code: "ntl.radiance_annual", label: Annual average radiance }
+  - { code: "ntl.radiance_monthly", label: Monthly average radiance }
+  - { code: "ntl.sum_lights", label: Sum of lights }
+  - { code: "pip.headcount", label: Poverty headcount at international line }
+  - { code: "pip.gini", label: Gini index }
+  - { code: "aid.wb_commitment", label: World Bank commitment }
+  - { code: "aid.wb_project_locations", label: Project location count }
+  - { code: "wbsldu.gdp_growth_forecast", label: Real GDP growth forecast }
+  - { code: "wbsldu.poverty_nowcast", label: "Poverty rate nowcast ($4.20/day)" }
+  - { code: "wdi.ny_gdp_mktp_cd", label: "GDP (current US$)" }
+  - { code: "wdi.ny_gdp_pcap_pp_kd", label: "GDP per capita, PPP (constant 2021 int'l $)" }
+  - { code: "wdi.si_pov_dday", label: "Poverty headcount at $3.00/day (2021 PPP)" }
+  - { code: "wdi.sp_dyn_le00_in", label: Life expectancy at birth }
+  - { code: "wdi.eg_elc_accs_zs", label: Access to electricity }
+  - { code: "wdi.series", label: "Any WDI series (generic, keyed by series code)" }
+  - { code: "env.wdpa_area", label: Protected area (WDPA) }
+  - { code: "price.wfp_market", label: Commodity price at market }
+  - { code: "clim.wfp_rainfall_dekad", label: Dekadal rainfall }
+  - { code: "clim.wfp_rainfall_anomaly", label: Rainfall anomaly vs long-term mean }
+  - { code: "env.wfp_ndvi_anomaly", label: NDVI anomaly }
+  - { code: "who.value", label: GHO indicator }
+  - { code: "xwalk.wikidata_qid_coverage", label: Share of units with a Wikidata QID }
+  - { code: "places.wikidata_items", label: Wikidata items with coordinates }
+  - { code: "ener.wind_power_density", label: Wind power density at 100 m }
+  - { code: "trade.bilateral", label: Trade value by partner and product }
+  - { code: "heritage.whs_sites", label: World Heritage properties }
+  - { code: "clim.wc_tavg", label: Mean temperature (normal) }
+  - { code: "clim.wc_prec", label: Precipitation (normal) }
+  - { code: "clim.wc_bio", label: Bioclimatic variable }
+  - { code: "lc.class_share", label: Land cover class share }
+  - { code: "lc.class_area", label: Land cover class area }
+  - { code: "pop.grid_age_sex", label: Population by age group and sex }
+  - { code: "pop.grid_dependency_ratio", label: Age dependency ratio }
+  - { code: "pop.grid_under5", label: Children under 5 }
+  - { code: "pop.grid_births", label: Estimated live births }
+  - { code: "pop.grid_pregnancies", label: Estimated pregnancies }
+  - { code: "pop.grid_total", label: Population (modelled) }

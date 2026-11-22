@@ -1,0 +1,18 @@
+# Local authority revenue type
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Local Government Finance statistics; Local Authorities Financial Regulations - revenue heads.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-local-government-finance
+id: lg_revenue_type
+title: Local authority revenue type
+codes:
+  - { code: total, label: Total revenue, total: true, sdmx: _T }
+  - { code: rates_taxes, label: Rates and taxes, parent: total }
+  - { code: rents, label: Rents, parent: total }
+  - { code: licences, label: Licences, parent: total }
+  - { code: fees_charges, label: Fees and charges for services, parent: total }
+  - { code: warrants_fines, label: Warrant costs and fines, parent: total }
+  - { code: grants, label: Grants (central / provincial), parent: total }
+  - { code: other, label: Other revenue, parent: total }

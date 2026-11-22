@@ -1,0 +1,22 @@
+# Presidential candidate
+# Source/authority: Election Commission of Sri Lanka - presidential election results by candidate.
+# Note: Code = person slug, stable across elections. Complete from the EC results of each election (2024 had 38 candidates).
+# Note: Proper names: si/ta from EC nomination lists only.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ec-presidential-results
+id: candidate
+title: Presidential candidate
+codes:
+  - { code: total, label: All candidates, total: true, sdmx: _T }
+  - { code: anura_kumara_dissanayake, label: Anura Kumara Dissanayake, parent: total }
+  - { code: sajith_premadasa, label: Sajith Premadasa, parent: total }
+  - { code: ranil_wickremesinghe, label: Ranil Wickremesinghe, parent: total }
+  - { code: namal_rajapaksa, label: Namal Rajapaksa, parent: total }
+  - { code: gotabaya_rajapaksa, label: Gotabaya Rajapaksa, parent: total }
+  - { code: maithripala_sirisena, label: Maithripala Sirisena, parent: total }
+  - { code: mahinda_rajapaksa, label: Mahinda Rajapaksa, parent: total }
+  - { code: sarath_fonseka, label: Sarath Fonseka, parent: total }
+  - { code: other, label: Other candidates, parent: total }

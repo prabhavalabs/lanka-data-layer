@@ -1,0 +1,265 @@
+# Country or area (ISO 3166-1 alpha-2)
+# Source/authority: ISO 3166-1 alpha-2 (ISO 3166 Maintenance Agency); code list taken from the IANA tz iso3166.tab copy of ISO 3166-1, names normalised to ISO short names.
+# Note: Shared by every country-valued dimension (origin_country, source_country, destination country, trade partner): reference it as {id: <dim>, codelist: country}.
+# Note: Codes are alpha-2 as in SDMX CL_AREA; alpha-3 / M49 crosswalk is a registry/crosswalks job.
+# Note: Source-specific regional aggregates (e.g. SLTDA 'Western Europe', SLBFE 'Middle East') are not countries: add them as codes here only once a dataset needs them, with parent total.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: boi-fdi-inflows, slbfe-labour-migration, sltda-tourist-arrivals, wits-trade-partners
+id: country
+title: Country or area (ISO 3166-1 alpha-2)
+sdmx_ref: "SDMX:CL_AREA"
+codes:
+  - { code: total, label: All countries / world, total: true, sdmx: _T }
+  - { code: AD, label: Andorra, parent: total }
+  - { code: AE, label: United Arab Emirates, parent: total }
+  - { code: AF, label: Afghanistan, parent: total }
+  - { code: AG, label: Antigua and Barbuda, parent: total }
+  - { code: AI, label: Anguilla, parent: total }
+  - { code: AL, label: Albania, parent: total }
+  - { code: AM, label: Armenia, parent: total }
+  - { code: AO, label: Angola, parent: total }
+  - { code: AQ, label: Antarctica, parent: total }
+  - { code: AR, label: Argentina, parent: total }
+  - { code: AS, label: American Samoa, parent: total }
+  - { code: AT, label: Austria, parent: total }
+  - { code: AU, label: Australia, parent: total }
+  - { code: AW, label: Aruba, parent: total }
+  - { code: AX, label: "Åland Islands", parent: total }
+  - { code: AZ, label: Azerbaijan, parent: total }
+  - { code: BA, label: Bosnia and Herzegovina, parent: total }
+  - { code: BB, label: Barbados, parent: total }
+  - { code: BD, label: Bangladesh, parent: total }
+  - { code: BE, label: Belgium, parent: total }
+  - { code: BF, label: Burkina Faso, parent: total }
+  - { code: BG, label: Bulgaria, parent: total }
+  - { code: BH, label: Bahrain, parent: total }
+  - { code: BI, label: Burundi, parent: total }
+  - { code: BJ, label: Benin, parent: total }
+  - { code: BL, label: Saint Barthelemy, parent: total }
+  - { code: BM, label: Bermuda, parent: total }
+  - { code: BN, label: Brunei Darussalam, parent: total }
+  - { code: BO, label: Bolivia, parent: total }
+  - { code: BQ, label: Caribbean NL, parent: total }
+  - { code: BR, label: Brazil, parent: total }
+  - { code: BS, label: Bahamas, parent: total }
+  - { code: BT, label: Bhutan, parent: total }
+  - { code: BV, label: Bouvet Island, parent: total }
+  - { code: BW, label: Botswana, parent: total }
+  - { code: BY, label: Belarus, parent: total }
+  - { code: BZ, label: Belize, parent: total }
+  - { code: CA, label: Canada, parent: total }
+  - { code: CC, label: Cocos (Keeling) Islands, parent: total }
+  - { code: CD, label: "Congo, Democratic Republic of the", parent: total }
+  - { code: CF, label: Central African Rep., parent: total }
+  - { code: CG, label: Congo, parent: total }
+  - { code: CH, label: Switzerland, parent: total }
+  - { code: CI, label: "Côte d’Ivoire", parent: total }
+  - { code: CK, label: Cook Islands, parent: total }
+  - { code: CL, label: Chile, parent: total }
+  - { code: CM, label: Cameroon, parent: total }
+  - { code: CN, label: China, parent: total }
+  - { code: CO, label: Colombia, parent: total }
+  - { code: CR, label: Costa Rica, parent: total }
+  - { code: CU, label: Cuba, parent: total }
+  - { code: CV, label: Cabo Verde, parent: total }
+  - { code: CW, label: "Curaçao", parent: total }
+  - { code: CX, label: Christmas Island, parent: total }
+  - { code: CY, label: Cyprus, parent: total }
+  - { code: CZ, label: Czechia, parent: total }
+  - { code: DE, label: Germany, parent: total }
+  - { code: DJ, label: Djibouti, parent: total }
+  - { code: DK, label: Denmark, parent: total }
+  - { code: DM, label: Dominica, parent: total }
+  - { code: DO, label: Dominican Republic, parent: total }
+  - { code: DZ, label: Algeria, parent: total }
+  - { code: EC, label: Ecuador, parent: total }
+  - { code: EE, label: Estonia, parent: total }
+  - { code: EG, label: Egypt, parent: total }
+  - { code: EH, label: Western Sahara, parent: total }
+  - { code: ER, label: Eritrea, parent: total }
+  - { code: ES, label: Spain, parent: total }
+  - { code: ET, label: Ethiopia, parent: total }
+  - { code: FI, label: Finland, parent: total }
+  - { code: FJ, label: Fiji, parent: total }
+  - { code: FK, label: Falkland Islands, parent: total }
+  - { code: FM, label: Micronesia (Federated States of), parent: total }
+  - { code: FO, label: Faroe Islands, parent: total }
+  - { code: FR, label: France, parent: total }
+  - { code: GA, label: Gabon, parent: total }
+  - { code: GB, label: United Kingdom, parent: total }
+  - { code: GD, label: Grenada, parent: total }
+  - { code: GE, label: Georgia, parent: total }
+  - { code: GF, label: French Guiana, parent: total }
+  - { code: GG, label: Guernsey, parent: total }
+  - { code: GH, label: Ghana, parent: total }
+  - { code: GI, label: Gibraltar, parent: total }
+  - { code: GL, label: Greenland, parent: total }
+  - { code: GM, label: Gambia, parent: total }
+  - { code: GN, label: Guinea, parent: total }
+  - { code: GP, label: Guadeloupe, parent: total }
+  - { code: GQ, label: Equatorial Guinea, parent: total }
+  - { code: GR, label: Greece, parent: total }
+  - { code: GS, label: South Georgia and the South Sandwich Islands, parent: total }
+  - { code: GT, label: Guatemala, parent: total }
+  - { code: GU, label: Guam, parent: total }
+  - { code: GW, label: Guinea-Bissau, parent: total }
+  - { code: GY, label: Guyana, parent: total }
+  - { code: HK, label: Hong Kong, parent: total }
+  - { code: HM, label: Heard Island and McDonald Islands, parent: total }
+  - { code: HN, label: Honduras, parent: total }
+  - { code: HR, label: Croatia, parent: total }
+  - { code: HT, label: Haiti, parent: total }
+  - { code: HU, label: Hungary, parent: total }
+  - { code: ID, label: Indonesia, parent: total }
+  - { code: IE, label: Ireland, parent: total }
+  - { code: IL, label: Israel, parent: total }
+  - { code: IM, label: Isle of Man, parent: total }
+  - { code: IN, label: India, parent: total }
+  - { code: IO, label: British Indian Ocean Territory, parent: total }
+  - { code: IQ, label: Iraq, parent: total }
+  - { code: IR, label: Iran, parent: total }
+  - { code: IS, label: Iceland, parent: total }
+  - { code: IT, label: Italy, parent: total }
+  - { code: JE, label: Jersey, parent: total }
+  - { code: JM, label: Jamaica, parent: total }
+  - { code: JO, label: Jordan, parent: total }
+  - { code: JP, label: Japan, parent: total }
+  - { code: KE, label: Kenya, parent: total }
+  - { code: KG, label: Kyrgyzstan, parent: total }
+  - { code: KH, label: Cambodia, parent: total }
+  - { code: KI, label: Kiribati, parent: total }
+  - { code: KM, label: Comoros, parent: total }
+  - { code: KN, label: Saint Kitts and Nevis, parent: total }
+  - { code: KP, label: "Korea, Democratic People's Republic of", parent: total }
+  - { code: KR, label: "Korea, Republic of", parent: total }
+  - { code: KW, label: Kuwait, parent: total }
+  - { code: KY, label: Cayman Islands, parent: total }
+  - { code: KZ, label: Kazakhstan, parent: total }
+  - { code: LA, label: "Lao People's Democratic Republic", parent: total }
+  - { code: LB, label: Lebanon, parent: total }
+  - { code: LC, label: Saint Lucia, parent: total }
+  - { code: LI, label: Liechtenstein, parent: total }
+  - { code: LK, label: Sri Lanka, parent: total }
+  - { code: LR, label: Liberia, parent: total }
+  - { code: LS, label: Lesotho, parent: total }
+  - { code: LT, label: Lithuania, parent: total }
+  - { code: LU, label: Luxembourg, parent: total }
+  - { code: LV, label: Latvia, parent: total }
+  - { code: LY, label: Libya, parent: total }
+  - { code: MA, label: Morocco, parent: total }
+  - { code: MC, label: Monaco, parent: total }
+  - { code: MD, label: Moldova, parent: total }
+  - { code: ME, label: Montenegro, parent: total }
+  - { code: MF, label: Saint Martin (French part), parent: total }
+  - { code: MG, label: Madagascar, parent: total }
+  - { code: MH, label: Marshall Islands, parent: total }
+  - { code: MK, label: North Macedonia, parent: total }
+  - { code: ML, label: Mali, parent: total }
+  - { code: MM, label: Myanmar, parent: total }
+  - { code: MN, label: Mongolia, parent: total }
+  - { code: MO, label: Macau, parent: total }
+  - { code: MP, label: Northern Mariana Islands, parent: total }
+  - { code: MQ, label: Martinique, parent: total }
+  - { code: MR, label: Mauritania, parent: total }
+  - { code: MS, label: Montserrat, parent: total }
+  - { code: MT, label: Malta, parent: total }
+  - { code: MU, label: Mauritius, parent: total }
+  - { code: MV, label: Maldives, parent: total }
+  - { code: MW, label: Malawi, parent: total }
+  - { code: MX, label: Mexico, parent: total }
+  - { code: MY, label: Malaysia, parent: total }
+  - { code: MZ, label: Mozambique, parent: total }
+  - { code: NA, label: Namibia, parent: total }
+  - { code: NC, label: New Caledonia, parent: total }
+  - { code: NE, label: Niger, parent: total }
+  - { code: NF, label: Norfolk Island, parent: total }
+  - { code: NG, label: Nigeria, parent: total }
+  - { code: NI, label: Nicaragua, parent: total }
+  - { code: NL, label: Netherlands, parent: total }
+  - { code: "NO", label: Norway, parent: total }
+  - { code: NP, label: Nepal, parent: total }
+  - { code: NR, label: Nauru, parent: total }
+  - { code: NU, label: Niue, parent: total }
+  - { code: NZ, label: New Zealand, parent: total }
+  - { code: OM, label: Oman, parent: total }
+  - { code: PA, label: Panama, parent: total }
+  - { code: PE, label: Peru, parent: total }
+  - { code: PF, label: French Polynesia, parent: total }
+  - { code: PG, label: Papua New Guinea, parent: total }
+  - { code: PH, label: Philippines, parent: total }
+  - { code: PK, label: Pakistan, parent: total }
+  - { code: PL, label: Poland, parent: total }
+  - { code: PM, label: Saint Pierre and Miquelon, parent: total }
+  - { code: PN, label: Pitcairn, parent: total }
+  - { code: PR, label: Puerto Rico, parent: total }
+  - { code: PS, label: "Palestine, State of", parent: total }
+  - { code: PT, label: Portugal, parent: total }
+  - { code: PW, label: Palau, parent: total }
+  - { code: PY, label: Paraguay, parent: total }
+  - { code: QA, label: Qatar, parent: total }
+  - { code: RE, label: "Réunion", parent: total }
+  - { code: RO, label: Romania, parent: total }
+  - { code: RS, label: Serbia, parent: total }
+  - { code: RU, label: Russian Federation, parent: total }
+  - { code: RW, label: Rwanda, parent: total }
+  - { code: SA, label: Saudi Arabia, parent: total }
+  - { code: SB, label: Solomon Islands, parent: total }
+  - { code: SC, label: Seychelles, parent: total }
+  - { code: SD, label: Sudan, parent: total }
+  - { code: SE, label: Sweden, parent: total }
+  - { code: SG, label: Singapore, parent: total }
+  - { code: SH, label: "Saint Helena, Ascension and Tristan da Cunha", parent: total }
+  - { code: SI, label: Slovenia, parent: total }
+  - { code: SJ, label: Svalbard and Jan Mayen, parent: total }
+  - { code: SK, label: Slovakia, parent: total }
+  - { code: SL, label: Sierra Leone, parent: total }
+  - { code: SM, label: San Marino, parent: total }
+  - { code: SN, label: Senegal, parent: total }
+  - { code: SO, label: Somalia, parent: total }
+  - { code: SR, label: Suriname, parent: total }
+  - { code: SS, label: South Sudan, parent: total }
+  - { code: ST, label: Sao Tome and Principe, parent: total }
+  - { code: SV, label: El Salvador, parent: total }
+  - { code: SX, label: Sint Maarten (Dutch part), parent: total }
+  - { code: SY, label: Syrian Arab Republic, parent: total }
+  - { code: SZ, label: Eswatini, parent: total }
+  - { code: TC, label: Turks and Caicos Islands, parent: total }
+  - { code: TD, label: Chad, parent: total }
+  - { code: TF, label: French S. Terr., parent: total }
+  - { code: TG, label: Togo, parent: total }
+  - { code: TH, label: Thailand, parent: total }
+  - { code: TJ, label: Tajikistan, parent: total }
+  - { code: TK, label: Tokelau, parent: total }
+  - { code: TL, label: East Timor, parent: total }
+  - { code: TM, label: Turkmenistan, parent: total }
+  - { code: TN, label: Tunisia, parent: total }
+  - { code: TO, label: Tonga, parent: total }
+  - { code: TR, label: Turkiye, parent: total }
+  - { code: TT, label: Trinidad and Tobago, parent: total }
+  - { code: TV, label: Tuvalu, parent: total }
+  - { code: TW, label: Taiwan, parent: total }
+  - { code: TZ, label: "Tanzania, United Republic of", parent: total }
+  - { code: UA, label: Ukraine, parent: total }
+  - { code: UG, label: Uganda, parent: total }
+  - { code: UM, label: US minor outlying islands, parent: total }
+  - { code: US, label: United States of America, parent: total }
+  - { code: UY, label: Uruguay, parent: total }
+  - { code: UZ, label: Uzbekistan, parent: total }
+  - { code: VA, label: Holy See, parent: total }
+  - { code: VC, label: Saint Vincent and the Grenadines, parent: total }
+  - { code: VE, label: Venezuela, parent: total }
+  - { code: VG, label: Virgin Islands (British), parent: total }
+  - { code: VI, label: Virgin Islands (U.S.), parent: total }
+  - { code: VN, label: Viet Nam, parent: total }
+  - { code: VU, label: Vanuatu, parent: total }
+  - { code: WF, label: Wallis and Futuna, parent: total }
+  - { code: WS, label: Samoa, parent: total }
+  - { code: YE, label: Yemen, parent: total }
+  - { code: YT, label: Mayotte, parent: total }
+  - { code: ZA, label: South Africa, parent: total }
+  - { code: ZM, label: Zambia, parent: total }
+  - { code: ZW, label: Zimbabwe, parent: total }
+  - { code: XK, label: Kosovo (user-assigned code), parent: total }
+  - { code: other, label: Other / not specified, parent: total, sdmx: _O }

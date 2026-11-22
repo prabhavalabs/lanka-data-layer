@@ -1,0 +1,22 @@
+# Protection class (OpenStreetMap protect_class=*)
+# Source/authority: OpenStreetMap wiki, Key:protect_class (1a-6 follow IUCN categories; 11-19 resource protection; 21-29 social protection).
+# Note: 11-19 and 21-29 are collapsed to `resource` / `social` because the individual sub-values are sparsely used in Sri Lanka; split if needed.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: osm-protected-areas
+id: protect_class
+title: "Protection class (OpenStreetMap protect_class=*)"
+codes:
+  - { code: total, label: All protected areas, total: true, sdmx: _T }
+  - { code: "1a", label: "1a Strict nature reserve (IUCN Ia)", parent: total }
+  - { code: "1b", label: "1b Wilderness area (IUCN Ib)", parent: total }
+  - { code: "2", label: "2 National park (IUCN II)", parent: total }
+  - { code: "3", label: "3 Natural monument (IUCN III)", parent: total }
+  - { code: "4", label: "4 Habitat/species management (IUCN IV)", parent: total }
+  - { code: "5", label: "5 Protected landscape/seascape (IUCN V)", parent: total }
+  - { code: "6", label: "6 Resource-use protected area (IUCN VI)", parent: total }
+  - { code: "7", label: "7 Nature protection outside IUCN categories", parent: total }
+  - { code: resource, label: "11-19 Resource protection (water, soil, forest...)", parent: total }
+  - { code: social, label: "21-29 Social protection (cultural, religious, heritage...)", parent: total }
+  - { code: unknown, label: No protect_class tagged, parent: total }

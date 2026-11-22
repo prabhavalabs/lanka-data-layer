@@ -1,0 +1,34 @@
+# Disease group (ICD-10 chapters)
+# Source/authority: WHO International Statistical Classification of Diseases and Related Health Problems, 10th revision (ICD-10, 2019 edition), chapters I-XXII.
+# Source/authority: Ministry of Health Indoor Morbidity and Mortality Return (IMMR) reports discharges/deaths by ICD-10 disease group.
+# Note: IMMR publishes finer ICD-10 groupings (block level); add them as children of the chapter codes when ingested.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: moh-immr
+id: icd_group
+title: Disease group (ICD-10 chapters)
+codes:
+  - { code: total, label: All causes, total: true, sdmx: _T }
+  - { code: I, label: Certain infectious and parasitic diseases (A00-B99), parent: total }
+  - { code: II, label: Neoplasms (C00-D48), parent: total }
+  - { code: III, label: Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism (D50-D89), parent: total }
+  - { code: IV, label: "Endocrine, nutritional and metabolic diseases (E00-E90)", parent: total }
+  - { code: V, label: Mental and behavioural disorders (F00-F99), parent: total }
+  - { code: VI, label: Diseases of the nervous system (G00-G99), parent: total }
+  - { code: VII, label: Diseases of the eye and adnexa (H00-H59), parent: total }
+  - { code: VIII, label: Diseases of the ear and mastoid process (H60-H95), parent: total }
+  - { code: IX, label: Diseases of the circulatory system (I00-I99), parent: total }
+  - { code: X, label: Diseases of the respiratory system (J00-J99), parent: total }
+  - { code: XI, label: Diseases of the digestive system (K00-K93), parent: total }
+  - { code: XII, label: Diseases of the skin and subcutaneous tissue (L00-L99), parent: total }
+  - { code: XIII, label: Diseases of the musculoskeletal system and connective tissue (M00-M99), parent: total }
+  - { code: XIV, label: Diseases of the genitourinary system (N00-N99), parent: total }
+  - { code: XV, label: "Pregnancy, childbirth and the puerperium (O00-O99)", parent: total }
+  - { code: XVI, label: Certain conditions originating in the perinatal period (P00-P96), parent: total }
+  - { code: XVII, label: "Congenital malformations, deformations and chromosomal abnormalities (Q00-Q99)", parent: total }
+  - { code: XVIII, label: "Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified (R00-R99)", parent: total }
+  - { code: XIX, label: "Injury, poisoning and certain other consequences of external causes (S00-T98)", parent: total }
+  - { code: XX, label: External causes of morbidity and mortality (V01-Y98), parent: total }
+  - { code: XXI, label: Factors influencing health status and contact with health services (Z00-Z99), parent: total }
+  - { code: XXII, label: Codes for special purposes (U00-U85), parent: total }

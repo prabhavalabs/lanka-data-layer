@@ -1,0 +1,15 @@
+# Road accident severity (Police)
+# Source/authority: Sri Lanka Police, Traffic Headquarters road accident statistics (fatal, grievous, non-grievous, damage only); DCS Statistical Abstract.
+# Note: Shared by dcs-abstract-transport and ntc-bus-statistics `severity`. Fatality counts (persons) are separate indicators from accident counts.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport, ntc-bus-statistics
+id: accident_severity
+title: Road accident severity (Police)
+codes:
+  - { code: total, label: All accidents, total: true, sdmx: _T }
+  - { code: fatal, label: Fatal, parent: total }
+  - { code: grievous, label: Grievous injury, parent: total }
+  - { code: non_grievous, label: Non-grievous (minor) injury, parent: total }
+  - { code: damage_only, label: Damage only, parent: total }

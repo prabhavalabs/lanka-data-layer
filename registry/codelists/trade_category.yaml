@@ -1,0 +1,40 @@
+# Merchandise trade category (CBSL)
+# Source/authority: Central Bank of Sri Lanka, External Sector Performance (monthly) and Annual Report - exports by major category and imports by end-use (BEC-based).
+# Note: Export and import categories share one list; the trade flow is the indicator (exports_usd / imports_usd).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-merchandise-trade
+id: trade_category
+title: Merchandise trade category (CBSL)
+codes:
+  - { code: total, label: Total merchandise trade, total: true, sdmx: _T }
+  - { code: exp_agricultural, label: Agricultural exports, parent: total }
+  - { code: exp_industrial, label: Industrial exports, parent: total }
+  - { code: exp_mineral, label: Mineral exports, parent: total }
+  - { code: exp_unclassified, label: Unclassified exports, parent: total }
+  - { code: tea, label: Tea, parent: exp_agricultural }
+  - { code: rubber, label: Rubber, parent: exp_agricultural }
+  - { code: coconut, label: Coconut products, parent: exp_agricultural }
+  - { code: spices, label: Spices, parent: exp_agricultural }
+  - { code: seafood, label: Seafood, parent: exp_agricultural }
+  - { code: textiles_garments, label: Textiles and garments, parent: exp_industrial }
+  - { code: rubber_products, label: Rubber products, parent: exp_industrial }
+  - { code: petroleum_products, label: Petroleum products, parent: exp_industrial }
+  - { code: food_beverages_tobacco, label: "Food, beverages and tobacco", parent: exp_industrial }
+  - { code: gems_jewellery, label: "Gems, diamonds and jewellery", parent: exp_industrial }
+  - { code: machinery_equipment, label: Machinery and mechanical appliances, parent: exp_industrial }
+  - { code: imp_consumer, label: Consumer goods imports, parent: total }
+  - { code: imp_intermediate, label: Intermediate goods imports, parent: total }
+  - { code: imp_investment, label: Investment goods imports, parent: total }
+  - { code: imp_unclassified, label: Unclassified imports, parent: total }
+  - { code: food_beverages, label: Food and beverages, parent: imp_consumer }
+  - { code: non_food_consumer, label: Non-food consumer goods, parent: imp_consumer }
+  - { code: fuel, label: Fuel, parent: imp_intermediate }
+  - { code: textiles_inputs, label: Textiles and textile articles, parent: imp_intermediate }
+  - { code: fertiliser, label: Fertiliser, parent: imp_intermediate }
+  - { code: other_intermediate, label: Other intermediate goods, parent: imp_intermediate }
+  - { code: machinery, label: Machinery and equipment, parent: imp_investment }
+  - { code: building_materials, label: Building materials, parent: imp_investment }
+  - { code: transport_equipment, label: Transport equipment, parent: imp_investment }

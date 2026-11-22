@@ -1,0 +1,20 @@
+# Road class (RDA national and provincial classification)
+# Source/authority: Road Development Authority (RDA), classification of national highways (A, B, E); Provincial Road Development Authorities (C, D); RDA Statistics / DCS Statistical Abstract road length by class.
+# Note: `local` covers Pradeshiya Sabha / municipal roads (class E is not used for them).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-abstract-transport, rda-national-roads
+id: road_class
+title: Road class (RDA national and provincial classification)
+codes:
+  - { code: total, label: All roads, total: true, sdmx: _T }
+  - { code: national, label: National roads (RDA), parent: total }
+  - { code: provincial, label: Provincial roads, parent: total }
+  - { code: local, label: Local authority roads, parent: total }
+  - { code: E, label: Class E - expressways, parent: national }
+  - { code: A, label: Class A - trunk roads, parent: national }
+  - { code: B, label: Class B - main roads, parent: national }
+  - { code: C, label: Class C - provincial roads, parent: provincial }
+  - { code: D, label: Class D - provincial roads, parent: provincial }
+  - { code: other, label: Other / unclassified, parent: total }

@@ -1,0 +1,16 @@
+# Fishery sub-sector
+# Source/authority: Ministry of Fisheries / NARA Fisheries Statistics (marine: coastal and offshore; inland capture and aquaculture).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-pocketbook-agriculture, fisheries-statistics
+id: fishery_type
+title: Fishery sub-sector
+codes:
+  - { code: total, label: All fish production, total: true, sdmx: _T }
+  - { code: marine, label: Marine fisheries, parent: total }
+  - { code: inland, label: Inland fisheries and aquaculture, parent: total }
+  - { code: coastal, label: Coastal fisheries, parent: marine }
+  - { code: offshore, label: Offshore / deep-sea fisheries, parent: marine }
+  - { code: inland_capture, label: Inland capture fisheries, parent: inland }
+  - { code: aquaculture, label: Aquaculture, parent: inland }

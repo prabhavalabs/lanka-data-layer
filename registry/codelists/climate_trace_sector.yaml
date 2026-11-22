@@ -1,0 +1,20 @@
+# Emissions sector (Climate TRACE)
+# Source/authority: Climate TRACE sector taxonomy (climatetrace.org data downloads).
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: climate-trace-emissions
+id: climate_trace_sector
+title: Emissions sector (Climate TRACE)
+codes:
+  - { code: total, label: All sectors, total: true, sdmx: _T }
+  - { code: power, label: Power, parent: total }
+  - { code: manufacturing, label: Manufacturing, parent: total }
+  - { code: transportation, label: Transportation, parent: total }
+  - { code: buildings, label: Buildings, parent: total }
+  - { code: fossil_fuel_operations, label: Fossil fuel operations, parent: total }
+  - { code: agriculture, label: Agriculture, parent: total }
+  - { code: waste, label: Waste, parent: total }
+  - { code: forestry_and_land_use, label: Forestry and land use, parent: total }
+  - { code: mineral_extraction, label: Mineral extraction, parent: total }
+  - { code: fluorinated_gases, label: Fluorinated gases, parent: total }

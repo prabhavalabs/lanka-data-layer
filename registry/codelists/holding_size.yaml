@@ -1,0 +1,19 @@
+# Agricultural holding size class
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Agriculture 2013/14 - holdings by size class (acre-based bands).
+# Note: Band edges are the usual DCS acre bands converted to ha; confirm against the census table (see review CSV).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-of-agriculture
+id: holding_size
+title: Agricultural holding size class
+codes:
+  - { code: total, label: All holdings, total: true, sdmx: _T }
+  - { code: "lt0.4", label: Under 0.4 ha (under 1 acre), parent: total }
+  - { code: "0.4-0.8", label: "0.4-0.8 ha (1-2 acres)", parent: total }
+  - { code: "0.8-2", label: "0.8-2 ha (2-5 acres)", parent: total }
+  - { code: "2-4", label: "2-4 ha (5-10 acres)", parent: total }
+  - { code: "4-8", label: "4-8 ha (10-20 acres)", parent: total }
+  - { code: "8+", label: "8 ha and over (20+ acres)", parent: total }
+  - { code: landless, label: Without land, parent: total }

@@ -1,0 +1,16 @@
+# Named disaster event
+# Source/authority: Disaster Management Centre situation reports; UNOSAT / Copernicus EMS activations for Sri Lanka.
+# Note: Add GLIDE numbers as the event code crosswalk; events are not additive (no total).
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dmc-situation-report-impacts, observed-flood-extents
+id: disaster_event
+title: Named disaster event
+codes:
+  - { code: "2016-05-cyclone-roanu-floods", label: May 2016 floods and landslides (Cyclone Roanu) }
+  - { code: "2017-05-sw-monsoon-floods", label: May 2017 south-west monsoon floods and landslides }
+  - { code: "2024-06-sw-monsoon-floods", label: June 2024 south-west monsoon floods }
+  - { code: "2025-11-cyclone-ditwah", label: Cyclone Ditwah floods and landslides (Nov-Dec 2025) }

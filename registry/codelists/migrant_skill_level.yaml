@@ -1,0 +1,17 @@
+# Migrant worker skill category (SLBFE)
+# Source/authority: Sri Lanka Bureau of Foreign Employment, Annual Statistical Report of Foreign Employment - departures by manpower level.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: slbfe-labour-migration
+id: migrant_skill_level
+title: Migrant worker skill category (SLBFE)
+codes:
+  - { code: total, label: All departures, total: true, sdmx: _T }
+  - { code: professional, label: Professional, parent: total }
+  - { code: middle_level, label: Middle level, parent: total }
+  - { code: clerical, label: Clerical and related, parent: total }
+  - { code: skilled, label: Skilled, parent: total }
+  - { code: semi_skilled, label: Semi-skilled, parent: total }
+  - { code: unskilled, label: Unskilled, parent: total }
+  - { code: domestic_housekeeping, label: Domestic housekeeping assistant (housemaid), parent: total }

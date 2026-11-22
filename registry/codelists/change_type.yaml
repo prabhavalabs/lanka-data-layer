@@ -1,0 +1,17 @@
+# Administrative unit change type
+# Source/authority: UN OCHA COD-AB change log conventions; Ministry of Public Administration gazette notifications of DS / GN changes.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: admin-region-history
+id: change_type
+title: Administrative unit change type
+codes:
+  - { code: total, label: All change events, total: true, sdmx: _T }
+  - { code: create, label: Creation, parent: total }
+  - { code: split, label: Split, parent: total }
+  - { code: merge, label: Merge, parent: total }
+  - { code: rename, label: Rename, parent: total }
+  - { code: boundary_change, label: Boundary change, parent: total }
+  - { code: code_change, label: Code (p-code) change, parent: total }
+  - { code: abolish, label: Abolition, parent: total }

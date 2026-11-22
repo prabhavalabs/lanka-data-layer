@@ -1,0 +1,30 @@
+# Political party or alliance (as contested)
+# Source/authority: Election Commission of Sri Lanka - registered political parties and results by party / independent group.
+# Note: Parties often contest under an alliance name and symbol (e.g. SLFP within UPFA, SLPP alliance): code the name under which votes were cast; party-alliance links belong in a crosswalk, not parent codes.
+# Note: Proper names: si/ta labels must be the EC registered names (native review), never translated.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: ec-local-authority-results, ec-parliamentary-results, ec-presidential-results, ec-provincial-council-results, parliament-members
+id: party
+title: Political party or alliance (as contested)
+codes:
+  - { code: total, label: All parties and independent groups, total: true, sdmx: _T }
+  - { code: npp, label: "National People's Power (NPP)", parent: total }
+  - { code: sjb, label: Samagi Jana Balawegaya (SJB), parent: total }
+  - { code: slpp, label: Sri Lanka Podujana Peramuna (SLPP), parent: total }
+  - { code: unp, label: United National Party (UNP), parent: total }
+  - { code: slfp, label: Sri Lanka Freedom Party (SLFP), parent: total }
+  - { code: upfa, label: "United People's Freedom Alliance (UPFA)", parent: total }
+  - { code: unfgg, label: United National Front for Good Governance (UNFGG), parent: total }
+  - { code: jvp, label: Janatha Vimukthi Peramuna (JVP), parent: total }
+  - { code: itak, label: Ilankai Tamil Arasu Kachchi (ITAK), parent: total }
+  - { code: tna, label: Tamil National Alliance (TNA), parent: total }
+  - { code: actc, label: All Ceylon Tamil Congress (ACTC), parent: total }
+  - { code: epdp, label: "Eelam People's Democratic Party (EPDP)", parent: total }
+  - { code: slmc, label: Sri Lanka Muslim Congress (SLMC), parent: total }
+  - { code: acmc, label: All Ceylon Makkal Congress (ACMC), parent: total }
+  - { code: cwc, label: "Ceylon Workers' Congress (CWC)", parent: total }
+  - { code: independent, label: Independent groups, parent: total }
+  - { code: other, label: Other parties, parent: total }

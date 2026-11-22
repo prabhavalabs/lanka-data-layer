@@ -1,0 +1,19 @@
+# Educational attainment (DCS Labour Force Survey groups)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Sri Lanka Labour Force Survey annual report - educational attainment groups.
+# Note: ISCED 2011 mapping (indicative): grade_5_below = ISCED 0-1, grade_6_10 = ISCED 2, gce_ol = ISCED 3 (partial), gce_al = ISCED 3, degree_above = ISCED 6+.
+# Note: Some LFS tables report only the four headline groups; children are optional.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-lfs-quarterly
+id: education
+title: Educational attainment (DCS Labour Force Survey groups)
+codes:
+  - { code: total, label: All levels, total: true, sdmx: _T }
+  - { code: grade_5_below, label: Grade 5 and below (incl. no schooling), parent: total }
+  - { code: no_schooling, label: No schooling, parent: grade_5_below }
+  - { code: grade_6_10, label: Grade 6-10, parent: total }
+  - { code: gce_ol, label: GCE O/L or equivalent, parent: total }
+  - { code: gce_al_above, label: GCE A/L and above, parent: total }
+  - { code: gce_al, label: GCE A/L, parent: gce_al_above }
+  - { code: degree_above, label: Degree and above, parent: gce_al_above }

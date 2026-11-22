@@ -1,0 +1,28 @@
+# Government revenue type
+# Source/authority: Central Bank of Sri Lanka, Annual Report - Fiscal Sector statistical tables (economic classification of revenue); Ministry of Finance, Annual Report - revenue by tax type; IMF GFSM 2014 revenue classification (11 taxes, 13 grants, 14 other revenue).
+# Note: Shared by cbsl-fiscal-operations (revenue_type) and treasury-revenue-outturn (tax_type). Taxes that are introduced or abolished keep their codes for history.
+# Status: complete for the classification as cited.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-fiscal-operations, treasury-revenue-outturn
+id: revenue_type
+title: Government revenue type
+codes:
+  - { code: total, label: Total revenue and grants, total: true, sdmx: _T }
+  - { code: tax, label: Tax revenue, parent: total }
+  - { code: non_tax, label: Non-tax revenue, parent: total }
+  - { code: grants, label: Grants, parent: total }
+  - { code: income_tax, label: Income taxes, parent: tax }
+  - { code: vat, label: Value added tax, parent: tax }
+  - { code: excise, label: Excise duties, parent: tax }
+  - { code: excise_liquor, label: Excise - liquor, parent: excise }
+  - { code: excise_tobacco, label: Excise - cigarettes / tobacco, parent: excise }
+  - { code: excise_petroleum, label: Excise - petroleum, parent: excise }
+  - { code: excise_motor_vehicles, label: Excise - motor vehicles, parent: excise }
+  - { code: excise_other, label: Excise - other, parent: excise }
+  - { code: import_duties, label: Import duties (customs), parent: tax }
+  - { code: cess, label: Cess, parent: tax }
+  - { code: special_commodity_levy, label: Special commodity levy, parent: tax }
+  - { code: ssc_levy, label: Social security contribution levy, parent: tax }
+  - { code: pal, label: Ports and airports development levy, parent: tax }
+  - { code: other_taxes, label: "Other taxes (stamp duty, licences, ...)", parent: tax }

@@ -1,0 +1,17 @@
+# BOI enterprise sector
+# Source/authority: Board of Investment of Sri Lanka, monthly/annual performance reports - FDI and projects by sector.
+# Note: BOI also publishes finer manufacturing sub-sectors (textiles and apparel, food, chemicals...); add as children.
+# Status: SEED - members below are the confidently known ones; complete the list from the
+#   source extract when the connector is built (every observed code must be listed).
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: boi-enterprises, boi-fdi-inflows
+id: boi_sector
+title: BOI enterprise sector
+codes:
+  - { code: total, label: All sectors, total: true, sdmx: _T }
+  - { code: manufacturing, label: Manufacturing, parent: total }
+  - { code: services, label: Services, parent: total }
+  - { code: agriculture, label: Agriculture, parent: total }
+  - { code: infrastructure, label: Infrastructure, parent: total }
+  - { code: other, label: Other, parent: total }
