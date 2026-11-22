@@ -31,9 +31,11 @@ impl Registry {
         }
     }
 
-    /// Adds a method (distribution crates, 12 §8).
+    /// Adds a method (distribution crates, 12 §8), replacing one with the
+    /// same id.
     #[must_use]
     pub fn with(mut self, m: Arc<dyn AnalysisMethod>) -> Self {
+        self.list.retain(|x| x.info().id != m.info().id);
         self.list.push(m);
         self
     }

@@ -7,7 +7,10 @@
 //! - the same request returns the same id and the same bytes twice, and
 //!   again after an unrelated release (cache served, and a recomputation
 //!   bypassing the store gives the same id and numbers);
-//! - a new version of an input gives a new id;
+//! - a new version of an input gives a new id, also for `pin: "latest"`
+//!   before the host's catalogue has reloaded (latest is resolved against
+//!   the database's current release before the store is consulted);
+//! - a new implementation revision of the method gives a new id;
 //! - a blocked request (3 regions < MIN_N) returns no estimates;
 //! - `lanka_analysis` cannot write `data.*`/`catalog.*`/`geo.*`, writes
 //!   `analysis.*`; `lanka_api` reads but cannot write `analysis.*`.
@@ -273,9 +276,33 @@ async fn as_role(url: &str, role: &'static str) -> PgPool {
 }
 
 fn relate(level: i16) -> Value {
-    json!({"spec": "ldl-analysis/1", "method": "relate", "support": {"kind": "admin", "level": level},
+    json!({"spec": "ldl-analysis/1", "method": "relate", "pin": "latest", "support": {"kind": "admin", "level": level},
            "variables": {"x": {"indicator": "it.share"}, "y": {"indicator": "it.pop", "transform": "log"}},
            "params": {"spatial": {"weights": "knn4", "permutations": 99}}})
+}
+
+/// `relate` under another implementation revision.
+struct Revised {
+    inner: Arc<dyn lanka_analysis::method::AnalysisMethod>,
+    info: &'static lanka_analysis::method::MethodInfo,
+}
+
+impl lanka_analysis::method::AnalysisMethod for Revised {
+    fn info(&self) -> &'static lanka_analysis::method::MethodInfo {
+        self.info
+    }
+    fn defaults(&self, params: &Value) -> Value {
+        self.inner.defaults(params)
+    }
+    fn cost_ms(&self, n: usize, params: &Value) -> u64 {
+        self.inner.cost_ms(n, params)
+    }
+    fn run(
+        &self,
+        ctx: &lanka_analysis::method::Ctx<'_>,
+    ) -> anyhow::Result<lanka_analysis::method::MethodOutput> {
+        self.inner.run(ctx)
+    }
 }
 
 fn strip(mut d: Value) -> Value {
@@ -465,10 +492,42 @@ async fn run_cycle(url: String) {
     run_train_with(&pool, "test", None, None, None)
         .await
         .expect("train 3");
-    reload(&catalog, Catalog::load(&pool).await.expect("catalog"));
+    // the host has not reloaded its catalogue yet: `latest` is still the
+    // database's current release, so the stale result is not served
     let d = engine.run(&relate(2)).await.expect("after input change");
     assert_ne!(d.id, a.id, "a changed input gives a new id");
     assert!(d.computed);
+    let dd: Value = serde_json::from_slice(&d.bytes).expect("doc");
+    assert_ne!(
+        dd["provenance"]["data_version"],
+        doc["provenance"]["data_version"]
+    );
+    reload(&catalog, Catalog::load(&pool).await.expect("catalog"));
+    let d2 = engine.run(&relate(2)).await.expect("after reload");
+    assert_eq!(d2.id, d.id);
+    assert!(!d2.computed);
+
+    // a new implementation revision of the method (same contract, same
+    // inputs) → a new id, computed rather than served from the store
+    let mut info = lanka_analysis::methods::relate::INFO.clone();
+    info.revision += 1;
+    let mut revised = lanka_analysis::Engine::new(
+        analysis_pool.clone(),
+        {
+            let c = catalog.clone();
+            Arc::new(move || c.read().expect("lock").clone())
+        },
+        Some(store.clone()),
+        "https://example.org".into(),
+        "test".into(),
+    );
+    revised.methods = revised.methods.clone().with(Arc::new(Revised {
+        inner: Arc::new(lanka_analysis::methods::relate::Relate),
+        info: Box::leak(Box::new(info)),
+    }));
+    let e = revised.run(&relate(2)).await.expect("revised method");
+    assert_ne!(e.id, d.id, "a method revision gives a new id");
+    assert!(e.computed);
     // the old result is still served by id
     assert_eq!(
         engine.get(&a.id).await.expect("get").expect("old").bytes,

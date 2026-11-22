@@ -378,14 +378,15 @@ A browser preview is labelled **preview** and has no id. Only a server result ha
 The recipe fingerprint rule ([04 §1](04-enrichment.md#1-vocabulary)) is reused unchanged:
 
 ```
-fingerprint = sha256( canonical JSON of the resolved request          -- "latest"/"auto"/defaults made explicit
-                      ‖ method id@version ‖ alignment method ids@versions
+fingerprint = sha256( canonical JSON of the resolved request − pin    -- "latest"/"auto"/defaults made explicit
+                      ‖ method id@version+r<revision> ‖ engine revision ‖ alignment method ids@versions
                       ‖ sorted input dsvs (and grid layer sha256s, spatial-weights sha256)
                       ‖ lanka-stats version ‖ tool versions if any )
 id = "an_" ‖ first 16 hex
 ```
 
-- `pin: "latest"` is resolved to the current release **before** fingerprinting, so a new release that changed an input produces a new id (stale results are never served) and one that did not produces the same id (the cache survives the release). This is the staleness rule of [04 §7](04-enrichment.md#7-dag-execution-and-incremental-recompute).
+- `pin: "latest"` is resolved to the current release **before** fingerprinting — the release current in the database at request time, not a host's catalogue snapshot — so a new release that changed an input produces a new id (stale results are never served) and one that did not produces the same id (the cache survives the release). The pin itself is left out of the fingerprint; the input versions it resolved to are in. This is the staleness rule of [04 §7](04-enrichment.md#7-dag-execution-and-incremental-recompute).
+- Code changes invalidate too: each method carries an implementation **revision** (`relate@1.0.0+r2`), bumped whenever the same request on the same inputs would give a different document (new estimates such as `partial`, changed numbers or wording) without a contract change, and the engine carries one for the shared pipeline (alignment, guards, presentation). Both enter the fingerprint and are reported (`method.revision`, `provenance.engine_revision`), so a deployment that changes results never serves documents computed by the old code for new requests; results stored under old ids stay readable by id.
 - `POST /v2/analyses` → `303 See Other` to `GET /v2/analyses/{id}`, which is `immutable` and cached by nginx. Identical requests from different users cost one computation.
 - Alignment is cached separately (`analysis.aligned`, keyed by variable + support + alignment + dsv): changing the transform or the method reuses the aligned columns. The frequently needed alignments (every `serve: true` grid layer × `grid_zonal` × ADM2–ADM4; feature counts per unit) are already published observations from recipes, so alignment is usually a frame read.
 

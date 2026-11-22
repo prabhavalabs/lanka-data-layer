@@ -75,6 +75,11 @@
         "version": {
           "type": "string"
         },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Implementation revision of the method (enters the fingerprint, 11 §9)."
+        },
         "citations": {
           "type": "array",
           "items": {
@@ -315,6 +320,11 @@
         },
         "stats": {
           "type": "string"
+        },
+        "engine_revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Revision of the shared pipeline: alignment, guards, presentation (enters the fingerprint, 11 §9)."
         }
       }
     },

@@ -814,3 +814,62 @@ fn suggested_layers_are_valid_map_layers() {
     }
     assert!(n >= 5, "{n} suggested layers");
 }
+
+/// A method that behaves like `inner` but reports another revision (a new
+/// implementation of the same contract).
+struct Revised {
+    inner: Arc<dyn crate::method::AnalysisMethod>,
+    info: &'static crate::method::MethodInfo,
+}
+
+impl crate::method::AnalysisMethod for Revised {
+    fn info(&self) -> &'static crate::method::MethodInfo {
+        self.info
+    }
+    fn defaults(&self, params: &Value) -> Value {
+        self.inner.defaults(params)
+    }
+    fn cost_ms(&self, n: usize, params: &Value) -> u64 {
+        self.inner.cost_ms(n, params)
+    }
+    fn run(&self, ctx: &crate::method::Ctx<'_>) -> anyhow::Result<crate::method::MethodOutput> {
+        self.inner.run(ctx)
+    }
+}
+
+#[test]
+fn fingerprint_tracks_inputs_and_implementation_not_the_release() {
+    use crate::result::{fingerprint, id_of};
+    let base = Case::relate(60).resolved();
+    let id = id_of(&fingerprint(&base));
+    // another release with the same input versions: same id
+    let mut other_release = base.clone();
+    other_release.request.pin = Pin::Release {
+        release: "20261123.1".into(),
+    };
+    other_release.data_version = "20261123.1".into();
+    assert_eq!(id_of(&fingerprint(&other_release)), id);
+    // a release that changed an input: new id
+    let mut changed = base.clone();
+    changed.vars[0].version.dsv = "dsv_x2".into();
+    assert_ne!(id_of(&fingerprint(&changed)), id);
+    // a new implementation revision of the method: new id
+    let inner = base.method.clone();
+    let mut info = inner.info().clone();
+    info.revision += 1;
+    let mut bumped = base.clone();
+    bumped.method = Arc::new(Revised {
+        inner,
+        info: Box::leak(Box::new(info)),
+    });
+    assert_ne!(id_of(&fingerprint(&bumped)), id);
+    // the revision is part of what the catalogue reports
+    assert_eq!(
+        Registry::builtin()
+            .get("relate")
+            .expect("relate")
+            .info()
+            .implementation(),
+        "relate@1.0.0+r2"
+    );
+}

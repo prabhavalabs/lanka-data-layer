@@ -1,5 +1,5 @@
 {
-  "data_version": "20261122.3",
+  "data_version": "20261122.5",
   "level": 3,
   "method": "relate",
   "request": {
@@ -27,7 +27,7 @@
       "uncertainty": "analytic"
     },
     "pin": {
-      "release": "20261122.3"
+      "release": "20261122.5"
     },
     "spec": "ldl-analysis/1",
     "support": {
@@ -94,11 +94,11 @@
       "role": "x",
       "source": {
         "aggregation": "none",
-        "dataset_key": 264,
+        "dataset_key": 34,
         "dims": "lc_class=50",
         "freq": "A",
         "id": "lc.class_share",
-        "indicator_key": 512,
+        "indicator_key": 468,
         "kind": "indicator",
         "period": "2021-01-01",
         "source_level": 3
@@ -117,10 +117,10 @@
       },
       "version": {
         "dataset_id": "worldcover-land-cover",
-        "dataset_key": 264,
+        "dataset_key": 34,
         "dsv": "dsv_ca7c1eb4f6867610",
         "seq": 1,
-        "version_id": 7
+        "version_id": 8
       }
     },
     {
@@ -157,11 +157,11 @@
       "role": "y",
       "source": {
         "aggregation": "none",
-        "dataset_key": 104,
+        "dataset_key": 116,
         "dims": "source_indicator=census24.pop_total",
         "freq": "A",
         "id": "derived.per_km2",
-        "indicator_key": 239,
+        "indicator_key": 225,
         "kind": "indicator",
         "period": "2024-01-01",
         "source_level": 3
@@ -180,10 +180,10 @@
       },
       "version": {
         "dataset_id": "derived-per-capita-indicators",
-        "dataset_key": 104,
+        "dataset_key": 116,
         "dsv": "dsv_3761902c4276c418",
         "seq": 1,
-        "version_id": 9
+        "version_id": 21
       }
     }
   ],

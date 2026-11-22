@@ -29,6 +29,8 @@ pub struct GroupCompare;
 pub static INFO: MethodInfo = MethodInfo {
     id: "group_compare",
     version: "1.0.0",
+    // r2: significance on the effective n (p_adjusted, ci_adjusted)
+    revision: 2,
     tier: 1,
     summary: "Difference of a measured variable between units inside and outside a zone: Welch t, Mann–Whitney, Hodges–Lehmann shift, bootstrap interval, Cohen's d",
     citations: &[

@@ -27,7 +27,14 @@ pub struct MinN {
 #[derive(Debug, Clone)]
 pub struct MethodInfo {
     pub id: &'static str,
+    /// The method's contract version (roles, params, estimates schema).
     pub version: &'static str,
+    /// Implementation revision: bumped whenever the same request on the
+    /// same inputs would give a different result document (new estimates,
+    /// changed numbers or wording) without a contract change. It enters
+    /// the fingerprint (11 §9), so stored results of an older revision are
+    /// never served for a new request.
+    pub revision: u32,
     pub tier: u8,
     pub summary: &'static str,
     pub citations: &'static [&'static str],
@@ -50,11 +57,19 @@ impl MethodInfo {
         format!("{}@{}", self.id, self.version)
     }
 
+    /// `relate@1.0.0+r2`: the contract version and the implementation
+    /// revision, as the fingerprint takes them.
+    #[must_use]
+    pub fn implementation(&self) -> String {
+        format!("{}+r{}", self.reference(), self.revision)
+    }
+
     #[must_use]
     pub fn to_json(&self) -> Value {
         json!({
             "id": self.id,
             "version": self.version,
+            "revision": self.revision,
             "tier": self.tier,
             "summary": self.summary,
             "citations": self.citations,

@@ -205,38 +205,30 @@ fn people_unit(u: &str) -> bool {
 }
 
 /// Versions of every dataset under the pin.
+///
+/// `latest` is the release that is current in the database at the time of
+/// the request — not the host's catalogue snapshot, which reloads
+/// asynchronously after a release — so the fingerprint is always taken over
+/// the input versions of the current release (11 §9).
 async fn pinned_versions(env: &Env, pin: &Pin) -> Result<(String, HashMap<String, (i32, String)>)> {
-    match pin {
+    let release = match pin {
         Pin::Latest => {
-            let dv = env
-                .catalog
-                .data_version
-                .clone()
-                .ok_or_else(|| bad("no release has been published yet", json!({})))?;
-            let m = env
-                .catalog
-                .datasets
-                .iter()
-                .filter_map(|(id, d)| {
-                    d.current
-                        .as_ref()
-                        .map(|c| (id.clone(), (c.seq, c.dsv.clone())))
-                })
-                .collect();
-            Ok((dv, m))
-        }
-        Pin::Release { release } => {
-            let rows = release_versions(&env.pool, release)
+            sqlx::query_scalar::<_, String>("SELECT data_version FROM data.current_release")
+                .fetch_optional(&env.pool)
                 .await?
-                .ok_or_else(|| bad(format!("no release \"{release}\""), json!({})))?;
-            Ok((
-                release.clone(),
-                rows.into_iter()
-                    .map(|r| (r.dataset_id, (r.seq, r.dsv)))
-                    .collect(),
-            ))
+                .ok_or_else(|| bad("no release has been published yet", json!({})))?
         }
-    }
+        Pin::Release { release } => release.clone(),
+    };
+    let rows = release_versions(&env.pool, &release)
+        .await?
+        .ok_or_else(|| bad(format!("no release \"{release}\""), json!({})))?;
+    Ok((
+        release,
+        rows.into_iter()
+            .map(|r| (r.dataset_id, (r.seq, r.dsv)))
+            .collect(),
+    ))
 }
 
 async fn version_of(

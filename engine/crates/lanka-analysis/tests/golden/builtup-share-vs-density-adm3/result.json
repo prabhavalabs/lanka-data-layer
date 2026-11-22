@@ -26,7 +26,7 @@
       "licence": "cc-by-4.0",
       "publisher": "European Space Agency (WorldCover consortium)",
       "source": "esa-worldcover",
-      "text": "Asian Development Bank, Key Indicators",
+      "text": "ESA WorldCover project / Contains modified Copernicus Sentinel data",
       "title": "ESA WorldCover 10 m 2020/2021",
       "url": "https://esa-worldcover.org/en/data-access"
     },
@@ -34,15 +34,15 @@
       "licence": "cc-by-4.0",
       "publisher": "Lanka Data Layer",
       "source": "lanka-data-layer-derived",
-      "text": "Asian Development Bank, Key Indicators",
+      "text": "Lanka Data Layer derived product (inputs keep their own licences; OSM-derived layers ODbL)",
       "title": "Lanka Data Layer derived analytics",
       "url": "https://github.com/prabhavalabs/lanka-data-layer"
     }
   ],
   "basis": "computed",
   "citation": {
-    "text": "Lanka Data Layer. Analysis an_170052d9a2366a89: relate(lc.class_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.3.",
-    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_170052d9a2366a89"
+    "text": "Lanka Data Layer. Analysis an_7cc9e39d9b1a89cd: relate(lc.class_share, derived.per_km2), Divisional Secretariat divisions. Data release 20261122.5.",
+    "url": "https://lanka-data-layer.prabhavalabs.com/id/analysis/an_7cc9e39d9b1a89cd"
   },
   "estimates": {
     "headline": "ols",
@@ -193,7 +193,7 @@
       "severity": "note"
     }
   ],
-  "id": "an_170052d9a2366a89",
+  "id": "an_7cc9e39d9b1a89cd",
   "inputs": [
     {
       "class": "third_party",
@@ -234,9 +234,11 @@
       "Dutilleul 1993, Biometrics 49",
       "MacKinnon & White 1985, J. Econometrics 29 (HC3)",
       "Huber 1964, Ann. Math. Statist. 35",
-      "Fieller, Hartley & Pearson 1957, Biometrika 44"
+      "Fieller, Hartley & Pearson 1957, Biometrika 44",
+      "Fisher 1924, Metron 3 (partial correlation)"
     ],
     "id": "relate",
+    "revision": 2,
     "version": "1.0.0"
   },
   "n": {
@@ -252,7 +254,7 @@
         "class",
         "basis"
       ],
-      "href": "https://lanka-data-layer.prabhavalabs.com/v2/analyses/an_170052d9a2366a89/outputs/bivariate",
+      "href": "/v2/analyses/an_7cc9e39d9b1a89cd/outputs/bivariate",
       "id": "bivariate",
       "kind": "frame",
       "suggested_layer": {
@@ -260,12 +262,28 @@
         "style": {
           "fill": {
             "bivariate": {
-              "palette": "ldl.bivariate.teal-orange",
+              "palette": "ldl.biv.blue-orange",
               "x": {
-                "field": "x"
+                "field": "x",
+                "scale": {
+                  "breaks": [
+                    0.3736457893132972,
+                    1.3622315856549803
+                  ],
+                  "classes": 3,
+                  "type": "quantile"
+                }
               },
               "y": {
-                "field": "y"
+                "field": "y",
+                "scale": {
+                  "breaks": [
+                    251.33160118656718,
+                    615.4222763615105
+                  ],
+                  "classes": 3,
+                  "type": "quantile"
+                }
               }
             }
           }
@@ -280,7 +298,7 @@
         "cooks",
         "leverage"
       ],
-      "href": "https://lanka-data-layer.prabhavalabs.com/v2/analyses/an_170052d9a2366a89/outputs/residuals",
+      "href": "/v2/analyses/an_7cc9e39d9b1a89cd/outputs/residuals",
       "id": "residuals",
       "kind": "frame",
       "suggested_layer": {
@@ -289,7 +307,9 @@
           "fill": {
             "field": "residual",
             "scale": {
+              "classes": 7,
               "mid": 0,
+              "ramp": "ldl.div.blue-orange",
               "type": "diverging"
             }
           }
@@ -299,19 +319,20 @@
     },
     {
       "encoding": "points",
-      "href": "https://lanka-data-layer.prabhavalabs.com/v2/analyses/an_170052d9a2366a89/outputs/scatter",
+      "href": "/v2/analyses/an_7cc9e39d9b1a89cd/outputs/scatter",
       "id": "scatter",
       "kind": "chart"
     }
   ],
   "provenance": {
     "computed_at": "",
-    "data_version": "20261122.3",
+    "data_version": "20261122.5",
     "elapsed_ms": 0,
     "engine": "lanka 0.1.0",
-    "fingerprint": "170052d9a2366a8967b8809222c14b7d42207c8503f39a5a0ba5811107675937",
+    "engine_revision": 1,
+    "fingerprint": "7cc9e39d9b1a89cdda86047219fd89034a00cfff0cffff46ca596d5ca9eec160",
     "git_rev": "",
-    "seed": 1657415757555198601,
+    "seed": 8991968397073484237,
     "stats": "lanka-stats 1.0.0"
   },
   "request": {
@@ -339,7 +360,7 @@
       "uncertainty": "analytic"
     },
     "pin": {
-      "release": "20261122.3"
+      "release": "20261122.5"
     },
     "spec": "ldl-analysis/1",
     "support": {

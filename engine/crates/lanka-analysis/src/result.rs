@@ -14,8 +14,13 @@ use crate::pipeline::{Resolved, redistribution_rank};
 use crate::request::RESULT_SPEC;
 
 /// sha256 over the resolved request without `pin` (so an unrelated release
-/// keeps the id), the method and alignment references, the sorted input
+/// keeps the id), the method reference with its implementation revision,
+/// the engine revision, the alignment references, the sorted input
 /// versions (and grid layer hashes) and the `lanka-stats` version.
+///
+/// `r` must already be resolved: `pin: "latest"` turned into the current
+/// release's dataset versions ([`crate::pipeline::resolve`]), so a release
+/// that changed an input changes the id and one that did not keeps it.
 #[must_use]
 pub fn fingerprint(r: &Resolved) -> [u8; 32] {
     let mut req = serde_json::to_value(&r.request).unwrap_or(Value::Null);
@@ -25,7 +30,9 @@ pub fn fingerprint(r: &Resolved) -> [u8; 32] {
     let mut h = Sha256::new();
     h.update(lanka_mapdoc::canon::jcs(&req).as_bytes());
     h.update(b"\nmethod:");
-    h.update(r.method.info().reference().as_bytes());
+    h.update(r.method.info().implementation().as_bytes());
+    h.update(b"\nengine:r");
+    h.update(crate::ENGINE_REVISION.to_string().as_bytes());
     let mut align: Vec<String> = r
         .vars
         .iter()
@@ -443,7 +450,7 @@ pub fn document(p: &Present<'_>, out: Option<&MethodOutput>, raised: &[Raised]) 
         "spec": RESULT_SPEC,
         "id": p.id,
         "state": if blocked { "blocked" } else { "ready" },
-        "method": {"id": info.id, "version": info.version, "citations": info.citations},
+        "method": {"id": info.id, "version": info.version, "revision": info.revision, "citations": info.citations},
         "request": serde_json::to_value(&r.request).unwrap_or(Value::Null),
         "inputs": inputs,
         "alignment": alignment,
@@ -459,6 +466,7 @@ pub fn document(p: &Present<'_>, out: Option<&MethodOutput>, raised: &[Raised]) 
             "fingerprint": hex::encode(p.fingerprint), "seed": p.seed, "engine": p.engine, "git_rev": p.git_rev,
             "data_version": r.data_version, "computed_at": p.computed_at, "elapsed_ms": p.elapsed_ms,
             "stats": format!("lanka-stats {}", lanka_stats::VERSION),
+            "engine_revision": crate::ENGINE_REVISION,
         },
         "citation": citation,
     })

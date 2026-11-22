@@ -18,6 +18,7 @@ pub struct Regress;
 pub static INFO: MethodInfo = MethodInfo {
     id: "regress",
     version: "1.0.0",
+    revision: 1,
     tier: 1,
     summary: "Multiple regression of y on x and controls (OLS with HC3 intervals, Huber robust fit), optional fixed effects by parent unit, with diagnostics",
     citations: &[

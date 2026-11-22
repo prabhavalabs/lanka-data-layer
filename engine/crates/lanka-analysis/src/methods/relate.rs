@@ -27,6 +27,8 @@ pub struct Relate;
 pub static INFO: MethodInfo = MethodInfo {
     id: "relate",
     version: "1.0.0",
+    // r2: estimates.partial and the partial headline with controls
+    revision: 2,
     tier: 1,
     summary: "Association between two variables on one support: correlations with intervals, spatially adjusted significance, OLS and robust fits, bivariate classes",
     citations: &[

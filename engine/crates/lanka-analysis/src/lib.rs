@@ -30,6 +30,12 @@ pub mod request;
 pub mod result;
 
 pub use engine::{Engine, EngineError, Ran};
+
+/// Revision of the shared pipeline (alignment, guards, presentation):
+/// bumped whenever a change outside a method alters result documents for
+/// unchanged inputs. It enters every fingerprint (11 §9) beside the
+/// method's own revision and the `lanka-stats` version.
+pub const ENGINE_REVISION: u32 = 1;
 pub use request::Request;
 
 #[cfg(test)]

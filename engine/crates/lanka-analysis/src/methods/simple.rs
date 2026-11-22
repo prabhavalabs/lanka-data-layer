@@ -18,6 +18,7 @@ pub struct Describe;
 pub static DESCRIBE: MethodInfo = MethodInfo {
     id: "describe",
     version: "1.0.0",
+    revision: 1,
     tier: 1,
     summary: "Univariate summary of one variable on a support: n, missing, mean, sd, quantiles, MAD, skewness, kurtosis, histogram",
     citations: &[
@@ -123,6 +124,7 @@ pub struct Classify;
 pub static CLASSIFY: MethodInfo = MethodInfo {
     id: "classify",
     version: "1.0.0",
+    revision: 1,
     tier: 1,
     summary: "Class breaks for one column (quantile, equal, jenks, stddev, headtail, pretty) or bivariate classes for two",
     citations: &[
@@ -241,6 +243,7 @@ pub struct Zonal;
 pub static ZONAL: MethodInfo = MethodInfo {
     id: "zonal",
     version: "1.0.0",
+    revision: 1,
     tier: 1,
     summary: "A grid or feature layer summarised to units (the alignment step exposed as a result)",
     citations: &["05 §8 grid_zonal; 04 §3 features_zonal"],
@@ -315,6 +318,7 @@ pub struct Exposure;
 pub static EXPOSURE: MethodInfo = MethodInfo {
     id: "exposure",
     version: "1.0.0",
+    revision: 1,
     tier: 1,
     summary: "Hazard mask × exposed quantity per unit (exposure_overlay): exposed counts and shares where the hazard grid is at or above a threshold",
     citations: &["04 §3 exposure_overlay; 11 §3.2 rule 4 (overlays on the canonical grid)"],

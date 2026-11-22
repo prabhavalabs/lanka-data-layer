@@ -1,5 +1,5 @@
 {
-  "data_version": "20261122.4",
+  "data_version": "20261122.5",
   "level": 3,
   "method": "relate",
   "request": {
@@ -27,7 +27,7 @@
       "uncertainty": "analytic"
     },
     "pin": {
-      "release": "20261122.4"
+      "release": "20261122.5"
     },
     "spec": "ldl-analysis/1",
     "support": {
