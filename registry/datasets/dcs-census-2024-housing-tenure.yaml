@@ -1,0 +1,48 @@
+id: dcs-census-2024-housing-tenure
+title: 'Census 2024: housing tenure and housing unit status'
+description: Tenure of housing units (% by sector and district) and housing units by status (permanent, semi-permanent,
+  improvised) by sector and district.
+source_ids:
+- dcs-census-2024-report
+indicators:
+- id: census24.tenure_share
+  label: Housing units by tenure (% of occupied housing units)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - tenure
+  - sector
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.housing_status_units
+  label: Housing units by status
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - housing_status
+  - sector
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: >-
+  Census 2024 final report tables 11.4 (tenure, %) and 11.7 (housing units by status) read from the PDF
+  text layer through registry templates; reviewed against the evidence sheet.
+limits:
+- Census reference night 2024; no intercensal updates.
+- Tenure is published only as percentages; counts are not in the report.
+- In table 11.7 the urban sector includes estate-urban units; estate-rural is the 2012 estate sector.
+enrichment:
+  joins:
+  - 'name->p-code crosswalk at district (ADM2) level: registry/crosswalks/ (ds-name-aliases.csv)'
+  aggregations:
+  - 'derive: share of non-permanent housing as deprivation proxy'
+publication_class: B

@@ -1,0 +1,27 @@
+# Census of Population and Housing 2024, final report, table 11.7: housing units by status
+# (permanent, semi-permanent, improvised, not classified), number and %, by sector and
+# district. Urban includes estate-urban ("*"); estate-rural ("**") is the 2012 "Estate".
+id: dcs-census-2024-report/table-11.7-housing-status
+title: Housing units by status, sector and district, 2024
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 11.7 :Number of Housing Units and Status of Housing Units", then_text: "Kegalle" }
+    label: { key: area, header: "Sector/District", slack: 15 }
+    columns:
+      - { key: total, header: "Total" }
+      - { key: total_pct, header: "%", nth: 1 }
+      - { key: permanent, header: "Permanent" }
+      - { key: permanent_pct, header: "%", nth: 2 }
+      - { key: semi_permanent, header: "Semi-" }
+      - { key: semi_permanent_pct, header: "%", nth: 3 }
+      - { key: improvised, header: "Improvised" }
+      - { key: improvised_pct, header: "%", nth: 4 }
+      - { key: not_classified, header: "Not" }
+      - { key: not_classified_pct, header: "%", nth: 5 }
+    rows: { stop_at: ["Although the 2024 Census"] }
+    checks:
+      - { row_count: { min: 29, max: 29 } }
+      - { rows_present: ["Sri Lanka", "Rural", "Colombo", "Kegalle"] }
+      - { sum: [permanent, semi_permanent, improvised, not_classified], equals: total, tol: 0 }
+      - { sum_rows: ["Urban*", "Rural", "Estate-Rural**"], equals_row: "Sri Lanka", columns: [total, permanent], tol: 0 }

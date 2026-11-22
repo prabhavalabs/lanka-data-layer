@@ -12,3 +12,6 @@ codes:
   - { code: some_difficulty, label: Some difficulty, parent: total }
   - { code: a_lot_of_difficulty, label: A lot of difficulty, parent: total }
   - { code: cannot_do_at_all, label: Cannot do at all, parent: total }
+  # Census 2024 final report aggregates (tables 6.2.2, 6.2.6); not direct children of total.
+  - { code: any_difficulty, label: "At least some difficulty (some, a lot, or cannot do)" }
+  - { code: disability, label: "Disability (a lot of difficulty or cannot do at all)" }

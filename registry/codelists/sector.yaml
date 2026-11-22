@@ -13,3 +13,6 @@ codes:
   - { code: urban, label: { en: Urban, si: "නාගරික" }, parent: total }
   - { code: rural, label: { en: Rural, si: "ග්‍රාමීය" }, parent: total }
   - { code: estate, label: { en: Estate, si: "වතු" }, parent: total }
+  # Census 2024 sectors: the 2012 "Estate" sector is "Estate-Rural"; estate units in urban areas are "Estate-Urban".
+  - { code: estate_urban, label: Estate - urban (census 2024), parent: total }
+  - { code: estate_rural, label: Estate - rural (census 2024), parent: total }

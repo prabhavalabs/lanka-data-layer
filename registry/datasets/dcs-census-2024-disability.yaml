@@ -3,6 +3,7 @@ title: 'Census 2024: functional difficulties'
 description: Population with functional difficulty (seeing, hearing, walking, cognition, self-care, communication) by district.
 source_ids:
 - dcs-census-2024
+- dcs-census-2024-report
 indicators:
 - id: census24.functional_difficulty
   label: Population with functional difficulty
@@ -16,6 +17,31 @@ indicators:
   - id: severity
     codelist: difficulty_degree
   - sex
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.functional_difficulty_rate
+  label: Persons with functional difficulty per 1,000 persons aged 5 and over
+  unit: '/10*3'
+  measure_type: rate
+  aggregation: none
+  class: official
+  dims:
+  - id: domain
+    codelist: functional_domain
+  - id: severity
+    codelist: difficulty_degree
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.pop_aged_5_plus
+  label: Population aged 5 and over
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

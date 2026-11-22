@@ -12,3 +12,5 @@ codes:
   - { code: sinhala, label: { en: Sinhala, si: "සිංහල", ta: "சிங்களம்" } }
   - { code: tamil, label: { en: Tamil, si: "දෙමළ", ta: "தமிழ்" } }
   - { code: english, label: { en: English, si: "ඉංග්‍රීසි", ta: "ஆங்கிலம்" } }
+  # Census 2024 final report (table 7.10).
+  - { code: any, label: At least one language }

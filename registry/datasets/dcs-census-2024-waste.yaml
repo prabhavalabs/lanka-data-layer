@@ -1,0 +1,33 @@
+id: dcs-census-2024-waste
+title: 'Census 2024: household solid waste disposal'
+description: Households by main method of disposing solid waste, for five waste types, by sector (%).
+source_ids:
+- dcs-census-2024-report
+indicators:
+- id: census24.waste_disposal_share
+  label: Households by main method of disposing solid waste (%)
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - id: waste_type
+    codelist: waste_type
+  - id: method
+    codelist: waste_disposal
+  - sector
+  geo_levels:
+  - national
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: >-
+  Census 2024 final report table 11.17 read from the PDF text layer through a registry template;
+  reviewed against the evidence sheet.
+limits:
+- Census reference night 2024; national and sector only (no district breakdown published).
+- Glass waste has no "occupants burn" category.
+enrichment:
+  aggregations:
+  - 'derive: share of households without local-authority collection'
+publication_class: B

@@ -1,0 +1,23 @@
+# Census of Population and Housing 2024, final report, table 11.4: tenure of housing units
+# (% of occupied housing units) by sector and district. "Sector" and "District" are group
+# lines without numbers.
+id: dcs-census-2024-report/table-11.4-housing-tenure
+title: Tenure of housing units by sector and district, 2024 (%)
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 11.4 : Tenure of Housing Units by Sector and District", then_text: "Kegalle" }
+    label: { key: area, header: "Sector/ District", slack: 15 }
+    columns:
+      - { key: total, header: "Total" }
+      - { key: owned, header: "Owned by a" }
+      - { key: rent_govt, header: "Rent/lease-", nth: 1 }
+      - { key: rent_private, header: "Rent/lease-", nth: 2 }
+      - { key: rent_free, header: "Free of" }
+      - { key: encroached, header: "Encroached" }
+      - { key: other, header: "Other" }
+    rows: { stop_at: ["The information regarding"] }
+    checks:
+      - { row_count: { min: 30, max: 30 } }
+      - { rows_present: ["Sri Lanka", "Urban", "Estate- Rural", "Colombo", "Kegalle"] }
+      - { sum: [owned, rent_govt, rent_private, rent_free, encroached, other], equals: total, tol: 0.3 }

@@ -1,0 +1,15 @@
+# Type of household solid waste (census)
+# Source/authority: Department of Census and Statistics (DCS), Sri Lanka, Census of Population and Housing 2024 - main method of disposing solid waste, by waste type (final report table 11.17).
+# Note: Each waste type is a separate breakdown of all households; no total.
+# No total member: the dimension is a non-additive selector; every observation carries an explicit code.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: dcs-census-2024-waste
+id: waste_type
+title: Type of household solid waste (census)
+codes:
+  - { code: biodegradable, label: Easily decaying (biodegradable) waste }
+  - { code: polythene_plastic, label: Polythene and plastic }
+  - { code: electronic, label: Electronic waste }
+  - { code: glass, label: Glass cuttings and bottles }
+  - { code: other, label: "Other (metal, tin, rubber etc.)" }

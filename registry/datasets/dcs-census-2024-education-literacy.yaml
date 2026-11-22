@@ -3,6 +3,7 @@ title: 'Census 2024: literacy, language, digital literacy'
 description: Literacy rate, language ability (Sinhala/Tamil/English), computer and digital literacy by district.
 source_ids:
 - dcs-census-2024
+- dcs-census-2024-report
 indicators:
 - id: census24.literacy_rate
   label: Literacy rate
@@ -50,6 +51,38 @@ indicators:
   class: official
   dims:
   - sex
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.language_literacy_rate
+  label: Language literacy rate, population aged 10 and over
+  unit: '%'
+  measure_type: share
+  aggregation: none
+  class: official
+  dims:
+  - language
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.pop_aged_10_plus
+  label: Population aged 10 and over (literacy denominator)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  geo_levels:
+  - national
+  - adm2
+  period_type: snapshot
+- id: census24.pop_aged_5_plus_literacy
+  label: Population aged 5 and over (computer literacy denominator)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
   geo_levels:
   - national
   - adm2

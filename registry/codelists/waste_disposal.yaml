@@ -16,3 +16,6 @@ codes:
   - { code: dumped_within, label: Dumped within the premises, parent: total }
   - { code: dumped_outside, label: Dumped outside the premises, parent: total }
   - { code: other, label: Other, parent: total }
+  # Census 2024 final report categories (table 11.17).
+  - { code: dumped_public, label: "Dumped into road, river, canal, sea, lagoon or forest", parent: total }
+  - { code: waste_collector, label: Given to waste collectors, parent: total }

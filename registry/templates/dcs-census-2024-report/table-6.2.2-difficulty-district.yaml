@@ -1,0 +1,32 @@
+# Census of Population and Housing 2024, final report, table 6.2.2: persons aged 5 and over
+# with at least some physical or mental difficulty (Washington Group short set) by district
+# and domain: number and rate per 1,000 persons.
+id: dcs-census-2024-report/table-6.2.2-difficulty-district
+title: Persons with physical or mental difficulties by district and domain, 2024
+editions:
+  - match: { edition: "2024..2026" }
+    locate:
+      page: { find_text: "Table 6.2.2 : Distribution of Persons Aged 5 Years and Over with Physical and Mental Difficulties by District", then_text: "Colombo" }
+      span_pages: 2
+    label: { key: district, header: "District", slack: 45 }
+    columns:
+      - { key: pop5, header: "Persons Aged" }
+      - { key: any_n, header: "Number", under: "one Physical or Mental" }
+      - { key: any_rate, header: "Rate", under: "one Physical or Mental" }
+      - { key: seeing_n, header: "Number", under: "Difficulty in Seeing" }
+      - { key: seeing_rate, header: "Rate", under: "Difficulty in Seeing" }
+      - { key: hearing_n, header: "Number", under: "Difficulty in Hearing" }
+      - { key: hearing_rate, header: "Rate", under: "Difficulty in Hearing" }
+      - { key: walking_n, header: "Number", under: "Difficulty in Walking or" }
+      - { key: walking_rate, header: "Rate", under: "Difficulty in Walking or" }
+      - { key: cognition_n, header: "Number", under: "Remembering or" }
+      - { key: cognition_rate, header: "Rate", under: "Remembering or" }
+      - { key: self_care_n, header: "Number", under: "Difficulty in Selfcare," }
+      - { key: self_care_rate, header: "Rate", under: "Difficulty in Selfcare," }
+      - { key: communication_n, header: "Number", under: "Communicating with" }
+      - { key: communication_rate, header: "Rate", under: "Communicating with" }
+    rows: { stop_at: ["Table 6.2.3", "Age Group"] }
+    checks:
+      - { row_count: { min: 26, max: 26 } }
+      - { rows_present: ["Sri Lanka", "Colombo", "Kegalle"] }
+      - { sum_rows: all_but_first, equals_row: "Sri Lanka", columns: [pop5, any_n, seeing_n, hearing_n, walking_n], tol: 0 }
