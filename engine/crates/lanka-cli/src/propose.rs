@@ -427,8 +427,18 @@ pub async fn template_propose(g: &Global, a: TemplateProposeArgs) -> Result<()> 
     let ls = lines(&ws);
     let numspec = template::NumberSpec::default();
     let is_num = |t: &str| matches!(numspec.parse(t), template::Value::Number(_));
-    let data: Vec<usize> = (0..ls.len())
-        .filter(|i| ls[*i].words.iter().filter(|w| is_num(&w.text)).count() >= 3)
+    // Data lines: below the anchor, with at least 3 numbers.
+    let anchor = ls
+        .iter()
+        .position(|l| {
+            let t: Vec<String> = l.words.iter().map(|w| norm(&w.text)).collect();
+            t.windows(want.len()).any(|w| w == want.as_slice())
+        })
+        .unwrap_or(0);
+    let count = |i: usize| ls[i].words.iter().filter(|w| is_num(&w.text)).count();
+    let max_n = (anchor + 1..ls.len()).map(count).max().unwrap_or(0);
+    let data: Vec<usize> = (anchor + 1..ls.len())
+        .filter(|i| count(*i) >= 3.max(max_n / 2))
         .collect();
     let first = *data
         .first()
@@ -456,37 +466,80 @@ pub async fn template_propose(g: &Global, a: TemplateProposeArgs) -> Result<()> 
     }
     cols.retain(|c| c.len() * 2 >= data.len());
     ensure!(!cols.is_empty(), "no stable numeric columns");
-    // Header words: non-numeric words above the first data line, nearest to each column.
-    let above: Vec<&lanka_extractd::Word> = ls[..first]
+    // Header of each column: on the nearest line above the first data line
+    // that has one, the word with a Latin letter whose right edge is closest
+    // to the column's (within 60 pt).
+    let header_for = |x: f32| -> Option<String> {
+        ls[..first].iter().rev().take(4).find_map(|l| {
+            l.words
+                .iter()
+                .filter(|w| {
+                    w.text.chars().any(|c| c.is_ascii_alphabetic()) && (w.bbox[2] - x).abs() <= 60.0
+                })
+                .min_by(|p, q| (p.bbox[2] - x).abs().total_cmp(&(q.bbox[2] - x).abs()))
+                .map(|w| w.text.trim_end_matches([';', ':', ',']).to_owned())
+        })
+    };
+    let mut columns: Vec<template::ColumnSpec> = cols
         .iter()
-        .rev()
-        .take(6)
-        .flat_map(|l| l.words.iter().copied())
-        .filter(|w| !is_num(&w.text))
+        .enumerate()
+        .map(|(k, c)| template::ColumnSpec {
+            key: format!("col{}", k + 1),
+            header: header_for(c[c.len() / 2]).unwrap_or_else(|| format!("COLUMN {}", k + 1)),
+            under: None,
+            nth: None,
+        })
         .collect();
-    let mut yaml = format!(
-        "# Proposed by `lanka template propose` from {} page {page}: review every column before committing.\nid: {}\neditions:\n  - match: {{ edition: \"{}\" }}\n    locate:\n      page: {{ find_text: {:?} }}\n    columns:\n",
-        a.pdf
-            .file_name()
-            .map(|f| f.to_string_lossy().into_owned())
-            .unwrap_or_default(),
-        a.id,
-        a.edition.as_deref().unwrap_or("2024..2030"),
-        a.find_text
-    );
-    for (k, c) in cols.iter().enumerate() {
-        let x = c[c.len() / 2];
-        let h = above
+    // Repeated headers need `nth` (or `under`) to be told apart.
+    for i in 0..columns.len() {
+        let before = columns[..i]
             .iter()
-            .min_by(|p, q| (p.bbox[2] - x).abs().total_cmp(&(q.bbox[2] - x).abs()))
-            .map_or_else(|| format!("COLUMN {}", k + 1), |w| w.text.clone());
-        yaml.push_str(&format!(
-            "      - {{ key: col{}, header: {:?} }}\n",
-            k + 1,
-            h
-        ));
+            .filter(|c| c.header == columns[i].header)
+            .count();
+        if columns
+            .iter()
+            .filter(|c| c.header == columns[i].header)
+            .count()
+            > 1
+        {
+            columns[i].nth = Some(before + 1);
+        }
     }
-    yaml.push_str("    checks:\n      - { row_count: { min: 1 } }\n");
+    let tpl = Template {
+        id: a.id.clone(),
+        title: None,
+        description: Some(format!(
+            "Proposed by `lanka template propose` from {} page {page}; review every column (keys, under, checks) before committing.",
+            a.pdf
+                .file_name()
+                .map(|f| f.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        )),
+        editions: vec![template::Edition {
+            when: template::EditionMatch {
+                edition: Some(a.edition.clone().unwrap_or_else(|| "2024..2030".into())),
+            },
+            locate: template::Locate {
+                page: template::PageFind {
+                    find_text: a.find_text.clone(),
+                    then_text: None,
+                },
+                span_pages: 1,
+            },
+            label: template::LabelSpec::default(),
+            columns,
+            rows: template::RowsSpec::default(),
+            number: template::NumberSpec::default(),
+            superscript_ratio: 0.75,
+            checks: vec![template::Check::RowCount {
+                row_count: template::MinMax {
+                    min: Some(1),
+                    max: None,
+                },
+            }],
+        }],
+    };
+    let yaml = serde_yaml_ng::to_string(&tpl)?;
     println!("{yaml}");
     match Template::from_yaml(&yaml)
         .and_then(|t| t.read(&words, a.edition.as_deref().or(Some("2024"))))

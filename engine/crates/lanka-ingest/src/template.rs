@@ -140,10 +140,10 @@ pub struct ColumnSpec {
     pub key: String,
     pub header: String,
     /// Group label printed above (spanning) the header.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub under: Option<String>,
     /// 1-based occurrence among the qualifying headers, left to right.
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nth: Option<usize>,
 }
 
