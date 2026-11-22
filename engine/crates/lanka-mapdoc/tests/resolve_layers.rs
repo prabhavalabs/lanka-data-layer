@@ -108,6 +108,7 @@ fn ctx() -> ResolveContext {
                 minzoom: 0,
                 maxzoom: 12,
                 layers: vec![("adm4".into(), "cod-ab-lka-boundaries".into())],
+                layer_minzoom: Default::default(),
             },
             TilesetRef {
                 id: "osm-road-network".into(),
@@ -115,6 +116,7 @@ fn ctx() -> ResolveContext {
                 minzoom: 5,
                 maxzoom: 14,
                 layers: vec![("roads".into(), "roads".into())],
+                layer_minzoom: Default::default(),
             },
             TilesetRef {
                 id: "dem".into(),
@@ -122,6 +124,7 @@ fn ctx() -> ResolveContext {
                 minzoom: 5,
                 maxzoom: 11,
                 layers: vec![("dem".into(), "copernicus-dem-terrain".into())],
+                layer_minzoom: Default::default(),
             },
             TilesetRef {
                 id: "big-points".into(),
@@ -129,6 +132,7 @@ fn ctx() -> ResolveContext {
                 minzoom: 0,
                 maxzoom: 14,
                 layers: vec![("big-points".into(), "big-points".into())],
+                layer_minzoom: Default::default(),
             },
         ],
         ..ResolveContext::default()

@@ -285,6 +285,32 @@ async fn find_set(st: &AppState, id: &str) -> Result<Tileset, ApiError> {
         .ok_or_else(|| ApiError::new(StatusCode::NOT_FOUND, format!("not_found: tileset {id}")))
 }
 
+/// tippecanoe's `vector_layers` with each layer's real zoom range from the
+/// build's layer index (tippecanoe states the tileset's range on every
+/// layer, although per-feature minzooms leave e.g. `adm4` empty below z9).
+fn vector_layers(
+    from_tiles: Option<&serde_json::Value>,
+    index: &serde_json::Value,
+) -> serde_json::Value {
+    let mut vl = from_tiles.cloned().unwrap_or_else(|| serde_json::json!([]));
+    if let Some(arr) = vl.as_array_mut() {
+        for v in arr {
+            let Some(l) = index
+                .as_array()
+                .and_then(|ls| ls.iter().find(|l| l["id"] == v["id"]))
+            else {
+                continue;
+            };
+            for k in ["minzoom", "maxzoom"] {
+                if let Some(z) = l.get(k).filter(|z| z.is_u64()) {
+                    v[k] = z.clone();
+                }
+            }
+        }
+    }
+    vl
+}
+
 fn base_url(headers: &HeaderMap) -> String {
     let host = headers
         .get(header::HOST)
@@ -377,7 +403,7 @@ async fn tilejson(
         "bounds": h.bounds,
         "center": [h.center[0], h.center[1], h.center_zoom],
         "attribution": t.attribution,
-        "vector_layers": meta.get("vector_layers").cloned().unwrap_or_default(),
+        "vector_layers": vector_layers(meta.get("vector_layers"), &t.layers),
         "pmtiles": format!("{base}/dl/tiles/{}/{}.pmtiles", t.id, t.sha16),
         "lanka": { "layers": t.layers, "datasets": t.dataset_ids, "built_at": t.built_at },
     });
@@ -568,6 +594,24 @@ async fn pmtiles_file(
 mod tests {
     use super::*;
     use axum::body::Body;
+
+    #[test]
+    fn vector_layers_carry_the_layer_zoom_range() {
+        let from_tiles = serde_json::json!([
+            {"id": "adm3", "minzoom": 0, "maxzoom": 12, "fields": {}},
+            {"id": "adm4", "minzoom": 0, "maxzoom": 12, "fields": {}},
+            {"id": "other", "minzoom": 0, "maxzoom": 12, "fields": {}}
+        ]);
+        let index = serde_json::json!([
+            {"id": "adm3", "minzoom": 6, "maxzoom": 12},
+            {"id": "adm4", "minzoom": 9, "maxzoom": 12}
+        ]);
+        let v = vector_layers(Some(&from_tiles), &index);
+        assert_eq!(v[0]["minzoom"], 6);
+        assert_eq!(v[1]["minzoom"], 9);
+        // an index without zooms (built before lanka-tiles-v2) leaves tippecanoe's
+        assert_eq!(v[2]["minzoom"], 0);
+    }
     use http_body_util::BodyExt;
     use lanka_core::Catalog;
     use tower::ServiceExt;

@@ -3,8 +3,10 @@
 //! (`tiles/<tileset>/<sha16>.pmtiles`) and indexed in `geo.tilesets`.
 //!
 //! Tilesets:
-//! - `admin` (built in): one layer per admin level `adm0…adm4` (zoom-gated
-//!   like v1: adm2 from z6, adm3 from z8, adm4 from z10), each feature
+//! - `admin` (built in): one layer per admin level `adm0…adm4` (zoom-gated:
+//!   adm0–adm2 from z0, adm3 from z6, adm4 from z9 — one zoom below the
+//!   `byZoom` switch of 10 §2 so a level is in the tiles before a map asks
+//!   for it), each feature
 //!   carrying `pcode` (for MapLibre `promoteId`), `level` and the three
 //!   names, plus a `centroids` point layer (point on surface) for labels and
 //!   symbols (10 §2: the frame/value join is by p-code, never by name).
@@ -36,11 +38,13 @@ use crate::pmtiles::PmTiles;
 use crate::tippecanoe;
 
 /// Bumped when the exported properties or layout change.
-const EXPORT_FORMAT: &str = "lanka-tiles-v1";
+/// v2: per-layer `minzoom`/`maxzoom` in the layer index, source attribution.
+const EXPORT_FORMAT: &str = "lanka-tiles-v2";
 pub const ADMIN: &str = "admin";
 const ADMIN_MAXZOOM: u8 = 12;
-/// Minimum zoom of each admin level's polygons and of its centroids.
-const ADMIN_ZOOMS: [(i16, u8, u8); 5] = [(0, 0, 0), (1, 0, 0), (2, 6, 5), (3, 8, 7), (4, 10, 10)];
+/// Minimum zoom of each admin level's polygons and of its centroids. The
+/// TileJSON's `vector_layers[].minzoom` states these (10 §3.1).
+pub const ADMIN_ZOOMS: [(i16, u8, u8); 5] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (3, 6, 6), (4, 9, 9)];
 
 #[derive(Debug, Clone, Serialize)]
 pub enum LayerSource {
@@ -170,6 +174,30 @@ pub async fn plans(pool: &PgPool, registry: &Registry, profile: &Profile) -> Res
     }
     out.extend(grouped.into_values());
     Ok(out)
+}
+
+/// The lowest zoom at which a layer has any feature.
+fn layer_minzoom(source: &LayerSource, tileset_min: u8) -> u8 {
+    let z = match source {
+        LayerSource::Admin { minzoom, .. } => *minzoom,
+        LayerSource::AdminCentroids => ADMIN_ZOOMS
+            .iter()
+            .filter(|(l, _, _)| *l >= 1)
+            .map(|(_, _, c)| *c)
+            .min()
+            .unwrap_or(0),
+        LayerSource::Features {
+            minzoom,
+            minzoom_by_kind,
+            ..
+        } => minzoom_by_kind
+            .values()
+            .copied()
+            .chain(std::iter::once(*minzoom))
+            .min()
+            .unwrap_or(*minzoom),
+    };
+    z.max(tileset_min)
 }
 
 fn input_hash(plan: &Plan, tool: &str) -> Result<[u8; 32]> {
@@ -355,6 +383,7 @@ pub async fn build(
         .layers
         .iter()
         .map(|l| {
+            let minzoom = layer_minzoom(&l.source, plan.minzoom);
             let fields = vector_layers
                 .as_array()
                 .and_then(|vs| vs.iter().find(|v| v["id"] == l.id.as_str()))
@@ -365,6 +394,7 @@ pub async fn build(
                 _ => json!(profile.boundary_dataset()),
             };
             json!({ "id": l.id, "dataset": dataset, "fields": fields,
+                    "minzoom": minzoom, "maxzoom": plan.maxzoom,
                     "features": features.get(&l.id).copied().unwrap_or(0) })
         })
         .collect();

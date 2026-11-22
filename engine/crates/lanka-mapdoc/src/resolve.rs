@@ -81,6 +81,8 @@ pub struct TilesetRef {
     pub maxzoom: u8,
     /// `(layer id, dataset id)`.
     pub layers: Vec<(String, String)>,
+    /// Lowest zoom with features, per layer id (absent: the tileset's).
+    pub layer_minzoom: BTreeMap<String, u8>,
 }
 
 /// Size of a `features` source's filtered set.
@@ -245,6 +247,19 @@ async fn load_layers(pool: &PgPool, doc: &MapDocument, ctx: &mut ResolveContext)
                             .collect()
                     })
                     .unwrap_or_default(),
+                layer_minzoom: layers
+                    .as_array()
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|l| {
+                                Some((
+                                    l.get("id")?.as_str()?.to_owned(),
+                                    u8::try_from(l.get("minzoom")?.as_u64()?).ok()?,
+                                ))
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default(),
             })
             .collect();
     }
@@ -342,6 +357,8 @@ pub struct ZoomFrame {
     pub level: u8,
     pub frame: String,
     pub source_layer: String,
+    /// Lowest zoom at which the tileset holds `source_layer`.
+    pub minzoom: u8,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -356,15 +373,19 @@ pub enum Shape {
         centroids_layer: String,
         #[serde(skip_serializing_if = "Option::is_none")]
         by_zoom: Option<Vec<ZoomFrame>>,
-        /// TileJSON of the boundary tileset; read `minzoom`/`maxzoom` from
-        /// it and over-zoom (tiles beyond its range do not exist).
+        /// TileJSON of the boundary tileset (its `vector_layers` state each
+        /// layer's zoom range); over-zoom beyond `maxzoom`.
         tilejson: String,
+        /// Lowest zoom at which the tileset holds `source_layer`.
+        minzoom: u8,
         maxzoom: u8,
     },
     Boundaries {
         tiles: String,
         source_layer: String,
         tilejson: String,
+        /// Lowest zoom at which the tileset holds `source_layer`.
+        minzoom: u8,
         maxzoom: u8,
     },
     /// A grid as `ldl-v16` value tiles (10 §3.2).
@@ -526,6 +547,16 @@ fn admin_tiles() -> String {
 
 /// Max zoom of the admin tileset (the WP-04 build: z0–12) unless the
 /// context knows the built one.
+/// Lowest zoom at which the admin tileset holds `layer` (e.g. `adm4` from z9).
+fn admin_minzoom(ctx: &ResolveContext, layer: &str) -> u8 {
+    ctx.tilesets
+        .iter()
+        .find(|t| t.id == "admin")
+        .map_or(0, |t| {
+            t.layer_minzoom.get(layer).copied().unwrap_or(t.minzoom)
+        })
+}
+
 fn admin_maxzoom(ctx: &ResolveContext) -> u8 {
     ctx.tilesets
         .iter()
@@ -817,6 +848,7 @@ impl Builder<'_> {
                         level: *l,
                         frame: url(*l),
                         source_layer: format!("adm{l}"),
+                        minzoom: admin_minzoom(self.ctx, &format!("adm{l}")),
                     })
                     .collect(),
             ),
@@ -839,6 +871,7 @@ impl Builder<'_> {
                 centroids_layer: "centroids".to_owned(),
                 by_zoom,
                 tilejson: "/v2/tiles/admin.json".to_owned(),
+                minzoom: admin_minzoom(self.ctx, &format!("adm{first}")),
                 maxzoom: admin_maxzoom(self.ctx),
             },
         }
@@ -1212,6 +1245,7 @@ impl Builder<'_> {
                                 tiles: admin_tiles(),
                                 source_layer: format!("adm{}", b.level),
                                 tilejson: "/v2/tiles/admin.json".to_owned(),
+                                minzoom: admin_minzoom(self.ctx, &format!("adm{}", b.level)),
                                 maxzoom: admin_maxzoom(self.ctx),
                             },
                         }

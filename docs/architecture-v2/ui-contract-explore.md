@@ -237,8 +237,9 @@ export type Resolved = {
 
 export type ResolvedSource = { access: 'public' | 'granted' | 'denied'; dsv?: string; class?: DataClass; basis?: Basis[] } & (
   | { shape: 'frame'; frame: string; tileset: string; tiles: string; source_layer: string; join: 'pcode' | 'code'
-      centroids_layer: string; periods?: PeriodCode[] }
-  | { shape: 'boundaries'; tiles: string; source_layer: string }
+      centroids_layer: string; periods?: PeriodCode[]; tilejson: string; minzoom: number /* of source_layer */; maxzoom: number
+      by_zoom?: { zoom: number; level: number; frame: string; source_layer: string; minzoom: number }[] }
+  | { shape: 'boundaries'; tiles: string; source_layer: string; tilejson: string; minzoom: number; maxzoom: number }
   | { shape: 'values'; values: string /* {z}/{x}/{y} template */; encoding: 'ldl-v16'; scale: number; offset: number
       nodata: number; minzoom: number; maxzoom: number; unit: string; stats: ColumnStats; categories?: Record<number, Text> }
   | { shape: 'points'; points: string; count: number; fields: FieldInfo[] }

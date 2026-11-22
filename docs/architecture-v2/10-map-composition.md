@@ -213,6 +213,8 @@ GET /v2/frame?indicators=exp.flood_pop_share,est.pop_density
 
 The boundary tileset (`admin`, already planned) gains two requirements: `promoteId` on `pcode` for every level's source layer, and a `centroids` source layer (one point per unit with `pcode`, `level`, `name_*`) for `symbol` and `label` layers.
 
+Admin levels are zoom-gated to hold tile sizes (largest tile ≈ 230 KB gzip at z9 over Colombo; no feature is coalesced or dropped): `adm0`–`adm2` from z0, `adm3` from z6 (simplified), `adm4` from z9, centroids from their level's zoom, maxzoom 12 (over-zoom above). The gates sit one zoom below the `byZoom` example (`[[0,2],[8,3],[10,4]]`) so a level is in the tiles before a map switches to it. The TileJSON states them truthfully in `vector_layers[].minzoom`, and the resolver's `frame`/`boundaries` shapes carry `minzoom` of their `source_layer` (and of each `by_zoom` entry); a client must not draw a level below its `minzoom`.
+
 ### 3.2 Value tiles
 
 [05 §9](05-storage-and-performance.md#9-tiles) renders grid PNG tiles server-side with a fixed ramp. That stays for simple clients (QGIS, static images). Composable maps need the **values**, so the ramp, range mask and opacity can change without a request.
