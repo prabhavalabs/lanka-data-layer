@@ -630,6 +630,54 @@ impl Tabular {
                     self.local(ctx, &mut c, f.file.as_deref())?;
                     out.push(c);
                 }
+                // `links`: the newest file whose path matches (dated folders)
+                if !d.links.is_empty() {
+                    let paths: Vec<String> = if offline {
+                        Vec::new()
+                    } else {
+                        let api = format!(
+                            "https://api.github.com/repos/{repo}/git/trees/{sha}?recursive=1"
+                        );
+                        let v: serde_json::Value =
+                            serde_json::from_str(&get_text(ctx, &api).await?)
+                                .with_context(|| format!("{api}: not JSON"))?;
+                        ensure!(
+                            v["truncated"].as_bool() != Some(true),
+                            "{api}: tree listing truncated"
+                        );
+                        v["tree"]
+                            .as_array()
+                            .context("tree listing")?
+                            .iter()
+                            .filter(|t| t["type"] == "blob")
+                            .filter_map(|t| t["path"].as_str().map(str::to_owned))
+                            .collect()
+                    };
+                    for l in &d.links {
+                        if offline {
+                            let mut c = mk(&l.key, format!("{repo}@{sha}"), None);
+                            self.local(ctx, &mut c, Some(&l.key))?;
+                            out.push(c);
+                            continue;
+                        }
+                        let rx = Regex::new(&l.pattern).context("links[].pattern")?;
+                        let path = paths
+                            .iter()
+                            .filter_map(|p| {
+                                rx.captures(p)
+                                    .map(|c| (c.get(1).map_or("", |m| m.as_str()).to_owned(), p))
+                            })
+                            .max()
+                            .map(|(_, p)| p.clone())
+                            .with_context(|| {
+                                format!("{repo}@{sha}: no file matches {:?}", l.pattern)
+                            })?;
+                        let url = format!("https://raw.githubusercontent.com/{repo}/{sha}/{path}");
+                        let mut c = mk(&l.key, url, None);
+                        c.edition = Some(sha.clone());
+                        out.push(c);
+                    }
+                }
             }
         }
         ensure!(!out.is_empty(), "discover found nothing");
@@ -728,6 +776,9 @@ impl<R: std::io::BufRead> CsvRows<R> {
         }
         if self.line.is_empty() {
             return Ok(None);
+        }
+        if self.line.starts_with(&[0xEF, 0xBB, 0xBF]) {
+            self.line.drain(..3); // UTF-8 byte order mark
         }
         let text = String::from_utf8_lossy(&self.line);
         let mut rows = parse_csv(&text, self.delim);
@@ -1261,5 +1312,60 @@ mod tests {
         );
         assert_eq!(cells.iter().filter(|c| c.table_id == "k#1").count(), 1);
         assert_eq!(cells[3].vtype, CellType::Number);
+    }
+
+    #[test]
+    fn csv_streams_with_a_row_filter_and_line_locators() {
+        let spec = ExtractSpec {
+            filter: vec![RowFilter {
+                column: "Area Code".into(),
+                any_of: vec!["38".into()],
+            }],
+            ..ExtractSpec::default()
+        };
+        let text = "\u{feff}\"Area Code\",\"Item\",\"Value\"\n\"2\",\"x\",\"1\"\n\"38\",\"Rice, paddy\",\"5\"\n\"38\",\"multi\nline\",\"\"\n";
+        let mut out = Vec::new();
+        csv_records(&spec, Cursor::new(text.as_bytes()), "t", ',', 0, &mut out).expect("csv");
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].fields["Item"], "Rice, paddy");
+        assert_eq!(out[0].path, "line:3");
+        assert_eq!(out[1].fields["Item"], "multi\nline");
+        assert!(
+            !out[1].fields.contains_key("Value"),
+            "empty fields are absent"
+        );
+        let bad = ExtractSpec {
+            filter: vec![RowFilter {
+                column: "Nope".into(),
+                any_of: vec![],
+            }],
+            ..ExtractSpec::default()
+        };
+        assert!(csv_records(&bad, Cursor::new(text.as_bytes()), "t", ',', 0, &mut out).is_err());
+    }
+
+    #[test]
+    fn json_tables_take_entries_and_key_templates() {
+        let t: Vec<JsonTable> = serde_json::from_value(serde_json::json!([
+            { "id": "v", "path": "$.values.{key}.{alpha3}", "entries": true },
+            { "id": "rows", "path": "$.data", "fields": { "goal": "goal[0]", "sex": "dimensions.Sex" } }
+        ]))
+        .expect("tables");
+        let doc = br#"{"values":{"NGDP":{"LKA":{"1980":5.8,"1981":null}}},
+            "data":[{"goal":["1"],"dimensions":{"Sex":"BOTHSEX"}},{"goal":["2"],"dimensions":{}}]}"#;
+        let mut out = Vec::new();
+        json_records(&t, doc, "NGDP", ("LK", "LKA"), 0, &mut out).expect("json");
+        assert_eq!(out[0].fields["_key"], "1980");
+        assert_eq!(out[0].fields["_value"], "5.8");
+        assert_eq!(out[0].path, "$.values.NGDP.LKA.1980");
+        assert!(!out[1].fields.contains_key("_value"), "null is no value");
+        assert_eq!(out[2].fields["goal"], "1");
+        assert_eq!(out[2].fields["sex"], "BOTHSEX");
+        assert!(!out[3].fields.contains_key("sex"));
+        let req: Vec<JsonTable> = serde_json::from_value(serde_json::json!([
+            { "id": "x", "path": "$.data", "require": "$.total" }
+        ]))
+        .expect("tables");
+        assert!(json_records(&req, doc, "k", ("LK", "LKA"), 0, &mut out).is_err());
     }
 }

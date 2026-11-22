@@ -1,0 +1,41 @@
+# nuuuwan/lk_dcs: DCS CCPI releases parsed into TSV, one dated folder per release. The
+# newest "movements of the CCPI core" table carries the whole monthly history since 2022;
+# its year-on-year inflation columns are ratios (0.506 = 50.6 %), scaled to percent.
+# The repository commit is the fingerprint (no change → nothing fetched). Third-party parse
+# of DCS PDFs: the DCS PDF parser (WP-08) remains the primary path; this is the
+# machine-readable cross-check named in the source notes. Licence permission_unclear:
+# published with attribution and the takedown contact (08 §2).
+source: nuuuwan-lk-dcs
+driver: git_files
+version: 1.0.0
+description: CCPI headline and core year-on-year inflation from nuuuwan/lk_dcs (TSV at a commit).
+discover:
+  kind: git
+  repo: nuuuwan/lk_dcs
+  ref: main
+  links:
+    - { key: ccpi_core, pattern: "^data/ccpi/movements-of-the-ccpi-core/\\d{4}/(\\d{4}-\\d{2}-\\d{2})/data\\.tsv$" }
+extract:
+  format: tsv
+standardise:
+  dataset: dcs-ccpi
+  tables:
+    - { id: ccpi, artifact: ^ccpi_core$ }
+  outputs:
+    - table: ccpi
+      method: csv_row
+      indicator: { value: econ.cpi.ccpi_yoy }
+      geo: { root: true }
+      period: &month { column: date_str, freq: M, parse: "%Y-%m-%d" }
+      value: { column: inflation_ccpi_year_to_year, number: { scale: 100 } }
+    - table: ccpi
+      method: csv_row
+      indicator: { value: econ.cpi.ccpi_core_yoy }
+      geo: { root: true }
+      period: *month
+      value: { column: inflation_ccpi_core_year_to_year, number: { scale: 100 } }
+expect:
+  - { check: range, min: -20, max: 100 }
+  - { check: no_future }
+  - { check: period_continuity }
+  - { check: row_count, min: 40 }
