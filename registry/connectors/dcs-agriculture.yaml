@@ -89,12 +89,26 @@ standardise:
             "OVERALL INDEX": total
       value: { number: { missing: ["-", ""] } }
 
+    # Maha production: the workbook's district labels do not match its values for
+    # 1978/79–1982/83 and 2008/09–2024/25 (checked 2026-11-22 against yield × harvested
+    # extent: e.g. 2024/25 "KURUNEGALA" 29.67 vs 435.99 for Anuradhapura; the values
+    # follow the Yala workbook's district order while the labels do not). Until DCS
+    # corrects the workbook, district rows are read only for 1983/84–2007/08, where every
+    # district agrees with its own yield × extent; the SRI LANKA row is read for all seasons.
     - table: production_maha
       indicator: { value: agri.paddy_production_t }
-      melt: { columns: "^\\d{4}/\\d{4}$" }
+      filter: [{ column: DISTRICT, not_in: ["SRI LANKA"] }]
+      melt: { columns: "^(198[3-9]|199\\d|200[0-7])/\\d{4}$" }
       geo: &district { column: DISTRICT, match: name, level: 2, root_names: ["SRI LANKA"], skip: [UDAWALAWE, "MAHAWELI'H'", "MAHAWELI 'H'", HIGHLAND PADDY] }
       period: &maha { melt: true, regex: "^(\\d{4})/\\d{4}", replace: "${1}-Maha", freq: S }
       value: &num { number: { missing: ["-", ""] } }
+    - table: production_maha
+      indicator: { value: agri.paddy_production_t }
+      filter: [{ column: DISTRICT, eq: "SRI LANKA" }]
+      melt: { columns: "^\\d{4}/\\d{4}$" }
+      geo: *district
+      period: *maha
+      value: *num
     - table: production_yala
       indicator: { value: agri.paddy_production_t }
       melt: { columns: "^\\d{4}$" }
@@ -134,3 +148,48 @@ expect:
   - { dataset: dcs-paddy-statistics, check: no_future }
   - { dataset: dcs-paddy-statistics, check: completeness, indicator: agri.paddy_production_t, level: 2, min_units: 20, severity: warn,
       note: "Mullaitivu and Kilinochchi are missing in conflict years." }
+  # Derived consistently: yield (kg/ha) vs production ('000 t → kg: ×1e6) / harvested extent (ha).
+  # DCS production = yield × net extent (gross harvested less bunds and channels), so
+  # yield × harvested / production is a per-district factor (1.0–1.8, highest in the hill
+  # country) that is stable over time. A season far from its district's median factor
+  # means a mislabelled or mistyped cell.
+  - dataset: dcs-paddy-statistics
+    check: sql
+    severity: warn
+    note: Yield, harvested extent and production agree through a stable per-district net-extent factor (±15 %).
+    query: >-
+      WITH r AS (
+        SELECT y.geo_code, y.period_start, y.value * h.value / (p.value * 1e6) AS f
+        FROM stage_obs y
+        JOIN stage_obs p ON p.geo_code = y.geo_code AND p.period_start = y.period_start
+          AND p.indicator_id = 'agri.paddy_production_t'
+        JOIN stage_obs h ON h.geo_code = y.geo_code AND h.period_start = y.period_start
+          AND h.indicator_id = 'agri.paddy_harvested_ha'
+        WHERE y.indicator_id = 'agri.paddy_yield' AND y.value > 0 AND p.value > 0 AND h.value > 0),
+      m AS (SELECT geo_code, percentile_cont(0.5) WITHIN GROUP (ORDER BY f) AS med FROM r GROUP BY geo_code)
+      SELECT r.geo_code, r.period_start, round(r.f::numeric, 3) AS factor, round(m.med::numeric, 3) AS district_median
+      FROM r JOIN m USING (geo_code) WHERE abs(r.f / m.med - 1) > 0.15
+  - { dataset: dcs-paddy-statistics, check: range, indicator: agri.paddy_sown_ha, min: 0, max: 1000000 }
+  - { dataset: dcs-paddy-statistics, check: row_count, min: 9000 }
+  - dataset: dcs-paddy-statistics
+    check: sql
+    severity: warn
+    note: Harvested extent never exceeds sown extent for the same district and season.
+    query: >-
+      SELECT h.geo_code, h.period_start, h.value AS harvested, s.value AS sown
+      FROM stage_obs h JOIN stage_obs s ON s.geo_code = h.geo_code AND s.period_start = h.period_start
+      AND s.indicator_id = 'agri.paddy_sown_ha'
+      WHERE h.indicator_id = 'agri.paddy_harvested_ha' AND h.value > s.value * 1.001 + 1
+  - dataset: dcs-paddy-statistics
+    check: sql
+    severity: warn
+    note: >-
+      Districts never sum to more than the national (SRI LANKA) row. Before 2017/18 Maha the national
+      row also includes Udawalawe, Mahaweli 'H' and highland paddy, so it may exceed the district sum.
+    query: >-
+      SELECT d.indicator_id, d.period_start, sum(d.value) AS districts, n.value AS national
+      FROM stage_obs d JOIN stage_obs n ON n.indicator_id = d.indicator_id AND n.period_start = d.period_start
+      AND n.geo_code = 'LK'
+      WHERE d.geo_code <> 'LK'
+      AND d.indicator_id IN ('agri.paddy_sown_ha', 'agri.paddy_harvested_ha', 'agri.paddy_production_t')
+      GROUP BY d.indicator_id, d.period_start, n.value HAVING sum(d.value) > n.value * 1.01 + 1

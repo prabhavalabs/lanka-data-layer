@@ -51,6 +51,8 @@ time_coverage:
 method: DCS XLSX workbooks per variable x season (Total column of extent and yield sheets); seasons are periods (1978-Maha = Maha 1978/79, 1979-Yala); reviewed.
 limits:
 - District totals; no DS breakdown.
+- Maha production by district covers 1983/84–2007/08 only. The DCS Maha production workbook's district labels do not match its values for 1978/79–1982/83 and 2008/09–2024/25 (cross-checked against yield × harvested extent); those seasons carry the national row only until DCS corrects the workbook.
+- DCS production = yield × net extent; yield × gross harvested extent / production is a stable per-district factor of 1.0–1.8, not 1.
 - Mullaitivu/Kilinochchi missing in conflict years.
 - Udawalawe, Mahaweli 'H' and highland paddy are DCS reporting areas, not districts; they are included in the national (SRI LANKA) row only. After 2017/18 Maha the districts include them.
 enrichment:
