@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowUpRight, Check, ChevronRight, Copy, Download, Minus, Plus, TriangleAlert } from 'lucide-react'
+import { ArrowUpRight, Check, ChevronRight, CircleHelp, Copy, Download, Minus, Plus, TriangleAlert } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { datasetQuery, themesQuery } from '@/api/queries'
@@ -238,6 +238,24 @@ export default function DatasetPage() {
                 </li>
               ))}
             </ol>
+            {d.licence.status === 'unclear' ? (
+              <div className="mt-4 flex gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--warn)_35%,var(--line))] bg-warn-soft px-4 py-3 text-[13px] leading-relaxed text-ink">
+                <CircleHelp className="mt-0.5 size-4 shrink-0 text-warn" />
+                <p>
+                  The publisher states no reuse licence. We republish this data with attribution in the public interest while we ask for written permission.{' '}
+                  <Link to="/terms#takedown" className="font-medium whitespace-nowrap text-warn hover:underline">
+                    Rights holder? Request removal
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-ink3">
+                Reuse under each source’s licence, with credit to the publisher.{' '}
+                <Link to="/terms#licensing" className="link-draw text-ink2 hover:text-ink">
+                  Licensing and removal requests
+                </Link>
+              </p>
+            )}
           </Block>
 
           <Block id="versions" title="Version history" kicker="row-level diffs">
