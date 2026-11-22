@@ -110,18 +110,36 @@ async fn dcs_agriculture_html_and_xlsx() {
     let overall = find(&idx.first, &[("dims", "group=total"), ("period", "2025")]);
     assert!(overall["value"].as_f64().is_some());
     // 8 workbooks, districts × seasons (Total columns only), reporting areas skipped
-    assert_eq!(paddy.rows, 9544);
-    let colombo = find(
+    // Maha production by district only for 1983/84-2007/08 (mislabelled elsewhere upstream)
+    assert_eq!(paddy.rows, 9002);
+    let is = |r: &Value, i: &str, g: &str, p: &str| {
+        r["indicator"] == i && r["geo"] == g && r["period"] == p
+    };
+    assert!(
+        !paddy
+            .first
+            .iter()
+            .any(|r| is(r, "agri.paddy_production_t", "LK11", "1978-Maha"))
+    );
+    let national = find(
+        &paddy.first,
+        &[
+            ("indicator", "agri.paddy_production_t"),
+            ("geo", "LK"),
+            ("period", "1978-Maha"),
+        ],
+    );
+    assert_eq!(national["value"], 1395.6);
+    assert_eq!(national["locator"]["sheet"], "Maha Season");
+    assert_eq!(national["locator"]["cell"], "C32");
+    find(
         &paddy.first,
         &[
             ("indicator", "agri.paddy_production_t"),
             ("geo", "LK11"),
-            ("period", "1978-Maha"),
+            ("period", "1983-Maha"),
         ],
     );
-    assert_eq!(colombo["value"], 12.2);
-    assert_eq!(colombo["locator"]["sheet"], "Maha Season");
-    assert_eq!(colombo["locator"]["cell"], "C4");
     // the printed header "198" is the 1980 Yala season (spec rename)
     find(
         &paddy.first,
