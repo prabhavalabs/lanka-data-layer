@@ -1816,6 +1816,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "lanka-extractd"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "lanka-grid"
 version = "0.1.0"
 dependencies = [

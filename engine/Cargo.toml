@@ -3,6 +3,7 @@ resolver = "3"
 members = [
   "crates/lanka-core",
   "crates/lanka-store",
+  "crates/lanka-extractd",
   "crates/lanka-ingest",
   "crates/lanka-enrich",
   "crates/lanka-mapdoc",
@@ -28,6 +29,7 @@ publish = false
 lanka-app = { path = "crates/lanka-app" }
 lanka-core = { path = "crates/lanka-core" }
 lanka-export = { path = "crates/lanka-export" }
+lanka-extractd = { path = "crates/lanka-extractd" }
 lanka-ingest = { path = "crates/lanka-ingest" }
 lanka-enrich = { path = "crates/lanka-enrich" }
 lanka-mapdoc = { path = "crates/lanka-mapdoc" }
