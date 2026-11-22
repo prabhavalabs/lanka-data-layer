@@ -15,6 +15,7 @@
 //! lanka reverse <lat> <lon>
 //! lanka area <pcode>
 //! lanka map validate <file>… | hash <file> | refs <file> | resolve <file> [--freeze] | types
+//! lanka tiles build [--tileset ID]… [--force] | list
 //! ```
 
 use std::net::SocketAddr;
@@ -33,6 +34,8 @@ use lanka_ingest::{
 use lanka_store::FsStore;
 use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
+
+mod tiles_cmd;
 
 #[derive(Parser)]
 #[command(
@@ -118,6 +121,9 @@ enum Cmd {
     /// Map documents (`ldl-map/1`): validate, hash, references, resolve.
     #[command(subcommand)]
     Map(MapCmd),
+    /// Vector tilesets (PMTiles) from the current release.
+    #[command(subcommand)]
+    Tiles(tiles_cmd::TilesCmd),
     /// HTTP GET a local URL and exit 0 on 200 (container health checks; the
     /// image has no curl). Only plain `http://host:port/path` is supported.
     Probe {
@@ -808,6 +814,7 @@ async fn run(cli: Cli) -> Result<()> {
             }
         }
         Cmd::Probe { url } => probe(&url).await?,
+        Cmd::Tiles(cmd) => tiles_cmd::run(g, cmd).await?,
         Cmd::Map(cmd) => map_cmd(g, cmd).await?,
         Cmd::Area { pcode } => {
             let pool = pool(g, PoolRole::Api).await?;
