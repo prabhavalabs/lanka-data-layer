@@ -516,3 +516,120 @@ attribution and `ESTIMATE`, the package keeps private data metadata-only, withdr
 - *Resolution of the real example*: on a database with only COD-AB, WDI and the census, the 10 §7 example resolves
   to boundaries + `PRIVATE_DATA` and `NOT_FOUND` problems (its exposure/flood/price datasets are not loaded); its
   attribution + `ESTIMATE` acceptance is therefore tested with a catalogue that holds them.
+
+## Enrichment (WP-06)
+
+Design: [04](../docs/architecture-v2/04-enrichment.md), [ADR 0010](../docs/architecture-v2/adr/0010-enrichment-methods-and-recipes.md),
+[ADR 0005](../docs/architecture-v2/adr/0005-provenance-side-table-and-derivations.md). Migration `0006_enrichment.sql`
+(`catalog.methods`, `catalog.recipes`, `catalog.recipe_inputs`, `data.derivations`, `data.version_inputs`).
+
+```
+registry/recipes/<id>.yaml ─(recipe.schema.json + lanka recipe check)─► catalog.recipes / recipe_inputs (global DAG)
+train step 1 (before the lock): candidates = current release ∪ approved
+  for recipe in topological order:  fingerprint = sha256(spec ‖ output dataset spec ‖ method@version ‖ tools ‖ input dsvs)
+     derivation with that fingerprint whose version is current/approved/in review → reused (nothing runs)
+     else lanka-enrich runner: steps → propagation → emit → QA gates → publish_observations (same validate/stage path)
+          → derived gate → data.derivations + data.version_inputs → approved output joins the candidates
+  the cut then releases official and derived versions together
+```
+
+- **Crate `lanka-enrich`**: `method.rs` (the `Method` trait, `MethodInfo`, rows, `Inputs`, `OutputSink`, contributors),
+  `methods/{rollup,ratio,features_zonal,unit_metrics}.rs`, `zonal.rs` (array-kernel plug-in for WP-05), `recipe.rs`
+  (spec, schema validation, type checks), `dag.rs` (Kahn, ties by id), `runner.rs` (execute, QA, fingerprint, explain),
+  `propagate.rs`, `pg.rs` (inputs over pinned versions), `provenance.rs`. Publication is `lanka-ingest/src/derive.rs`
+  (it owns the staging path); the train calls it through `train::run_train_with(…, Some(&DeriveEnv))`
+  (`run_train` without an env skips recompute, so existing callers are unchanged).
+- **Methods are a library**: they read only through `Inputs` (pinned Postgres versions, earlier steps, or `MemInputs`)
+  and write to an `OutputSink` (`CollectSink` in memory), so `lanka-analysis` can call them outside a recipe run.
+  Every output row lists its contributors (`Contrib { port, kind: obs|feature|unit|cells, idx, role, weight }`); the
+  runner enforces 04 §5 from them after every step (basis = max, status suppressed > missing > low_reliability >
+  provisional, flags OR of all propagating bits incl. 16 `INTERPOLATED_SPACE` and 17 `DISAGGREGATED`, null value for
+  suppressed/missing, `Interval` methods must give bounds), and `explain` resolves them to obs_ids.
+- **Library v1**: `rollup@1` (aggregation rule from the catalogue: sum, min, max, ratio_of_sums, weighted_mean; `none`
+  never; `min_coverage` → `missing` below, `PARTIAL_COVERAGE` between; variances add for intervals), `ratio@1`
+  (formula grammar `+ - * / ( )` over named terms, `select` dims, broadcast of undimensioned terms, `match_period:
+  exact | {nearest: {max_years}}` with `DENOM_MISMATCH`, zero divisor → `missing`, delta-method intervals),
+  `features_zonal@1` (count | length_km | area_km2 per unit and ancestors, kind/attr filters, a breakdown dimension with
+  a total, flags pass through), `unit_metrics@1` (geodesic `area_km2` of the reference set, child counts).
+- **Recipes** (`registry/recipes/`): `derived-admin-metrics` (`admin.area_km2`, `admin.child_count` ADM0–4, moved out of
+  `cod-ab-lka-boundaries`), `derived-census-2024-rollups` (district → province for pop total/age-sex/ethnicity/religion,
+  provincial sex ratio; QA: provinces sum to the printed national totals), `derived-per-capita-indicators`
+  (`derived.per_km2{source_indicator=census24.pop_total}` ADM0–3, reading the two recipes above),
+  `derived-facility-counts` (`derived.facility_count` and `derived.facility_per_10k` by `amenity_type`; waits for
+  WP-04's features). QA checks: `sum_matches`, `non_negative`, `min_rows`, `no_missing`.
+- **Derived gate** (04 §7): approved only when `stable`, QA passed, not the dataset's first version, same method MAJORs
+  and parameters as the published derivation (and the class-A staging gate passes); else `in_review`
+  (`lanka review approve`). A failing recipe or QA gate stages nothing, opens a `recipe_failed` incident and keeps the
+  previous version; downstream recipes then see the old input and are reused.
+- **Provenance**: derived rows get no `data.obs_provenance` row (their canonical row hashes without a locator; staging
+  never classifies them as restated). `GET /v2/observations/{id}/provenance[?depth=1..3]` adds `derived`: derivation
+  (recipe, methods, parameters, pinned input dsvs, fingerprint, git rev), formula and contributors re-computed by
+  `explain` over the pinned versions; `depth` recurses into derived contributors. Attribution lists the inputs' sources.
+
+```bash
+lanka recipe check                    # schema + methods + params + ports + emit + DAG (also part of `registry validate`)
+lanka recipe list                     # what the next train would do per recipe (dry run)
+lanka recipe methods
+lanka recipe run derived-census-2024-rollups [--force] [--dry-run]
+lanka recipe explain <obs_id> [--depth 2]
+lanka jobs enqueue recipe [<id>] [--force]   # worker job kind `recipe` (priority 150, weight 4)
+lanka release cut                     # recompute stale recipes, then cut
+```
+
+Measured on the local database (debug build, loaded laptop; census 2024 + COD-AB ingested, 2026-11-22):
+
+| Train | Recipes | Recompute | Result |
+|---|---|---|---|
+| 1 | admin-metrics (14,791 rows, 830 ms), census-rollups (216 rows, 414 ms) | 1.30 s | both in review (first version); per-capita, facilities `waiting_inputs` |
+| 2 (after review) | admin + rollups reused; per-capita (374 rows, 410 ms) | 0.48 s | 2 released; per-capita in review |
+| 3 | all reused | 38 ms | per-capita released |
+| 4 | **nothing runs** (3 reused, facilities waiting) | 37 ms | `no_change`, train 76 ms |
+
+Values: Western Province 6,117,341 (sum of 3 districts; provinces sum to the national total, worst 0.0 %), sex ratio
+93.83, Sri Lanka 329.6 people/km² (66,079 km²). `lanka recipe explain` 0.2 s; the provenance endpoint with explain
+~140 ms (debug; it re-runs the step over the pinned inputs).
+
+### Decision note: WP-06 deviations
+
+- *One writer per dataset*: a recipe owns its output dataset, so census ADM1 roll-ups are `rollup.census24.*` in
+  `derived-census-2024-rollups`, not computed rows inside `census24.pop_total` as 04 §8.1 allows; a serve-time union for
+  levels the source does not print is a follow-up. `admin.area_km2`/`admin.child_count` moved to `derived-admin-metrics`
+  (class `derived`) because a boundaries dataset version carries no observations.
+- *`data.derivations`* has its own id; `version_id` is not unique, with `outcome new | unchanged`: a re-run whose output
+  equals the published version records its fingerprint against that version, so it is reused next time. Failed runs
+  are not recorded (incident only) and retry on the next train.
+- *Tabular methods* read with one indexed SQL range scan per port and compute in Rust (pure, property-tested, usable
+  in memory) rather than set-based SQL; at 14k units × a few hundred series this is milliseconds.
+- *Partial recompute* (`changed_keys`) is in the context but no method uses it yet: staging needs the full row set, and
+  unchanged rows already cost nothing (range versioning). `MethodCtx` has no `pg`/`scratch`/`tools` members yet (no
+  method needs them); tool versions enter the fingerprint as an empty map until a method declares tools.
+- *QA failure* stages nothing (04 §7 says the version is `rejected`; the effect — previous version stays — is the same).
+  The class-A staging gate (> 1 % changed) also applies to derived versions, stricter than `max_revision_pct`.
+- *Periods*: an emitted row is re-expressed in the output indicator's frequency (census snapshot `2024` → year 2024 for
+  `derived.per_km2`).
+- *Features* (`features_zonal`, WP-04): reads the 05 §4 shape of `geo.features` (`dataset_key`, `vfrom`/`vto`,
+  `feature_key`, `kind`, `unit_key`, `attrs`, `flags`, `geom`). Until 0007 lands the facility recipe waits for its input
+  and `lanka recipe check` warns that `osm-pois-amenities` is not yet `kind: features`; the facility acceptance is proven
+  by `tests/pg_enrich.rs` on a fixture table of that shape. Lines/polygons count whole in their `unit_key`.
+
+### How WP-05 plugs `grid_zonal` in
+
+Implement the pure kernel and register the adapter — no runner, recipe or Postgres code involved:
+
+```rust
+pub trait ZonalKernel: Send + Sync {                       // lanka-enrich/src/zonal.rs
+    fn info(&self) -> &MethodInfo;                         // id "grid_zonal", params schema, basis, flags
+    fn zonal(&self, values: &[f32], unit_idx: &[u32], n_units: usize, params: &Value) -> Result<Vec<ZonalStat>>;
+}
+// methods/mod.rs: Methods::builtin() gains Arc::new(GridZonal(GridZonalKernel)); `Inputs::grid(port)` returns a
+// `GridInput { values, unit_idx, units, basis, flags }` (implement it on `pg::PgInputs` from lanka-grid's mmap arrays).
+```
+
+`GridZonal` emits one row per deepest unit with a `cells` contributor; coarser levels are a following `rollup` step.
+`SumKernel` and its conservation property test (Σ units + unassigned = total) are the template.
+
+```bash
+# tests (DB tests create and drop throwaway databases)
+LANKA_TEST_DATABASE_URL=postgres://lanka:<password>@127.0.0.1:55432/postgres cargo test -p lanka-ingest --test pg_enrich
+cargo test -p lanka-enrich      # methods, propagation (proptest), expr, DAG/check, runner, fingerprint, zonal
+```

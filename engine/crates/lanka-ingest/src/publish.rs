@@ -391,7 +391,11 @@ pub async fn validate(
         .collect())
 }
 
-fn canonical(r: &ObsRow) -> CanonicalRow<'_> {
+/// The canonical row as the database will reconstruct it. A row without an
+/// artifact (a derived row, ADR 0005) gets no `data.obs_provenance` row, so
+/// its locator hashes as absent on both sides.
+fn canonical<'a>(r: &'a ObsRow, artifact_ids: &[i64]) -> CanonicalRow<'a> {
+    let has_prov = artifact_ids.get(r.artifact).is_some();
     CanonicalRow {
         indicator_id: &r.indicator_id,
         geo_code: &r.geo_code,
@@ -403,8 +407,8 @@ fn canonical(r: &ObsRow) -> CanonicalRow<'_> {
         basis: r.basis,
         status: r.status,
         flags: r.flags,
-        verbatim: r.verbatim.as_deref(),
-        locator: Some(&r.locator),
+        verbatim: r.verbatim.as_deref().filter(|_| has_prov),
+        locator: has_prov.then_some(&r.locator),
     }
 }
 
@@ -512,7 +516,8 @@ async fn classify(conn: &mut PgConnection, dataset_key: i32, cur_seq: i32) -> Re
                      IS DISTINCT FROM (c.value, c.lo, c.hi, c.basis,
                                        CASE WHEN c.status = 3 THEN 1::int2 ELSE c.status END, c.flags)
                   THEN 'c'
-                WHEN (s.locator::text, s.verbatim) IS DISTINCT FROM (p.locator::text, p.verbatim) THEN 'r'
+                WHEN s.artifact_id IS NOT NULL
+                     AND (s.locator::text, s.verbatim) IS DISTINCT FROM (p.locator::text, p.verbatim) THEN 'r'
                 ELSE 's' END AS change,
            c.obs_id IS NOT NULL AND (s.value, s.lo, s.hi) IS DISTINCT FROM (c.value, c.lo, c.hi) AS value_changed
          FROM obs_stage s
@@ -574,6 +579,7 @@ async fn delta_multiset(
     dataset_key: i32,
     prev: MultisetHash,
     rows: &[ObsRow],
+    artifact_ids: &[i64],
 ) -> Result<(MultisetHash, u64)> {
     let mut m = prev;
     let rns: Vec<i64> = sqlx::query_scalar("SELECT rn FROM obs_diff WHERE change <> 's'")
@@ -583,7 +589,7 @@ async fn delta_multiset(
         let r = rows
             .get(usize::try_from(*rn)?)
             .context("staged row number out of range")?;
-        m.add(&canonical(r).hash());
+        m.add(&canonical(r, artifact_ids).hash());
     }
     // CANON_SELECT is a constant; nothing user-supplied is formatted in.
     let closed: Vec<CanonRow> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -914,11 +920,13 @@ pub async fn publish_observations(
     // Incremental from the released version when its hash is known, else a
     // full sum over the delivered rows (first version).
     let (multiset, hashed) = match current.as_ref().and_then(|c| c.multiset) {
-        Some(prev) => delta_multiset(&mut tx, profile, dataset_key, prev, rows).await?,
+        Some(prev) => {
+            delta_multiset(&mut tx, profile, dataset_key, prev, rows, artifact_ids).await?
+        }
         None => {
             let mut m = MultisetHash::empty();
             for r in rows {
-                m.add(&canonical(r).hash());
+                m.add(&canonical(r, artifact_ids).hash());
             }
             (m, n)
         }
@@ -1548,7 +1556,7 @@ mod tests {
 
     fn multiset(rows: &[ObsRow]) -> MultisetHash {
         let mut m = MultisetHash::empty();
-        rows.iter().for_each(|r| m.add(&canonical(r).hash()));
+        rows.iter().for_each(|r| m.add(&canonical(r, &[1]).hash()));
         m
     }
 
@@ -1564,7 +1572,7 @@ mod tests {
         assert!(d.starts_with("dsv_") && d.len() == 20);
         // Appending a period changes the hash by exactly the new row.
         let mut inc = multiset(&a);
-        inc.add(&canonical(&row("x", "LK", "2022", 3.0)).hash());
+        inc.add(&canonical(&row("x", "LK", "2022", 3.0), &[1]).hash());
         let mut all = a.clone();
         all.push(row("x", "LK", "2022", 3.0));
         assert_eq!(inc, multiset(&all));

@@ -1,0 +1,74 @@
+id: derived-census-2024-rollups
+title: 'Census 2024: province roll-ups'
+description: Census 2024 population counts summed from districts to provinces (ADM1), which the DCS tables do not print,
+  and the provincial sex ratio recomputed from the summed counts.
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: rollup.census24.pop_total
+  label: Enumerated population (sum of districts)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - sex
+  geo_levels:
+  - adm1
+  period_type: snapshot
+- id: rollup.census24.pop_age_sex
+  label: Population by age group and sex (sum of districts)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - sex
+  - age_group
+  geo_levels:
+  - adm1
+  period_type: snapshot
+- id: rollup.census24.pop_by_ethnicity
+  label: Population by ethnicity (sum of districts)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - ethnicity
+  geo_levels:
+  - adm1
+  period_type: snapshot
+- id: rollup.census24.pop_by_religion
+  label: Population by religion (sum of districts)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - religion
+  geo_levels:
+  - adm1
+  period_type: snapshot
+- id: rollup.census24.sex_ratio
+  label: Males per 100 females (from summed counts)
+  unit: '1'
+  measure_type: ratio
+  aggregation: none
+  class: derived
+  geo_levels:
+  - adm1
+  period_type: snapshot
+time_coverage:
+  from: '2024'
+method: 'Recipe derived-census-2024-rollups: rollup@1 (sum of the 25 district values per province, by every breakdown)
+  and ratio@1 (male / female × 100 from the summed counts). Gate: provinces sum to the printed national total.'
+limits:
+- Values are sums of the published district figures; they inherit every limitation of those figures and are not DCS
+  publications.
+- A province is missing (not zero) when any of its districts is missing.
+enrichment:
+  derived_from:
+  - dcs-census-2024-population
+  - dcs-census-2024-ethnicity-religion
+publication_class: A

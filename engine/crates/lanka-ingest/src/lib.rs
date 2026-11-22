@@ -6,6 +6,7 @@
 pub mod connector;
 pub mod connectors;
 pub mod copy_bin;
+pub mod derive;
 pub mod drivers;
 pub mod extract;
 pub mod geo_load;

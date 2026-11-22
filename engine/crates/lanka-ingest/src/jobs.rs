@@ -132,6 +132,25 @@ impl NewJob {
     }
 }
 
+impl NewJob {
+    /// A recipe run outside the train (priority 150, weight 4: the heavy
+    /// slot is exclusive). `recipe = None` recomputes every stale recipe.
+    #[must_use]
+    pub fn recipe(recipe: Option<&str>, trigger: &str, force: bool) -> Self {
+        Self {
+            kind: "recipe".into(),
+            lane: "batch".into(),
+            dedupe_key: format!("recipe:{}", recipe.unwrap_or("*")),
+            payload: json!({ "recipe": recipe, "force": force }),
+            priority: 150,
+            weight: 4,
+            max_attempts: 2,
+            trigger: trigger.into(),
+            run_after: None,
+        }
+    }
+}
+
 /// Enqueues `job`; returns `(id, created)`. A live job with the same dedupe
 /// key is returned instead of a new one.
 pub async fn enqueue(pool: &PgPool, job: &NewJob) -> Result<(i64, bool)> {

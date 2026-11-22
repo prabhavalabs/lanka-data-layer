@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/prabhavalabs/lanka-data-layer/registry/schema/recipe.schema.json",
+  "title": "Lanka Data Layer recipe",
+  "description": "A declarative binding of methods, parameters and input datasets to one derived output dataset (docs/architecture-v2/04-enrichment.md §4). Method parameters are validated against each method's own schema by `lanka recipe check`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "output", "stability", "inputs", "steps", "emit"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^derived-[a-z0-9]+(-[a-z0-9]+)*$", "description": "Equals the file name and, by convention, the output dataset id." },
+    "output": { "type": "string", "pattern": "^derived-[a-z0-9]+(-[a-z0-9]+)*$", "description": "registry/datasets/<output>.yaml holds title, limits and indicators." },
+    "title": { "type": "string" },
+    "stability": { "enum": ["experimental", "stable"], "description": "Only stable recipes are auto-approved by the train." },
+    "schedule": { "enum": ["daily", "weekly", "monthly", "manual"], "default": "daily", "description": "Heavy recipes are skipped by daily trains even when stale." },
+    "as_of": { "type": "string", "format": "date", "description": "Reference date handed to methods (never the wall clock)." },
+    "inputs": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dataset"],
+        "properties": {
+          "dataset": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+          "indicators": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "description": "Read only these indicators." },
+          "optional": { "type": "boolean", "default": false }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "method", "with"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+          "method": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(@(\\*|[=^]?[0-9]+(\\.[0-9]+){0,2}))?$", "description": "<method id>@<semver requirement>, e.g. rollup@^1" },
+          "with": { "type": "object", "description": "Method parameters; port references name a declared input or an earlier step." }
+        }
+      }
+    },
+    "emit": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["from"],
+        "properties": {
+          "from": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+            ]
+          },
+          "indicator": { "type": "string", "description": "Every row of the step(s) becomes this output indicator." },
+          "map": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Step indicator → output indicator; unmapped rows are not emitted." }
+        },
+        "not": { "required": ["indicator", "map"] }
+      }
+    },
+    "qa": {
+      "type": "array",
+      "description": "Gates: a failed gate blocks publication of the version.",
+      "items": {
+        "type": "object",
+        "required": ["check"],
+        "properties": {
+          "check": { "enum": ["sum_matches", "non_negative", "min_rows", "no_missing"] },
+          "indicator": { "type": "string" },
+          "level": { "type": "integer", "minimum": 0 },
+          "input": { "type": "string" },
+          "input_indicator": { "type": "string" },
+          "input_level": { "type": "integer", "minimum": 0 },
+          "tol_pct": { "type": "number", "minimum": 0 },
+          "n": { "type": "integer", "minimum": 0 },
+          "max_share": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "max_revision_pct": { "type": "number", "minimum": 0 }
+  }
+}

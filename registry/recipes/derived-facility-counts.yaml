@@ -1,0 +1,38 @@
+id: derived-facility-counts
+output: derived-facility-counts
+title: Facility counts per unit and per 10,000 population
+stability: stable
+inputs:
+  pois: { dataset: osm-pois-amenities }
+  census: { dataset: dcs-census-2024-population, indicators: [census24.pop_total] }
+  rollups: { dataset: derived-census-2024-rollups, indicators: [rollup.census24.pop_total] }
+steps:
+  - id: count
+    method: features_zonal@^1
+    with:
+      features: pois
+      measure: count
+      kinds: [hospital, clinic, doctors, pharmacy, school, college, university, police, post_office, fire_station]
+      dim: { id: amenity_type, from: kind, total: total }
+      indicator: derived.facility_count
+      period: "2026"
+      levels: [1, 2, 3, 4]
+  - id: per_10k
+    method: ratio@^1
+    with:
+      terms:
+        n: { from: [{ port: count, indicator: derived.facility_count }] }
+        pop:
+          from:
+            - { port: census, indicator: census24.pop_total }
+            - { port: rollups, indicator: rollup.census24.pop_total }
+          select: "sex=total"
+      formula: n / pop * 10000
+      indicator: derived.facility_per_10k
+      match_period: { nearest: { max_years: 5 } }
+      levels: [1, 2, 3]
+emit:
+  - { from: count }
+  - { from: per_10k }
+qa:
+  - { check: non_negative }

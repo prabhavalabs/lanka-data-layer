@@ -1,0 +1,49 @@
+id: derived-facility-counts
+title: Facilities per admin unit and per 10,000 population
+description: Counts of health, education and public-service facilities per admin unit by facility type, and the same
+  counts per 10,000 enumerated population (Census 2024).
+source_ids:
+- lanka-data-layer-derived
+indicators:
+- id: derived.facility_count
+  label: Facilities by type
+  unit: '{count}'
+  measure_type: count
+  aggregation: sum
+  class: derived
+  dims:
+  - amenity_type
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  - adm4
+  period_type: snapshot
+- id: derived.facility_per_10k
+  label: Facilities per 10,000 population
+  unit: '/10*4'
+  measure_type: rate
+  aggregation: none
+  class: derived
+  dims:
+  - amenity_type
+  geo_levels:
+  - adm1
+  - adm2
+  - adm3
+  period_type: snapshot
+time_coverage:
+  from: '2026'
+method: 'Recipe derived-facility-counts: features_zonal@1 (point in unit by the feature''s deepest admin unit, summed up
+  the p-code hierarchy) and ratio@1 (count / Census 2024 population × 10,000; DENOM_MISMATCH because the denominator year
+  differs).'
+limits:
+- Counts are of mapped features (OpenStreetMap); absence in the data is not absence on the ground.
+- The denominator is the 2024 census population; rates for later feature snapshots carry DENOM_MISMATCH.
+- Lines and polygons count once, in the unit holding their point on surface.
+enrichment:
+  derived_from:
+  - osm-pois-amenities
+  - dcs-census-2024-population
+  - derived-census-2024-rollups
+publication_class: A
