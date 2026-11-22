@@ -1,0 +1,24 @@
+# Pocket Book 2026, table 9.8: index numbers of external trade (2010=100), value and
+# volume indices of imports and exports and the terms of trade (CBSL). A figure sits
+# to the right of the table on the same page; rows are told apart by occurrence
+# (Imports#1 / Exports#1 value, #2 volume). "Terms of / Trade(a)" wraps around its
+# numbers (label_above).
+id: dcs-pocketbook-economy/table-9.8-external-trade-indices
+title: "Index numbers of external trade (2010=100)"
+editions:
+  - match: { edition: "2026" }
+    locate:
+      page: { find_text: "(Value, Volume and Terms of Trade", then_text: "Imports" }
+    label: { key: item, header: "Item" }
+    columns:
+      - { key: y2021, header: "2021" }
+      - { key: y2022, header: "2022" }
+      - { key: y2023, header: "2023" }
+      - { key: y2024, header: "2024" }
+      - { key: y2025, header: "2025" }
+    rows: { stop_at: ["Export unit price index"], label_above: true, min_cells: 5 }
+    # The figure title "Value Index" lands in the 2025 cells of two rows: stripped.
+    number: { thousands: ",", strip: ["Index", "Value"] }
+    checks:
+      - { row_count: { min: 5, max: 5 } }
+      - { rows_present: ["Imports#2", "Exports#2", "Trade"] }

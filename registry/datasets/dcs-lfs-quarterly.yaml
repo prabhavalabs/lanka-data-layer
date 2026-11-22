@@ -41,10 +41,56 @@ indicators:
   geo_levels:
   - national
   period_type: quarter
+- id: lab.household_pop_q
+  label: Household population aged 15 and over (quarterly LFS)
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  period_type: quarter
+- id: lab.labour_force_q
+  label: Labour force, quarterly
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  period_type: quarter
+- id: lab.unemployed_q
+  label: Unemployed persons, quarterly
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  period_type: quarter
+- id: lab.not_in_labour_force_q
+  label: Persons not in the labour force, quarterly
+  unit: '{person}'
+  measure_type: count
+  aggregation: sum
+  class: official
+  dims:
+  - sex
+  geo_levels:
+  - national
+  period_type: quarter
 time_coverage:
-  from: 2019-Q4
-  to: 2026-Q1
-method: Quarterly report PDFs, reviewed tables.
+  from: 2024-Q2
+  to: 2026-Q2
+method: 'LFS quarterly report (latest: 2026 Q2) annex table 1: labour force status of the household population aged 15 and
+  over by sex for the four quarters printed (2024 Q2, 2025 Q2, 2026 Q1, 2026 Q2); read through a registry template and reviewed.
+  Earlier quarters need the earlier reports (one template edition per layout).'
 limits:
 - Sample survey; youth/education splits have wide CIs.
 - Definitions revised 2023 (ICLS-19) - break flagged.

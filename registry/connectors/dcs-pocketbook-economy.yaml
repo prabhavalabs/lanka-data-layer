@@ -12,7 +12,7 @@ version: 1.0.0
 description: >-
   Statistical Pocket Book 2026 tables 3.9-3.10 (wages, migration), 5.3 (building materials), 6.2-6.11
   (agriculture, fisheries), 7.1 (energy), 8.1-8.4 (transport, vehicles, telecom), 10.2-10.4
-  (national accounts) and 14.1 (tourism).
+  (national accounts), 9.8 (trade indices) and 14.1 (tourism).
 discover:
   files:
     - { key: pocketbook-2026, url: "https://www.statistics.gov.lk/Publication/PocketBook2026", edition: "2026" }
@@ -34,6 +34,7 @@ extract:
     - { id: t8_1, file: pocketbook-2026, template: dcs-pocketbook-economy/table-8.1-transport-passengers-freight }
     - { id: t8_2, file: pocketbook-2026, template: dcs-pocketbook-economy/table-8.2-registered-motor-vehicles }
     - { id: t8_4, file: pocketbook-2026, template: dcs-pocketbook-economy/table-8.4-telecommunication-services }
+    - { id: t9_8, file: pocketbook-2026, template: dcs-pocketbook-economy/table-9.8-external-trade-indices }
     - { id: t10_2, file: pocketbook-2026, template: dcs-pocketbook-economy/table-10.2-gdp-by-activity-current }
     - { id: t10_3, file: pocketbook-2026, template: dcs-pocketbook-economy/table-10.3-gdp-by-activity-constant }
     - { id: t10_4, file: pocketbook-2026, template: dcs-pocketbook-economy/table-10.4-gdp-expenditure-current }
@@ -356,6 +357,23 @@ standardise:
         "Special Purpose vehicles": { vehicle_class: special_purpose }
     - { dataset: dmt-vehicle-registrations, table: t8_2, indicator: tran.passenger_cars_per_100, geo: { fixed: root },
         period: { from_header: year }, columns: *y21_25, rows: { "Passenger Cars Per 100 Population (%)": {} } }
+    # ── external trade indices (9.8, CBSL, 2010=100) ──
+    - dataset: dcs-pocketbook-trade-indices
+      table: t9_8
+      indicator: trade.value_index
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows: { "Imports#1": { flow: import }, "Exports#1": { flow: export } }
+    - dataset: dcs-pocketbook-trade-indices
+      table: t9_8
+      indicator: trade.volume_index
+      geo: { fixed: root }
+      period: { from_header: year }
+      columns: *y21_25
+      rows: { "Imports#2": { flow: import }, "Exports#2": { flow: export } }
+    - { dataset: dcs-pocketbook-trade-indices, table: t9_8, indicator: trade.terms_of_trade, geo: { fixed: root },
+        period: { from_header: year }, columns: *y21_25, rows: { "Trade": {} } }
     # ── national accounts (10.2-10.4), Rs. million ──
     - dataset: dcs-gdp-by-industry
       table: t10_2

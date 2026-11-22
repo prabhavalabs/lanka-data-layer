@@ -33,6 +33,7 @@ datasets:
 - dcs-pocketbook-sector-services
 - dmt-vehicle-registrations
 - slbfe-labour-migration
+- dcs-pocketbook-trade-indices
 priority: P1
 effort: M
 status: active
@@ -64,3 +65,4 @@ dc_refs:
 - telecom-services
 - tourism-activity
 - transport-passengers-freight
+- external-trade-indices
