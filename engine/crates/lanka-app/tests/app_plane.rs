@@ -664,6 +664,33 @@ async fn run_snapshots(url: String) {
         assert_eq!(r["payload"]["resolved"], r2["payload"]["resolved"], "{f}");
     }
 
+    // 7b. admin-backed shapes carry the admin tileset's per-layer minzoom
+    // (10 §3.1), also in a document without grid or features sources
+    sqlx::query(
+        "INSERT INTO geo.tilesets (id, sha16, path, bytes, minzoom, maxzoom, layers, input_hash, tool)
+         VALUES ('admin', '00000000000000aa', 'tiles/admin/00000000000000aa.pmtiles', 1, 0, 12,
+                 '[{\"id\": \"adm3\", \"dataset\": \"cod-ab-lka-boundaries\", \"minzoom\": 5, \"maxzoom\": 12},
+                   {\"id\": \"adm4\", \"dataset\": \"cod-ab-lka-boundaries\", \"minzoom\": 9, \"maxzoom\": 12}]',
+                 '\\x00', 'test')",
+    )
+    .execute(&admin)
+    .await
+    .expect("tileset");
+    let ds = json!({"spec": "ldl-map/1", "title": "DS divisions", "pin": "latest",
+        "view": {"center": [80.7, 7.8], "zoom": 5.6}, "basemap": {"style": "ldl-auto"},
+        "sources": {"b": {"kind": "boundaries", "scheme": "admin", "level": 3}},
+        "layers": [{"id": "lb", "name": "DS", "type": "line", "source": "b", "visible": true, "style": {}}]});
+    let (status, _, r) = c.post("/app/v1/maps/resolve", "192.0.2.77", &ds).await;
+    assert_eq!(status, StatusCode::OK, "{r}");
+    assert_eq!(
+        r["payload"]["resolved"]["sources"]["b"]["source_layer"], "adm3",
+        "{r}"
+    );
+    assert_eq!(
+        r["payload"]["resolved"]["sources"]["b"]["minzoom"], 5,
+        "{r}"
+    );
+
     // 8. invalid documents: JSON-pointer problems, nothing stored
     let mut bad = example.clone();
     bad["layers"][0]["source"] = json!("nope");

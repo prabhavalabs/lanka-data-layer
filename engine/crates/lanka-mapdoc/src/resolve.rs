@@ -221,7 +221,9 @@ async fn load_layers(pool: &PgPool, doc: &MapDocument, ctx: &mut ResolveContext)
             })
             .collect();
     }
-    if has("grid") || has("features") {
+    // always: admin-backed shapes (indicator frames, boundaries, analysis
+    // outputs) carry the admin tileset's per-layer `minzoom` too
+    {
         let rows: Vec<(String, String, i16, i16, Value)> = sqlx::query_as(
             "SELECT id, sha16, minzoom, maxzoom, layers FROM geo.current_tilesets ORDER BY id",
         )
