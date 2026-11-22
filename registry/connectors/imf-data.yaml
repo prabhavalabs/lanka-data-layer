@@ -2,8 +2,10 @@
 # (`/api/v1/<subject>/<alpha3>` returns {"values": {<subject>: {<alpha3>: {<year>: value}}}})
 # plus the indicator catalogue, whose `source` names the edition ("World Economic Outlook
 # (October 2026)") — the `vintage` dimension (codelist edition, YYYY-MM).
-# Projections: the DataMapper does not flag them; years from the edition year on are marked
-# basis = forecast by the regex below (bump it when a new decade starts).
+# Projections: the DataMapper does not flag them (it has no "estimates start after" field).
+# WEO projections start in the edition year (October 2026 edition: 2026 onwards), so years
+# from the year in each subject's catalogue `source` ("World Economic Outlook (October
+# 2026)") on are marked basis = forecast (status.since): it moves with each new edition.
 # Licence: imf-terms, permission_unclear — published with attribution (08 §2).
 source: imf-data
 driver: http_json
@@ -41,10 +43,7 @@ standardise:
         vintage: { table: catalogue, column: source, key_column: _key, regex: "\\(([A-Za-z]+ \\d{4})\\)$", date: { parse: "%B %Y", format: "%Y-%m" } }
       value: { column: _value }
       status:
-        template: "{_key}"
-        regex: "^(20(2[6-9]|[3-9]\\d))$"
-        replace: projection
-        unmapped: keep
+        since: { code: projection, table: catalogue, column: source, key_column: _key, regex: "\\([A-Za-z]+ (\\d{4})\\)$" }
         codes: { projection: [forecast, normal] }
 expect:
   - { check: row_count, min: 300 }

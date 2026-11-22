@@ -210,6 +210,47 @@ async fn cbsl_exchange_rates_xlsx() {
     assert!(names.contains(&"period_continuity") && names.contains(&"max_step_change"));
 }
 
+/// basis of the observation for `year` in the first output.
+fn basis_of(r: &TestReport, year: &str) -> String {
+    r.outputs[0]
+        .first
+        .iter()
+        .find(|x| x["period"].as_str() == Some(year))
+        .and_then(|x| x["basis"].as_str())
+        .unwrap_or_else(|| panic!("no row for {year}"))
+        .to_owned()
+}
+
+#[tokio::test]
+async fn imf_projections_follow_the_edition_year() {
+    let (reg, p) = registry();
+    // Real DataMapper responses, trimmed: NGDP_RPCH for LKA 2020-2031, WEO October 2026.
+    let r = test("imf-data", &reg, &p).await.expect("runs");
+    assert_eq!(
+        (r.outputs[0].dataset.as_str(), r.outputs[0].rows),
+        ("imf-weo-lka", 12)
+    );
+    assert_eq!(basis_of(&r, "2025"), "reported");
+    assert_eq!(basis_of(&r, "2026"), "forecast");
+    assert_eq!(basis_of(&r, "2031"), "forecast");
+    // The next edition moves the boundary without a registry edit.
+    let dir = std::env::temp_dir().join(format!("lanka-golden-imf-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("dir");
+    let src = root().join("engine/crates/lanka-ingest/tests/fixtures/imf-data");
+    std::fs::copy(src.join("NGDP_RPCH.json"), dir.join("NGDP_RPCH.json")).expect("copy");
+    let cat = std::fs::read_to_string(src.join("indicators.json"))
+        .expect("catalogue")
+        .replace("(October 2026)", "(April 2027)");
+    std::fs::write(dir.join("indicators.json"), cat).expect("write");
+    let work = dir.join("work");
+    let r = run(&reg, &p, "imf-data", Some(&dir), &work, &lookup(), usize::MAX)
+        .await
+        .expect("runs");
+    let _ = std::fs::remove_dir_all(&dir);
+    assert_eq!(basis_of(&r, "2026"), "reported");
+    assert_eq!(basis_of(&r, "2027"), "forecast");
+}
+
 #[test]
 fn every_connector_spec_builds_its_driver() {
     let (reg, _) = registry();

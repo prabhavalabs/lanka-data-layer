@@ -350,6 +350,20 @@ pub struct StatusOut {
     pub codes: BTreeMap<String, (Basis, Status)>,
     #[serde(default = "reported_normal")]
     pub default: (Basis, Status),
+    /// Observations from a period on take `codes[since.code]` (projections
+    /// from the publisher's edition year: no yearly edits).
+    #[serde(default)]
+    pub since: Option<SinceSpec>,
+    #[serde(flatten)]
+    pub src: SrcFull,
+}
+
+/// `status.since`: a source evaluating to the first period (of the output's
+/// frequency) that takes status code `code`, per row (so `table` +
+/// `key_column` can read it from a metadata table, per series).
+#[derive(Debug, Clone, Deserialize)]
+pub struct SinceSpec {
+    pub code: String,
     #[serde(flatten)]
     pub src: SrcFull,
 }
@@ -1143,6 +1157,7 @@ struct COut<'s> {
     lo: Option<CSrc>,
     hi: Option<CSrc>,
     status: Option<CSrc>,
+    since: Option<(CSrc, &'s SinceSpec)>,
 }
 
 impl<'s> COut<'s> {
@@ -1217,6 +1232,19 @@ impl<'s> COut<'s> {
                 .as_ref()
                 .map(|s| CSrc::new(s.src.clone()))
                 .transpose()?,
+            since: match spec.status.as_ref().and_then(|s| s.since.as_ref()) {
+                None => None,
+                Some(s) => {
+                    ensure!(
+                        spec.status
+                            .as_ref()
+                            .is_some_and(|st| st.codes.contains_key(&s.code)),
+                        "status.since: code {:?} is not in status.codes",
+                        s.code
+                    );
+                    Some((CSrc::new(s.src.clone())?, s))
+                }
+            },
         })
     }
 
@@ -1524,11 +1552,30 @@ fn map_obs(
             };
             let lo = bound(&c.lo, &o.lo).with_context(at)?;
             let hi = bound(&c.hi, &o.hi).with_context(at)?;
+            let since = match &c.since {
+                None => None,
+                Some((s, spec)) => match rc.eval(s, false).with_context(at)? {
+                    None => None,
+                    Some(first) => {
+                        let first = Period::parse(*freq, &first, &ctx.profile.calendars)
+                            .map_err(|e| anyhow::anyhow!("status.since: {e}"))
+                            .with_context(at)?;
+                        let this = Period::parse(*freq, &period, &ctx.profile.calendars)
+                            .map_err(|e| anyhow::anyhow!("{e}"))
+                            .with_context(at)?;
+                        (this.start >= first.start).then_some(spec.code.as_str())
+                    }
+                },
+            };
             let (basis, status) = match (&c.status, &o.status) {
-                (Some(s), Some(spec)) => match rc.eval(s, false)? {
+                (Some(_), Some(spec)) if since.is_some() => since
+                    .and_then(|k| spec.codes.get(k).copied())
+                    .unwrap_or(spec.default),
+                (Some(s), Some(spec)) if s.has_base() => match rc.eval(s, false)? {
                     Some(code) => spec.codes.get(&code).copied().unwrap_or(spec.default),
                     None => spec.default,
                 },
+                (Some(_), Some(spec)) => spec.default,
                 _ => (Basis::Reported, Status::Normal),
             };
             let dims = crate::connector::dims_key(&refs);
