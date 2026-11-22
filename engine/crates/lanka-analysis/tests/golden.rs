@@ -13,12 +13,11 @@
 //!   holding the inputs): the whole pipeline (resolve → align → evaluate)
 //!   must reproduce the committed `result.json` exactly.
 //!
-//! The acceptance pair of the roadmap — flood area share vs population
-//! density, ADM3, island — needs WP-27's `haz.flood_area_share`; until that
-//! merges the harness runs on an open-data substitute available here:
-//! ESA WorldCover built-up share (`lc.class_share`, class 50) vs census
-//! population density (`derived.per_km2`, log), ADM3, island. The flood case
-//! is `flood_area_share_vs_density_adm3_live`, ignored until WP-27 merges.
+//! Cases: the roadmap's acceptance pair — JRC flood area share
+//! (`haz.flood_area_share`, RP100, WP-27) vs census population density
+//! (`derived.per_km2`, log), ADM3, island — and the open-data substitute used
+//! before WP-27 merged: ESA WorldCover built-up share (`lc.class_share`,
+//! class 50) vs the same density.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -57,6 +56,22 @@ fn stable(mut doc: Value) -> Value {
             || t.to_owned(),
             |(_, r)| format!("Lanka Data Layer. Analysis {r}"),
         );
+        doc["citation"]["text"] = json!(t);
+    }
+    doc
+}
+
+/// A result without the release it first ran against: the fingerprint (and
+/// so the id) leaves out `pin`, so a later unrelated release keeps the
+/// result; only the recorded release differs.
+fn release_free(mut doc: Value) -> Value {
+    doc["request"]["pin"] = json!(null);
+    doc["provenance"]["data_version"] = json!(null);
+    if let Some(t) = doc["citation"]["text"].as_str() {
+        let t = t
+            .split_once(" Data release ")
+            .map_or(t, |(a, _)| a)
+            .to_owned();
         doc["citation"]["text"] = json!(t);
     }
     doc
@@ -168,7 +183,8 @@ async fn live(case: &str) {
     let want = read(case, "result.json")
         .unwrap_or_else(|| panic!("{case}: no result.json; run with LANKA_GOLDEN_UPDATE=1"));
     assert_eq!(
-        doc, want,
+        release_free(doc),
+        release_free(want),
         "{case}: the result differs from the committed golden file"
     );
 }
@@ -183,13 +199,13 @@ async fn builtup_share_vs_density_adm3_live() {
     live("builtup-share-vs-density-adm3").await;
 }
 
-/// The roadmap's acceptance pair. Enable when WP-27 has merged
-/// (`registry/connectors/jrc-flood-hazard.yaml` + `haz.flood_area_share`):
-/// load the JRC layers, check the dims in `request.json` against the
-/// published indicator, run once with `LANKA_GOLDEN_UPDATE=1`, review and
-/// commit the files, then remove the `#[ignore]` and add an `_offline` twin.
+/// The roadmap's acceptance pair (JRC flood hazard, release 20261122.4).
+#[test]
+fn flood_area_share_vs_density_adm3_offline() {
+    offline("flood-area-share-vs-density-adm3");
+}
+
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs WP-27's haz.flood_area_share (JRC flood hazard); enable at merge"]
 async fn flood_area_share_vs_density_adm3_live() {
     live("flood-area-share-vs-density-adm3").await;
 }

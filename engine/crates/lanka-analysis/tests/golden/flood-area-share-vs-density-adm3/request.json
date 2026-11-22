@@ -1,4 +1,4 @@
 {"spec":"ldl-analysis/1","method":"relate","pin":"latest",
  "support":{"kind":"admin","level":3},
- "variables":{"x":{"indicator":"haz.flood_area_share","dims":{"return_period":"RP100"},"label":"flood area share (1-in-100-year)"},
+ "variables":{"x":{"indicator":"haz.flood_area_share","dims":{"return_period":"rp100"},"label":"flood area share (1-in-100-year)"},
               "y":{"indicator":"derived.per_km2","dims":{"source_indicator":"census24.pop_total"},"transform":"log","label":"population density"}}}
