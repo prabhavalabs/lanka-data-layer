@@ -1,0 +1,162 @@
+# CBSL Economic and Social Statistics of Sri Lanka (annual Excel tables). Banking tables:
+#   7.8  Bank branches and banking density by district: one block per year (the year printed
+#        alone in the District column, "2022(e)" … "2025(f)"), a row per district plus Total,
+#        a column per bank, the total, CBSL's population ('000), population per branch and the
+#        banking density index (branches per 100,000 persons);
+#   7.9  Bank branch network: a row per bank / bank group, a column per year from 2013, then the
+#        rural bank outlets and the density rows.
+# (e) revised, (f) / (b) provisional. The ESS edition is in the file name (ess_2026_…): a new
+# edition is a new URL. Licence permission_unclear: published with attribution and the takedown
+# contact; it does not block ingestion.
+source: cbsl-ess
+driver: xlsx_table
+version: 1.0.0
+description: CBSL Economic and Social Statistics of Sri Lanka 2026, tables 7.8 and 7.9 (bank branches).
+discover:
+  kind: static
+  files:
+    - { key: table7.8, file: ess_2026_table7.8_e.xlsx, url: "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/ess_2026_table7.8_e.xlsx" }
+    - { key: table7.9, file: ess_2026_table7.9_e.xlsx, url: "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/statistics/sheets/ess_2026_table7.9_e.xlsx" }
+standardise:
+  dataset: cbsl-bank-branches
+  tables:
+    - id: district
+      artifact: ^table7\.8$
+      header: { anchor: "^District$" }
+      rows: { until_blank: 3, stop: ["^\\(a\\)"] }
+      section: { column: District, pattern: "^\\d{4}", into: Year }
+    - id: national
+      artifact: ^table7\.9$
+      header: { anchor: "^Name of Bank$" }
+      rows: { until_blank: 2, stop: ["^\\(a\\)"] }
+      # The density rows repeat "Total Bank Branches" below their own heading.
+      section: { column: Name of Bank, pattern: "^No of Branches per 100,000", into: Block }
+  outputs:
+    # ── 7.8 district × bank ──
+    - table: district
+      indicator: { value: fin.bank_branches }
+      filter: [{ column: District, empty: false }]
+      melt: { columns: ".", exclude: [District, Year, "Population '000", Population per Branch, Banking Density Index (d)] }
+      # The national rows come from 7.9 (all years); the 7.8 Total row is not loaded twice.
+      geo: &dgeo { column: District, match: name, level: 2, skip: [Total] }
+      period: &dyear { column: Year, regex: "^(\\d{4})", freq: A, parse: year }
+      dims:
+        bank:
+          melt: true
+          map:
+            "Amana Bank PLC": amana
+            "Bank of Ceylon": boc
+            "People's Bank": peoples
+            "Hatton National Bank PLC": hnb
+            "Commercial Bank of Ceylon PLC": combank
+            "Sampath Bank PLC": sampath
+            "Seylan bank PLC": seylan
+            "Union Bank of Colombo PLC": ubc
+            "Pan Asia Banking Corporation PLC": pabc
+            "Nations Trust Bank PLC": ntb
+            "DFCC Bank PLC (a)": dfcc
+            "Cargills Bank PLC": cargills
+            "National Development Bank PLC": ndb
+            "Sanasa Development Bank PLC": sdb
+            "National Savings Bank": nsb
+            "State Mortgage and Investment Bank": smib
+            "Housing Development Finance Corporation Bank of Sri Lanka": hdfc
+            "Sri Lanka Saving Bank Ltd.": slsb
+            "Pradeshiya Sanwardana Bank (b)": psb
+            "Foreign Banks (c)": foreign
+            "Total No. of Branches": total
+      value: &num { number: { missing: ["-", ""] } }
+      status: &dstatus { column: Year, regex: "(\\(f\\))", unmapped: keep, codes: { "(f)": [reported, provisional] } }
+    - table: district
+      indicator: { value: fin.branches_per_100k }
+      filter: [{ column: District, empty: false }]
+      melt: { columns: "^Banking Density Index" }
+      geo: *dgeo
+      period: *dyear
+      dims: { bank: { value: total } }
+      value: *num
+      status: *dstatus
+    # ── 7.9 national × bank ──
+    - table: national
+      indicator: { value: fin.bank_branches }
+      filter:
+        - { column: Block, empty: true }
+        - { column: Name of Bank, not_in: ["Population (’000)", "Population per Bank Branch", "District Co-operative Rural Banks",
+            "Total Branches (including Rural Banks)"] }
+      melt: &years { columns: "^\\d{4}" }
+      geo: { root: true }
+      period: &nyear { melt: true, regex: "^(\\d{4})", freq: A, parse: year }
+      dims:
+        bank:
+          column: Name of Bank
+          map:
+            "Licensed Commercial Banks": lcb
+            "Domestic Banks": lcb_domestic
+            "Amana Bank PLC": amana
+            "Bank of Ceylon": boc
+            "Cargills Bank PLC": cargills
+            "Commercial Bank of Ceylon PLC": combank
+            "DFCC Bank PLC(c)": dfcc
+            "Hatton National Bank PLC": hnb
+            "National Development Bank PLC": ndb
+            "Nations Trust Bank PLC": ntb
+            "Pan Asia Banking Corporation PLC": pabc
+            "People’s Bank": peoples
+            "Sampath Bank PLC": sampath
+            "Seylan Bank PLC": seylan
+            "Union Bank of Colombo PLC": ubc
+            "Foreign Banks": foreign
+            "Licensed Specialised Banks": lsb
+            "Housing Development Finance Corporation Bank of Sri Lanka": hdfc
+            "Lankaputhra Development Bank (d)": lankaputhra
+            "Pradeshiya Sanwardhana Bank (d)": psb
+            "National Savings Bank": nsb
+            "State Mortgage and Investment Bank": smib
+            "Sanasa Development Bank PLC.": sdb
+            "Sri Lanka Savings Bank": slsb
+            "Others (e)": lsb_other
+            "Total Bank Branches": total
+      value: *num
+      status: &nstatus { melt: true, regex: "(\\(b\\))", unmapped: keep, codes: { "(b)": [reported, provisional] } }
+    - table: national
+      indicator: { value: fin.rural_bank_branches }
+      filter: [{ column: Name of Bank, eq: District Co-operative Rural Banks }]
+      melt: *years
+      geo: { root: true }
+      period: *nyear
+      value: *num
+      status: *nstatus
+    - table: national
+      indicator: { value: fin.branches_per_100k }
+      filter: [{ column: Block, empty: false }, { column: Name of Bank, in: [Total Bank Branches, Commercial Bank Branches] }]
+      melt: *years
+      geo: { root: true }
+      period: *nyear
+      dims: { bank: { column: Name of Bank, map: { Total Bank Branches: total, Commercial Bank Branches: lcb } } }
+      value: *num
+      status: *nstatus
+    - table: national
+      indicator: { value: fin.outlets_per_100k_incl_rural }
+      filter: [{ column: Name of Bank, eq: All Branches (including Rural Banks) }]
+      melt: *years
+      geo: { root: true }
+      period: *nyear
+      value: *num
+      status: *nstatus
+expect:
+  - { check: no_future }
+  - { check: row_count, min: 2400 }
+  - { check: completeness, indicator: fin.bank_branches, level: 2, min_units: 25 }
+  - { check: range, indicator: fin.bank_branches, min: 0, max: 7000 }
+  - { check: range, indicator: fin.branches_per_100k, min: 5, max: 60 }
+  - check: sql
+    severity: warn
+    note: >-
+      The 25 district totals (7.8) add up to the national total of 7.9 within 0.5 %. 7.8 and 7.9 are
+      compiled separately: 2022 differs by two branches (3,632 against 3,630).
+    query: >-
+      SELECT n.period_start FROM stage_obs n
+      JOIN (SELECT period_start, sum(value) s FROM stage_obs WHERE indicator_id = 'fin.bank_branches'
+            AND dims = 'bank=total' AND geo_code <> 'LK' GROUP BY period_start) d ON d.period_start = n.period_start
+      WHERE n.indicator_id = 'fin.bank_branches' AND n.dims = 'bank=total' AND n.geo_code = 'LK'
+        AND abs(d.s - n.value) > 0.005 * n.value

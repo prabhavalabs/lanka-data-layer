@@ -1,0 +1,39 @@
+# Licensed bank (CBSL branch statistics)
+# Source/authority: Central Bank of Sri Lanka, Economic and Social Statistics of Sri Lanka, tables 7.8 and 7.9
+#   (banks licensed under the Banking Act No. 30 of 1988).
+# Note: the parent is the licence group (licensed commercial / licensed specialised bank); foreign banks are one
+#   group as published. Lankaputhra Development Bank merged into Pradeshiya Sanwardhana Bank on 1 April 2019;
+#   DFCC Bank and DFCC Vardhana Bank amalgamated on 1 October 2015.
+# Status: complete for the banks named in the 2026 edition.
+# Labels: English only; si/ta pending native-speaker review (not machine-translated).
+# Order: codes are listed in display order.
+# Used by: cbsl-bank-branches
+id: bank
+title: Licensed bank (CBSL branch statistics)
+codes:
+  - { code: total, label: All licensed banks, total: true, sdmx: _T }
+  - { code: lcb, label: Licensed commercial banks, parent: total }
+  - { code: lcb_domestic, label: Domestic licensed commercial banks, parent: lcb }
+  - { code: amana, label: Amana Bank PLC, parent: lcb_domestic }
+  - { code: boc, label: Bank of Ceylon, parent: lcb_domestic }
+  - { code: cargills, label: Cargills Bank PLC, parent: lcb_domestic }
+  - { code: combank, label: Commercial Bank of Ceylon PLC, parent: lcb_domestic }
+  - { code: dfcc, label: DFCC Bank PLC, parent: lcb_domestic }
+  - { code: hnb, label: Hatton National Bank PLC, parent: lcb_domestic }
+  - { code: ndb, label: National Development Bank PLC, parent: lcb_domestic }
+  - { code: ntb, label: Nations Trust Bank PLC, parent: lcb_domestic }
+  - { code: pabc, label: Pan Asia Banking Corporation PLC, parent: lcb_domestic }
+  - { code: peoples, label: People's Bank, parent: lcb_domestic }
+  - { code: sampath, label: Sampath Bank PLC, parent: lcb_domestic }
+  - { code: seylan, label: Seylan Bank PLC, parent: lcb_domestic }
+  - { code: ubc, label: Union Bank of Colombo PLC, parent: lcb_domestic }
+  - { code: foreign, label: Foreign banks, parent: lcb }
+  - { code: lsb, label: Licensed specialised banks, parent: total }
+  - { code: hdfc, label: Housing Development Finance Corporation Bank of Sri Lanka, parent: lsb }
+  - { code: lankaputhra, label: Lankaputhra Development Bank (merged 2019), parent: lsb }
+  - { code: psb, label: Pradeshiya Sanwardhana Bank, parent: lsb }
+  - { code: nsb, label: National Savings Bank, parent: lsb }
+  - { code: smib, label: State Mortgage and Investment Bank, parent: lsb }
+  - { code: sdb, label: Sanasa Development Bank PLC, parent: lsb }
+  - { code: slsb, label: Sri Lanka Savings Bank, parent: lsb }
+  - { code: lsb_other, label: Other licensed specialised banks, parent: lsb }
