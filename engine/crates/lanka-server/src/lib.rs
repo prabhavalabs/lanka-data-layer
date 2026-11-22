@@ -20,6 +20,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use lanka_core::envelope::Link;
 use lanka_core::query::{self, CatalogQuery, MapQuery, SeriesQuery};
+use lanka_core::status;
 use lanka_core::{Catalog, CoreError, Envelope, Meta, Pcode};
 
 use serde::{Deserialize, Serialize};
@@ -36,6 +37,9 @@ pub mod openapi;
 pub struct AppState {
     pub pool: PgPool,
     catalog: Arc<RwLock<Arc<Catalog>>>,
+    started: std::time::Instant,
+    /// Blob store root (read-only for the server); checked by /v2/health.
+    store_dir: Option<std::path::PathBuf>,
 }
 
 impl AppState {
@@ -44,6 +48,11 @@ impl AppState {
         Ok(Self {
             pool,
             catalog: Arc::new(RwLock::new(Arc::new(cat))),
+            started: std::time::Instant::now(),
+            store_dir: std::env::var_os("LANKA_STORE_DIR")
+                .or_else(|| std::env::var_os("LANKA_DATA_DIR"))
+                .filter(|v| !v.is_empty())
+                .map(std::path::PathBuf::from),
         })
     }
 
@@ -212,18 +221,266 @@ fn with_boundaries<'a>(cat: &'a Catalog, ids: impl IntoIterator<Item = &'a str>)
 
 // ───────────────────────────── handlers ────────────────────────────────────
 
-/// Service and database health.
-#[utoipa::path(get, path = "/v2/health", tag = "meta",
-    responses((status = 200, body = Envelope<query::Health>), (status = 500, body = ErrorBody)))]
-async fn health(State(st): State<AppState>) -> ApiResult {
-    let cat = st.catalog();
-    let h = query::health(&st.pool, &cat)
-        .await
-        .map_err(ApiError::from)?;
-    let mut res = axum::Json(Envelope::ok(h, Meta::bare(cat.data_version.clone()))).into_response();
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct HealthParams {
+    /// `1` adds PostGIS version, migration version, replica lag and counts.
+    pub deep: Option<String>,
+}
+
+fn no_store(mut res: Response) -> Response {
     res.headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
-    Ok(res)
+    res
+}
+
+/// Liveness + readiness: 200 when Postgres answers and a release is loaded, else 503.
+#[utoipa::path(get, path = "/v2/health", tag = "ops", params(HealthParams),
+    responses((status = 200, body = Envelope<status::Health>), (status = 503, body = Envelope<status::Health>)))]
+async fn health(State(st): State<AppState>, Query(p): Query<HealthParams>) -> Response {
+    let cat = st.catalog();
+    let latency = status::db_latency_ms(&st.pool).await;
+    let deep = if latency.is_some() && matches!(p.deep.as_deref(), Some("1" | "true")) {
+        let scheme = cat.profile.as_deref().map_or("admin", |p| p.admin_scheme());
+        match status::deep_health(&st.pool, scheme).await {
+            Ok((postgis, migration_version, replica_lag_s, admin_units)) => {
+                Some(status::DeepHealth {
+                    postgis,
+                    migration_version,
+                    replica_lag_s,
+                    admin_units,
+                    datasets_published: cat
+                        .datasets
+                        .values()
+                        .filter(|d| d.current.is_some())
+                        .count(),
+                })
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "deep health failed");
+                None
+            }
+        }
+    } else {
+        None
+    };
+    let ready = latency.is_some() && cat.data_version.is_some();
+    let h = status::Health {
+        status: if ready { "ok" } else { "unavailable" }.to_owned(),
+        data_version: cat.data_version.clone(),
+        db: status::DbHealth {
+            ok: latency.is_some(),
+            latency_ms: latency,
+        },
+        store: status::StoreHealth {
+            ok: st.store_dir.as_ref().is_none_or(|d| d.is_dir()),
+        },
+        grids_mapped: 0,
+        uptime_s: st.started.elapsed().as_secs(),
+        engine_version: lanka_core::ENGINE_VERSION.to_owned(),
+        git_rev: lanka_core::git_rev(),
+        country: cat.profile.as_deref().map(|p| p.spec.id.clone()),
+        deep,
+    };
+    let code = if ready {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+    let body = Envelope::ok(h, Meta::bare(cat.data_version.clone()));
+    no_store((code, axum::Json(body)).into_response())
+}
+
+/// Ops reads are never cached.
+fn ops_ok<T: Serialize>(cat: &Catalog, payload: T) -> Response {
+    no_store(
+        axum::Json(Envelope::ok(payload, Meta::bare(cat.data_version.clone()))).into_response(),
+    )
+}
+
+/// One-screen platform summary with the computed `overall` state. Always 200: the body says what is wrong.
+#[utoipa::path(get, path = "/v2/status", tag = "ops",
+    responses((status = 200, body = Envelope<status::StatusSummary>)))]
+async fn status_summary(State(st): State<AppState>) -> Response {
+    let cat = st.catalog();
+    match status::summary(&st.pool).await {
+        Ok(s) => ops_ok(&cat, s),
+        Err(e) => {
+            tracing::error!(error = %e, "status summary failed");
+            ops_ok(
+                &cat,
+                serde_json::json!({
+                    "overall": "failing",
+                    "reasons": ["database unreachable or status query failed"],
+                    "generated_at": sqlx::types::chrono::Utc::now(),
+                }),
+            )
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct SourcesParams {
+    /// fresh | due | overdue | failing | in_review | expected_missing | never_run | paused | retired
+    pub state: Option<String>,
+    /// `1` = only sources with an implemented connector.
+    pub schedulable: Option<String>,
+}
+
+/// Per-source freshness, last run and next check.
+#[utoipa::path(get, path = "/v2/status/sources", tag = "ops", params(SourcesParams),
+    responses((status = 200, body = Envelope<Vec<status::SourceStatus>>), (status = 400, body = ErrorBody)))]
+async fn status_sources(State(st): State<AppState>, Query(p): Query<SourcesParams>) -> ApiResult {
+    let cat = st.catalog();
+    let sched = p.schedulable.as_deref().map(|v| matches!(v, "1" | "true"));
+    let rows = status::sources(
+        &st.pool,
+        p.state.as_deref().filter(|s| !s.is_empty()),
+        sched,
+    )
+    .await
+    .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
+    Ok(ops_ok(&cat, rows))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct DatasetsStatusParams {
+    /// published | approved | in_review | unpublished
+    pub state: Option<String>,
+}
+
+/// Per-dataset currency: released version, pending (approved / in review) version.
+#[utoipa::path(get, path = "/v2/status/datasets", tag = "ops", params(DatasetsStatusParams),
+    responses((status = 200, body = Envelope<Vec<status::DatasetStatus>>), (status = 400, body = ErrorBody)))]
+async fn status_datasets(
+    State(st): State<AppState>,
+    Query(p): Query<DatasetsStatusParams>,
+) -> ApiResult {
+    let cat = st.catalog();
+    let rows = status::datasets(&st.pool, p.state.as_deref().filter(|s| !s.is_empty()))
+        .await
+        .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
+    Ok(ops_ok(&cat, rows))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct RunsParams {
+    /// RFC 3339 timestamp: runs started at or after it.
+    pub since: Option<String>,
+    pub source: Option<String>,
+    /// running | succeeded | no_change | needs_review | failed
+    pub status: Option<String>,
+    /// `next_cursor` of the previous page.
+    pub cursor: Option<i64>,
+    /// 1–200 (default 50).
+    pub limit: Option<i64>,
+}
+
+/// Run history, newest first, cursor-paged.
+#[utoipa::path(get, path = "/v2/status/runs", tag = "ops", params(RunsParams),
+    responses((status = 200, body = Envelope<status::RunPage>), (status = 400, body = ErrorBody)))]
+async fn status_runs(State(st): State<AppState>, Query(p): Query<RunsParams>) -> ApiResult {
+    let cat = st.catalog();
+    let since = match p.since.as_deref().filter(|s| !s.is_empty()) {
+        None => None,
+        Some(s) => Some(
+            s.parse::<sqlx::types::chrono::DateTime<sqlx::types::chrono::Utc>>()
+                .map_err(|_| {
+                    ApiError::new(
+                        StatusCode::BAD_REQUEST,
+                        "since must be an RFC 3339 timestamp",
+                    )
+                })?,
+        ),
+    };
+    let page = status::runs(
+        &st.pool,
+        since,
+        p.source.as_deref().filter(|s| !s.is_empty()),
+        p.status.as_deref().filter(|s| !s.is_empty()),
+        p.cursor,
+        p.limit.unwrap_or(50),
+    )
+    .await
+    .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
+    Ok(ops_ok(&cat, page))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct EventsParams {
+    /// Last event id seen (exclusive); 0 or absent = from the beginning.
+    pub after: Option<i64>,
+    /// Minimum level: debug | info | warn | error.
+    pub level: Option<String>,
+    pub source: Option<String>,
+    /// 1–1000 (default 100).
+    pub limit: Option<i64>,
+}
+
+/// Append-only event feed with strictly increasing ids (`Accept: application/x-ndjson` for NDJSON).
+#[utoipa::path(get, path = "/v2/status/events", tag = "ops", params(EventsParams),
+    responses((status = 200, body = Envelope<Vec<status::EventRecord>>), (status = 400, body = ErrorBody)))]
+async fn status_events(
+    State(st): State<AppState>,
+    Query(p): Query<EventsParams>,
+    headers: HeaderMap,
+) -> ApiResult {
+    let cat = st.catalog();
+    let rows = status::events(
+        &st.pool,
+        p.after.unwrap_or(0),
+        p.level.as_deref().filter(|s| !s.is_empty()),
+        p.source.as_deref().filter(|s| !s.is_empty()),
+        p.limit.unwrap_or(100),
+    )
+    .await
+    .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
+    let ndjson = headers
+        .get(header::ACCEPT)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.contains("application/x-ndjson"));
+    if ndjson {
+        let mut body = String::new();
+        for r in &rows {
+            body.push_str(
+                &serde_json::to_string(r).map_err(|_| {
+                    ApiError::new(StatusCode::INTERNAL_SERVER_ERROR, "internal error")
+                })?,
+            );
+            body.push('\n');
+        }
+        let mut res = body.into_response();
+        res.headers_mut().insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/x-ndjson"),
+        );
+        return Ok(no_store(res));
+    }
+    Ok(ops_ok(&cat, rows))
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct IncidentsParams {
+    /// `1` = open incidents only.
+    pub open: Option<String>,
+    pub limit: Option<i64>,
+}
+
+/// Persistent conditions, opened and closed automatically.
+#[utoipa::path(get, path = "/v2/status/incidents", tag = "ops", params(IncidentsParams),
+    responses((status = 200, body = Envelope<Vec<status::Incident>>)))]
+async fn status_incidents(
+    State(st): State<AppState>,
+    Query(p): Query<IncidentsParams>,
+) -> ApiResult {
+    let cat = st.catalog();
+    let rows = status::incidents(
+        &st.pool,
+        matches!(p.open.as_deref(), Some("1" | "true")),
+        p.limit.unwrap_or(100),
+    )
+    .await
+    .map_err(|e| ApiError::from(e).with_version(cat.data_version.clone()))?;
+    Ok(ops_ok(&cat, rows))
 }
 
 #[derive(Debug, Deserialize, IntoParams)]
@@ -507,6 +764,12 @@ async fn fallback() -> ApiError {
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/v2/health", get(health))
+        .route("/v2/status", get(status_summary))
+        .route("/v2/status/sources", get(status_sources))
+        .route("/v2/status/datasets", get(status_datasets))
+        .route("/v2/status/runs", get(status_runs))
+        .route("/v2/status/events", get(status_events))
+        .route("/v2/status/incidents", get(status_incidents))
         .route("/v2/catalog", get(catalog))
         .route("/v2/datasets/{id}", get(dataset))
         .route("/v2/areas/{pcode}", get(area))
@@ -567,6 +830,7 @@ mod tests {
     /// that must not touch the database.
     fn app() -> Router {
         let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(Duration::from_millis(500))
             .connect_lazy("postgres://nobody@127.0.0.1:1/none")
             .expect("lazy pool");
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../registry");
@@ -580,6 +844,8 @@ mod tests {
         let state = AppState {
             pool,
             catalog: Arc::new(RwLock::new(Arc::new(cat))),
+            started: std::time::Instant::now(),
+            store_dir: None,
         };
         router(state)
     }
@@ -631,6 +897,12 @@ mod tests {
         assert_eq!(status, StatusCode::OK);
         for p in [
             "/v2/health",
+            "/v2/status",
+            "/v2/status/sources",
+            "/v2/status/datasets",
+            "/v2/status/runs",
+            "/v2/status/events",
+            "/v2/status/incidents",
             "/v2/catalog",
             "/v2/datasets/{id}",
             "/v2/areas/{pcode}",
@@ -641,6 +913,21 @@ mod tests {
         ] {
             assert!(v["paths"].get(p).is_some(), "missing {p}");
         }
+    }
+
+    #[tokio::test]
+    async fn health_is_503_without_database_or_release() {
+        let (status, v) = get("/v2/health").await;
+        assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(v["payload"]["status"], "unavailable");
+        assert_eq!(v["payload"]["db"]["ok"], false);
+    }
+
+    #[tokio::test]
+    async fn status_is_200_even_when_the_database_is_down() {
+        let (status, v) = get("/v2/status").await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(v["payload"]["overall"], "failing");
     }
 
     #[tokio::test]

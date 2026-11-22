@@ -13,6 +13,12 @@ use utoipa::OpenApi;
     ),
     paths(
         super::health,
+        super::status_summary,
+        super::status_sources,
+        super::status_datasets,
+        super::status_runs,
+        super::status_events,
+        super::status_incidents,
         super::catalog,
         super::dataset,
         super::area,
@@ -22,7 +28,7 @@ use utoipa::OpenApi;
         super::reverse,
     ),
     tags(
-        (name = "meta", description = "Health"),
+        (name = "ops", description = "Health and status: emitted for external monitoring (no alert delivery)"),
         (name = "catalog", description = "Datasets, sources, licences, freshness"),
         (name = "areas", description = "Admin units by p-code; reverse geocoding"),
         (name = "indicators", description = "Series and choropleth data"),
