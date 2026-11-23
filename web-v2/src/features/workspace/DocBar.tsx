@@ -22,7 +22,8 @@ export type DocActions = {
   blank: () => void
   /** copies a link; resolves to what to say about it */
   share: () => Promise<string | void>
-  exportPng: () => void
+  /** opens the export dialog: the image and the layers' data, optionally clipped to an area */
+  openExport: () => void
   exportJson: () => void
   /** null when the document came from a link and has never been saved */
   /** `blank`: the province-only map /explore opens on; saving it makes a map of the visitor's own */
@@ -101,9 +102,9 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
               <Link2 />
               Copy share link
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={doc.exportPng}>
+            <DropdownMenuItem onSelect={doc.openExport}>
               <ImageDown />
-              Export image (PNG)
+              Export image and data…
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={doc.exportJson}>
               <FileJson />

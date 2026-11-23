@@ -723,6 +723,23 @@ export class MapEngine {
   zoomIn() {
     this.map.zoomIn({ duration: 220 })
   }
+  /** Frame a box at once, inside the panels, and resolve when every tile of it has drawn: what an export clipped to an area waits for. */
+  frameNow(box: [number, number, number, number], extra = 24): Promise<void> {
+    const [w, s, e, n] = box
+    this.fit([[w, s], [e, n]], extra, undefined, 0)
+    return new Promise((resolve) => {
+      const done = () => resolve()
+      if (this.map.loaded() && this.map.areTilesLoaded()) requestAnimationFrame(() => (this.map.loaded() && this.map.areTilesLoaded() ? done() : this.map.once('idle', done)))
+      else this.map.once('idle', done)
+    })
+  }
+  /** Resolves when every tile in view has drawn (after a pixel-ratio change, say). */
+  settle(): Promise<void> {
+    return new Promise((resolve) => {
+      this.map.once('idle', () => resolve())
+      this.map.triggerRepaint()
+    })
+  }
   /** To at least `zoom`, about the current centre: how a layer out of reach is brought into view. */
   zoomTo(zoom: number) {
     this.map.easeTo({ zoom: Math.max(zoom, this.map.getZoom()), duration: this.reducedMotion ? 0 : 420, easing: easeOut })

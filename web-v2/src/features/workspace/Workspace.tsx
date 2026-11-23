@@ -16,7 +16,8 @@ import { cn } from '@/lib/utils'
 import { shownLayers, useBasemap, useLayerData, WorkspaceContext, type WorkspaceCtx } from './context'
 import { DocBar, MapsDialog, type DocActions } from './DocBar'
 import type { Hover, MapEngine } from './engine/MapEngine'
-import { exportPng } from './exporting'
+import { ExportDialog } from './ExportDialog'
+import { renderPng } from './exporting'
 import { Inspector } from './Inspector'
 import { LayersPanel } from './LayersPanel'
 import { LegendCard, legendEntries, LegendList } from './LegendCard'
@@ -53,7 +54,7 @@ const PanelFallback = () => (
 
 export type WorkspaceProps = {
   doc: MapDocument
-  docActions: Omit<DocActions, 'exportPng'>
+  docActions: Omit<DocActions, 'openExport'>
   /** the camera to open at: a link's `?v=`, or the document's own view */
   initialView: MapDocument['view']
   /** changes when another document is opened, so the camera goes to its view */
@@ -185,16 +186,21 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
   }
 
   /* ---- document actions that need the map ---- */
-  const onExportPng = useCallback(() => {
-    const e = engine.current
-    if (!e) return
-    const entries = legendEntries(doc.layers, shownLayers(doc.layers, solo)).flatMap((l) => {
-      const model = e.legend(l.id)
-      return model ? [{ title: l.legend.title ?? l.name, model }] : []
-    })
-    void exportPng(e, doc, entries, { left: padding.left - 12, top: 0, right: padding.right - 12, bottom: 0 }, scheme === 'dark', credits.plain)
-  }, [doc, solo, padding, scheme, credits])
-  const all: DocActions = useMemo(() => ({ ...docActions, exportPng: onExportPng }), [docActions, onExportPng])
+  const [exporting, setExporting] = useState(false)
+  const renderImage = useCallback(
+    async (area?: Parameters<typeof renderPng>[6]) => {
+      const e = engine.current
+      if (!e) return null
+      const entries = legendEntries(doc.layers, shownLayers(doc.layers, solo)).flatMap((l) => {
+        const model = e.legend(l.id)
+        return model ? [{ title: l.legend.title ?? l.name, model }] : []
+      })
+      return renderPng(e, doc, entries, { left: padding.left - 12, top: 0, right: padding.right - 12, bottom: 0 }, scheme === 'dark', credits.plain, area)
+    },
+    [doc, solo, padding, scheme, credits],
+  )
+  const openExport = useCallback(() => setExporting(true), [])
+  const all: DocActions = useMemo(() => ({ ...docActions, openExport }), [docActions, openExport])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey
@@ -407,6 +413,7 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
           </Suspense>
         )}
         <MapsDialog open={mapsOpen} onOpenChange={setMapsOpen} doc={all} scheme={scheme} />
+        <ExportDialog open={exporting} onOpenChange={setExporting} doc={doc} solo={solo} credits={credits.plain} render={renderImage} />
       </div>
     </WorkspaceContext.Provider>
   )

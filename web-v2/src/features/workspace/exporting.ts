@@ -4,6 +4,7 @@ import { encodeDocument, type MapDocument } from '@/lib/map-spec'
 import { hexToRgb } from '@/lib/palettes'
 import type { LegendModel } from './engine/compile'
 import type { MapEngine } from './engine/MapEngine'
+import type { AreaShape } from './exportData'
 import { fmt, unitSuffix } from './format'
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'map'
@@ -99,36 +100,104 @@ function drawLegend(ctx: CanvasRenderingContext2D, e: Entry, x: number, y: numbe
   return y
 }
 
-/** The visible map area with a caption block drawn in: title, legend, attribution. */
-export async function exportPng(engine: MapEngine, doc: MapDocument, entries: Entry[], crop: { left: number; top: number; right: number; bottom: number }, dark: boolean, credits: string[] = ['Lanka Data Layer · sample data']) {
+type Crop = { left: number; top: number; right: number; bottom: number }
+
+/**
+ * The map with its caption (title, legend, attribution) as a PNG blob, drawn at least at 2x.
+ *
+ * Without an `area` it is the visible map with the caption laid over its corners. With one, the map is first
+ * framed on the area and cut to its outline (transparent outside it, unless `mask` is off), the canvas is
+ * cropped to the area's box, and the caption goes in a band below the map so it covers none of the area.
+ */
+export async function renderPng(engine: MapEngine, doc: MapDocument, entries: Entry[], crop: Crop, dark: boolean, credits: string[], area?: { shape: AreaShape; mask: boolean; name: string }): Promise<Blob | null> {
   await document.fonts?.ready
-  const shot = await engine.snapshot()
+  const ratio = engine.map.getPixelRatio()
+  const sharp = Math.max(2, ratio)
+  if (sharp !== ratio) engine.map.setPixelRatio(sharp)
+  let shot: HTMLCanvasElement
+  let rings: [number, number][][] | null = null
+  try {
+    if (area) await engine.frameNow(area.shape.bbox)
+    else await engine.settle()
+    shot = await engine.snapshot()
+    // the outline in CSS pixels of the map container, while the camera is where the snapshot was taken
+    if (area) rings = outlineRings(engine, area.shape)
+  } finally {
+    if (sharp !== ratio) engine.map.setPixelRatio(ratio)
+  }
   const box = engine.map.getContainer().getBoundingClientRect()
   const k = shot.width / box.width
-  const sx = Math.max(0, crop.left) * k, sy = Math.max(0, crop.top) * k
-  const sw = shot.width - sx - Math.max(0, crop.right) * k, sh = shot.height - sy - Math.max(0, crop.bottom) * k
-  const out = document.createElement('canvas')
-  out.width = Math.round(sw)
-  out.height = Math.round(sh)
-  const ctx = out.getContext('2d')!
-  ctx.drawImage(shot, sx, sy, sw, sh, 0, 0, out.width, out.height)
-  ctx.scale(k, k)
-  const W = out.width / k, H = out.height / k
+  let left = Math.max(0, crop.left), top = Math.max(0, crop.top), right = box.width - Math.max(0, crop.right), bottom = box.height - Math.max(0, crop.bottom)
+  if (rings) {
+    const xs = rings.flat().map((q) => q[0]), ys = rings.flat().map((q) => q[1])
+    const m = 12
+    left = Math.max(left, Math.min(...xs) - m)
+    top = Math.max(top, Math.min(...ys) - m)
+    right = Math.min(right, Math.max(...xs) + m)
+    bottom = Math.min(bottom, Math.max(...ys) + m)
+  }
+  const mw = right - left, mh = bottom - top
+
   const ink = dark ? '#e8edf2' : '#14181c', ink3 = dark ? '#9aa7b4' : '#515c66'
   const [r, g, b] = hexToRgb(dark ? '#0e1217' : '#ffffff')
+  if (area) credits = [`Clipped to ${area.name}`, ...credits]
+
+  // the caption's size, measured before the canvas is made: a clipped map gets a band of that height below it
+  const shown = entries.filter((e) => e.model.kind !== 'relief').slice(0, 4)
+  const cw = 292, pad = 14, gap = 14
+  const measure = document.createElement('canvas').getContext('2d')!
+  let ch = pad + 22 + 8
+  for (const e of shown) ch = drawLegend(measure, e, 0, ch, cw - pad * 2, ink, ink3) + 4
+  ch += pad - 8
+  const W = area ? Math.max(mw, cw + 260 + gap * 3) : mw
+  measure.font = `10.5px ${FONT}`
+  const maxW = Math.max(180, W - cw - gap * 3 - 16)
+  const lines: string[] = []
+  for (const part of [...credits, '© OpenStreetMap contributors · OpenFreeMap']) {
+    const last = lines[lines.length - 1]
+    if (last !== undefined && measure.measureText(`${last} · ${part}`).width <= maxW) lines[lines.length - 1] = `${last} · ${part}`
+    else lines.push(part)
+  }
+  const lh = 15, bh = lines.length * lh + 8
+  const band = area ? Math.max(ch, bh) + gap * 2 : 0
+  const H = mh + band
+
+  const out = document.createElement('canvas')
+  out.width = Math.max(1, Math.round(W * k))
+  out.height = Math.max(1, Math.round(H * k))
+  const ctx = out.getContext('2d')!
+  ctx.scale(k, k)
+  // the map, centred when the band made the canvas wider than the area
+  const mx = (W - mw) / 2
+  ctx.drawImage(shot, left * k, top * k, mw * k, mh * k, mx, 0, mw, mh)
+  if (rings && area?.mask) {
+    const path = () => {
+      ctx.beginPath()
+      for (const ring of rings!) ring.forEach(([x, y], i) => (i ? ctx.lineTo(x - left + mx, y - top) : ctx.moveTo(x - left + mx, y - top)))
+    }
+    // keep only what lies inside the boundary (holes stay out: even-odd), but never the band below
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0, 0, W, mh)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'destination-in'
+    path()
+    ctx.fill('evenodd')
+    ctx.restore()
+    // and draw the boundary itself, so the cut reads as a border rather than a ragged edge
+    ctx.save()
+    ctx.strokeStyle = dark ? 'rgba(232,237,242,0.55)' : 'rgba(20,24,28,0.5)'
+    ctx.lineWidth = 1
+    path()
+    ctx.stroke()
+    ctx.restore()
+  }
 
   // caption: title, then as many legend entries as fit
-  const shown = entries.filter((e) => e.model.kind !== 'relief').slice(0, 4)
-  const cw = 292, pad = 14
-  ctx.font = `600 15px ${FONT}`
-  const measure = document.createElement('canvas').getContext('2d')!
-  let h = pad + 22 + 8
-  for (const e of shown) h = drawLegend(measure, e, 0, h, cw - pad * 2, ink, ink3) + 4
-  h += pad - 8
-  const x = 14, y = H - h - 14
+  const x = gap, y = H - ch - gap
   ctx.fillStyle = `rgba(${r},${g},${b},0.9)`
   ctx.beginPath()
-  ctx.roundRect(x, y, cw, h, 12)
+  ctx.roundRect(x, y, cw, ch, 12)
   ctx.fill()
   ctx.strokeStyle = dark ? 'rgba(255,255,255,0.1)' : 'rgba(20,24,28,0.12)'
   ctx.lineWidth = 1
@@ -144,23 +213,23 @@ export async function exportPng(engine: MapEngine, doc: MapDocument, entries: En
 
   // attribution (and every notice of the resolved document) is part of the bitmap, wrapped to the free width
   ctx.font = `10.5px ${FONT}`
-  const maxW = Math.max(180, W - cw - 14 * 3 - 16)
-  const lines: string[] = []
-  for (const part of [...credits, '© OpenStreetMap contributors · OpenFreeMap']) {
-    const last = lines[lines.length - 1]
-    if (last !== undefined && ctx.measureText(`${last} · ${part}`).width <= maxW) lines[lines.length - 1] = `${last} · ${part}`
-    else lines.push(part)
-  }
   const tw = Math.min(maxW, Math.max(...lines.map((l) => ctx.measureText(l).width)))
-  const lh = 15, bh = lines.length * lh + 8
   ctx.fillStyle = `rgba(${r},${g},${b},0.82)`
   ctx.beginPath()
-  ctx.roundRect(W - tw - 14 - 16, H - 14 - bh, tw + 16, bh, 10)
+  ctx.roundRect(W - tw - gap - 16, H - gap - bh, tw + 16, bh, 10)
   ctx.fill()
   ctx.fillStyle = ink3
   ctx.textBaseline = 'middle'
-  lines.forEach((l, i) => ctx.fillText(l, W - tw - 14 - 8, H - 14 - bh + 4 + lh * i + lh / 2, maxW))
+  lines.forEach((l, i) => ctx.fillText(l, W - tw - gap - 8, H - gap - bh + 4 + lh * i + lh / 2, maxW))
 
-  const blob = await new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'))
-  if (blob) download(blob, `${slug(doc.title)}.png`)
+  return new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'))
+}
+
+/** Every ring of the area's outline, projected to the map container's CSS pixels. */
+function outlineRings(engine: MapEngine, shape: AreaShape): [number, number][][] {
+  const polys = shape.geometry.type === 'Polygon' ? [shape.geometry.coordinates] : shape.geometry.coordinates
+  return polys.flatMap((poly) => poly.map((ring) => ring.map(([lng, lat]) => {
+    const p = engine.map.project([lng, lat])
+    return [p.x, p.y] as [number, number]
+  })))
 }

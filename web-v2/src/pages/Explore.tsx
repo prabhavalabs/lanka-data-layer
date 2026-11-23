@@ -158,7 +158,7 @@ export default function Explore({ shared }: { shared?: MapDocument } = {}) {
       }
     },
   })
-  const docActions = useMemo<Omit<DocActions, 'exportPng'>>(
+  const docActions = useMemo<Omit<DocActions, 'openExport'>>(
     () => ({
       origin,
       saving: save.isPending,
