@@ -20,7 +20,7 @@ import { ExportDialog } from './ExportDialog'
 import { renderPng } from './exporting'
 import { Inspector } from './Inspector'
 import { LayersPanel } from './LayersPanel'
-import { LegendCard, legendEntries, LegendList } from './LegendCard'
+import { LegendCard, legendBlocks, LegendList } from './LegendCard'
 import { MapCanvas } from './MapCanvas'
 import { actions, useWs } from './store'
 import { Timeline } from './Timeline'
@@ -191,10 +191,7 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
     async (area?: Parameters<typeof renderPng>[6]) => {
       const e = engine.current
       if (!e) return null
-      const entries = legendEntries(doc.layers, shownLayers(doc.layers, solo)).flatMap((l) => {
-        const model = e.legend(l.id)
-        return model ? [{ title: l.legend.title ?? l.name, model }] : []
-      })
+      const entries = legendBlocks(doc.layers, shownLayers(doc.layers, solo), (id) => e.legend(id))
       return renderPng(e, doc, entries, { left: padding.left - 12, top: 0, right: padding.right - 12, bottom: 0 }, scheme === 'dark', credits.plain, area)
     },
     [doc, solo, padding, scheme, credits],

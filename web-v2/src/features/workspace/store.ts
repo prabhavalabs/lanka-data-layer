@@ -35,6 +35,14 @@ import {
   type Style,
 } from '@/lib/map-spec'
 
+/** A layer's style with its colour fixed to one value, whatever it was bound to: what a split's parts are drawn in. */
+function inOneColour(layer: Layer, color: string): Style {
+  const s = layer.style
+  if (layer.type === 'line') return { ...s, stroke: { ...s.stroke, color } }
+  if (layer.type === 'polygon') return s.fill === 'none' || s.fill === undefined ? { ...s, stroke: { ...s.stroke, color } } : { ...s, fill: color }
+  return { ...s, fill: color }
+}
+
 export type WorkspaceState = {
   doc: MapDocument | null
   /** the document as loaded or last saved; the map is dirty when `doc !== saved` */
@@ -185,6 +193,33 @@ export const actions = {
       made = g.id
       return { ...d, layers: insertNode(layers, parent?.id ?? null, at, g) }
     }, 'Grouped')
+    if (made) set({ selected: made })
+  },
+  /**
+   * Split a layer by a category field: a group of the same name takes its place, holding one layer per value,
+   * each the original filtered to that value and drawn in one colour, so each can be recoloured, hidden or
+   * labelled on its own. The layers share the original source: no data is fetched twice.
+   */
+  split(id: string, field: string, parts: { value: string; name: string; color: string }[]) {
+    let made: string | null = null
+    edit((d) => {
+      const node = findNode(d.layers, id)
+      if (!node || isGroup(node) || parts.length < 2) return d
+      if (allLayers(d.layers).length - 1 + parts.length > LIMITS.layers || countGroups(d.layers) >= LIMITS.groups) return d
+      if (ancestorsOf(d.layers, id).length + 1 > MAX_GROUP_DEPTH) return d
+      const parent = parentOf(d.layers, id) ?? null
+      const siblings = parent ? parent.children : d.layers
+      const at = siblings.findIndex((n) => n.id === id)
+      const [layers] = removeNode(d.layers, id)
+      const children: Layer[] = parts.map((p) => {
+        const only: Cql = { op: '=', args: [{ property: field }, p.value] }
+        return { ...node, id: uid('l'), name: p.name, filter: node.filter ? { op: 'and', args: [node.filter, only] } : only, style: inOneColour(node, p.color), legend: { ...node.legend, title: null } }
+      })
+      // the document stores bottom → top: the first value ends up at the top of the group
+      const g: Group = { id: uid('g'), type: 'group', name: node.name, visible: node.visible, opacity: 1, collapsed: false, children: children.reverse() }
+      made = g.id
+      return { ...d, layers: insertNode(layers, parent?.id ?? null, at, g) }
+    }, `Split into ${parts.length} layers`)
     if (made) set({ selected: made })
   },
   addGroup() {

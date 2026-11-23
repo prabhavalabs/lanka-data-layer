@@ -2,7 +2,7 @@
 // out (filter) and how it explains itself (labels, legend). Every control writes the document.
 import { ChartScatter, Plus, TriangleAlert, Ungroup, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { adminLevelsQuery, featureMeta, gridMeta, INDICATOR_META, indicatorMeta, LEVELS, type FieldMeta, type LayerData } from '@/api/workspace'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -677,8 +677,75 @@ function PolygonSections({ layer, data, scheme }: P) {
   )
 }
 
+/** The most layers a split makes: past this a legend says it better than a list of layers. */
+const SPLIT_MAX = 24
+/** The colour a layer draws a category in now, so a split keeps the picture as it was. */
+function colourBinding(layer: Layer): FieldBinding | undefined {
+  const c = layer.type === 'line' ? layer.style.stroke?.color : layer.type === 'polygon' && (layer.style.fill === 'none' || layer.style.fill === undefined) ? layer.style.stroke?.color : layer.style.fill
+  return isBinding(c) ? c : undefined
+}
+
+/** Split a layer into one layer per category: each can then be recoloured, hidden or labelled on its own. */
+function SplitSection({ layer, data }: { layer: Layer; data: LayerData | undefined }) {
+  const { scheme } = useWorkspace()
+  const bound = colourBinding(layer)
+  const fields = fieldsOf(data).filter((f) => f.kind === 'category' && (f.categories?.length ?? 0) >= 2)
+  const [field, setField] = useState<string | undefined>(undefined)
+  const pick = field && fields.some((f) => f.id === field) ? field : bound && fields.some((f) => f.id === bound.field) ? bound.field : fields[0]?.id
+  const meta = fields.find((f) => f.id === pick)
+  const parts = useMemo(() => {
+    if (!meta) return []
+    // keep the colours the layer draws in now when it is coloured by this field; else the categorical palette
+    const scale = bound?.field === meta.id && bound.scale.type === 'categorical' ? bound.scale : { type: 'categorical' as const, ramp: 'ldl.cat.default' }
+    const r = resolveScale([], scale, scheme, meta.categories)
+    const colourOf = (v: string) => (r.kind === 'categorical' ? (r.colors[r.keys.indexOf(v)] ?? r.other) : '#888888')
+    const features = data?.kind === 'features' ? data.collection.features : []
+    return (meta.categories ?? []).map((value) => {
+      // a value whose features all share one name is called by it (a route by "CM01 Makumbura to Pettah")
+      const names = new Set(features.filter((f) => String(f.properties?.[meta.id]) === value).map((f) => f.properties?.name).filter((n): n is string => typeof n === 'string' && !!n))
+      return { value, name: names.size === 1 ? [...names][0] : value.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()), color: colourOf(value) }
+    })
+  }, [meta, bound, scheme, data])
+  if (!fields.length) return null
+  const tooMany = parts.length > SPLIT_MAX
+  return (
+    <Section title="Sub-layers" defaultOpen={false}>
+      <p className="text-[12px] leading-[1.5] text-ink3">One layer per value, grouped under this one, so each can have its own colour, labels and visibility.</p>
+      <Field label="Split by">
+        <Picker value={pick} label="Split by field" options={fields.map((f) => ({ value: f.id, label: f.label }))} onChange={setField} />
+      </Field>
+      {parts.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {parts.slice(0, 12).map((p) => (
+            <span key={p.value} className="inline-flex max-w-full items-center gap-1.5 rounded-md border border-line px-1.5 py-0.5 text-[11.5px] text-ink2">
+              <span className="size-2 shrink-0 rounded-full" style={{ background: p.color }} />
+              <span className="truncate">{p.name}</span>
+            </span>
+          ))}
+          {parts.length > 12 && <span className="text-[11.5px] text-ink3">+{parts.length - 12} more</span>}
+        </div>
+      )}
+      <Button variant="outline" size="sm" disabled={!meta || tooMany || parts.length < 2} onClick={() => meta && actions.split(layer.id, meta.id, parts)} className="w-full max-md:h-10">
+        <Ungroup className="rotate-180" />
+        {tooMany ? `${parts.length} values: too many to split` : `Split into ${parts.length} layers`}
+      </Button>
+    </Section>
+  )
+}
+
+/** The field a layer keeps one value of (`route_id = CM02`, as a split's parts do): its natural label. */
+function keptField(f: Layer['filter']): string | undefined {
+  if (!f) return undefined
+  if (f.op === '=' && typeof f.args[0] === 'object') return f.args[0].property
+  if (f.op === 'and') return keptField(f.args[f.args.length - 1])
+  return undefined
+}
+
 function LabelSection({ layer, data }: { layer: Layer; data: LayerData | undefined }) {
   const label = layer.style.label
+  // a layer of one value is called by it ("CM02"): short enough to run along a winding line, where a long name does not fit
+  const kept = keptField(layer.filter)
+  const fallback = kept ? `{${kept}}` : '{name}'
   const patch = setStyle(layer)
   const [size, setSize] = useLive(label?.size ?? 11)
   const fields = [{ value: '{name}', label: 'Name' }, ...(data?.kind === 'frame' || data?.kind === 'boundaries' ? [{ value: '{pcode}', label: 'P-code' }] : fieldsOf(data).map((f) => ({ value: `{${f.id}}`, label: f.label })))]
@@ -687,7 +754,7 @@ function LabelSection({ layer, data }: { layer: Layer; data: LayerData | undefin
     <Section title="Labels" defaultOpen={own || !!label}>
       {!own && (
         <Field label="Show" htmlFor={`label-${layer.id}`}>
-          <Switch id={`label-${layer.id}`} checked={!!label} onCheckedChange={(v) => patch((s) => ({ ...s, label: v ? { text: '{name}', size: 11 } : undefined }))} />
+          <Switch id={`label-${layer.id}`} checked={!!label} onCheckedChange={(v) => patch((s) => ({ ...s, label: v ? { text: fallback, size: 11 } : undefined }))} />
         </Field>
       )}
       {(own || label) && (
@@ -829,7 +896,8 @@ export function Inspector({ onRelate }: { onRelate: () => void }) {
       {source && node.type === 'polygon' && <PolygonSections {...p} />}
       {node.type === 'line' && <OutlineSection layer={node} data={d} scheme={scheme} bindable dash title="Line" />}
       <FilterSection layer={node} data={d} />
-      {(node.type === 'choropleth' || node.type === 'bivariate' || node.type === 'point' || node.type === 'label') && <LabelSection layer={node} data={d} />}
+      {(node.type === 'line' || node.type === 'polygon' || node.type === 'point') && <SplitSection layer={node} data={d} />}
+      {(node.type === 'choropleth' || node.type === 'bivariate' || node.type === 'point' || node.type === 'line' || node.type === 'polygon' || node.type === 'label') && <LabelSection layer={node} data={d} />}
       {node.type !== 'label' && node.type !== 'hillshade' && <LegendSection layer={node} />}
     </div>
   )

@@ -215,11 +215,14 @@ function fieldsOf(dataset: string, info: FieldInfo[] | undefined, collection?: F
       const vals = collection?.features.map((x) => Number(x.properties?.[f.id])).filter(Number.isFinite) ?? []
       if (collection && !vals.length) continue
       out.push({ id: f.id, label: label.replace(/^./, (c) => c.toUpperCase()), kind: 'number', unit: f.unit && !f.unit.startsWith('{') ? f.unit : undefined, domain: vals.length ? [Math.min(...vals), Math.max(...vals)] : undefined })
-    } else if (f.type === 'category' && collection) {
-      const c = [...new Set(collection.features.map((x) => x.properties?.[f.id]).filter((v): v is string => typeof v === 'string'))].sort()
-      if (c.length > 1 && c.length <= 12) out.push({ id: f.id, label: label.replace(/^./, (x) => x.toUpperCase()), kind: 'category', categories: c })
+    } else if ((f.type === 'category' || f.type === 'string') && collection) {
+      // a text field with a handful of values (a route, a direction, a zone type) is a category: it can colour, filter and split a layer
+      const c = [...new Set(collection.features.map((x) => x.properties?.[f.id]).filter((v): v is string => typeof v === 'string' && v !== ''))].sort()
+      if (c.length > 1 && c.length <= 24) out.push({ id: f.id, label: label.replace(/^./, (x) => x.toUpperCase()), kind: 'category', categories: c })
     }
   }
+  // from tiles there is no collection to count: the categories the registry declares stand in
+  for (const f of meta?.fields ?? []) if (f.kind === 'category' && f.id !== 'kind' && !out.some((o) => o.id === f.id) && !collection) out.push(f)
   return out
 }
 
