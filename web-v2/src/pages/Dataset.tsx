@@ -3,6 +3,7 @@ import { ArrowUpRight, Check, ChevronRight, CircleHelp, Copy, Download, Minus, P
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { datasetQuery, themesQuery } from '@/api/queries'
+import { realCatalogue, REAL_INDICATORS } from '@/api/real/registry'
 import { isSample, type DatasetDetail } from '@/api/types'
 import { FreshnessDot, LicenceLight, SampleMark } from '@/components/common/bits'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -51,9 +52,13 @@ function Cite({ text }: { text: string }) {
   )
 }
 
+const MAPPABLE = new Set([...realCatalogue('light').map((c) => c.dataset ?? c.id), ...REAL_INDICATORS.map((m) => m.dataset)])
+
 export default function DatasetPage() {
   const { id = '' } = useParams()
   const { data: d, isPending } = useQuery(datasetQuery(id))
+  // drawable when the map catalogue has it, or the map knows one of its indicators
+  const mappable = MAPPABLE.has(id)
   const { data: themes = [] } = useQuery(themesQuery())
 
   if (isPending || !d)
@@ -109,11 +114,18 @@ export default function DatasetPage() {
               <Download /> Download
             </a>
           </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link to="/explore">
-              View on the map <ArrowUpRight />
-            </Link>
-          </Button>
+          {mappable ? (
+            <Button size="lg" variant="outline" asChild>
+              {/* a new tab, so the page stays where it was; the map opens with this dataset's layers in it */}
+              <a href={`/explore?dataset=${encodeURIComponent(d.id)}`} target="_blank" rel="noopener">
+                View on the map <ArrowUpRight />
+              </a>
+            </Button>
+          ) : (
+            <Button size="lg" variant="outline" disabled title="This dataset has no map layer yet: its tables are below and in the API">
+              No map layer yet
+            </Button>
+          )}
         </div>
       </header>
 

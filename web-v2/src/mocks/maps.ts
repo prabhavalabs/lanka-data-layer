@@ -227,6 +227,31 @@ export function baseMap(): MapDocument {
   return b.done(BASE_MAP, [b.add(REAL_PRESET.boundaryLabels(1), { name: 'Province names' }, 'provinces'), b.add(REAL_PRESET.boundaryLines(1), { opacity: 0.5 }, 'provinces')])
 }
 
+/**
+ * A map of one dataset, for "View on the map": the base map's provinces, then the dataset's layers in a group
+ * named after it. Layers that complement each other (a route network and its stops) are switched on; the
+ * alternatives of the first (another return period, another level) start hidden, one click away. `bounds`
+ * frames the data when it covers only part of the island.
+ */
+export function datasetMap(item: { title: string; summary: string; presets: LayerTemplate[] }, bounds?: [number, number, number, number] | null): MapDocument {
+  const b = builder(item.title, item.summary)
+  b.source('provinces', { kind: 'boundaries', scheme: 'admin', level: 1 })
+  const shown = new Set<string>()
+  const layers = item.presets.map((p, i) => {
+    const on = i === 0 || (!shown.has(p.type) && ['point', 'line', 'polygon', 'label', 'cluster'].includes(p.type) && ['point', 'line', 'polygon', 'label', 'cluster'].includes(item.presets[0].type))
+    if (on) shown.add(p.type)
+    return b.add(p, { visible: on })
+  })
+  // points over lines over areas, whatever order the catalogue lists them in
+  const rank: Record<string, number> = { label: 0, point: 1, cluster: 1, heatmap: 2, line: 3, polygon: 4, choropleth: 5, bivariate: 5, raster: 6, hillshade: 7 }
+  layers.sort((x, y) => (rank[x.type] ?? 5) - (rank[y.type] ?? 5))
+  const doc = b.done('m_dataset', [b.add(REAL_PRESET.boundaryLabels(1), { name: 'Province names' }, 'provinces'), b.group(item.title, layers), b.add(REAL_PRESET.boundaryLines(1), { opacity: 0.5 }, 'provinces')])
+  const now = new Date().toISOString()
+  // a wide extent is the island, which the default view already shows
+  const small = bounds && bounds[2] - bounds[0] < 1.6 && bounds[3] - bounds[1] < 2.6
+  return { ...doc, id: undefined, view: small ? { ...doc.view, bounds } : doc.view, meta: { ...doc.meta, created_at: now, updated_at: now, author: undefined } }
+}
+
 /** The single-indicator map the explorer used to be: the landing point of links from area pages. */
 export function glance(indicator = 'pop.density', level = 2, _scheme: Theme = 'dark'): MapDocument {
   void _scheme

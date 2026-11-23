@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { apiAvailable } from '@/api/http'
 import { createSnapshot, snapshotError } from '@/api/real/share'
-import { BASE_MAP, baseMap, DEFAULT_MAP, glance, isStarter, mapQuery, saveMap } from '@/api/workspace'
+import { BASE_MAP, baseMap, catalogueQuery, datasetMapQuery, DEFAULT_MAP, glance, isStarter, mapQuery, saveMap } from '@/api/workspace'
 import type { DocActions } from '@/features/workspace/DocBar'
 import { exportJson, shareLink } from '@/features/workspace/exporting'
 import { actions, getWs, useDoc, useWs } from '@/features/workspace/store'
@@ -42,26 +42,31 @@ export default function Explore({ shared }: { shared?: MapDocument } = {}) {
   /* ---- which document ---- */
   const inline = hash.startsWith('#d=') ? hash.slice(3) : null
   const mapParam = params.get('map')
+  // `?dataset=<id>`: a new map of one catalogue dataset, from "View on the map" on its page
+  const datasetParam = mapParam ? null : params.get('dataset')
   const legacy = params.get('indicator')
   const area = params.get('area')?.toUpperCase() ?? null
   const level = params.get('level') === '1' || area?.length === 3 ? 1 : 2
   const id = mapParam ?? (legacy || area ? 'm_glance' : DEFAULT_MAP)
   // what identifies the document, whatever theme it is shown in
-  const key = shared && !imported ? `snap:${shared.id}` : imported ? `import:${imported.n}` : inline ? `link:${inline.slice(0, 48)}` : mapParam === 'new' ? 'new' : `${id}:${legacy ?? ''}:${id === 'm_glance' ? level : ''}`
-  const stored = useQuery({ ...mapQuery(id, theme), enabled: !shared && !imported && !inline && mapParam !== 'new' && !(id === 'm_glance' && !!legacy) })
+  const key = shared && !imported ? `snap:${shared.id}` : imported ? `import:${imported.n}` : inline ? `link:${inline.slice(0, 48)}` : mapParam === 'new' ? 'new' : datasetParam ? `dataset:${datasetParam}` : `${id}:${legacy ?? ''}:${id === 'm_glance' ? level : ''}`
+  const stored = useQuery({ ...mapQuery(id, theme), enabled: !shared && !imported && !inline && !datasetParam && mapParam !== 'new' && !(id === 'm_glance' && !!legacy) })
+  const catalogue = useQuery({ ...catalogueQuery(theme), enabled: !!datasetParam && !shared && !imported && !inline })
+  const ofDataset = useQuery(datasetMapQuery(datasetParam, theme, catalogue.data))
   const linked = useQuery({ queryKey: ['map-link', inline], queryFn: () => decodeDocument(inline!), enabled: !!inline && !imported, staleTime: Infinity, retry: false })
   const opened = useMemo<Opened | null>(() => {
     if (shared && !imported) return { doc: shared, origin: 'link' }
     if (imported) return { doc: imported.doc, origin: 'new' }
     if (inline) return linked.data ? { doc: linked.data, origin: 'link' } : null
     // a new map starts where /explore does: province outlines and names, unsaved
+    if (datasetParam) return ofDataset.data ? { doc: ofDataset.data, origin: 'new' } : null
     if (mapParam === 'new') {
       const base = baseMap()
       return { doc: { ...blankDocument(), description: base.description, sources: base.sources, layers: base.layers }, origin: 'new' }
     }
     if (id === 'm_glance' && legacy) return { doc: glance(legacy, level, theme), origin: 'starter' }
     return stored.data ? { doc: stored.data, origin: id === BASE_MAP ? 'blank' : isStarter(id) ? 'starter' : 'own' } : null
-  }, [shared, imported, inline, linked.data, mapParam, id, legacy, level, stored.data, theme])
+  }, [shared, imported, inline, linked.data, mapParam, datasetParam, ofDataset.data, id, legacy, level, stored.data, theme])
 
   /* ---- into the store ---- */
   const loaded = useRef('')
@@ -214,13 +219,14 @@ export default function Explore({ shared }: { shared?: MapDocument } = {}) {
   )
 
   if (!doc || !docKey) {
-    const failed = (inline && linked.isError) || (!inline && !imported && stored.isFetched && !stored.data && mapParam !== 'new')
+    const noLayers = !!datasetParam && ofDataset.isFetched && !ofDataset.data
+    const failed = noLayers || (inline && linked.isError) || (!inline && !imported && !datasetParam && stored.isFetched && !stored.data && mapParam !== 'new')
     return (
       <div className="grid h-[100dvh] place-items-center bg-bg px-6">
         {failed ? (
           <div className="max-w-sm text-center">
-            <h1 className="t-h3">This map could not be opened</h1>
-            <p className="mt-2 text-[14px] leading-[1.55] text-ink2">{inline ? 'The link is incomplete, or it was made by a newer version of the map format.' : 'It is not among the starters or the maps saved in this browser.'}</p>
+            <h1 className="t-h3">{noLayers ? 'This dataset has no map layer yet' : 'This map could not be opened'}</h1>
+            <p className="mt-2 text-[14px] leading-[1.55] text-ink2">{noLayers ? 'Its tables are on its page and in the API; it is not drawn on the map yet.' : inline ? 'The link is incomplete, or it was made by a newer version of the map format.' : 'It is not among the starters or the maps saved in this browser.'}</p>
             <button type="button" onClick={() => navigate('/explore')} className="pressable mt-5 h-9 rounded-lg bg-ink px-4 text-[13.5px] font-medium text-bg">
               Open the default map
             </button>

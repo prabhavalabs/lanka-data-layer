@@ -8,7 +8,7 @@ import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { ApiError, apiAvailable, getJson } from './http'
 import { adminLevels, adminTiles, engineSource, loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
 import { outputs as engineOutputs, planAnalysis, runAnalysisOnEngine, toEngine, type EngineRequest } from './real/analysis'
-import { realCatalogue } from './real/registry'
+import { realCatalogue, realChoropleth, REAL_INDICATORS } from './real/registry'
 import type { Theme } from '@/lib/hooks'
 import type { AnalysisRequest, GroupCompareRequest, MapDocument, RelateRequest, Source, TimeConfig, Variable } from '@/lib/map-spec'
 import { resolvePeriod } from '@/lib/map-spec'
@@ -47,6 +47,23 @@ export const catalogueQuery = (scheme: Theme) =>
     },
     staleTime: HOUR,
   })
+/**
+ * "View on the map" for a catalogue dataset: its map-catalogue presets, or else a choropleth for each of its
+ * indicators the map knows, framed on the data's tiles. null when nothing of it can be drawn yet.
+ */
+export async function datasetMapDoc(id: string, catalogue: CatalogueItem[]): Promise<MapDocument | null> {
+  const item = catalogue.find((c) => (c.dataset ?? c.id) === id)
+  const tiles = await getJson<{ id: string; bounds?: [number, number, number, number] }[]>('/v2/tiles').catch(() => [])
+  const bounds = tiles.find((t) => t.id === id)?.bounds ?? null
+  if (item) return maps.datasetMap(item, bounds)
+  const metas = REAL_INDICATORS.filter((m) => m.dataset === id)
+  if (!metas.length) return null
+  const detail = await getJson<{ title?: string; description?: string }>(`/v2/datasets/${encodeURIComponent(id)}`).catch(() => null)
+  return maps.datasetMap({ title: detail?.title ?? id, summary: detail?.description ?? '', presets: metas.slice(0, 6).map((m) => realChoropleth(m.id, m.levels.includes(3) ? 3 : Math.max(...m.levels))) }, null)
+}
+export const datasetMapQuery = (id: string | null, scheme: Theme, catalogue: CatalogueItem[] | undefined) =>
+  queryOptions({ queryKey: ['dataset-map', id, scheme], queryFn: () => datasetMapDoc(id!, catalogue!), enabled: !!id && !!catalogue, staleTime: Infinity, gcTime: 60_000 })
+
 /** `POST /app/v1/maps/resolve` for the document's sources; null = the engine is unreachable. */
 export const resolveQuery = (sources: Record<string, Source>, pin: MapDocument['pin']) =>
   queryOptions({ queryKey: ['resolve', resolveKey(sources, pin)], queryFn: () => resolveSources(sources, pin), staleTime: 5 * 60 * 1000, retry: false, placeholderData: keepPreviousData })
