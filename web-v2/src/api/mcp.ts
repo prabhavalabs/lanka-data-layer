@@ -31,7 +31,7 @@ export async function handshake(endpoint: string, protocolVersion: string): Prom
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', 'mcp-protocol-version': protocolVersion },
+      headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', 'mcp-protocol-version': protocolVersion, 'mcp-method': 'initialize' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion, capabilities: {}, clientInfo: { name: 'lanka-data-layer-web', version: '1' } } }),
       signal: AbortSignal.timeout(8000),
     })

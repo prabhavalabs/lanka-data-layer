@@ -19,7 +19,8 @@ export function McpConnect({ compact = false }: { compact?: boolean }) {
   const url = mcpEndpoint(info.data)
   const local = LOCAL.test(url)
   const setups = useMemo(() => clientSetups(url, info.data?.stdio_command ?? 'lanka mcp'), [url, info.data?.stdio_command])
-  const versions = info.data?.protocol_versions ?? []
+  // the server lists them oldest first; newest first reads better, and is what a client asks for
+  const versions = [...(info.data?.protocol_versions ?? [])].reverse()
   const [test, setTest] = useState<Handshake | 'running' | null>(null)
   const [urlCopied, copyUrl] = useCopy()
 
