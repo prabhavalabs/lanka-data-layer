@@ -6,7 +6,7 @@
 // the engine cannot be reached, loads the bundled sample data instead, marked `origin: 'sample'`.
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { ApiError, apiAvailable, getJson } from './http'
-import { adminTiles, engineSource, loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
+import { adminLevels, adminTiles, engineSource, loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
 import { outputs as engineOutputs, planAnalysis, runAnalysisOnEngine, toEngine, type EngineRequest } from './real/analysis'
 import { realCatalogue } from './real/registry'
 import type { Theme } from '@/lib/hooks'
@@ -220,6 +220,8 @@ export function layerDataQuery(source: Source | undefined, doc: Pick<MapDocument
   return queryOptions({ queryKey: key, queryFn: () => served(source?.kind === 'analysis' ? 320 : 140, source?.kind === 'analysis' ? load : sample), enabled: !!source && !waiting, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData })
 }
 /** The terrain model's shading, shared by hillshade layers and relief-shaded rasters. */
+/** Which admin levels have boundary tiles, and from what zoom; null without the engine (the sample has all four, from z0). */
+export const adminLevelsQuery = () => queryOptions({ queryKey: ['admin-levels'], queryFn: async () => ((await apiAvailable()) ? adminLevels() : null), staleTime: Infinity, retry: false })
 export const reliefQuery = (exaggeration: number, enabled = true) => queryOptions({ queryKey: ['relief', exaggeration], queryFn: () => layers.relief(exaggeration), staleTime: Infinity, enabled })
 
 /* ---------------- map documents ---------------- */

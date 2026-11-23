@@ -24,6 +24,7 @@ import { MapCanvas } from './MapCanvas'
 import { actions, useWs } from './store'
 import { Timeline } from './Timeline'
 import { SHEET_PEEK, WorkspaceSheet } from './WorkspaceSheet'
+import { setMapZoom } from './zoom'
 import './workspace.css'
 
 // the catalogue and the analysis (its charts and the statistics behind them) load when first opened
@@ -242,11 +243,20 @@ export function Workspace({ doc, docActions, initialView, docKey, onView, area, 
     </Suspense>
   )
 
+  // the zoom the layer panel and the inspector measure layers against (see ./zoom)
+  useState(() => setMapZoom(initialView.zoom))
+  const onViewAndZoom = useCallback(
+    (v: { center: [number, number]; zoom: number }) => {
+      setMapZoom(v.zoom)
+      onView(v)
+    },
+    [onView],
+  )
   return (
     <WorkspaceContext.Provider value={ctx}>
       <div className={cn('relative h-[100dvh] w-full overflow-hidden bg-bg', scheme !== theme && 'ws-mixed')} style={vars}>
         <h1 className="sr-only">{doc.title}</h1>
-        <MapCanvas doc={doc} data={data} relief={relief} scheme={scheme} basemap={style} solo={solo} padding={padding} reducedMotion={reducedMotion} engine={engine} tooltipRef={tooltipRef} onHover={setHover} onClick={onClick} onView={onView} onCompiled={onCompiled} initialView={initialView} />
+        <MapCanvas doc={doc} data={data} relief={relief} scheme={scheme} basemap={style} solo={solo} padding={padding} reducedMotion={reducedMotion} engine={engine} tooltipRef={tooltipRef} onHover={setHover} onClick={onClick} onView={onViewAndZoom} onCompiled={onCompiled} initialView={initialView} />
         {/* keeps the floating nav legible over any basemap */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-bg/80 to-transparent" aria-hidden />
 

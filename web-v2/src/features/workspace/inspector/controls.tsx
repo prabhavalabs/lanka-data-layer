@@ -55,11 +55,15 @@ export function Seg<T extends string>({ value, onChange, options, label, classNa
     <ToggleGroup type="single" value={value} onValueChange={(v) => v && onChange(v as T)} aria-label={label} className={cn('flex h-8 w-full max-md:h-10', className)}>
       {options.map((o) =>
         o.hint ? (
+          // the tooltip sits on a wrapper: on the item itself its `data-state` would replace the item's `on`,
+          // and a disabled button never sees the pointer, so it could not say why it is disabled
           <Tooltip key={o.value}>
             <TooltipTrigger asChild>
-              <ToggleGroupItem value={o.value} disabled={o.disabled} className="px-1.5 disabled:opacity-40">
-                {o.label}
-              </ToggleGroupItem>
+              <span className={cn('flex h-full min-w-0 flex-1', o.disabled && 'cursor-not-allowed')}>
+                <ToggleGroupItem value={o.value} disabled={o.disabled} className="px-1.5 disabled:pointer-events-none disabled:opacity-35">
+                  {o.label}
+                </ToggleGroupItem>
+              </span>
             </TooltipTrigger>
             <TooltipContent>{o.hint}</TooltipContent>
           </Tooltip>
@@ -150,7 +154,8 @@ export function RampPicker({ value, reverse, scheme, onChange, onReverse, diverg
 export function TonePicker({ value, scheme, onChange, label, extra = [] }: { value: string | undefined; scheme: Theme; onChange: (tone: string) => void; label: string; extra?: string[] }) {
   const current = value?.replace('ldl.tone.', '')
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap items-center gap-1.5">
+    // spread edge to edge, so the swatches line up with the segmented controls above and below them
+    <div role="radiogroup" aria-label={label} className="flex w-full flex-wrap items-center justify-between gap-1.5 px-1">
       {[...TONES, ...extra].map((t) => (
         <Tooltip key={t}>
           <TooltipTrigger asChild>

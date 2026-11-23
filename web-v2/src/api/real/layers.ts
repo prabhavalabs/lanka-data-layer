@@ -154,6 +154,19 @@ export async function adminTiles(level: number, parent?: string): Promise<AdminT
   return { tiles: [absoluteApiUrl(t.tiles[0])], minzoom: layer?.minzoom ?? t.minzoom, maxzoom: layer?.maxzoom ?? t.maxzoom, sourceLayer: `adm${level}`, centroidsLayer: 'centroids', level, parent }
 }
 
+/** The admin levels the tileset carries, and the zoom each starts at: `{ 1: 0, 2: 0, 3: 5, 4: 9 }`. */
+export async function adminLevels(): Promise<Record<number, number>> {
+  tilejson ??= getBytes('/v2/tiles/admin.json').then((r) => r.json() as Promise<TileJson>)
+  tilejson.catch(() => (tilejson = null))
+  const t = await tilejson
+  const out: Record<number, number> = {}
+  for (const l of t.vector_layers) {
+    const m = /^adm(\d)$/.exec(l.id)
+    if (m) out[Number(m[1])] = l.minzoom ?? t.minzoom
+  }
+  return out
+}
+
 async function frame(source: Extract<Source, { kind: 'indicator' }>, r: ResolvedSource): Promise<FramePayload> {
   const { payload: f } = await getEnvelope<ServerFrame>(r.frame!)
   const ids = source.indicators?.length ? source.indicators : [source.indicator]

@@ -723,6 +723,10 @@ export class MapEngine {
   zoomIn() {
     this.map.zoomIn({ duration: 220 })
   }
+  /** To at least `zoom`, about the current centre: how a layer out of reach is brought into view. */
+  zoomTo(zoom: number) {
+    this.map.easeTo({ zoom: Math.max(zoom, this.map.getZoom()), duration: this.reducedMotion ? 0 : 420, easing: easeOut })
+  }
   zoomOut() {
     this.map.zoomOut({ duration: 220 })
   }

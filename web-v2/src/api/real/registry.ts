@@ -72,11 +72,13 @@ const OUTLINE: Style['stroke'] = { color: 'ldl.tone.paper', width: 0.3 }
 const fill = (ramp: string, classes = 5, type: 'quantile' | 'jenks' = 'quantile'): FieldBinding => ({ field: 'value', scale: { type, classes, ramp } })
 const LEVEL = ['', 'province', 'district', 'DS division', 'GN division']
 const LEVEL_CODE = ['ADM0', 'ADM1', 'ADM2', 'ADM3', 'ADM4']
+/** Said in the picker: GN divisions start at z9 in the admin tileset (its TileJSON's `adm4.minzoom`), so a whole-island view shows none. */
+const DRAWN_FROM: Record<number, string> = { 4: ', drawn from zoom 9' }
 export const metaOf = (key: string) => REAL_INDICATORS.find((m) => m.id === key)!
 export function realChoropleth(key: string, level: number, opts: { ramp?: string; type?: 'quantile' | 'jenks'; parent?: string } = {}): Preset {
   const m = metaOf(key)
   const source: Source = { kind: 'indicator', indicator: m.indicator!, ...(m.dims ? { dims: { ...m.dims } } : {}), level, ...(opts.parent ? { parent: opts.parent } : {}), period: TIME }
-  return { id: `${key}:${level}`, label: `By ${LEVEL[level]}`, hint: `${LEVEL_CODE[level]} choropleth`, type: 'choropleth', name: m.label, source, style: { fill: fill(opts.ramp ?? m.ramp, 5, opts.type), stroke: level >= 4 ? { color: 'ldl.tone.paper', width: 0 } : OUTLINE, uncertainty: 'off' }, opacity: 0.9 }
+  return { id: `${key}:${level}`, label: `By ${LEVEL[level]}`, hint: `${LEVEL_CODE[level]} choropleth${DRAWN_FROM[level] ?? ''}`, type: 'choropleth', name: m.label, source, style: { fill: fill(opts.ramp ?? m.ramp, 5, opts.type), stroke: level >= 4 ? { color: 'ldl.tone.paper', width: 0 } : OUTLINE, uncertainty: 'off' }, opacity: 0.9 }
 }
 const grid = (id: string): Source => ({ kind: 'grid', grid: id, period: TIME })
 const tint = (scheme: Theme) => (scheme === 'dark' ? ('screen' as const) : ('multiply' as const))
@@ -122,7 +124,7 @@ export const REAL_PRESET = {
   trails: (): Preset => ({ id: 'osm:trails', label: 'Trails', hint: 'Vector tiles, dotted', type: 'line', name: 'Walking trails and cycle routes', source: { kind: 'features', dataset: 'osm-trails-cycling' }, style: { stroke: { color: 'ldl.tone.green', width: 0.9, dash: [0.4, 2] } }, opacity: 0.85 }),
   boundaryLines: (level: number): Preset => {
     const plural = ['Country', 'Provinces', 'Districts', 'DS divisions', 'GN divisions'][level]
-    return { id: `adm:${level}`, label: plural, hint: `${LEVEL_CODE[level]} outlines from the boundary tiles`, type: 'line', name: plural, source: { kind: 'boundaries', scheme: 'admin', level }, style: { stroke: { color: 'ldl.tone.ink', width: level === 1 ? 1.4 : level === 2 ? 1 : level === 3 ? 0.6 : 0.3 } }, opacity: level >= 3 ? 0.55 : 0.6 }
+    return { id: `adm:${level}`, label: plural, hint: `${LEVEL_CODE[level]} outlines${DRAWN_FROM[level] ?? ' from the boundary tiles'}`, type: 'line', name: plural, source: { kind: 'boundaries', scheme: 'admin', level }, style: { stroke: { color: 'ldl.tone.ink', width: level === 1 ? 1.4 : level === 2 ? 1 : level === 3 ? 0.6 : 0.3 } }, opacity: level >= 3 ? 0.55 : 0.6 }
   },
   boundaryLabels: (level: number): Preset => ({ id: `adm:${level}:label`, label: 'Names', hint: `${LEVEL[level]} names`, type: 'label', name: `${LEVEL[level].replace(/^./, (c) => c.toUpperCase())} names`, source: { kind: 'boundaries', scheme: 'admin', level }, style: { label: { text: '{name}', size: level >= 3 ? 10.5 : 12 } }, zoom: level >= 3 ? [8.6, 22] : [5, 22] }),
 }
