@@ -524,6 +524,10 @@
             "max": {
               "type": "integer",
               "minimum": 0
+            },
+            "kind": {
+              "type": "string",
+              "description": "Features only: count the features of this kind."
             }
           }
         },

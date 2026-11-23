@@ -1,0 +1,56 @@
+# nuuuwan/cmb_bus_network: a community proposal for a Colombo trunk bus network (8 routes CMC1…, 78 candidate stops).
+# data/places.json maps each place name to [lat, lng]; data/routes.json lists each route with its code, name and the
+# ordered names of its stops. Places become points (kind bus_stop); each route becomes one LineString (kind bus_route)
+# chained through its stops' coordinates (`feature.line`). The repository commit is the fingerprint.
+# The suburban rail repo (nuuuwan/cmb_rail) and the NTC route statistics (nuuuwan/bus_routes_lk) are other
+# repositories and need their own connector entries (see registry/sources/nuuuwan-cmb-transit.yaml notes).
+# Licence: repository MIT (code); the underlying NTC/OSM-derived names are unstated, so the dataset is held for review.
+source: nuuuwan-cmb-transit
+driver: git_files
+version: 1.0.0
+description: Community Colombo bus network (nuuuwan/cmb_bus_network data/places.json + data/routes.json at a commit).
+discover:
+  kind: git
+  repo: nuuuwan/cmb_bus_network
+  ref: main
+  files:
+    - { key: places, path: data/places.json }
+    - { key: routes, path: data/routes.json }
+extract:
+  format: json
+  tables:
+    # object keyed by place name: the entry key is the name, the value is [lat, lng]
+    - { id: places, artifact: ^places$, path: "$", entries: true, fields: { lat: "[0]", lng: "[1]" } }
+    - { id: routes, artifact: ^routes$, path: "$", fields: { code: code, name: name } }
+    # one record per stop of a route, in route order
+    - { id: route_stops, artifact: ^routes$, path: "$", fields: { route: code }, explode: { path: stops, field: stop, index: seq } }
+standardise:
+  dataset: colombo-bus-rail-network
+  tables:
+    - { id: places, artifact: ^places$ }
+  outputs:
+    - table: places
+      feature:
+        key: _key
+        kind: { value: bus_stop }
+        name: _key
+        lon: lng
+        lat: lat
+    - table: routes
+      feature:
+        key: code
+        kind: { value: bus_route }
+        name: { template: "{code} {name}" }
+        line:
+          through: route_stops
+          by: route
+          point: stop
+          order: seq
+          points: { table: places, key: _key, lon: lng, lat: lat }
+          count: stop_count
+        attrs:
+          route_code: code
+expect:
+  - { check: geometry, valid: true, within_bbox: [79.7, 6.6, 80.2, 7.3] }
+  - { check: row_count, kind: bus_stop, min: 50, max: 150 }
+  - { check: row_count, kind: bus_route, min: 5, max: 15, note: "the proposal has 8 routes (CMC1-CMC8)" }

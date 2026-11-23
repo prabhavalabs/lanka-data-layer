@@ -1,21 +1,26 @@
-# nuuuwan/lk_metro: a community proposal for a Colombo "Lanka Metro" bus network (8 routes CM01…, 111 stops).
-# data/stops.json lists every stop with its road and [lat, lng]; the repository commit is the fingerprint.
-# Only the stops are published: the routes (data/routes.json) are ordered lists of stop names, and turning them
-# into lines needs a geometry step the declarative drivers do not have. Licence MIT (attribution).
+# nuuuwan/lk_metro: a community proposal for a Colombo "Lanka Metro" bus network (routes CM01…, 111 stops).
+# data/stops.json lists every stop with its road and [lat, lng]; data/routes.json lists each route with its id, name,
+# colour, distance and the ordered names of its stops. Stops become points (kind stop); each route becomes one
+# LineString (kind route) chained through its stops' coordinates (`feature.line`). The repository commit is the
+# fingerprint. Licence MIT (attribution).
 source: nuuuwan-lk-metro
 driver: git_files
-version: 1.0.0
-description: Proposed Lanka Metro stops (nuuuwan/lk_metro data/stops.json at a commit).
+version: 1.1.0
+description: Proposed Lanka Metro stops and route lines (nuuuwan/lk_metro data/stops.json + data/routes.json at a commit).
 discover:
   kind: git
   repo: nuuuwan/lk_metro
   ref: main
   files:
     - { key: stops, path: data/stops.json }
+    - { key: routes, path: data/routes.json }
 extract:
   format: json
   tables:
-    - { id: stops, path: "$", fields: { name: name, road: road, lat: "latlng[0]", lng: "latlng[1]" } }
+    - { id: stops, artifact: ^stops$, path: "$", fields: { name: name, road: road, lat: "latlng[0]", lng: "latlng[1]" } }
+    - { id: routes, artifact: ^routes$, path: "$", fields: { id: id, name: name, distance_km: distance_km, color: color } }
+    # one record per stop of a route, in route order
+    - { id: route_stops, artifact: ^routes$, path: "$", fields: { route: id }, explode: { path: stops, field: stop, index: seq } }
 standardise:
   dataset: lk-metro-proposed-lines
   tables:
@@ -30,6 +35,23 @@ standardise:
         lat: lat
         attrs:
           road: road
+    - table: routes
+      feature:
+        key: id
+        kind: { value: route }
+        name: { template: "{id} {name}" }
+        line:
+          through: route_stops
+          by: route
+          point: stop
+          order: seq
+          points: { table: stops, key: name, lon: lng, lat: lat }
+          count: stop_count
+        attrs:
+          route_id: id
+          color: color
+          distance_km: distance_km
 expect:
   - { check: geometry, valid: true, within_bbox: [79.7, 6.6, 80.2, 7.3] }
-  - { check: row_count, min: 100, max: 200 }
+  - { check: row_count, kind: stop, min: 100, max: 200 }
+  - { check: row_count, kind: route, min: 6, max: 12, note: "the proposal has CM01-CM06 and CM08 (7 routes)" }

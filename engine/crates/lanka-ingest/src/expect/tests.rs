@@ -304,18 +304,21 @@ fn geometry() {
         vec![
             GeomItem {
                 key: "P",
+                kind: None,
                 level: Some(1),
                 parent: None,
                 geojson: parent,
             },
             GeomItem {
                 key: "C1",
+                kind: None,
                 level: Some(2),
                 parent: Some("P"),
                 geojson: inside,
             },
             GeomItem {
                 key: "C2",
+                kind: None,
                 level: Some(2),
                 parent: Some("P"),
                 geojson: child,

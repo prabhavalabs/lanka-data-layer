@@ -1,0 +1,54 @@
+# Lanka Metro Transit GTFS (Mobility Database feed mdb-3490, the operator's own feed): stops.txt and shapes.txt of the
+# latest archive on files.mobilitydatabase.org. One archive, read twice under two keys (per-file `zip_member`).
+# Stops become points (kind stop). shapes.txt is one row per vertex: each shape (one per route and direction,
+# SHAPE_CM01_D0 …) becomes a LineString (kind route_shape) through its own vertices in shape_pt_sequence order
+# (`feature.line` with lon/lat columns, `distinct` folding the vertex rows into one feature per shape).
+# Trips, stop_times and fares are not loaded (no frequencies yet). Licence of the feed is unstated.
+source: mobilitydb-lk
+driver: csv
+version: 1.0.0
+description: "Lanka Metro Transit GTFS feed (Mobility Database mdb-3490): stops and route shapes."
+discover:
+  kind: static
+  files:
+    - { key: stops, url: "https://files.mobilitydatabase.org/mdb-3490/latest.zip", file: mdb-3490.zip, zip_member: "^stops\\.txt$" }
+    - { key: shapes, url: "https://files.mobilitydatabase.org/mdb-3490/latest.zip", file: mdb-3490.zip, zip_member: "^shapes\\.txt$" }
+extract:
+  format: csv
+standardise:
+  dataset: lk-gtfs-feeds
+  tables:
+    - { id: stops, artifact: ^stops$ }
+    - { id: shapes, artifact: ^shapes$ }
+  outputs:
+    - table: stops
+      feature:
+        key: { template: "lmt/{stop_id}" }
+        kind: { value: stop }
+        name: stop_name
+        lon: stop_lon
+        lat: stop_lat
+        attrs:
+          feed: { value: lanka-metro-transit }
+          stop_code: stop_code
+    - table: shapes
+      feature:
+        distinct: true
+        key: shape_id
+        kind: { value: route_shape }
+        name: { column: shape_id, regex: "^SHAPE_(CM\\d+)_D(\\d)$", replace: "$1 direction $2" }
+        line:
+          through: shapes
+          by: shape_id
+          order: shape_pt_sequence
+          lon: shape_pt_lon
+          lat: shape_pt_lat
+          count: vertex_count
+        attrs:
+          feed: { value: lanka-metro-transit }
+          route_id: { column: shape_id, regex: "^SHAPE_(CM\\d+)_D\\d$" }
+          direction: { column: shape_id, regex: "^SHAPE_CM\\d+_D(\\d)$" }
+expect:
+  - { check: geometry, valid: true, within_bbox: [79.7, 6.6, 80.2, 7.3] }
+  - { check: row_count, kind: stop, min: 150, max: 400 }
+  - { check: row_count, kind: route_shape, min: 6, max: 30, note: "7 routes x 2 directions in the 2026-11 feed" }

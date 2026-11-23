@@ -23,6 +23,6 @@ datasets:
 - lk-gtfs-feeds
 priority: P2
 effort: S
-status: planned
+status: active
 verified_at: '2026-11-21'
-notes: Pettah-Kottawa express bus feed. No SLTB, NTC or Sri Lanka Railways GTFS exists as of 2026-11.
+notes: 'mdb-3490 is the Lanka Metro Transit operator feed (7 routes CM01-CM06 and CM08, 220 stops, road-following shapes), served as a zip from https://files.mobilitydatabase.org/mdb-3490/latest.zip (reachable without a key, verified 2026-11-23). The feed is a one-day snapshot (2026-11-15). No SLTB, NTC or Sri Lanka Railways GTFS exists as of 2026-11. The transitland-lmt source for the same operator is blocked by bot protection (HTTP 403).'

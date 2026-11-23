@@ -83,6 +83,9 @@ pub enum Check {
         min: Option<u64>,
         #[serde(default)]
         max: Option<u64>,
+        /// Features only: count the features of this kind (`kind: route`).
+        #[serde(default)]
+        kind: Option<String>,
     },
     RowCountChange {
         pct: f64,
@@ -460,7 +463,7 @@ pub fn check_observations(
         let sev = e.severity_for(ctx.class);
         let mut bad: Vec<String> = Vec::new();
         let r = match &e.check {
-            Check::RowCount { min, max } => {
+            Check::RowCount { min, max, .. } => {
                 let n = rows.len() as u64;
                 if min.is_some_and(|m| n < m) || max.is_some_and(|m| n > m) {
                     bad.push(format!("{n} rows, expected {min:?}..{max:?}"));
@@ -882,6 +885,8 @@ pub fn check_revision(
 /// A geometry to check: code, level/parent (admin units) and GeoJSON.
 pub struct GeomItem<'a> {
     pub key: &'a str,
+    /// Feature kind (none for admin units).
+    pub kind: Option<&'a str>,
     pub level: Option<i16>,
     pub parent: Option<&'a str>,
     pub geojson: &'a str,
@@ -947,10 +952,16 @@ pub fn check_geometry(
 ) -> Vec<CheckResult> {
     let mut out = Vec::new();
     for e in exps {
-        if let Check::RowCount { min, max } = &e.check {
-            let n = items.len() as u64;
+        if let Check::RowCount { min, max, kind } = &e.check {
+            let n = items
+                .iter()
+                .filter(|i| kind.as_deref().is_none_or(|k| i.kind == Some(k)))
+                .count() as u64;
+            let what = kind
+                .as_deref()
+                .map_or_else(|| "features".to_owned(), |k| format!("{k} features"));
             let bad: Vec<String> = if min.is_some_and(|m| n < m) || max.is_some_and(|m| n > m) {
-                vec![format!("{n} features, expected {min:?}..{max:?}")]
+                vec![format!("{n} {what}, expected {min:?}..{max:?}")]
             } else {
                 Vec::new()
             };
@@ -959,7 +970,7 @@ pub fn check_geometry(
                 e.severity_for(class),
                 bad.len(),
                 &bad,
-                &format!("{n} features"),
+                &format!("{n} {what}"),
             ));
             continue;
         }
@@ -1117,6 +1128,7 @@ pub fn feature_items(rows: &[FeatureIn]) -> Vec<GeomItem<'_>> {
     rows.iter()
         .map(|f| GeomItem {
             key: &f.key,
+            kind: Some(&f.kind),
             level: None,
             parent: None,
             geojson: &f.geometry,

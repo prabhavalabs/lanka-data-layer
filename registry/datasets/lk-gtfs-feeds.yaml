@@ -1,6 +1,6 @@
 id: lk-gtfs-feeds
 title: Public transit schedules (GTFS)
-description: Stops, routes, trips and schedules from all GTFS feeds published for Sri Lanka.
+description: Stops and route shapes (and, later, trips and schedules) from the GTFS feeds published for Sri Lanka; today the Lanka Metro Transit feed.
 source_ids:
 - transitland-lmt
 - mobilitydb-lk
@@ -36,9 +36,10 @@ indicators:
 time_coverage:
   from: '2024'
   to: '2026'
-method: Fetch feeds, validate with gtfs-validator, load into GTFS tables; stop-level frequency.
+method: 'Fetch the feed archive (Mobility Database mirror of the operator feed), read stops.txt (one point per stop, kind stop) and shapes.txt (one road-following line per route direction, kind route_shape). Trips, stop_times and stop-level frequency are not loaded yet.'
 limits:
 - Covers a tiny share of island bus service.
+- The feed is a single-day snapshot (feed_start_date = feed_end_date = 2026-11-15); stop_times and trips are not loaded, so no frequencies.
 enrichment:
   joins:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
@@ -46,3 +47,12 @@ enrichment:
   - service frequency per GN
   - input to derived-transit-access
 publication_class: A
+kind: features
+searchable: true
+fields:
+- {name: feed, type: string, label: Feed}
+- {name: stop_code, type: string, label: Stop code}
+- {name: route_id, type: string, label: Route number}
+- {name: direction, type: string, label: Direction (GTFS direction_id)}
+- {name: vertex_count, type: integer, label: Shape vertices, unit: '{count}', measure_type: count}
+tiles: {minzoom: 7, maxzoom: 14, attrs: [feed, stop_code, route_id, direction], minzoom_by_kind: {route_shape: 7, stop: 11}}

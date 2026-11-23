@@ -448,10 +448,73 @@ pub struct FeatureOut {
     pub kind: Src,
     #[serde(default)]
     pub name: Option<Src>,
-    pub lon: Src,
-    pub lat: Src,
+    /// A point feature has `lon` and `lat` …
+    #[serde(default)]
+    pub lon: Option<Src>,
+    #[serde(default)]
+    pub lat: Option<Src>,
+    /// … a line feature has `line` instead.
+    #[serde(default)]
+    pub line: Option<LineSpec>,
+    /// Rows repeating an earlier row's key fold into it instead of being a
+    /// duplicate error: the output table is the vertex table itself (a GTFS
+    /// `shapes.txt`, one row per vertex) and `line.through` names it.
+    #[serde(default)]
+    pub distinct: bool,
     #[serde(default)]
     pub attrs: BTreeMap<String, Src>,
+}
+
+/// `feature.line`: a LineString through ordered points of another table.
+///
+/// ```yaml
+/// feature:
+///   key: id
+///   kind: { value: route }
+///   line:
+///     through: route_stops       # one row per vertex, in route order
+///     by: route                  # … rows whose `route` equals this feature's key
+///     point: stop                # … name the vertex by this column
+///     points: { table: stops, key: name, lon: lng, lat: lat }
+///     count: stop_count          # optional: receives the vertex count
+/// ```
+///
+/// Vertices that carry their own coordinates (a GTFS `shapes.txt`) need no
+/// `points` table: give `lon` and `lat` columns of `through` instead of
+/// `point` and `points`, and `distinct: true` on the feature when `through`
+/// is the output table.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LineSpec {
+    /// Table with one row per vertex.
+    pub through: String,
+    /// Column of `through` holding the owning feature's key.
+    pub by: String,
+    /// Column of `through` naming the vertex (a `points.key` value).
+    #[serde(default)]
+    pub point: Option<String>,
+    /// Numeric column of `through` ordering the vertices (default: table order).
+    #[serde(default)]
+    pub order: Option<String>,
+    /// Declared integer field that receives the number of vertices.
+    #[serde(default)]
+    pub count: Option<String>,
+    #[serde(default)]
+    pub points: Option<PointsSpec>,
+    /// Vertex coordinates read from `through` itself.
+    #[serde(default)]
+    pub lon: Option<String>,
+    #[serde(default)]
+    pub lat: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PointsSpec {
+    pub table: String,
+    pub key: String,
+    pub lon: String,
+    pub lat: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -1503,6 +1566,19 @@ fn with_record_tables(
             Some(VintageSpec::From(f)) => f.table.as_deref(),
             _ => None,
         })
+        .chain(
+            spec.outputs
+                .iter()
+                .filter_map(|o| o.feature.as_ref()?.line.as_ref())
+                .flat_map(|l| {
+                    [
+                        Some(l.through.as_str()),
+                        l.points.as_ref().map(|p| p.table.as_str()),
+                    ]
+                    .into_iter()
+                    .flatten()
+                }),
+        )
         .filter(|t| !tables.contains_key(*t))
         .collect();
     for id in wanted {
@@ -1747,10 +1823,15 @@ fn map_features(
     let key = CSrc::new(f.key.full())?;
     let kind = CSrc::new(f.kind.full())?;
     let name = f.name.as_ref().map(|n| CSrc::new(n.full())).transpose()?;
-    let lon = CSrc::new(f.lon.full())?;
-    let lat = CSrc::new(f.lat.full())?;
     let fields: BTreeMap<&str, &FieldSpec> =
         ds.fields.iter().map(|f| (f.name.as_str(), f)).collect();
+    let shape = match (&f.line, &f.lon, &f.lat) {
+        (Some(l), None, None) => Shape::Line(LineIndex::new(l, tables, &fields)?),
+        (None, Some(x), Some(y)) => {
+            Shape::Point(Box::new((CSrc::new(x.full())?, CSrc::new(y.full())?)))
+        }
+        _ => bail!("{}: a feature needs `lon` and `lat`, or `line`", t.id),
+    };
     let mut attrs: Vec<(String, &FieldSpec, CSrc)> = Vec::new();
     for (k, s) in &f.attrs {
         let fs = fields
@@ -1770,22 +1851,47 @@ fn map_features(
             tables,
         };
         let at = || format!("table {} row {}", t.id, r + 1);
-        let (Some(k), Some(kd), Some(x), Some(y)) = (
+        let (Some(k), Some(kd)) = (
             rc.eval(&key, false).with_context(at)?,
             rc.eval(&kind, false).with_context(at)?,
-            rc.eval(&lon, false).with_context(at)?,
-            rc.eval(&lat, false).with_context(at)?,
         ) else {
             continue;
         };
-        let x: f64 = x.parse().with_context(|| format!("{}: lon {x:?}", at()))?;
-        let y: f64 = y.parse().with_context(|| format!("{}: lat {y:?}", at()))?;
-        ensure!(x.is_finite() && y.is_finite(), "{}: non-finite point", at());
-        ensure!(
-            seen.insert(k.clone()),
-            "{}: duplicate feature key {k:?}",
-            at()
-        );
+        if f.distinct && seen.contains(&k) {
+            continue;
+        }
+        let mut extra: Vec<(&str, usize)> = Vec::new();
+        let g = match &shape {
+            Shape::Point(ll) => {
+                let (lon, lat) = &**ll;
+                let (Some(x), Some(y)) = (
+                    rc.eval(lon, false).with_context(at)?,
+                    rc.eval(lat, false).with_context(at)?,
+                ) else {
+                    continue;
+                };
+                let x: f64 = x.parse().with_context(|| format!("{}: lon {x:?}", at()))?;
+                let y: f64 = y.parse().with_context(|| format!("{}: lat {y:?}", at()))?;
+                ensure!(x.is_finite() && y.is_finite(), "{}: non-finite point", at());
+                crate::geom::Geometry::Point([x, y])
+            }
+            Shape::Line(li) => {
+                let coords = li
+                    .line(&k)
+                    .with_context(|| format!("{}: line {k:?}", at()))?;
+                if let Some(c) = &li.count {
+                    extra.push((c.as_str(), coords.len()));
+                }
+                crate::geom::Geometry::LineString(coords)
+            }
+        };
+        let [x, y] = g
+            .rep_point()
+            .with_context(|| format!("{}: empty geometry", at()))?;
+        if !seen.insert(k.clone()) {
+            ensure!(f.distinct, "{}: duplicate feature key {k:?}", at());
+            continue;
+        }
         let mut map = serde_json::Map::new();
         for (n, fs, s) in &attrs {
             if let Some(v) = rc.eval(s, false).with_context(at)?
@@ -1794,7 +1900,9 @@ fn map_features(
                 map.insert(n.clone(), tv);
             }
         }
-        let g = crate::geom::Geometry::Point([x, y]);
+        for (n, v) in extra {
+            map.insert(n.to_owned(), Value::from(v));
+        }
         let kcell = rc.source_cell(&key)?;
         counts.rows += 1;
         sink.feature(FeatureIn {
@@ -1822,12 +1930,290 @@ fn map_features(
     Ok(())
 }
 
+/// How a feature output makes its geometry.
+enum Shape {
+    Point(Box<(CSrc, CSrc)>),
+    Line(LineIndex),
+}
+
+/// A line's vertex: a named point of the `points` table, or coordinates
+/// read from the vertex row itself.
+enum Vertex {
+    Named(String),
+    At(crate::geom::Coord),
+}
+
+/// The vertices of every line of one output, grouped by owner key.
+struct LineIndex {
+    lines: HashMap<String, Vec<(f64, Vertex)>>,
+    points: HashMap<String, crate::geom::Coord>,
+    count: Option<String>,
+}
+
+fn parse_coord(x: &str, y: &str, at: &dyn Fn() -> String) -> Result<crate::geom::Coord> {
+    let px: f64 = x.parse().with_context(|| format!("{}: lon {x:?}", at()))?;
+    let py: f64 = y.parse().with_context(|| format!("{}: lat {y:?}", at()))?;
+    ensure!(
+        px.is_finite() && py.is_finite(),
+        "{}: non-finite point",
+        at()
+    );
+    Ok([px, py])
+}
+
+impl LineIndex {
+    fn new(
+        l: &LineSpec,
+        tables: &HashMap<String, Table>,
+        fields: &BTreeMap<&str, &FieldSpec>,
+    ) -> Result<Self> {
+        if let Some(c) = &l.count {
+            let f = fields
+                .get(c.as_str())
+                .with_context(|| format!("line.count {c:?} is not a declared field"))?;
+            ensure!(
+                f.ty == crate::registry::FieldType::Integer,
+                "line.count field {c:?} must be an integer"
+            );
+        }
+        let through = tables
+            .get(&l.through)
+            .with_context(|| format!("line.through: no table {:?}", l.through))?;
+        let col = |t: &Table, n: &str| {
+            t.col(n)
+                .with_context(|| format!("table {}: no column {n:?}", t.id))
+        };
+        let by = col(through, &l.by)?;
+        // Named vertices (`point` + `points`) or vertices with coordinates (`lon` + `lat`).
+        let named = match (&l.point, &l.points, &l.lon, &l.lat) {
+            (Some(p), Some(_), None, None) => Some(col(through, p)?),
+            (None, None, Some(_), Some(_)) => None,
+            _ => bail!(
+                "line: give `point` and `points`, or `lon` and `lat` columns of `through`, not both"
+            ),
+        };
+        let xy = match (&l.lon, &l.lat) {
+            (Some(x), Some(y)) => Some((col(through, x)?, col(through, y)?)),
+            _ => None,
+        };
+        let ord = l.order.as_deref().map(|o| col(through, o)).transpose()?;
+        let mut lines: HashMap<String, Vec<(f64, Vertex)>> = HashMap::new();
+        for (i, row) in through.rows.iter().enumerate() {
+            let text = |c: usize| row.get(c).and_then(Option::as_ref).map(|c| clean(&c.text));
+            let at = || format!("table {} row {}", through.id, i + 1);
+            let Some(owner) = text(by) else { continue };
+            let vertex = match (named, xy) {
+                (Some(pc), _) => {
+                    let Some(p) = text(pc) else { continue };
+                    Vertex::Named(p)
+                }
+                (None, Some((xc, yc))) => {
+                    let (Some(x), Some(y)) = (text(xc), text(yc)) else {
+                        continue;
+                    };
+                    Vertex::At(parse_coord(&x, &y, &at)?)
+                }
+                (None, None) => unreachable!("checked above"),
+            };
+            let o = match ord {
+                Some(c) => text(c)
+                    .and_then(|t| t.parse::<f64>().ok())
+                    .with_context(|| format!("{}: no numeric order", at()))?,
+                None => i as f64,
+            };
+            lines.entry(owner).or_default().push((o, vertex));
+        }
+        for v in lines.values_mut() {
+            v.sort_by(|a, b| a.0.total_cmp(&b.0));
+        }
+        let mut points = HashMap::new();
+        if let Some(ps) = &l.points {
+            let pts = tables
+                .get(&ps.table)
+                .with_context(|| format!("line.points: no table {:?}", ps.table))?;
+            let (kc, xc, yc) = (col(pts, &ps.key)?, col(pts, &ps.lon)?, col(pts, &ps.lat)?);
+            for (i, row) in pts.rows.iter().enumerate() {
+                let text = |c: usize| row.get(c).and_then(Option::as_ref).map(|c| clean(&c.text));
+                let (Some(k), Some(x), Some(y)) = (text(kc), text(xc), text(yc)) else {
+                    continue;
+                };
+                let at = || format!("table {} row {}", pts.id, i + 1);
+                let c = parse_coord(&x, &y, &at)?;
+                ensure!(
+                    points.insert(k.clone(), c).is_none(),
+                    "{}: duplicate point key {k:?}",
+                    at()
+                );
+            }
+        }
+        Ok(Self {
+            lines,
+            points,
+            count: l.count.clone(),
+        })
+    }
+
+    /// The vertices of the line of owner `key` (at least two, every named one a known point).
+    fn line(&self, key: &str) -> Result<Vec<crate::geom::Coord>> {
+        let vs = self.lines.get(key).context("no vertex rows")?;
+        let coords = vs
+            .iter()
+            .map(|(_, v)| match v {
+                Vertex::At(c) => Ok(*c),
+                Vertex::Named(n) => self
+                    .points
+                    .get(n)
+                    .copied()
+                    .with_context(|| format!("vertex {n:?} is not a known point")),
+            })
+            .collect::<Result<Vec<_>>>()?;
+        ensure!(coords.len() >= 2, "a line needs at least two vertices");
+        Ok(coords)
+    }
+}
+
 /// Shared handle so drivers can keep a parsed spec behind an `Arc`.
 pub type SharedStd = Arc<StdSpec>;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn table(id: &str, cols: &[&str], rows: &[&[&str]]) -> Table {
+        let cell = |text: &str| {
+            Some(TCell {
+                text: text.to_owned(),
+                vtype: CellType::String,
+                extract: 0,
+                row: 0,
+                artifact: 0,
+                loc: Loc::Record {
+                    path: "$".into(),
+                    field: "x".into(),
+                },
+            })
+        };
+        Table {
+            id: id.to_owned(),
+            columns: cols.iter().map(|c| (*c).to_owned()).collect(),
+            rows: rows
+                .iter()
+                .map(|r| r.iter().map(|c| cell(c)).collect())
+                .collect(),
+            keys: vec![String::new(); rows.len()],
+            urls: vec![String::new(); rows.len()],
+            records: true,
+        }
+    }
+
+    fn line_spec(order: Option<&str>) -> LineSpec {
+        serde_json::from_value(serde_json::json!({
+            "through": "rs", "by": "route", "point": "stop", "order": order,
+            "count": "n",
+            "points": { "table": "stops", "key": "name", "lon": "lng", "lat": "lat" }
+        }))
+        .expect("line spec")
+    }
+
+    fn tables(rs: Table) -> HashMap<String, Table> {
+        let stops = table(
+            "stops",
+            &["name", "lat", "lng"],
+            &[
+                &["A", "6.9", "79.8"],
+                &["B", "6.95", "79.9"],
+                &["C", "7.0", "80.0"],
+            ],
+        );
+        HashMap::from([("rs".to_owned(), rs), ("stops".to_owned(), stops)])
+    }
+
+    fn count_field() -> FieldSpec {
+        serde_json::from_value(serde_json::json!({ "name": "n", "type": "integer" }))
+            .expect("field")
+    }
+
+    #[test]
+    fn lines_follow_route_order_through_known_points() {
+        let rs = table(
+            "rs",
+            &["route", "stop", "seq"],
+            &[
+                &["R1", "C", "3"],
+                &["R2", "B", "1"],
+                &["R1", "A", "1"],
+                &["R1", "B", "2"],
+                &["R2", "C", "2"],
+            ],
+        );
+        let tb = tables(rs);
+        let cf = count_field();
+        let fields = BTreeMap::from([("n", &cf)]);
+        // ordered by `seq`, not table order
+        let li = LineIndex::new(&line_spec(Some("seq")), &tb, &fields).expect("index");
+        assert_eq!(
+            li.line("R1").expect("R1"),
+            vec![[79.8, 6.9], [79.9, 6.95], [80.0, 7.0]]
+        );
+        assert_eq!(li.line("R2").expect("R2"), vec![[79.9, 6.95], [80.0, 7.0]]);
+        assert!(li.line("R9").is_err(), "no vertex rows");
+        // table order without `order`
+        let li = LineIndex::new(&line_spec(None), &tb, &fields).expect("index");
+        assert_eq!(li.line("R1").expect("R1")[0], [80.0, 7.0]);
+    }
+
+    #[test]
+    fn lines_take_vertices_with_their_own_coordinates() {
+        let spec: LineSpec = serde_json::from_value(serde_json::json!({
+            "through": "shapes", "by": "shape_id", "order": "seq", "lon": "lon", "lat": "lat"
+        }))
+        .expect("line spec");
+        let shapes = table(
+            "shapes",
+            &["shape_id", "seq", "lat", "lon"],
+            &[
+                &["S1", "2", "6.95", "79.9"],
+                &["S2", "1", "7.0", "80.0"],
+                &["S1", "10", "7.0", "80.0"],
+                &["S1", "1", "6.9", "79.8"],
+                &["S2", "2", "7.1", "80.1"],
+            ],
+        );
+        let tb = HashMap::from([("shapes".to_owned(), shapes)]);
+        let li = LineIndex::new(&spec, &tb, &BTreeMap::new()).expect("index");
+        // numeric order: 1 < 2 < 10 (not text order)
+        assert_eq!(
+            li.line("S1").expect("S1"),
+            vec![[79.8, 6.9], [79.9, 6.95], [80.0, 7.0]]
+        );
+        assert_eq!(li.line("S2").expect("S2"), vec![[80.0, 7.0], [80.1, 7.1]]);
+        // `point` + `points` and `lon` + `lat` together are ambiguous
+        let both: LineSpec = serde_json::from_value(serde_json::json!({
+            "through": "shapes", "by": "shape_id", "lon": "lon", "lat": "lat", "point": "x",
+            "points": { "table": "t", "key": "k", "lon": "a", "lat": "b" }
+        }))
+        .expect("line spec");
+        assert!(LineIndex::new(&both, &tb, &BTreeMap::new()).is_err());
+    }
+
+    #[test]
+    fn lines_reject_unknown_points_and_short_lines() {
+        let cf = count_field();
+        let fields = BTreeMap::from([("n", &cf)]);
+        let unknown = tables(table(
+            "rs",
+            &["route", "stop"],
+            &[&["R1", "A"], &["R1", "Z"]],
+        ));
+        let li = LineIndex::new(&line_spec(None), &unknown, &fields).expect("index");
+        let e = format!("{:#}", li.line("R1").expect_err("unknown"));
+        assert!(e.contains("\"Z\""), "{e}");
+        let short = tables(table("rs", &["route", "stop"], &[&["R1", "A"]]));
+        let li = LineIndex::new(&line_spec(None), &short, &fields).expect("index");
+        assert!(li.line("R1").is_err(), "one vertex is not a line");
+        // `count` must be a declared integer field
+        assert!(LineIndex::new(&line_spec(None), &short, &BTreeMap::new()).is_err());
+    }
 
     #[test]
     fn province_names_in_labels() {
