@@ -1,12 +1,13 @@
 // The document's own controls: its name, whether it is saved, and what can be done with it as a whole.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Copy, Ellipsis, FileJson, FilePlus, FolderOpen, ImageDown, Link2, RotateCcw, Save, Trash2, Upload } from 'lucide-react'
+import { Bot, Check, Copy, Ellipsis, FileJson, FilePlus, FolderOpen, ImageDown, Link2, RotateCcw, Save, Trash2, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { deleteMap, forkMap, mapsQuery, type MapSummary } from '@/api/workspace'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, MenuShortcut } from '@/components/ui/dropdown-menu'
 import type { Theme } from '@/lib/hooks'
+import { McpConnect } from '@/features/mcp/McpConnect'
 import { assertDocument, type MapDocument } from '@/lib/map-spec'
 import { cn } from '@/lib/utils'
 import { ago } from './format'
@@ -35,6 +36,7 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
   const dirty = useWs((s) => s.doc !== s.saved)
   const updated = useWs((s) => s.saved?.meta.updated_at)
   const [copied, setCopied] = useState<string | null>(null)
+  const [connect, setConnect] = useState(false)
   const file = useRef<HTMLInputElement>(null)
   const [, force] = useState(0)
   // "saved 2 min ago" keeps itself current
@@ -115,6 +117,11 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
               Import map document…
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setConnect(true)}>
+              <Bot />
+              Connect an AI assistant…
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onMaps}>
               <FolderOpen />
               Open a map…
@@ -142,6 +149,19 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
           }
         }}
       />
+      <Dialog open={connect} onOpenChange={setConnect}>
+        <DialogContent aria-describedby="connect-desc" className="top-[9vh] flex max-h-[82vh] max-w-[640px] flex-col overflow-hidden max-md:top-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0">
+          <div className="px-5 pt-4 pb-3.5 max-md:pt-[max(16px,env(safe-area-inset-top))]">
+            <DialogTitle className="text-[15px] font-semibold tracking-[-0.015em] text-ink">Connect an AI assistant</DialogTitle>
+            <DialogDescription id="connect-desc" className="mt-0.5 text-[12.5px] text-ink3">
+              Ask Claude, Codex, Cursor or any MCP client about Sri Lanka's data; it can send back a link that opens its answer as a map here.
+            </DialogDescription>
+          </div>
+          <div className="scroll-thin min-h-0 flex-1 overflow-y-auto border-t border-line px-5 pt-4 pb-5">
+            <McpConnect compact />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

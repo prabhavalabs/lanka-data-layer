@@ -5,7 +5,8 @@ import { Eyebrow, Reveal } from '@/components/common/bits'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CLI_COMMANDS, CLI_INSTALL, CLI_SESSION, DUCKDB, MCP_CALL, MCP_CONFIG, MCP_RESULT, MCP_TOOLS, REST_ENDPOINTS, REST_REQUEST, REST_RESPONSE } from '@/lib/snippets'
+import { McpConnect } from '@/features/mcp/McpConnect'
+import { CLI_COMMANDS, CLI_INSTALL, CLI_SESSION, DUCKDB, MCP_CALL, MCP_RESULT, REST_ENDPOINTS, REST_REQUEST, REST_RESPONSE } from '@/lib/snippets'
 import { SITE_HOST } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
@@ -123,22 +124,14 @@ export default function Developers() {
         </div>
       </Part>
 
-      <Part id="mcp" n="02" title="MCP server" lead="Ten read-only tools over streamable HTTP, with no sign-in. Every result carries provenance, licences, completeness and the calls a model is likely to want next. The same server runs locally over stdio with lanka mcp.">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="space-y-4">
-            <CodeBlock title="connect" code={MCP_CONFIG} />
-            <CodeBlock title="tools/call" code={MCP_CALL} lang="json" />
-          </div>
+      <Part id="mcp" n="02" title="MCP server" lead="Connect Claude Code, Codex, Cursor, VS Code or any MCP client and ask about Sri Lanka in plain words: find data, profile an area, compare and rank units, relate two indicators, and get a link that opens the result as a map here. Streamable HTTP with no sign-in, or stdio with lanka mcp.">
+        <McpConnect />
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <CodeBlock title="tools/call" code={MCP_CALL} lang="json" />
           <CodeBlock title="result" code={MCP_RESULT} lang="json" />
         </div>
-        <div className="mt-4">
-          <RefTable
-            head={['Tool', 'Arguments', 'Returns']}
-            rows={MCP_TOOLS.map(([name, args, returns]) => [<code key="n" className="text-[12.5px] text-ink">{name}</code>, <span key="a" className="font-mono text-[12px] whitespace-normal text-ink3">{args}</span>, returns])}
-          />
-        </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          {['readOnlyHint', 'idempotentHint', 'no destructive tools', '200 rows · 256 KB cap'].map((t) => (
+          {['readOnlyHint', 'idempotentHint', 'no destructive tools', '500 rows · 256 KB cap'].map((t) => (
             <Badge key={t} variant="mono">
               {t}
             </Badge>
