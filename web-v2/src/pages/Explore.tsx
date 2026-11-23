@@ -78,7 +78,9 @@ export default function Explore({ shared }: { shared?: MapDocument } = {}) {
       const t = params.get('t')
       const base = o.doc.time && t && t >= o.doc.time.range[0] && t <= o.doc.time.range[1] ? { ...o.doc, time: { ...o.doc.time, cursor: t } } : o.doc
       const draft = fresh ? readDraft(k) : null
-      actions.load(draft ?? base, o.origin === 'link' || o.origin === 'new' ? null : base)
+      // the opened document is the baseline even when it is not saved anywhere (a link, a new or a dataset map):
+      // only an edit makes it dirty, so only an edit is kept as a draft; Save still offers itself for those origins
+      actions.load(draft ?? base, base)
       loaded.current = k
       setOrigin(o.origin)
       if (fresh) setDocKey(k)

@@ -66,7 +66,15 @@ export const datasetMapQuery = (id: string | null, scheme: Theme, catalogue: Cat
 
 /** `POST /app/v1/maps/resolve` for the document's sources; null = the engine is unreachable. */
 export const resolveQuery = (sources: Record<string, Source>, pin: MapDocument['pin']) =>
-  queryOptions({ queryKey: ['resolve', resolveKey(sources, pin)], queryFn: () => resolveSources(sources, pin), staleTime: 5 * 60 * 1000, retry: false, placeholderData: keepPreviousData })
+  queryOptions({
+    queryKey: ['resolve', resolveKey(sources, pin)],
+    queryFn: () => resolveSources(sources, pin),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    placeholderData: keepPreviousData,
+    // null = the engine did not answer: everything is sample data until it does, so ask again shortly rather than in five minutes
+    refetchInterval: (q) => (q.state.data === null ? 6000 : false),
+  })
 export type { Resolved, ResolvedSource }
 
 /* ---------------- analyses ---------------- */
