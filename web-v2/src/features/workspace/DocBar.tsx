@@ -25,7 +25,8 @@ export type DocActions = {
   exportPng: () => void
   exportJson: () => void
   /** null when the document came from a link and has never been saved */
-  origin: 'starter' | 'own' | 'link' | 'new'
+  /** `blank`: the province-only map /explore opens on; saving it makes a map of the visitor's own */
+  origin: 'starter' | 'blank' | 'own' | 'link' | 'new'
 }
 
 export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocActions; onMaps: () => void; compact?: boolean; extra?: React.ReactNode }) {
@@ -41,7 +42,7 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
     return () => window.clearInterval(id)
   }, [])
   const status =
-    doc.origin === 'link' ? { dot: 'bg-warn', text: 'From a link' } : doc.origin === 'new' ? { dot: 'bg-warn', text: 'Not saved' } : doc.origin === 'starter' ? (dirty ? { dot: 'bg-warn', text: 'Edited copy' } : { dot: 'bg-ink3', text: 'Starter' }) : dirty ? { dot: 'bg-warn', text: 'Unsaved' } : { dot: 'bg-ok', text: `Saved ${updated ? ago(updated) : ''}` }
+    doc.origin === 'link' ? { dot: 'bg-warn', text: 'From a link' } : doc.origin === 'new' ? { dot: 'bg-warn', text: 'Not saved' } : doc.origin === 'blank' ? (dirty ? { dot: 'bg-warn', text: 'Not saved' } : { dot: 'bg-ink3', text: 'New map' }) : doc.origin === 'starter' ? (dirty ? { dot: 'bg-warn', text: 'Edited copy' } : { dot: 'bg-ink3', text: 'Starter' }) : dirty ? { dot: 'bg-warn', text: 'Unsaved' } : { dot: 'bg-ok', text: `Saved ${updated ? ago(updated) : ''}` }
   const canSave = dirty || doc.origin === 'link' || doc.origin === 'new'
   const share = async () => {
     setCopied('Making a link…')
@@ -75,8 +76,9 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
           Maps
         </Button>
         <Button variant={canSave ? 'primary' : 'outline'} size="sm" onClick={doc.save} disabled={!canSave || doc.saving} className="h-7 gap-1.5 px-2.5 text-[12.5px] max-md:h-9">
-          {canSave ? <Save className="!size-3.5" /> : <Check className="!size-3.5" />}
-          {doc.saving ? 'Saving' : canSave ? 'Save' : 'Saved'}
+          {/* only a map of the visitor's own can be "Saved"; an untouched starter or new map just has nothing to save yet */}
+          {canSave || doc.origin !== 'own' ? <Save className="!size-3.5" /> : <Check className="!size-3.5" />}
+          {doc.saving ? 'Saving' : canSave || doc.origin !== 'own' ? 'Save' : 'Saved'}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

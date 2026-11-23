@@ -220,6 +220,13 @@ function landAndTerrain(scheme: Theme): MapDocument {
   ])
 }
 
+/** What /explore opens on, and what a new map starts from: province outlines and names, nothing else. */
+export function baseMap(): MapDocument {
+  const b = builder('Untitled map', 'Province outlines and names. Add layers from the catalogue, or open a starter from Maps.')
+  b.source('provinces', { kind: 'boundaries', scheme: 'admin', level: 1 })
+  return b.done(BASE_MAP, [b.add(REAL_PRESET.boundaryLabels(1), { name: 'Province names' }, 'provinces'), b.add(REAL_PRESET.boundaryLines(1), { opacity: 0.5 }, 'provinces')])
+}
+
 /** The single-indicator map the explorer used to be: the landing point of links from area pages. */
 export function glance(indicator = 'pop.density', level = 2, _scheme: Theme = 'dark'): MapDocument {
   void _scheme
@@ -240,7 +247,7 @@ const starter = (id: string, scheme: Theme): MapDocument | undefined => {
   const key = `${scheme}:${id}`
   if (!starterCache.has(`${scheme}:`)) {
     starterCache.set(`${scheme}:`, blankDocument())
-    for (const make of STARTERS) {
+    for (const make of [...STARTERS, baseMap]) {
       const d = make(scheme)
       starterCache.set(`${scheme}:${d.id}`, d)
     }
@@ -248,7 +255,8 @@ const starter = (id: string, scheme: Theme): MapDocument | undefined => {
   return starterCache.get(key)
 }
 export const isStarter = (id: string | undefined) => !!id && !!starter(id, 'dark')
-export const DEFAULT_MAP = 'm_flood_density'
+export const BASE_MAP = 'm_base'
+export const DEFAULT_MAP = BASE_MAP
 
 /* ---------------- the visitor's own maps ---------------- */
 type Store = Record<string, MapDocument>

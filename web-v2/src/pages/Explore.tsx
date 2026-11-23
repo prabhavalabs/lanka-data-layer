@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { apiAvailable } from '@/api/http'
 import { createSnapshot, snapshotError } from '@/api/real/share'
-import { DEFAULT_MAP, glance, isStarter, mapQuery, saveMap } from '@/api/workspace'
+import { BASE_MAP, baseMap, DEFAULT_MAP, glance, isStarter, mapQuery, saveMap } from '@/api/workspace'
 import type { DocActions } from '@/features/workspace/DocBar'
 import { exportJson, shareLink } from '@/features/workspace/exporting'
 import { actions, getWs, useDoc, useWs } from '@/features/workspace/store'
@@ -54,9 +54,13 @@ export default function Explore({ shared }: { shared?: MapDocument } = {}) {
     if (shared && !imported) return { doc: shared, origin: 'link' }
     if (imported) return { doc: imported.doc, origin: 'new' }
     if (inline) return linked.data ? { doc: linked.data, origin: 'link' } : null
-    if (mapParam === 'new') return { doc: blankDocument(), origin: 'new' }
+    // a new map starts where /explore does: province outlines and names, unsaved
+    if (mapParam === 'new') {
+      const base = baseMap()
+      return { doc: { ...blankDocument(), description: base.description, sources: base.sources, layers: base.layers }, origin: 'new' }
+    }
     if (id === 'm_glance' && legacy) return { doc: glance(legacy, level, theme), origin: 'starter' }
-    return stored.data ? { doc: stored.data, origin: isStarter(id) ? 'starter' : 'own' } : null
+    return stored.data ? { doc: stored.data, origin: id === BASE_MAP ? 'blank' : isStarter(id) ? 'starter' : 'own' } : null
   }, [shared, imported, inline, linked.data, mapParam, id, legacy, level, stored.data, theme])
 
   /* ---- into the store ---- */

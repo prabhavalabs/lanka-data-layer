@@ -233,7 +233,7 @@ export const saveMap = (doc: MapDocument) => served(260, () => maps.saveMap(doc)
 export const forkMap = (id: string, scheme: Theme) => served(200, () => maps.forkMap(id, scheme))
 /** `DELETE /app/v1/maps/{id}` */
 export const deleteMap = (id: string) => served(140, () => maps.deleteMap(id))
-export { DEFAULT_MAP, glance, isStarter } from '@/mocks/maps'
+export { BASE_MAP, baseMap, DEFAULT_MAP, glance, isStarter } from '@/mocks/maps'
 export type { MapSummary } from '@/mocks/maps'
 export type { AnalysisResult, CompareResult, RelateData, RelateResult } from '@/mocks/analysis'
 export type { CatalogueItem, DemPayload, FeaturesPayload, FieldMeta, FrameColumn, FramePayload, GridPayload, BoundariesPayload, LayerData, Preset, ValuesPayload } from '@/mocks/layers'
