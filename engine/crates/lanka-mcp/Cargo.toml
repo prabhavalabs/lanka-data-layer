@@ -1,0 +1,30 @@
+[package]
+name = "lanka-mcp"
+description = "Lanka Data Layer MCP server: read-only tools over the shared query core (WP-14, WP-34)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+lanka-core.workspace = true
+lanka-analysis.workspace = true
+lanka-app.workspace = true
+lanka-mapdoc.workspace = true
+rmcp.workspace = true
+anyhow.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+axum.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tower = { version = "=0.5.3", features = ["util"] }
+http-body-util = "=0.1.5"
+
+[lints]
+workspace = true

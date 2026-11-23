@@ -1,6 +1,6 @@
 id: lk-metro-proposed-lines
 title: Proposed Colombo metro lines and stations
-description: Hypothetical/proposed metro lines with stop locations (community proposal).
+description: Hypothetical/proposed Lanka Metro bus routes (one line per route) and their stops (community proposal).
 source_ids:
 - nuuuwan-lk-metro
 indicators:
@@ -14,12 +14,14 @@ indicators:
   - line
   geo_levels:
   - point
+  - line
   period_type: snapshot
 time_coverage:
   from: '2026'
-method: data/stops.json of nuuuwan/lk_metro at the fetched commit — one point per stop with its road; the 8 proposed routes (data/routes.json, stop-name sequences) are not drawn as lines yet.
+method: 'data/stops.json and data/routes.json of nuuuwan/lk_metro at the fetched commit — one point per stop (kind stop, with its road) and one line per proposed route (kind route): the route''s ordered stop names are joined to the stop coordinates, so a line is the straight-line chain of its stops, not the road alignment.'
 limits:
 - A proposal, not an approved project.
+- Route lines join the stops with straight segments; they do not follow the road geometry. distance_km is the proposal's own figure for the road distance.
 enrichment:
   joins:
   - 'point-in-polygon: each feature gets its ADM4 p-code (and ADM3/ADM2/ADM1 by hierarchy) via the grid lookup'
@@ -30,5 +32,9 @@ kind: features
 searchable: true
 fields:
 - {name: road, type: string, label: Road}
-tiles: {minzoom: 9, maxzoom: 14, attrs: [road]}
+- {name: route_id, type: string, label: Route number}
+- {name: color, type: string, label: Route colour (hex)}
+- {name: distance_km, type: number, label: Route distance (as proposed), unit: km, measure_type: sum}
+- {name: stop_count, type: integer, label: Stops on the route, unit: '{count}', measure_type: count}
+tiles: {minzoom: 7, maxzoom: 14, attrs: [road, route_id, color, distance_km, stop_count], minzoom_by_kind: {route: 7, stop: 10}}
 publication_class: A

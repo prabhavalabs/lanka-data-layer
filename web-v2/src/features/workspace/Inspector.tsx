@@ -1,8 +1,9 @@
 // The layer inspector: what a layer shows (source, period), how it draws (per type), what it leaves
 // out (filter) and how it explains itself (labels, legend). Every control writes the document.
 import { ChartScatter, Plus, TriangleAlert, Ungroup, X } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo, type ReactNode } from 'react'
-import { featureMeta, gridMeta, INDICATOR_META, indicatorMeta, LEVELS, type FieldMeta, type LayerData } from '@/api/workspace'
+import { adminLevelsQuery, featureMeta, gridMeta, INDICATOR_META, indicatorMeta, LEVELS, type FieldMeta, type LayerData } from '@/api/workspace'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -21,6 +22,7 @@ import { Field, NumberSlider, Picker, RampPicker, Section, Seg, TonePicker, useL
 import { ScaleEditor } from './inspector/ScaleEditor'
 import { LayerThumb } from './LayerThumb'
 import { actions, useDoc, useNode, useWs } from './store'
+import { drawnFrom, useMapZoom, zoomLabel } from './zoom'
 
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const CLASS_NOTE: Record<string, { label: string; variant: 'neutral' | 'warn' | 'outline'; note: string }> = {
@@ -61,8 +63,54 @@ function PeriodField({ layer, source, periods }: { layer: Layer; source: Extract
   )
 }
 
+/**
+ * The admin levels as Units options. A level is greyed out when there is nothing to draw at it (the
+ * indicator is not published there, or the boundary tiles do not carry it), and its hint says why; one
+ * that only draws from some zoom says from which.
+ */
+function levelOptions(admin: Record<number, number> | null | undefined, opts: { has?: (l: number) => boolean; sample: boolean }) {
+  return [1, 2, 3, 4].map((l) => {
+    const plural = LEVELS[l].plural.replace(/^./, (c) => c.toUpperCase())
+    const tiles = !admin || l in admin
+    const has = opts.has ? opts.has(l) : true
+    const from = admin?.[l] ?? 0
+    const hint = !tiles ? `${plural}: no boundaries for this level yet` : !has ? `${plural}: no data for this indicator` : opts.sample && l >= 3 ? `${plural}: Western Province only in the sample data` : from > 0 ? `${plural} · drawn from zoom ${from}` : plural
+    return { value: String(l), label: LEVELS[l].code, disabled: !tiles || !has, hint }
+  })
+}
+
+const levelWord = (l: number) => LEVELS[l].plural.replace(/^./, (c) => c.toUpperCase())
+const levelName = (l: number) => LEVELS[l].name.replace(/^./, (c) => c.toUpperCase())
+/** The name a boundary layer takes at another level, if it still has its level's default name ("Provinces", "Province names"). */
+function boundaryName(layer: Layer, from: number, to: number): string | null {
+  if (from === to) return null
+  if (layer.name === levelWord(from)) return levelWord(to)
+  if (layer.name === `${levelName(from)} names`) return `${levelName(to)} names`
+  return null
+}
+
+/** Said when the layer is on, but the map is zoomed out past where it draws: otherwise nothing tells why it is blank. */
+function ReachNotice({ layer, data, what }: { layer: Layer; data: LayerData | undefined; what: string }) {
+  const zoom = useMapZoom()
+  const { engine } = useWorkspace()
+  const from = drawnFrom(layer, data)
+  if (!layer.visible || from <= 0 || zoom >= from - 0.005) return null
+  return (
+    <div role="status" className="flex items-start gap-2.5 rounded-lg border border-warn/40 bg-warn/[0.07] px-2.5 py-2">
+      <TriangleAlert className="mt-px size-3.5 shrink-0 text-warn" />
+      <p className="min-w-0 flex-1 text-[12px] leading-[1.45] text-ink2">
+        <span className="font-medium text-ink">Not drawn at this zoom.</span> {what} draw from zoom {zoomLabel(from)}; the map is at {zoomLabel(zoom)}.
+      </p>
+      <Button variant="outline" size="sm" onClick={() => engine.current?.zoomTo(from + 0.15)} className="h-7 shrink-0 px-2 text-[12px] max-md:h-9">
+        Zoom in
+      </Button>
+    </div>
+  )
+}
+
 function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source: Source; data: LayerData | undefined; onRelate: () => void }) {
   const sample = data?.origin === 'sample'
+  const admin = useQuery(adminLevelsQuery()).data
   const sampleBadge = sample && (
     <Badge variant="outline" title="Bundled sample data: the engine does not serve this source">
       Sample
@@ -97,10 +145,11 @@ function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source
             value={String(source.level)}
             label="Admin level"
             onChange={(v) => actions.setSource(layer.id, (s) => ({ ...s, level: Number(v), ...(Number(v) >= 3 && !real ? { parent: 'LK1' } : { parent: undefined }) }) as Source, 'Admin level changed')}
-            options={[1, 2, 3, 4].map((l) => ({ value: String(l), label: LEVELS[l].code, disabled: !(meta?.levels ?? [1, 2]).includes(l), hint: l >= 3 && !real ? `${LEVELS[l].plural}: Western Province only in the sample data` : LEVELS[l].plural }))}
+            options={levelOptions(real ? admin : null, { has: (l) => (meta?.levels ?? [1, 2]).includes(l), sample: !real })}
             className="[&_button]:font-mono [&_button]:text-[11px]"
           />
         </Field>
+        <ReachNotice layer={layer} data={data} what={LEVELS[source.level].plural.replace(/^./, (c) => c.toUpperCase())} />
         {layer.type !== 'bivariate' && <PeriodField layer={layer} source={source} periods={meta?.periods ?? []} />}
         {meta && <p className="text-[12px] leading-[1.5] text-ink3">{meta.description}</p>}
       </Section>
@@ -131,6 +180,7 @@ function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source
           {n > 0 && <span className="t-label t-num shrink-0">{n.toLocaleString('en')}</span>}
         </Field>
         {data?.kind === 'features' && data.tiles && <p className="text-[12px] leading-[1.5] text-ink3">Too many features for one request: drawn from vector tiles, so it has no histogram here.</p>}
+        <ReachNotice layer={layer} data={data} what={meta?.label ?? 'These features'} />
       </Section>
     )
   }
@@ -152,11 +202,17 @@ function SourceSection({ layer, source, data, onRelate }: { layer: Layer; source
         <Seg
           value={String(source.level)}
           label="Admin level"
-          onChange={(v) => actions.setSource(layer.id, (s) => ({ ...s, level: Number(v), parent: Number(v) >= 3 && sample ? 'LK1' : undefined }) as Source, 'Admin level changed')}
-          options={[1, 2, 3, 4].map((l) => ({ value: String(l), label: LEVELS[l].code, hint: l >= 3 && sample ? `${LEVELS[l].plural}: Western Province only in the sample data` : LEVELS[l].plural }))}
+          onChange={(v) => {
+            actions.setSource(layer.id, (s) => ({ ...s, level: Number(v), parent: Number(v) >= 3 && sample ? 'LK1' : undefined }) as Source, 'Admin level changed')
+            // a layer still called what its level is called follows the level, so its name says what it draws
+            const next = boundaryName(layer, source.level, Number(v))
+            if (next) actions.rename(layer.id, next)
+          }}
+          options={levelOptions(sample ? null : admin, { sample })}
           className="[&_button]:font-mono [&_button]:text-[11px]"
         />
       </Field>
+      {source.kind === 'boundaries' && <ReachNotice layer={layer} data={data} what={LEVELS[source.level].plural.replace(/^./, (c) => c.toUpperCase())} />}
     </Section>
   )
 }

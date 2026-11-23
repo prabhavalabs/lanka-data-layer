@@ -263,7 +263,7 @@ impl AppPlane {
 
 // ───────────────────────────── handlers ────────────────────────────────────
 
-#[derive(Serialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Serialize, utoipa::ToSchema)]
 pub struct SnapshotCreated {
     /// `ms_` + 16 hex of the content hash.
     pub id: String,
@@ -290,45 +290,8 @@ pub struct SnapshotCreated {
 pub async fn create_snapshot(State(app): State<AppPlane>, req: Request) -> AppResult {
     let principal = Principal::anonymous(identify(req.headers(), peer(&req), &app.hasher));
     let (v, _doc) = read_document(req.into_body()).await?;
-    let p = snapshots::prepare(&v);
-    let existing = snapshots::state(&app.pool, &p.id).await?;
-    if existing == Some(true) {
-        return Err(AppError::new(
-            StatusCode::GONE,
-            "withdrawn",
-            format!("snapshot {} was withdrawn", p.id),
-        ));
-    }
-    let created = if existing.is_some() {
-        false
-    } else {
-        if let Err(wait) = app.snapshot_limiter.check(&principal.rate) {
-            let mut e = AppError::new(
-                StatusCode::TOO_MANY_REQUESTS,
-                "rate_limited",
-                format!(
-                    "snapshot limit reached ({} per identity)",
-                    app.cfg.snapshot_rate
-                ),
-            )
-            .detail("sign-in and API keys raise this limit (WP-31)");
-            e.0.retry_after = Some(wait.as_secs().max(1));
-            return Err(e);
-        }
-        let stored = snapshots::insert(&app.pool, &p, principal.user_id, principal.rate.ip_hash())
-            .await
-            .map_err(AppError::internal)?;
-        stored == Stored::Created
-    };
-    let base = app.public_url();
-    let body = SnapshotCreated {
-        url: format!("{base}/m/{}", p.id),
-        document: format!("/app/v1/maps/{}", p.id),
-        embed: format!("{base}/embed/m/{}", p.id),
-        id: p.id.clone(),
-        created,
-        bytes: p.bytes,
-    };
+    let (body, created) = app.store_snapshot(&v, &principal).await?;
+    let id = body.id.clone();
     let status = if created {
         StatusCode::CREATED
     } else {
@@ -341,10 +304,131 @@ pub async fn create_snapshot(State(app): State<AppPlane>, req: Request) -> AppRe
         NO_STORE,
         None,
     );
-    if let Ok(v) = HeaderValue::from_str(&format!("/app/v1/maps/{}", p.id)) {
+    if let Ok(v) = HeaderValue::from_str(&format!("/app/v1/maps/{id}")) {
         res.headers_mut().insert(header::LOCATION, v);
     }
     Ok(res)
+}
+
+/// What a failed [`AppPlane::create_snapshot`] reports (the transport-neutral
+/// face of the route's problem answer).
+#[derive(Debug, Clone)]
+pub struct SnapshotFailure {
+    /// The HTTP status the route answers with.
+    pub status: u16,
+    /// `invalid_document`, `too_large`, `rate_limited`, `withdrawn`, …
+    pub kind: &'static str,
+    pub title: String,
+    /// JSON-pointer problems of an invalid document.
+    pub problems: Vec<Problem>,
+    /// Seconds to wait when rate limited.
+    pub retry_after_s: Option<u64>,
+}
+
+impl From<AppError> for SnapshotFailure {
+    fn from(e: AppError) -> Self {
+        let e = *e.0;
+        Self {
+            status: e.status.as_u16(),
+            kind: e.kind,
+            title: e.title,
+            problems: e.problems,
+            retry_after_s: e.retry_after,
+        }
+    }
+}
+
+impl AppPlane {
+    /// Validates and stores a map document as an immutable snapshot, exactly
+    /// as `POST /app/v1/maps/snapshots` does (same validation, content id,
+    /// idempotence and rate limit), for in-process callers (the MCP tool
+    /// `create_map_link`). `rate` is the caller's rate identity.
+    pub async fn create_snapshot(
+        &self,
+        v: &Value,
+        rate: crate::RateIdentity,
+    ) -> Result<(SnapshotCreated, bool), SnapshotFailure> {
+        match lanka_mapdoc::validate(v) {
+            Ok(_) => {}
+            Err(problems) => {
+                let too_large = problems.iter().any(|p| p.code == "TOO_LARGE");
+                let mut e = if too_large {
+                    AppError::new(
+                        StatusCode::PAYLOAD_TOO_LARGE,
+                        "too_large",
+                        "map document over the size limit",
+                    )
+                } else {
+                    AppError::new(
+                        StatusCode::BAD_REQUEST,
+                        "invalid_document",
+                        format!("invalid map document: {} problem(s)", problems.len()),
+                    )
+                };
+                e.0.problems = problems;
+                return Err(e.into());
+            }
+        }
+        Ok(self.store_snapshot(v, &Principal::anonymous(rate)).await?)
+    }
+
+    /// The storing half of snapshot creation for a validated document.
+    async fn store_snapshot(
+        &self,
+        v: &Value,
+        principal: &Principal,
+    ) -> Result<(SnapshotCreated, bool), AppError> {
+        let p = snapshots::prepare(v);
+        let existing = snapshots::state(&self.pool, &p.id).await?;
+        if existing == Some(true) {
+            return Err(AppError::new(
+                StatusCode::GONE,
+                "withdrawn",
+                format!("snapshot {} was withdrawn", p.id),
+            ));
+        }
+        let created = if existing.is_some() {
+            false
+        } else {
+            if let Err(wait) = self.snapshot_limiter.check(&principal.rate) {
+                let mut e = AppError::new(
+                    StatusCode::TOO_MANY_REQUESTS,
+                    "rate_limited",
+                    format!(
+                        "snapshot limit reached ({} per identity)",
+                        self.cfg.snapshot_rate
+                    ),
+                )
+                .detail("sign-in and API keys raise this limit (WP-31)");
+                e.0.retry_after = Some(wait.as_secs().max(1));
+                return Err(e);
+            }
+            let stored =
+                snapshots::insert(&self.pool, &p, principal.user_id, principal.rate.ip_hash())
+                    .await
+                    .map_err(AppError::internal)?;
+            stored == Stored::Created
+        };
+        let base = self.public_url();
+        Ok((
+            SnapshotCreated {
+                url: format!("{base}/m/{}", p.id),
+                document: format!("/app/v1/maps/{}", p.id),
+                embed: format!("{base}/embed/m/{}", p.id),
+                id: p.id.clone(),
+                created,
+                bytes: p.bytes,
+            },
+            created,
+        ))
+    }
+
+    /// The hash of an address as a rate identity (this month, salted), for
+    /// in-process callers that know their client's address.
+    #[must_use]
+    pub fn rate_identity_for(&self, ip: std::net::IpAddr) -> crate::RateIdentity {
+        crate::RateIdentity::Ip(self.hasher.hash(ip))
+    }
 }
 
 /// Resolve a document without storing it (anonymous): the document plus its

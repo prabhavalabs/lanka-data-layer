@@ -29,7 +29,7 @@ export const REST_RESPONSE = `{
   }
 }`
 
-export const MCP_CONFIG = `$ claude mcp add --transport http lanka ${MCP}
+export const MCP_CONFIG = `$ claude mcp add --transport http lanka-data-layer ${MCP}
 # anonymous and read-only: no key, no account`
 
 export const MCP_CALL = `{
@@ -93,19 +93,6 @@ export const REST_ENDPOINTS: [method: string, path: string, purpose: string][] =
   ['GET', '/v2/observations/{id}/provenance', 'Document, page, cell, verbatim value, hash, crop'],
   ['POST', '/v2/query', 'Bounded structured query, up to 5,000 rows'],
   ['GET', '/v2/status', 'Freshness of every source'],
-]
-
-export const MCP_TOOLS: [name: string, args: string, returns: string][] = [
-  ['search_catalog', 'q, theme, geo_level', 'Ranked datasets and indicators with coverage and licence status'],
-  ['describe_dataset', 'dataset_id', 'Indicators, limits, sources, freshness'],
-  ['resolve_place', 'q (name, postal code, p-code, lat,lon)', 'Typed matches with p-code chain'],
-  ['get_area_profile', 'pcode, sections', 'Headline indicators with rank and national value'],
-  ['query_indicator', 'indicator_id, geo or level, period', 'Rows with observation ids and status'],
-  ['compare_areas', 'pcodes (2–10), indicators', 'Matrix plus spread per indicator'],
-  ['analyze_point', 'lat, lon, radius_m', 'Admin chain, people in radius, nearest facilities'],
-  ['find_features', 'dataset, near or bbox or pcode', 'Features with distance and source'],
-  ['travel_reach', 'lat, lon, mode, minutes', 'People and facilities per travel-time band'],
-  ['get_provenance', 'observation_id', 'Document, page and cell, SHA-256, licence, review'],
 ]
 
 export const CLI_COMMANDS: [cmd: string, what: string][] = [

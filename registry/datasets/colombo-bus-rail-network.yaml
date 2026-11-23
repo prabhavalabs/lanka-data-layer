@@ -1,6 +1,6 @@
 id: colombo-bus-rail-network
 title: Colombo bus routes and rail network (community)
-description: Route geometries and stops for Colombo bus routes and suburban rail.
+description: Colombo bus routes (one line per route) and stops from the community cmb_bus_network proposal; suburban rail (nuuuwan/cmb_rail) is planned.
 source_ids:
 - nuuuwan-cmb-transit
 indicators:
@@ -30,9 +30,12 @@ indicators:
 time_coverage:
   from: '2023'
   to: '2026'
-method: Repo GeoJSON/TSV.
+method: 'data/places.json and data/routes.json of nuuuwan/cmb_bus_network at the fetched commit — one point per place (kind bus_stop) and one line per route (kind bus_route): the route''s ordered stop names are joined to the place coordinates, so a line is the straight-line chain of its stops, not the road alignment.'
 limits:
 - Community-derived; no frequencies.
+- cmb_bus_network is a proposed trunk network (routes CMC1-CMC8), not the current NTC/SLTB service; 41 of its 78 places are not on any route.
+- Route lines join the stops with straight segments; they do not follow the road geometry.
+- Suburban rail (nuuuwan/cmb_rail) and NTC route statistics (nuuuwan/bus_routes_lk) are not loaded yet.
 enrichment:
   joins:
   - line features split at ADM4 boundaries; length per unit computed in a metric CRS (EPSG:5235 SLD99)
@@ -40,3 +43,9 @@ enrichment:
   aggregations:
   - route-km per DS
 publication_class: B
+kind: features
+searchable: true
+fields:
+- {name: route_code, type: string, label: Route number}
+- {name: stop_count, type: integer, label: Stops on the route, unit: '{count}', measure_type: count}
+tiles: {minzoom: 8, maxzoom: 14, attrs: [route_code, stop_count], minzoom_by_kind: {bus_route: 8, bus_stop: 11}}

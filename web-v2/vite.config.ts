@@ -9,8 +9,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   // the engine's API paths go to the local Rust server, so the app also works when served on another host
-  server: { port: 5183, strictPort: true, host: '127.0.0.1', proxy: Object.fromEntries(['/v2/', '/app/', '/dl/'].map((p) => [p, { target: API_TARGET, changeOrigin: false }])) },
-  preview: { proxy: Object.fromEntries(['/v2/', '/app/', '/dl/'].map((p) => [p, { target: API_TARGET, changeOrigin: false }])) },
+  server: { port: 5183, strictPort: true, host: '127.0.0.1', proxy: Object.fromEntries(['/v2/', '/app/', '/dl/', '/mcp'].map((p) => [p, { target: API_TARGET, changeOrigin: false }])) },
+  preview: { proxy: Object.fromEntries(['/v2/', '/app/', '/dl/', '/mcp'].map((p) => [p, { target: API_TARGET, changeOrigin: false }])) },
   build: {
     target: 'es2022',
     chunkSizeWarningLimit: 1100,

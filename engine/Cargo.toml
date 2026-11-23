@@ -15,6 +15,7 @@ members = [
   "crates/lanka-stats",
   "crates/lanka-stats-wasm",
   "crates/lanka-analysis",
+  "crates/lanka-mcp",
 ]
 
 [workspace.package]
@@ -38,6 +39,7 @@ lanka-store = { path = "crates/lanka-store" }
 lanka-server = { path = "crates/lanka-server" }
 lanka-stats = { path = "crates/lanka-stats" }
 lanka-analysis = { path = "crates/lanka-analysis" }
+lanka-mcp = { path = "crates/lanka-mcp" }
 
 anyhow = "=1.0.104"
 thiserror = "=2.0.21"
@@ -84,6 +86,8 @@ rayon = "=1.12.0"
 # WP-29: pure-Rust maths for bit-identical native/WASM statistics; zip CRCs for result bundles
 libm = "=0.2.16"
 crc32fast = "=1.5.5"
+# WP-14: the official Rust MCP SDK (server side only: no macros, no client, no OAuth)
+rmcp = { version = "=3.4.0", default-features = false, features = ["server", "transport-io", "transport-streamable-http-server"] }
 
 [profile.release]
 lto = "thin"

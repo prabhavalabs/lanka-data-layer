@@ -107,10 +107,20 @@ export async function getBytes(pathOrUrl: string, signal?: AbortSignal): Promise
 
 /* ---------------- is the API there at all ---------------- */
 let probe: Promise<boolean> | null = null
-/** One cheap request per page load: when the engine is unreachable every reader falls back to the bundled sample data. */
+let failedAt = 0
+/**
+ * One cheap request: when the engine is unreachable every reader falls back to the bundled sample data. A yes
+ * holds for the page's life; a no only for a few seconds, so one slow answer (the engine busy rebuilding, say)
+ * does not leave the whole page on sample data until a reload.
+ */
 export function apiAvailable(): Promise<boolean> {
-  probe ??= fetch(apiUrl('/v2/health'), { credentials: 'omit', signal: AbortSignal.timeout(4000) })
+  if (probe && failedAt && Date.now() - failedAt > 5000) probe = null
+  probe ??= fetch(apiUrl('/v2/health'), { credentials: 'omit', signal: AbortSignal.timeout(8000) })
     .then((r) => r.ok)
     .catch(() => false)
+    .then((ok) => {
+      failedAt = ok ? 0 : Date.now()
+      return ok
+    })
   return probe
 }

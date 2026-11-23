@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowUpRight, Search, SlidersHorizontal, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, LayoutGrid, List, Search, SlidersHorizontal, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { datasetsQuery, themesQuery } from '@/api/queries'
 import { isSample, type Dataset, type LicenceStatus } from '@/api/types'
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { fmtCompact, fmtInt } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -72,6 +73,116 @@ function Facets({ data, filters, toggle, themeLabel }: { data: Dataset[]; filter
   )
 }
 
+type View = 'list' | 'grid'
+
+function ListRow({ d, themeLabel }: { d: Dataset; themeLabel: (id: string) => string }) {
+  return (
+    <li className="border-b border-line last:border-0">
+      <Link to={`/data/${d.id}`} className="group grid grid-cols-1 gap-x-6 gap-y-3 p-5 transition-colors duration-150 hover:bg-bg3/50 md:grid-cols-[1fr_210px]">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-[16px] font-semibold tracking-[-0.015em] text-ink">{d.title}</h2>
+            <ArrowUpRight className="size-4 text-ink3 transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-ink" />
+          </div>
+          <p className="mt-1.5 max-w-[68ch] text-[14px] leading-relaxed text-ink2">{d.summary}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12.5px] text-ink3">
+            <LicenceLight status={d.licence.status} label={d.licence.label} />
+            <span>{d.publisher}</span>
+            <span className="text-line2">·</span>
+            <span>{d.vintage}</span>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <Badge variant="outline">{themeLabel(d.theme)}</Badge>
+            {d.levels.map((l) => (
+              <Badge key={l} variant="mono">
+                {l}
+              </Badge>
+            ))}
+          </div>
+        </div>
+        <dl className="grid grid-cols-2 content-start gap-x-4 gap-y-2.5 border-t border-line pt-3 text-[12.5px] md:border-t-0 md:border-l md:pt-0 md:pl-6">
+          <div>
+            <dt className="text-ink3">Rows</dt>
+            <dd className="t-num mt-0.5 text-[14px] font-medium text-ink">{fmtCompact(d.rows)}</dd>
+          </div>
+          <div>
+            <dt className="text-ink3">Updated</dt>
+            <dd className="t-num mt-0.5 text-[13px] text-ink">{d.updated}</dd>
+          </div>
+          <div className="col-span-2 flex items-center justify-between">
+            <FreshnessDot state={d.freshness} />
+            <Sparkline data={d.spark} width={76} height={20} dot={false} color="var(--ink3)" />
+          </div>
+          <div className="col-span-2 truncate font-mono text-[11px] text-ink3">{d.formats.join(' · ')}</div>
+        </dl>
+      </Link>
+    </li>
+  )
+}
+
+/** A card: the same facts as a row, with the tags up front, for scanning many at once. */
+function GridCard({ d, themeLabel }: { d: Dataset; themeLabel: (id: string) => string }) {
+  const levels = d.levels.slice(0, 3)
+  return (
+    <li className="min-w-0">
+      <Link to={`/data/${d.id}`} className="group flex h-full flex-col rounded-2xl border border-line bg-bg2 p-4 transition-[border-color,background-color] duration-150 hover:border-line2 hover:bg-bg3/40">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline">{themeLabel(d.theme)}</Badge>
+          {levels.map((l) => (
+            <Badge key={l} variant="mono">
+              {l}
+            </Badge>
+          ))}
+          {d.levels.length > levels.length && <Badge variant="mono">+{d.levels.length - levels.length}</Badge>}
+        </div>
+        <h2 className="mt-3 flex items-start gap-1.5 text-[15px] leading-snug font-semibold tracking-[-0.015em] text-ink">
+          <span className="line-clamp-2 min-w-0 flex-1">{d.title}</span>
+          <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-ink3 transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-ink" />
+        </h2>
+        <p className="mt-1.5 line-clamp-3 text-[13px] leading-relaxed text-ink2">{d.summary}</p>
+        <div className="mt-auto pt-4">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[12px] text-ink3">
+            <LicenceLight status={d.licence.status} label={d.licence.label} />
+            <FreshnessDot state={d.freshness} />
+          </div>
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3 text-[12px]">
+            <span className="min-w-0 truncate text-ink3">{d.publisher}</span>
+            <span className="t-num shrink-0 font-medium text-ink">{fmtCompact(d.rows)} rows</span>
+          </div>
+        </div>
+      </Link>
+    </li>
+  )
+}
+
+/** Pages of the list: first, last, the current one and its neighbours, with gaps between. */
+function Pager({ page, pages, total, size, onPage }: { page: number; pages: number; total: number; size: number; onPage: (n: number) => void }) {
+  const shown = [...new Set([1, page - 1, page, page + 1, pages])].filter((n) => n >= 1 && n <= pages).sort((a, b) => a - b)
+  return (
+    <nav aria-label="Pages" className="mt-6 flex flex-wrap items-center justify-between gap-3">
+      <span className="t-num text-[12.5px] text-ink3">
+        {(page - 1) * size + 1}–{Math.min(page * size, total)} of {total}
+      </span>
+      <div className="flex items-center gap-1">
+        <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPage(page - 1)} aria-label="Previous page" className="h-8 w-8 p-0 max-md:h-10 max-md:w-10">
+          <ChevronLeft />
+        </Button>
+        {shown.map((n, i) => (
+          <span key={n} className="flex items-center gap-1">
+            {i > 0 && n - shown[i - 1] > 1 && <span className="px-1 text-[12.5px] text-ink3">…</span>}
+            <Button variant={n === page ? 'primary' : 'outline'} size="sm" onClick={() => onPage(n)} aria-current={n === page ? 'page' : undefined} className="t-num h-8 min-w-8 px-2 text-[12.5px] max-md:h-10 max-md:min-w-10">
+              {n}
+            </Button>
+          </span>
+        ))}
+        <Button variant="outline" size="sm" disabled={page >= pages} onClick={() => onPage(page + 1)} aria-label="Next page" className="h-8 w-8 p-0 max-md:h-10 max-md:w-10">
+          <ChevronRight />
+        </Button>
+      </div>
+    </nav>
+  )
+}
+
 export default function Catalogue() {
   const { data = [], isPending } = useQuery(datasetsQuery())
   const { data: themes = [] } = useQuery(themesQuery())
@@ -79,11 +190,25 @@ export default function Catalogue() {
   const [filters, setFilters] = useState<Filters>(() => ({ ...EMPTY, theme: params.get('theme') ? [params.get('theme')!] : [] }))
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('updated')
+  // the view and the page ride in the address, so a link (and the back button) lands where it was
+  const view: View = params.get('view') === 'grid' ? 'grid' : 'list'
+  const size = view === 'grid' ? 24 : 20
+  const top = useRef<HTMLDivElement>(null)
+  const setParam = (k: string, v: string | null) =>
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p)
+        if (v === null) n.delete(k)
+        else n.set(k, v)
+        return n
+      },
+      { replace: true },
+    )
 
   const themeLabel = (id: string) => themes.find((t) => t.id === id)?.label ?? id
   const toggle = (k: FacetKey, v: string) => {
     setFilters((f) => ({ ...f, [k]: f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v] }))
-    if (k === 'theme' && params.has('theme')) setParams({}, { replace: true })
+    if (k === 'theme' && params.has('theme')) setParam('theme', null)
   }
   const active = (Object.keys(filters) as FacetKey[]).flatMap((k) => filters[k].map((v) => [k, v] as const))
 
@@ -97,6 +222,21 @@ export default function Catalogue() {
     }
     return out.sort(by[sort])
   }, [data, filters, q, sort])
+  const pages = Math.max(1, Math.ceil(rows.length / size))
+  const page = Math.min(pages, Math.max(1, Number(params.get('page')) || 1))
+  const pageRows = rows.slice((page - 1) * size, page * size)
+  const goTo = (n: number) => {
+    setParam('page', n > 1 ? String(n) : null)
+    top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  // a narrower list starts again from its first page
+  const narrowed = `${JSON.stringify(filters)}|${q}|${sort}|${view}`
+  const last = useRef(narrowed)
+  useEffect(() => {
+    if (last.current !== narrowed && params.has('page')) setParam('page', null)
+    last.current = narrowed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [narrowed])
 
   const facets = <Facets data={data} filters={filters} toggle={toggle} themeLabel={themeLabel} />
 
@@ -155,6 +295,14 @@ export default function Catalogue() {
                 <div className="scroll-thin overflow-x-hidden overflow-y-auto px-5 pt-4 pb-6">{facets}</div>
               </SheetContent>
             </Sheet>
+            <ToggleGroup type="single" value={view} onValueChange={(v) => v && setParam('view', v === 'grid' ? 'grid' : null)} aria-label="Layout" className="h-10 w-[84px] shrink-0">
+              <ToggleGroupItem value="list" aria-label="List" title="List">
+                <List />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="grid" aria-label="Grid" title="Grid">
+                <LayoutGrid />
+              </ToggleGroupItem>
+            </ToggleGroup>
             <div className="w-[168px]">
               <Select value={sort} onValueChange={setSort}>
                 <SelectTrigger className="h-10" aria-label="Sort">
@@ -171,7 +319,7 @@ export default function Catalogue() {
 
           <div className="mt-4 flex min-h-7 flex-wrap items-center gap-1.5">
             <span className="t-num mr-1 text-[13px] text-ink2">
-              {isPending ? 'Loading…' : `${rows.length} of ${data.length} datasets`}
+              {isPending ? 'Loading…' : rows.length > size ? `${(page - 1) * size + 1}–${Math.min(page * size, rows.length)} of ${rows.length} datasets${rows.length < data.length ? ` (${data.length} in all)` : ''}` : `${rows.length} of ${data.length} datasets`}
             </span>
             {data.some((d) => isSample(d.sample, 'spark')) && (
               <span className="order-last ml-auto inline-flex items-center gap-1.5 text-[12px] text-ink3">
@@ -191,66 +339,37 @@ export default function Catalogue() {
             )}
           </div>
 
-          <ul className="mt-4 overflow-hidden rounded-2xl border border-line bg-bg2">
-            {isPending &&
-              Array.from({ length: 6 }, (_, i) => (
-                <li key={i} className="border-b border-line p-5 last:border-0">
-                  <div className="skeleton h-5 w-64" />
-                  <div className="skeleton mt-3 h-4 w-[70%]" />
-                </li>
+          <div ref={top} className="scroll-mt-28" />
+          {!isPending && rows.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-line bg-bg2 px-5 py-16 text-center">
+              <p className="text-[15px] font-medium">No dataset matches those filters.</p>
+              <p className="mt-1 text-sm text-ink2">We may simply not hold it yet. Clear a filter, or check the roadmap.</p>
+              <Button variant="outline" className="mt-5" onClick={() => (setFilters(EMPTY), setQ(''))}>
+                Clear filters
+              </Button>
+            </div>
+          ) : view === 'list' ? (
+            <ul className="mt-4 overflow-hidden rounded-2xl border border-line bg-bg2">
+              {isPending &&
+                Array.from({ length: 6 }, (_, i) => (
+                  <li key={i} className="border-b border-line p-5 last:border-0">
+                    <div className="skeleton h-5 w-64" />
+                    <div className="skeleton mt-3 h-4 w-[70%]" />
+                  </li>
+                ))}
+              {pageRows.map((d) => (
+                <ListRow key={d.id} d={d} themeLabel={themeLabel} />
               ))}
-            {rows.map((d) => (
-              <li key={d.id} className="border-b border-line last:border-0">
-                <Link to={`/data/${d.id}`} className="group grid grid-cols-1 gap-x-6 gap-y-3 p-5 transition-colors duration-150 hover:bg-bg3/50 md:grid-cols-[1fr_210px]">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-[16px] font-semibold tracking-[-0.015em] text-ink">{d.title}</h2>
-                      <ArrowUpRight className="size-4 text-ink3 transition-transform duration-200 ease-[var(--ease-out)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-ink" />
-                    </div>
-                    <p className="mt-1.5 max-w-[68ch] text-[14px] leading-relaxed text-ink2">{d.summary}</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12.5px] text-ink3">
-                      <LicenceLight status={d.licence.status} label={d.licence.label} />
-                      <span>{d.publisher}</span>
-                      <span className="text-line2">·</span>
-                      <span>{d.vintage}</span>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      <Badge variant="outline">{themeLabel(d.theme)}</Badge>
-                      {d.levels.map((l) => (
-                        <Badge key={l} variant="mono">
-                          {l}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <dl className="grid grid-cols-2 content-start gap-x-4 gap-y-2.5 border-t border-line pt-3 text-[12.5px] md:border-t-0 md:border-l md:pt-0 md:pl-6">
-                    <div>
-                      <dt className="text-ink3">Rows</dt>
-                      <dd className="t-num mt-0.5 text-[14px] font-medium text-ink">{fmtCompact(d.rows)}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink3">Updated</dt>
-                      <dd className="t-num mt-0.5 text-[13px] text-ink">{d.updated}</dd>
-                    </div>
-                    <div className="col-span-2 flex items-center justify-between">
-                      <FreshnessDot state={d.freshness} />
-                      <Sparkline data={d.spark} width={76} height={20} dot={false} color="var(--ink3)" />
-                    </div>
-                    <div className="col-span-2 truncate font-mono text-[11px] text-ink3">{d.formats.join(' · ')}</div>
-                  </dl>
-                </Link>
-              </li>
-            ))}
-            {!isPending && rows.length === 0 && (
-              <li className="px-5 py-16 text-center">
-                <p className="text-[15px] font-medium">No dataset matches those filters.</p>
-                <p className="mt-1 text-sm text-ink2">We may simply not hold it yet. Clear a filter, or check the roadmap.</p>
-                <Button variant="outline" className="mt-5" onClick={() => (setFilters(EMPTY), setQ(''))}>
-                  Clear filters
-                </Button>
-              </li>
-            )}
-          </ul>
+            </ul>
+          ) : (
+            <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {isPending && Array.from({ length: 6 }, (_, i) => <li key={i} className="skeleton h-[228px] rounded-2xl" />)}
+              {pageRows.map((d) => (
+                <GridCard key={d.id} d={d} themeLabel={themeLabel} />
+              ))}
+            </ul>
+          )}
+          {pages > 1 && <Pager page={page} pages={pages} total={rows.length} size={size} onPage={goTo} />}
         </div>
       </div>
     </div>

@@ -23,6 +23,6 @@ datasets:
 - colombo-bus-rail-network
 priority: P2
 effort: M
-status: planned
+status: active
 verified_at: '2026-11-21'
-notes: Colombo bus network and rail repos (nuuuwan/cmb_rail, nuuuwan/bus_routes_lk).
+notes: 'Connector loads nuuuwan/cmb_bus_network (8 proposed trunk routes, 78 places). Still to add as their own connector entries: nuuuwan/cmb_rail (4 rail lines as station-name lists + stations.json, same shape) and nuuuwan/bus_routes_lk (NTC 2022 route statistics CSV, no geometry). Repositories are MIT-licensed code; the data''s own terms are unstated, hence permission_unclear and class B review before publication.'

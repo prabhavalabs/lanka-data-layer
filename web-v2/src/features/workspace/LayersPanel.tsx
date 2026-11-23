@@ -13,6 +13,7 @@ import { BLEND_MODES, containsNode, isGroup, LAYER_TYPE_LABEL, parentOf, type Ba
 import { cn } from '@/lib/utils'
 import { useRafCallback, useWorkspace } from './context'
 import { LayerThumb } from './LayerThumb'
+import { drawnFrom, useMapZoom, zoomLabel } from './zoom'
 import { actions, getWs, rowsOf, useNode, useWs, type Row } from './store'
 
 const INDENT = 16
@@ -26,6 +27,8 @@ type RowProps = {
   sample?: boolean
   /** the engine's reason the layer could not be drawn */
   failed?: string
+  /** the zoom the layer starts drawing at, when the map is zoomed out past it: nothing of it is on screen */
+  reach?: number
   selected: boolean
   solo: boolean
   /** another node is soloed and this one is not part of it */
@@ -38,6 +41,7 @@ type RowProps = {
   touch: boolean
   onRename: (id: string | null) => void
   onZoom: (id: string) => void
+  onReach: (zoom: number) => void
 }
 type ItemKit = { Item: ComponentType<{ children: ReactNode; onSelect?: () => void; disabled?: boolean; destructive?: boolean }>; Separator: ComponentType }
 function RowMenu({ node, kit, onRename, onZoom }: { node: LayerNode; kit: ItemKit; onRename: (id: string) => void; onZoom: (id: string) => void }) {
@@ -109,11 +113,13 @@ function RowMenu({ node, kit, onRename, onZoom }: { node: LayerNode; kit: ItemKi
 const DROPDOWN: ItemKit = { Item: DropdownMenuItem, Separator: DropdownMenuSeparator }
 const CONTEXT: ItemKit = { Item: ContextMenuItem, Separator: ContextMenuSeparator }
 
-const LayerRow = memo(function LayerRow({ row, sample, failed, selected, solo, muted, renaming, dragging, into, focusable, scheme, touch, onRename, onZoom }: RowProps) {
+const LayerRow = memo(function LayerRow({ row, sample, failed, reach, selected, solo, muted, renaming, dragging, into, focusable, scheme, touch, onRename, onZoom, onReach }: RowProps) {
   const { node, depth, hidden, lockedBy } = row
   const group = isGroup(node)
   const blend = !group && node.blend !== 'normal' ? BLEND_MODES.find((b) => b.id === node.blend)?.tag : null
   const off = hidden || muted
+  // visible, but the map is zoomed out past where it draws: dimmed like a hidden one, with a way in
+  const far = !off && reach !== undefined
   const input = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (renaming) input.current?.select()
@@ -153,7 +159,7 @@ const LayerRow = memo(function LayerRow({ row, sample, failed, selected, solo, m
             // a layer inside a group lines up under the group's folder, past its chevron
             depth > 0 && <span className="w-1 shrink-0" />
           )}
-          <LayerThumb node={node} scheme={scheme} className={cn('transition-opacity duration-150', off && 'opacity-40')} />
+          <LayerThumb node={node} scheme={scheme} className={cn('transition-opacity duration-150', (off || far) && 'opacity-40')} />
           {renaming ? (
             <input
               ref={input}
@@ -169,7 +175,7 @@ const LayerRow = memo(function LayerRow({ row, sample, failed, selected, solo, m
               className="-my-1 min-w-0 flex-1 rounded-md border border-line2 bg-bg2 px-1.5 py-1 text-[13px] text-ink outline-none focus:border-brand"
             />
           ) : (
-            <span className={cn('min-w-0 flex-1 truncate text-[13px] leading-none tracking-[-0.005em] transition-colors duration-150', off ? 'text-ink3' : selected ? 'text-ink' : 'text-ink2', group && 'font-medium')}>{node.name}</span>
+            <span className={cn('min-w-0 flex-1 truncate text-[13px] leading-none tracking-[-0.005em] transition-colors duration-150', off || far ? 'text-ink3' : selected ? 'text-ink' : 'text-ink2', group && 'font-medium')}>{node.name}</span>
           )}
           {!renaming && (
             <>
@@ -177,6 +183,25 @@ const LayerRow = memo(function LayerRow({ row, sample, failed, selected, solo, m
                 <span title={failed} className="shrink-0 rounded-[4px] border border-bad/50 px-1 font-mono text-[9px] leading-[14px] tracking-[0.04em] text-bad">
                   FAILED
                 </span>
+              )}
+              {far && !failed && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onReach(reach)
+                      }}
+                      aria-label={`Not drawn at this zoom. Zoom in to ${zoomLabel(reach)} to see ${node.name}`}
+                      className="pressable shrink-0 rounded-[4px] border border-warn/50 px-1 font-mono text-[9px] leading-[14px] tracking-[0.04em] text-warn hover:bg-warn/10"
+                    >
+                      Z{zoomLabel(reach)}+
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Drawn from zoom {zoomLabel(reach)}. Click to zoom in.</TooltipContent>
+                </Tooltip>
               )}
               {sample && !failed && (
                 <span title="Sample data: the engine does not serve this source" className="shrink-0 rounded-[4px] border border-dashed border-line2 px-1 font-mono text-[9px] leading-[14px] tracking-[0.04em] text-ink3">
@@ -256,6 +281,13 @@ function LayerTree({ onAdd }: { onAdd: () => void }) {
   const soloNode = solo ? rows.find((r) => r.node.id === solo)?.node : null
   const inSolo = (r: Row) => !soloNode || containsNode(soloNode, r.node.id) || containsNode(r.node, soloNode.id)
   const onZoom = useCallback((id: string) => engine.current?.fitLayer(id), [engine])
+  const onReach = useCallback((z: number) => engine.current?.zoomTo(z + 0.15), [engine])
+  const zoom = useMapZoom()
+  const reachOf = (node: LayerNode, z: number) => {
+    if (isGroup(node)) return undefined
+    const from = drawnFrom(node, data.get(node.id))
+    return from > 0 && z < from - 0.005 ? from : undefined
+  }
 
   /** Where a node dropped at this pointer position would go. */
   const dropAt = (clientX: number, clientY: number, dragId: string): Drop | null => {
@@ -478,6 +510,7 @@ function LayerTree({ onAdd }: { onAdd: () => void }) {
           row={row}
           sample={data.get(row.node.id)?.origin === 'sample'}
           failed={failed.get(row.node.id)}
+          reach={reachOf(row.node, zoom)}
           selected={row.node.id === selected}
           solo={row.node.id === solo}
           muted={!inSolo(row)}
@@ -489,6 +522,7 @@ function LayerTree({ onAdd }: { onAdd: () => void }) {
           touch={touch}
           onRename={setRenaming}
           onZoom={onZoom}
+          onReach={onReach}
         />
       ))}
       <div ref={line} className="ws-drop" style={{ opacity: 0 }} aria-hidden />

@@ -303,6 +303,10 @@
             "max": {
               "type": "integer",
               "minimum": 0
+            },
+            "kind": {
+              "type": "string",
+              "description": "Features only: count the features of this kind."
             }
           }
         },
@@ -1112,9 +1116,40 @@
           "type": "object",
           "required": [
             "key",
-            "kind",
-            "lon",
-            "lat"
+            "kind"
+          ],
+          "description": "One feature per row: a point (lon + lat) or, with `line`, a LineString through points of another table.",
+          "oneOf": [
+            {
+              "required": [
+                "lon",
+                "lat"
+              ],
+              "not": {
+                "required": [
+                  "line"
+                ]
+              }
+            },
+            {
+              "required": [
+                "line"
+              ],
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "lon"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "lat"
+                    ]
+                  }
+                ]
+              }
+            }
           ],
           "additionalProperties": false,
           "properties": {
@@ -1132,6 +1167,82 @@
             },
             "lat": {
               "$ref": "#/$defs/src"
+            },
+            "distinct": {
+              "type": "boolean",
+              "description": "Rows repeating an earlier row's key fold into it (the output table is the vertex table of `line.through`)."
+            },
+            "line": {
+              "type": "object",
+              "description": "Line through ordered points: the rows of `through` whose `by` column equals this row's feature key, in table order (or sorted by numeric `order`), each naming a point (column `point`) of `points.table` by its `points.key`.",
+              "required": [
+                "through",
+                "by"
+              ],
+              "oneOf": [
+                {
+                  "required": [
+                    "point",
+                    "points"
+                  ]
+                },
+                {
+                  "required": [
+                    "lon",
+                    "lat"
+                  ]
+                }
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "through": {
+                  "type": "string"
+                },
+                "by": {
+                  "type": "string"
+                },
+                "point": {
+                  "type": "string"
+                },
+                "lon": {
+                  "type": "string",
+                  "description": "Vertices with their own coordinates: lon and lat columns of `through` (instead of point + points)."
+                },
+                "lat": {
+                  "type": "string"
+                },
+                "order": {
+                  "type": "string"
+                },
+                "count": {
+                  "type": "string",
+                  "description": "Declared integer field that receives the number of vertices."
+                },
+                "points": {
+                  "type": "object",
+                  "required": [
+                    "table",
+                    "key",
+                    "lon",
+                    "lat"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "table": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "lon": {
+                      "type": "string"
+                    },
+                    "lat": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
             },
             "attrs": {
               "type": "object",
@@ -1296,6 +1407,10 @@
                       "html",
                       "json"
                     ]
+                  },
+                  "zip_member": {
+                    "type": "string",
+                    "description": "Regex of the zip member this file reads, when it differs from extract.zip_member."
                   }
                 }
               }
@@ -1486,6 +1601,26 @@
                       },
                       "entries": {
                         "type": "boolean"
+                      },
+                      "explode": {
+                        "type": "object",
+                        "description": "One record per element of the array at `path` (relative to the record): `fields` are read from the parent record, `field` receives the element's text and `index` its 1-based position.",
+                        "required": [
+                          "path",
+                          "field"
+                        ],
+                        "additionalProperties": false,
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "field": {
+                            "type": "string"
+                          },
+                          "index": {
+                            "type": "string"
+                          }
+                        }
                       },
                       "artifact": {
                         "type": "string"

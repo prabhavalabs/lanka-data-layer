@@ -48,7 +48,7 @@
 //! (`delimiter`, `columns` for header-less files, `skip_lines`), `xlsx`
 //! (xls too; `sheets`), `html` (`tables`: a CSS selector, default `table`),
 //! `json` (`tables: [{id, path, entries, fields}]`). `zip_member` (a regex)
-//! reads one member of a zip archive first.
+//! reads one member of a zip archive first (`files[].zip_member` per file).
 
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read};
@@ -103,6 +103,11 @@ pub struct FileSpec {
     /// This file's format when it differs from `extract.format`.
     #[serde(default)]
     pub format: Option<Format>,
+    /// The zip member (regex) this file reads when it differs from
+    /// `extract.zip_member`: several tables of one archive (a GTFS feed's
+    /// `stops.txt` and `shapes.txt`) are the same URL under different keys.
+    #[serde(default)]
+    pub zip_member: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -248,12 +253,28 @@ pub struct JsonTable {
     /// field name → path relative to the record (`$` = the record).
     #[serde(default)]
     pub fields: BTreeMap<String, String>,
+    /// One record per element of an array inside each record (a route's
+    /// ordered stop names): the parent's `fields` repeat on every element.
+    #[serde(default)]
+    pub explode: Option<Explode>,
     /// Regex on the artifact key (default: every artifact).
     #[serde(default)]
     pub artifact: Option<String>,
     /// A path that must be present, else the response is an upstream error.
     #[serde(default)]
     pub require: Option<String>,
+}
+
+/// `explode:` of a JSON table: the array at `path` (relative to the record)
+/// yields one record per element; `field` receives the element's text
+/// (scalars only) and `index` (optional) its 1-based position.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Explode {
+    pub path: String,
+    pub field: String,
+    #[serde(default)]
+    pub index: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -298,6 +319,8 @@ pub struct Tabular {
     format: Format,
     /// Per-key format overrides (`files[].format`, `links[].format`, `resources[].read_as`).
     formats: std::collections::HashMap<String, Format>,
+    /// Per-key zip members (`files[].zip_member`).
+    members: std::collections::HashMap<String, String>,
     json_tables: Vec<JsonTable>,
 }
 
@@ -346,11 +369,19 @@ impl Tabular {
                     .filter_map(|r| r.read_as.map(|x| (r.key.clone(), x))),
             )
             .collect();
+        let mut members = std::collections::HashMap::new();
+        for f in &d.files {
+            if let Some(z) = &f.zip_member {
+                Regex::new(z).with_context(|| format!("files[{}].zip_member", f.key))?;
+                members.insert(f.key.clone(), z.clone());
+            }
+        }
         Ok(Self {
             spec,
             sha256,
             format,
             formats,
+            members,
             json_tables,
         })
     }
@@ -1169,7 +1200,8 @@ fn json_records(
                 .map(|(i, v)| (None, v, format!("{path}[{i}]")))
                 .collect()
         };
-        for (i, (k, v, path)) in items.into_iter().enumerate() {
+        let mut n = 0usize;
+        for (k, v, path) in items {
             let mut fields = BTreeMap::new();
             if let Some(k) = k {
                 fields.insert("_key".to_owned(), k);
@@ -1183,13 +1215,39 @@ fn json_records(
                     fields.insert(name.clone(), s);
                 }
             }
-            out.push(Record {
-                table_id: t.id.clone(),
-                record_idx: u32::try_from(i)?,
-                path,
-                fields,
-                artifact_idx: ai,
-            });
+            let Some(ex) = &t.explode else {
+                out.push(Record {
+                    table_id: t.id.clone(),
+                    record_idx: u32::try_from(n)?,
+                    path,
+                    fields,
+                    artifact_idx: ai,
+                });
+                n += 1;
+                continue;
+            };
+            let at = select(v, &ex.path)?;
+            for (j, el) in elements(at)
+                .with_context(|| format!("{key}: {path}.{}", ex.path))?
+                .into_iter()
+                .enumerate()
+            {
+                let mut f = fields.clone();
+                if let Some(s) = text(Some(el))? {
+                    f.insert(ex.field.clone(), s);
+                }
+                if let Some(ix) = &ex.index {
+                    f.insert(ix.clone(), (j + 1).to_string());
+                }
+                out.push(Record {
+                    table_id: t.id.clone(),
+                    record_idx: u32::try_from(n)?,
+                    path: format!("{path}.{}[{j}]", ex.path.trim_start_matches("$.")),
+                    fields: f,
+                    artifact_idx: ai,
+                });
+                n += 1;
+            }
         }
     }
     Ok(())
@@ -1261,6 +1319,7 @@ impl Connector for Tabular {
                 })
                 .copied()
                 .unwrap_or(self.format);
+            let member = self.members.get(f.key.as_str()).or(x.zip_member.as_ref());
             if matches!(format, Format::Csv | Format::Tsv) {
                 let delim = match (&x.delimiter, format) {
                     (Some(d), _) if d == "\\t" || d == "tab" => '\t',
@@ -1268,7 +1327,7 @@ impl Connector for Tabular {
                     (None, Format::Tsv) => '\t',
                     _ => ',',
                 };
-                match &x.zip_member {
+                match member {
                     Some(z) => with_member(&raw, z, |name, r| {
                         csv_records(x, r, &format!("{}/{name}", f.key), delim, ai, &mut records)
                     }),
@@ -1277,7 +1336,7 @@ impl Connector for Tabular {
                 .with_context(|| f.key.clone())?;
                 continue;
             }
-            let (table_id, bytes) = match &x.zip_member {
+            let (table_id, bytes) = match member {
                 Some(z) => {
                     let (name, b) = unzip(&raw, z).with_context(|| f.key.clone())?;
                     (format!("{}/{name}", f.key), b)
@@ -1456,5 +1515,43 @@ mod tests {
         ]))
         .expect("tables");
         assert!(json_records(&req, doc, "k", ("LK", "LKA"), 0, &mut out).is_err());
+    }
+
+    #[test]
+    fn json_tables_explode_arrays_into_ordered_records() {
+        let t: Vec<JsonTable> = serde_json::from_value(serde_json::json!([
+            { "id": "route_stops", "path": "$", "fields": { "route": "id" },
+              "explode": { "path": "stops", "field": "stop", "index": "seq" } }
+        ]))
+        .expect("tables");
+        let doc = br#"[{"id":"CM01","stops":["A","B","C"]},{"id":"CM02","stops":[]},{"id":"CM03","stops":["B","D"]}]"#;
+        let mut out = Vec::new();
+        json_records(&t, doc, "routes", ("LK", "LKA"), 0, &mut out).expect("json");
+        let rows: Vec<(String, String, String)> = out
+            .iter()
+            .map(|r| {
+                (
+                    r.fields["route"].clone(),
+                    r.fields["seq"].clone(),
+                    r.fields["stop"].clone(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            rows,
+            [
+                ("CM01", "1", "A"),
+                ("CM01", "2", "B"),
+                ("CM01", "3", "C"),
+                ("CM03", "1", "B"),
+                ("CM03", "2", "D"),
+            ]
+            .map(|(a, b, c)| (a.to_owned(), b.to_owned(), c.to_owned()))
+        );
+        assert_eq!(out[0].path, "$[0].stops[0]");
+        assert_eq!(
+            out.iter().map(|r| r.record_idx).collect::<Vec<_>>(),
+            [0, 1, 2, 3, 4]
+        );
     }
 }

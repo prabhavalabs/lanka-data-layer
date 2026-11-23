@@ -1,12 +1,13 @@
 // The document's own controls: its name, whether it is saved, and what can be done with it as a whole.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Copy, Ellipsis, FileJson, FilePlus, FolderOpen, ImageDown, Link2, RotateCcw, Save, Trash2, Upload } from 'lucide-react'
+import { Bot, Check, Copy, Ellipsis, FileJson, FilePlus, FolderOpen, ImageDown, Link2, RotateCcw, Save, Trash2, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { deleteMap, forkMap, mapsQuery, type MapSummary } from '@/api/workspace'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, MenuShortcut } from '@/components/ui/dropdown-menu'
 import type { Theme } from '@/lib/hooks'
+import { McpConnect } from '@/features/mcp/McpConnect'
 import { assertDocument, type MapDocument } from '@/lib/map-spec'
 import { cn } from '@/lib/utils'
 import { ago } from './format'
@@ -22,10 +23,12 @@ export type DocActions = {
   blank: () => void
   /** copies a link; resolves to what to say about it */
   share: () => Promise<string | void>
-  exportPng: () => void
+  /** opens the export dialog: the image and the layers' data, optionally clipped to an area */
+  openExport: () => void
   exportJson: () => void
   /** null when the document came from a link and has never been saved */
-  origin: 'starter' | 'own' | 'link' | 'new'
+  /** `blank`: the province-only map /explore opens on; saving it makes a map of the visitor's own */
+  origin: 'starter' | 'blank' | 'own' | 'link' | 'new'
 }
 
 export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocActions; onMaps: () => void; compact?: boolean; extra?: React.ReactNode }) {
@@ -33,6 +36,7 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
   const dirty = useWs((s) => s.doc !== s.saved)
   const updated = useWs((s) => s.saved?.meta.updated_at)
   const [copied, setCopied] = useState<string | null>(null)
+  const [connect, setConnect] = useState(false)
   const file = useRef<HTMLInputElement>(null)
   const [, force] = useState(0)
   // "saved 2 min ago" keeps itself current
@@ -41,7 +45,7 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
     return () => window.clearInterval(id)
   }, [])
   const status =
-    doc.origin === 'link' ? { dot: 'bg-warn', text: 'From a link' } : doc.origin === 'new' ? { dot: 'bg-warn', text: 'Not saved' } : doc.origin === 'starter' ? (dirty ? { dot: 'bg-warn', text: 'Edited copy' } : { dot: 'bg-ink3', text: 'Starter' }) : dirty ? { dot: 'bg-warn', text: 'Unsaved' } : { dot: 'bg-ok', text: `Saved ${updated ? ago(updated) : ''}` }
+    doc.origin === 'link' ? { dot: 'bg-warn', text: 'From a link' } : doc.origin === 'new' ? { dot: 'bg-warn', text: 'Not saved' } : doc.origin === 'blank' ? (dirty ? { dot: 'bg-warn', text: 'Not saved' } : { dot: 'bg-ink3', text: 'New map' }) : doc.origin === 'starter' ? (dirty ? { dot: 'bg-warn', text: 'Edited copy' } : { dot: 'bg-ink3', text: 'Starter' }) : dirty ? { dot: 'bg-warn', text: 'Unsaved' } : { dot: 'bg-ok', text: `Saved ${updated ? ago(updated) : ''}` }
   const canSave = dirty || doc.origin === 'link' || doc.origin === 'new'
   const share = async () => {
     setCopied('Making a link…')
@@ -75,8 +79,9 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
           Maps
         </Button>
         <Button variant={canSave ? 'primary' : 'outline'} size="sm" onClick={doc.save} disabled={!canSave || doc.saving} className="h-7 gap-1.5 px-2.5 text-[12.5px] max-md:h-9">
-          {canSave ? <Save className="!size-3.5" /> : <Check className="!size-3.5" />}
-          {doc.saving ? 'Saving' : canSave ? 'Save' : 'Saved'}
+          {/* only a map of the visitor's own can be "Saved"; an untouched starter or new map just has nothing to save yet */}
+          {canSave || doc.origin !== 'own' ? <Save className="!size-3.5" /> : <Check className="!size-3.5" />}
+          {doc.saving ? 'Saving' : canSave || doc.origin !== 'own' ? 'Save' : 'Saved'}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -99,9 +104,9 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
               <Link2 />
               Copy share link
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={doc.exportPng}>
+            <DropdownMenuItem onSelect={doc.openExport}>
               <ImageDown />
-              Export image (PNG)
+              Export image and data…
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={doc.exportJson}>
               <FileJson />
@@ -110,6 +115,11 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
             <DropdownMenuItem onSelect={() => file.current?.click()}>
               <Upload />
               Import map document…
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => setConnect(true)}>
+              <Bot />
+              Connect an AI assistant…
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onMaps}>
@@ -139,6 +149,19 @@ export function DocBar({ doc, onMaps, compact = false, extra }: { doc: DocAction
           }
         }}
       />
+      <Dialog open={connect} onOpenChange={setConnect}>
+        <DialogContent aria-describedby="connect-desc" className="top-[9vh] flex max-h-[82vh] max-w-[640px] flex-col overflow-hidden max-md:top-0 max-md:h-[100dvh] max-md:max-h-none max-md:w-screen max-md:max-w-none max-md:rounded-none max-md:border-0">
+          <div className="px-5 pt-4 pb-3.5 max-md:pt-[max(16px,env(safe-area-inset-top))]">
+            <DialogTitle className="text-[15px] font-semibold tracking-[-0.015em] text-ink">Connect an AI assistant</DialogTitle>
+            <DialogDescription id="connect-desc" className="mt-0.5 text-[12.5px] text-ink3">
+              Ask Claude, Codex, Cursor or any MCP client about Sri Lanka's data; it can send back a link that opens its answer as a map here.
+            </DialogDescription>
+          </div>
+          <div className="scroll-thin min-h-0 flex-1 overflow-y-auto border-t border-line px-5 pt-4 pb-5">
+            <McpConnect compact />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

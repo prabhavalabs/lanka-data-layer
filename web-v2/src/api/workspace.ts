@@ -6,9 +6,9 @@
 // the engine cannot be reached, loads the bundled sample data instead, marked `origin: 'sample'`.
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
 import { ApiError, apiAvailable, getJson } from './http'
-import { adminTiles, engineSource, loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
+import { adminLevels, adminTiles, engineSource, loadResolved, resolvedKey, resolveKey, resolveSources, servable, type Resolved, type ResolvedSource } from './real/layers'
 import { outputs as engineOutputs, planAnalysis, runAnalysisOnEngine, toEngine, type EngineRequest } from './real/analysis'
-import { realCatalogue } from './real/registry'
+import { realCatalogue, realChoropleth, REAL_INDICATORS } from './real/registry'
 import type { Theme } from '@/lib/hooks'
 import type { AnalysisRequest, GroupCompareRequest, MapDocument, RelateRequest, Source, TimeConfig, Variable } from '@/lib/map-spec'
 import { resolvePeriod } from '@/lib/map-spec'
@@ -47,9 +47,34 @@ export const catalogueQuery = (scheme: Theme) =>
     },
     staleTime: HOUR,
   })
+/**
+ * "View on the map" for a catalogue dataset: its map-catalogue presets, or else a choropleth for each of its
+ * indicators the map knows, framed on the data's tiles. null when nothing of it can be drawn yet.
+ */
+export async function datasetMapDoc(id: string, catalogue: CatalogueItem[]): Promise<MapDocument | null> {
+  const item = catalogue.find((c) => (c.dataset ?? c.id) === id)
+  const tiles = await getJson<{ id: string; bounds?: [number, number, number, number] }[]>('/v2/tiles').catch(() => [])
+  const bounds = tiles.find((t) => t.id === id)?.bounds ?? null
+  if (item) return maps.datasetMap(item, bounds)
+  const metas = REAL_INDICATORS.filter((m) => m.dataset === id)
+  if (!metas.length) return null
+  const detail = await getJson<{ title?: string; description?: string }>(`/v2/datasets/${encodeURIComponent(id)}`).catch(() => null)
+  return maps.datasetMap({ title: detail?.title ?? id, summary: detail?.description ?? '', presets: metas.slice(0, 6).map((m) => realChoropleth(m.id, m.levels.includes(3) ? 3 : Math.max(...m.levels))) }, null)
+}
+export const datasetMapQuery = (id: string | null, scheme: Theme, catalogue: CatalogueItem[] | undefined) =>
+  queryOptions({ queryKey: ['dataset-map', id, scheme], queryFn: () => datasetMapDoc(id!, catalogue!), enabled: !!id && !!catalogue, staleTime: Infinity, gcTime: 60_000 })
+
 /** `POST /app/v1/maps/resolve` for the document's sources; null = the engine is unreachable. */
 export const resolveQuery = (sources: Record<string, Source>, pin: MapDocument['pin']) =>
-  queryOptions({ queryKey: ['resolve', resolveKey(sources, pin)], queryFn: () => resolveSources(sources, pin), staleTime: 5 * 60 * 1000, retry: false, placeholderData: keepPreviousData })
+  queryOptions({
+    queryKey: ['resolve', resolveKey(sources, pin)],
+    queryFn: () => resolveSources(sources, pin),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    placeholderData: keepPreviousData,
+    // null = the engine did not answer: everything is sample data until it does, so ask again shortly rather than in five minutes
+    refetchInterval: (q) => (q.state.data === null ? 6000 : false),
+  })
 export type { Resolved, ResolvedSource }
 
 /* ---------------- analyses ---------------- */
@@ -220,6 +245,8 @@ export function layerDataQuery(source: Source | undefined, doc: Pick<MapDocument
   return queryOptions({ queryKey: key, queryFn: () => served(source?.kind === 'analysis' ? 320 : 140, source?.kind === 'analysis' ? load : sample), enabled: !!source && !waiting, staleTime: Infinity, gcTime: 10 * 60 * 1000, placeholderData: keepPreviousData })
 }
 /** The terrain model's shading, shared by hillshade layers and relief-shaded rasters. */
+/** Which admin levels have boundary tiles, and from what zoom; null without the engine (the sample has all four, from z0). */
+export const adminLevelsQuery = () => queryOptions({ queryKey: ['admin-levels'], queryFn: async () => ((await apiAvailable()) ? adminLevels() : null), staleTime: Infinity, retry: false })
 export const reliefQuery = (exaggeration: number, enabled = true) => queryOptions({ queryKey: ['relief', exaggeration], queryFn: () => layers.relief(exaggeration), staleTime: Infinity, enabled })
 
 /* ---------------- map documents ---------------- */
@@ -233,7 +260,7 @@ export const saveMap = (doc: MapDocument) => served(260, () => maps.saveMap(doc)
 export const forkMap = (id: string, scheme: Theme) => served(200, () => maps.forkMap(id, scheme))
 /** `DELETE /app/v1/maps/{id}` */
 export const deleteMap = (id: string) => served(140, () => maps.deleteMap(id))
-export { DEFAULT_MAP, glance, isStarter } from '@/mocks/maps'
+export { BASE_MAP, baseMap, DEFAULT_MAP, glance, isStarter } from '@/mocks/maps'
 export type { MapSummary } from '@/mocks/maps'
 export type { AnalysisResult, CompareResult, RelateData, RelateResult } from '@/mocks/analysis'
 export type { CatalogueItem, DemPayload, FeaturesPayload, FieldMeta, FrameColumn, FramePayload, GridPayload, BoundariesPayload, LayerData, Preset, ValuesPayload } from '@/mocks/layers'
