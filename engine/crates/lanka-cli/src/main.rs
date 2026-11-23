@@ -17,6 +17,7 @@
 //! lanka jobs list | show <id> | enqueue ingest|restandardise|release … | cancel <id>
 //! lanka ops tick | record-backup --kind pg|store|drill (--ok|--failed)
 //! lanka serve [--bind 127.0.0.1:8601] | serve rebuild
+//! lanka mcp [--pack DIR]      (MCP over stdio; DATABASE_URL like serve)
 //! lanka reverse <lat> <lon>
 //! lanka area <pcode>
 //! lanka map validate <file>… | hash <file> | refs <file> | resolve <file> [--freeze] | types
@@ -123,6 +124,13 @@ enum Cmd {
         bind: SocketAddr,
         #[command(subcommand)]
         action: Option<ServeCmd>,
+    },
+    /// Run the MCP server over stdio (06 §4): the tools of `/mcp` for desktop
+    /// MCP clients. Reads the database in `DATABASE_URL`, like `serve`.
+    Mcp {
+        /// Offline data pack (PackBackend, ADR 0015): not wired yet.
+        #[arg(long, env = "LANKA_PACK")]
+        pack: Option<PathBuf>,
     },
     /// Reverse geocode a point to admin units and the canonical grid cell.
     #[command(allow_negative_numbers = true)]
@@ -852,6 +860,18 @@ async fn run(cli: Cli) -> Result<()> {
         Cmd::Serve { bind, action: None } => {
             let pool = pool(g, PoolRole::Api).await?;
             lanka_server::serve(pool, bind).await?;
+        }
+        Cmd::Mcp { pack } => {
+            if let Some(p) = pack {
+                // TODO(WP-14): the PackBackend (SQLite pack + grid arrays) is not wired yet;
+                // until then `lanka mcp` needs a Postgres database.
+                anyhow::bail!(
+                    "--pack {}: the offline pack backend is not available yet; run `lanka mcp` against DATABASE_URL",
+                    p.display()
+                );
+            }
+            let pool = pool(g, PoolRole::Api).await?;
+            lanka_server::serve_mcp_stdio(pool).await?;
         }
         Cmd::Release(cmd) => {
             let pool = pool(g, PoolRole::Ingest).await?;

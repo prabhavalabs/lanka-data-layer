@@ -141,6 +141,21 @@ impl AppState {
         Arc::new(move || st.catalog())
     }
 
+    /// What the MCP tools read from: the pool, the swapped catalogue
+    /// snapshot, the grid fast path for reverse geocoding, and — when
+    /// mounted — the analysis engine and the app plane.
+    #[must_use]
+    pub fn mcp_context(&self) -> lanka_mcp::McpContext {
+        let st = self.clone();
+        lanka_mcp::McpContext {
+            pool: self.pool.clone(),
+            catalog: self.catalog_fn(),
+            analysis: self.analysis.clone(),
+            app: self.app.clone(),
+            reverse: Some(Arc::new(move |lat, lon| st.grids().reverse(lat, lon))),
+        }
+    }
+
     /// Mounts the app plane (`/app/v1`).
     #[must_use]
     pub fn with_app_plane(mut self, plane: lanka_app::AppPlane) -> Self {
@@ -1214,6 +1229,52 @@ async fn oembed(State(st): State<AppState>, Query(p): Query<OEmbedParams>) -> Ap
     Ok(res)
 }
 
+/// One tool of the MCP server (documentation shape of [`McpDiscovery`]).
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct McpToolSummary {
+    pub name: String,
+    pub title: String,
+    pub description: String,
+    /// `false` only for `create_map_link`.
+    pub read_only: bool,
+}
+
+/// What `GET /v2/mcp` returns (documentation shape).
+#[derive(Serialize, utoipa::ToSchema)]
+pub struct McpDiscovery {
+    pub name: String,
+    pub title: String,
+    /// The `lanka-mcp` crate version.
+    pub version: String,
+    /// Streamable HTTP endpoint, relative to the site origin.
+    pub endpoint: String,
+    /// `streamable-http`, `stdio`.
+    pub transports: Vec<String>,
+    /// Every MCP protocol revision the server speaks, oldest first.
+    pub protocol_versions: Vec<String>,
+    /// The command that runs the stdio transport.
+    pub stdio_command: String,
+    /// The registered tools (generated, not hand-written).
+    pub tools: Vec<McpToolSummary>,
+}
+
+/// How to connect an MCP client: endpoint, transports, protocol revisions,
+/// the stdio command and the registered tools. The server itself is `POST
+/// /mcp` (Streamable HTTP, stateless; clients send `Accept: application/json,
+/// text/event-stream`) and `lanka mcp` (stdio).
+#[utoipa::path(get, path = "/v2/mcp", tag = "mcp",
+    responses((status = 200, body = Envelope<McpDiscovery>)))]
+async fn mcp_discovery(State(st): State<AppState>, headers: HeaderMap, uri: Uri) -> ApiResult {
+    let cat = st.catalog();
+    let payload = lanka_mcp::discovery(&st.mcp_context());
+    respond(
+        &headers,
+        &uri,
+        payload,
+        Meta::bare(cat.data_version.clone()),
+    )
+}
+
 async fn openapi_json() -> Response {
     let mut doc = openapi::ApiDoc::openapi();
     doc.merge(features_api::FeaturesDoc::openapi());
@@ -1234,6 +1295,7 @@ async fn fallback() -> ApiError {
 }
 
 pub fn router(state: AppState) -> Router {
+    let mcp_state = state.clone();
     let app_plane = state.app.as_ref().map(lanka_app::AppPlane::router);
     // Analysis takes POST bodies (WP-29): its own CORS, so the rest of /v2
     // stays GET-only.
@@ -1267,6 +1329,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v2/grids/{id}", get(grids::detail))
         .route("/v2/grids/{id}/tiles/{z}/{x}/{y}", get(grids::tile))
         .route("/v2/grids/{id}/values/{z}/{x}/{y}", get(grids::values_tile))
+        .route("/v2/mcp", get(mcp_discovery))
         .route("/v2/openapi.json", get(openapi_json))
         .merge(features_api::routes())
         .merge(units_api::routes())
@@ -1284,6 +1347,9 @@ pub fn router(state: AppState) -> Router {
         Some(app) => app.merge(v2),
         None => v2,
     };
+    // MCP (Streamable HTTP, stateless) shares the process, the pool and the
+    // swapped catalogue with REST; it has its own CORS.
+    let all = all.merge(lanka_mcp::router(mcp_state.mcp_context()));
     all.layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
 }
@@ -1322,6 +1388,28 @@ pub async fn serve(pool: PgPool, bind: SocketAddr) -> anyhow::Result<()> {
     .with_graceful_shutdown(shutdown())
     .await?;
     Ok(())
+}
+
+/// Runs the MCP stdio transport (`lanka mcp`): the same query core and tools
+/// as `/mcp`, over stdin/stdout, until the client closes the pipe. The app
+/// plane (`create_map_link`) and the analysis engine are mounted under the
+/// same environment switches as `serve`.
+pub async fn serve_mcp_stdio(pool: PgPool) -> anyhow::Result<()> {
+    let mut state = AppState::new(pool).await?;
+    state.spawn_reloader();
+    let cfg = lanka_app::AppConfig::from_env()?;
+    if cfg.enabled {
+        let app_pool = lanka_app::connect(&cfg, &state.pool.connect_options()).await?;
+        let plane = lanka_app::AppPlane::new(app_pool, state.catalog_fn(), cfg);
+        state = state.with_app_plane(plane);
+    }
+    match state.analysis_engine().await {
+        Ok(e) => state = state.with_analysis(e),
+        Err(e) => {
+            tracing::warn!(error = %format!("{e:#}"), "analysis engine off: analyze_relationship and get_analysis are not offered")
+        }
+    }
+    lanka_mcp::serve_stdio(state.mcp_context()).await
 }
 
 async fn shutdown() {
@@ -1611,6 +1699,94 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn mcp_discovery_lists_the_registered_tools() {
+        let (status, v) = get("/v2/mcp").await;
+        assert_eq!(status, StatusCode::OK, "{v}");
+        let p = &v["payload"];
+        assert_eq!(p["name"], "lanka-data-layer");
+        assert_eq!(p["version"], env!("CARGO_PKG_VERSION"));
+        assert_eq!(p["endpoint"], "/mcp");
+        assert_eq!(
+            p["transports"],
+            serde_json::json!(["streamable-http", "stdio"])
+        );
+        assert_eq!(p["stdio_command"], "lanka mcp");
+        let versions: Vec<&str> = p["protocol_versions"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|x| x.as_str()).collect())
+            .unwrap_or_default();
+        let want: Vec<&str> = lanka_mcp::PROTOCOL_VERSIONS
+            .iter()
+            .map(|x| x.as_str())
+            .collect();
+        assert_eq!(versions, want);
+        // generated from the registered tools: no engine and no app plane here
+        let names: Vec<&str> = p["tools"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|t| t["name"].as_str()).collect())
+            .unwrap_or_default();
+        assert!(
+            names.contains(&"search_catalog") && names.contains(&"resolve_place"),
+            "{names:?}"
+        );
+        assert!(
+            !names.contains(&"analyze_relationship") && !names.contains(&"create_map_link"),
+            "{names:?}"
+        );
+        assert!(
+            p["tools"]
+                .as_array()
+                .is_some_and(|a| a.iter().all(|t| t["read_only"] == true
+                    && t["title"].is_string()
+                    && t["description"].is_string()))
+        );
+        assert_eq!(v["meta"]["contract_version"], lanka_core::CONTRACT_VERSION);
+    }
+
+    #[tokio::test]
+    async fn mcp_is_mounted_next_to_rest() {
+        let app = app();
+        let init = serde_json::json!({
+            "jsonrpc": "2.0", "id": 1, "method": "initialize",
+            "params": { "protocolVersion": "2025-06-18", "capabilities": {},
+                        "clientInfo": { "name": "t", "version": "1" } }
+        });
+        let req = axum::http::Request::post("/mcp")
+            .header(header::HOST, "api.example.org")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::ACCEPT, "application/json, text/event-stream")
+            .header("mcp-protocol-version", "2025-06-18")
+            .body(Body::from(init.to_string()))
+            .expect("request");
+        let (status, _, v) = send(app.clone(), req).await;
+        assert_eq!(status, StatusCode::OK, "{v}");
+        assert_eq!(v["result"]["protocolVersion"], "2025-06-18");
+        // CORS preflight for browser clients
+        let pre = axum::http::Request::options("/mcp")
+            .header(header::HOST, "api.example.org")
+            .header(header::ORIGIN, "https://app.example.org")
+            .header(header::ACCESS_CONTROL_REQUEST_METHOD, "POST")
+            .header(
+                header::ACCESS_CONTROL_REQUEST_HEADERS,
+                "content-type,mcp-protocol-version",
+            )
+            .body(Body::empty())
+            .expect("request");
+        let (_, h, _) = send(app.clone(), pre).await;
+        assert_eq!(
+            h.get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+                .and_then(|v| v.to_str().ok()),
+            Some("*")
+        );
+        // REST is unaffected
+        let (status, _, v) = send(app, get_req("/v2/nope")).await;
+        assert_eq!(
+            (status, &v["success"]),
+            (StatusCode::NOT_FOUND, &serde_json::json!(false))
+        );
+    }
+
+    #[tokio::test]
     async fn openapi_lists_all_routes() {
         let (status, v) = get("/v2/openapi.json").await;
         assert_eq!(status, StatusCode::OK);
@@ -1632,6 +1808,7 @@ mod tests {
             "/v2/observations/{id}/provenance",
             "/v2/reverse",
             "/v2/oembed",
+            "/v2/mcp",
             "/v2/units",
             "/v2/units/{pcode}/geometry",
         ] {

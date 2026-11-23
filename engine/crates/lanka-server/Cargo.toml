@@ -15,6 +15,7 @@ lanka-enrich.workspace = true
 lanka-export.workspace = true
 lanka-grid.workspace = true
 lanka-mapdoc.workspace = true
+lanka-mcp.workspace = true
 arrow-array.workspace = true
 arrow-schema.workspace = true
 arrow-ipc.workspace = true

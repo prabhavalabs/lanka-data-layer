@@ -13,6 +13,7 @@ Design: [docs/architecture-v2/](../docs/architecture-v2/README.md) (the standard
 | `lanka-ingest` | registry loader + JSON-Schema validation + sync (profile, units, codelists, connector specs, schedules), connector SDK v2 (`discover` → `extract` → `standardise`), declarative drivers (`http_json`, tabular `csv`/`sdmx`/`ckan`/`xlsx_table`/`html_table`/`git_files`, spatial `osm_pbf`/`geo_file`/`raster`; `registry/connectors/*.yaml`), declarative expectations (`expect.rs`), `lanka connector test`, code connectors (`dcs-census-2024`, `hdx-cod-ab-lka`), L1 Parquet extracts, layered change detection, run tracking + the event feed, validate → stage (binary COPY + set-based diff, incremental dsv, range-versioned) → gate → approve/review, the job queue (`jobs.rs`), scheduler (`scheduler.rs`), release train (`train.rs`) and `lanka worker` (`worker.rs`), the WP-01 registry migration |
 | `lanka-mapdoc` | the `ldl-map/1` map document (WP-26): serde types (`x-*` keys preserved), validation (embedded `spec/map/1/map.schema.json` + limits/references, JSON-pointer problems), RFC 8785 canonical JSON + content hash, references (`app.map_refs`), resolution against the catalogue, the ramp/tone registry, generated TypeScript |
 | `lanka-server` | axum `/v2/*` (data, frames, health, status) + OpenAPI (utoipa) |
+| `lanka-mcp` | the MCP server (WP-14/WP-34): read-only tools over the shared query core on the official Rust SDK (`rmcp` 3.4.0), Streamable HTTP at `/mcp` (mounted by `lanka-server`) and stdio (`lanka mcp`) |
 | `lanka-cli` | the `lanka` binary |
 
 Toolchain: Rust 1.94+ (edition 2024; sqlx 0.9 needs 1.94). Crate versions are pinned exactly in `Cargo.toml`.
@@ -1256,4 +1257,48 @@ cargo test -p lanka-stats -p lanka-stats-wasm -p lanka-analysis           # kern
 LANKA_TEST_DATABASE_URL=postgres://…/postgres cargo test -p lanka-analysis --test pg_analysis
 LANKA_GOLDEN_DATABASE_URL=postgres://…/lanka LANKA_STORE_DIR=$PWD/../data/v2 cargo test -p lanka-analysis --test golden
 cargo test --release -p lanka-stats --test bench -- --ignored --nocapture # kernel timings
+```
+
+## MCP server (WP-14, WP-34)
+
+[06 §4](../docs/architecture-v2/06-serving.md#4-mcp-server), [11 §11.2](../docs/architecture-v2/11-analysis-engine.md#112-mcp).
+Crate `lanka-mcp` on `rmcp` **=3.4.0** (server side only: `server`, `transport-io`,
+`transport-streamable-http-server`; no macros, no client, no OAuth). Every tool calls the same `lanka_core` functions
+the REST routes call (`query::series`, `query::map`, `query::area_profile`, `query::reverse`, `features::*`,
+`lanka_analysis::Engine`), so the numbers agree by construction; two reads REST has no route for were added to
+`lanka-core/src/places.rs` (`place_search` for `resolve_place`, `releases` for `list_releases`).
+
+| Transport | |
+|---|---|
+| Streamable HTTP | `POST /mcp` in the same axum app as `/v2`; **stateless** (no sessions: one JSON body per POST, so nginx and Cloudflare need no sticky routing); open CORS; clients must send `Accept: application/json, text/event-stream` and `Content-Type: application/json`; `GET`/`DELETE` answer 405. `LANKA_MCP_ALLOWED_HOSTS` (comma list) restricts `Host`; unset = any |
+| stdio | `lanka mcp` (`DATABASE_URL` like `serve`; logs to stderr). `--pack` is a TODO error until the PackBackend exists |
+| Discovery | `GET /v2/mcp` (REST envelope): `{name, title, version, endpoint, transports, protocol_versions, stdio_command, tools[]}`, the tool list generated from the registered tools |
+
+Protocol revisions: `lanka_mcp::PROTOCOL_VERSIONS` = the SDK's `KNOWN_VERSIONS` (`2024-11-05`, `2025-03-26`,
+`2025-06-18`, `2025-11-25`, `2026-07-28`). `initialize` echoes the client's version when it has an `initialize`
+handshake and is listed; otherwise (unknown, or `2026-07-28`, which replaced the handshake by `server/discover` and
+per-request `_meta`) it answers `2025-11-25`.
+
+Tools (all `readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false`, except
+`create_map_link`: `readOnlyHint: false`): `search_catalog`, `describe_dataset`, `describe_indicator`, `resolve_place`,
+`get_area_profile`, `query_indicator`, `rank_areas`, `compare_areas`, `find_features`, `list_releases`,
+`list_analysis_methods`, and — registered only when their backing is mounted — `analyze_relationship`, `get_analysis`
+(analysis engine) and `create_map_link` (`LANKA_APP_PLANE=on`; it stores through `AppPlane::create_snapshot`, the
+same validation, content id, idempotence and rate limit as `POST /app/v1/maps/snapshots`).
+
+Result rules: structured content `{data_version, result | error, attribution[], licences[], dataset_versions[], next[],
+notices[], estimate_notice?}` plus a compact text block; `next[]` are ready-to-send calls
+(`{tool, arguments, why, href?}`); the estimate notice leads the text when any value is estimated/forecast or comes from
+an `est.`/`idx.`/`acc.`/`exp.` indicator; ≤ 500 rows and ≤ 256 KB per result (overflow → trimmed, with a download
+link in `next`); errors are `isError: true` results with the REST `hints` (`valid` values, `available_levels`, …) and a
+`next` suggestion. `analyze_relationship` text leads with `NOT_CAUSAL`, then blocking and warning guards, then numbers.
+
+Not in this slice (no backing yet): `get_download` (downloads are nginx-served `/dl/`; no manifest read in the core),
+`get_provenance`, `get_method`, `get_changelog`, `analyze_point`, `travel_reach`, `compare_groups`, `find_clusters`,
+`exposure_summary`, `detect_change`; resources (`lanka://…`) and the PackBackend.
+
+```bash
+cargo test -p lanka-mcp          # protocol, negotiation, tools/list, search_catalog, resolve_place validation, limits
+# the acceptance transcript (resolve_place → get_area_profile → query_indicator, numbers equal the core's), read-only:
+LANKA_MCP_TEST_DATABASE_URL=postgres://lanka:<password>@127.0.0.1:55432/lanka cargo test -p lanka-mcp --test transcript
 ```

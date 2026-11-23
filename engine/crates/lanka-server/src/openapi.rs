@@ -29,6 +29,7 @@ use utoipa::OpenApi;
         super::provenance,
         super::reverse,
         super::oembed,
+        super::mcp_discovery,
         super::grids::point,
         super::grids::radius_handler,
         super::grids::list,
@@ -43,6 +44,7 @@ use utoipa::OpenApi;
         (name = "indicators", description = "Series, choropleth data and frames"),
         (name = "provenance", description = "Row-level lineage of every value"),
         (name = "embeds", description = "oEmbed for map URLs"),
+        (name = "mcp", description = "MCP server discovery: the server is POST /mcp (Streamable HTTP) and `lanka mcp` (stdio)"),
         (name = "grids", description = "Canonical 0.001° grid layers: point values, radius statistics, PNG tiles"),
     )
 )]

@@ -19,6 +19,7 @@ pub mod geo_code;
 pub mod geo_units;
 pub mod grid;
 pub mod period;
+pub mod places;
 pub mod profile;
 pub mod public;
 pub mod query;
