@@ -25,18 +25,18 @@ const TILE = '#0b0e12'
 
 const TWEAKS = {
   /** Douglas-Peucker tolerance in degrees. Higher = fewer, bolder facets. */
-  tolerance: 0.046,
+  tolerance: 0.02,
   /** Corner rounding: share of each facet given to the curve (0 = polygon, 0.5 = fully round B-spline). */
-  round: 0.36,
+  round: 0.5,
   /** Anchors closer than this (px in the 24 box) are merged, which removes kinks. */
-  minGap: 0.9,
+  minGap: 0.42,
   /** Opening radius (cells): shaves slivers thinner than the mark can hold at 16 px. */
   open: 1,
   /** Mark height inside the 24 px box (the island is ~0.57 as wide as it is tall). */
   height: 21.6,
   /** Raster cell (degrees) and closing radius (cells) used to seal the lagoons. */
   cell: 0.012,
-  close: 4,
+  close: 3,
 }
 
 /* ---------- 1. project ---------- */
