@@ -11,6 +11,7 @@ const Explore = lazy(() => import('@/pages/Explore'))
 const AreaProfile = lazy(() => import('@/pages/AreaProfile'))
 const Catalogue = lazy(() => import('@/pages/Catalogue'))
 const DatasetPage = lazy(() => import('@/pages/Dataset'))
+const Government = lazy(() => import('@/pages/Government'))
 const Developers = lazy(() => import('@/pages/Developers'))
 const SharedMap = lazy(() => import('@/pages/SharedMap'))
 const Terms = lazy(() => import('@/pages/Terms'))
@@ -70,6 +71,7 @@ export function App() {
             <Route path="area/:pcode" element={<AreaProfile />} />
             <Route path="data" element={<Catalogue />} />
             <Route path="data/:id" element={<DatasetPage />} />
+            <Route path="government" element={<Government />} />
             <Route path="developers" element={<Developers />} />
             <Route path="terms" element={<Terms />} />
             <Route path="takedown" element={<Navigate to="/terms#takedown" replace />} />

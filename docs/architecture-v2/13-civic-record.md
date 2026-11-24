@@ -129,6 +129,109 @@ Sources, in order of use:
 
 Queries this answers: who held this portfolio on a date, which ministry a department sat under over time (a flow view), and which bodies govern a given p-code.
 
+### 2.1 Build C1: ministries and their institutions over time (binding contract)
+
+**Instruments.** Under Article 44(1) of the Constitution, the President notifies by gazette the Cabinet ministers, their subjects and functions, and the departments, statutory institutions and public corporations in each minister's charge. A **baseline** sets out the whole schedule. Its notification reads "…the subjects and functions and Departments… shall be as set out in the schedule…". Its notification says the President has "determined the number of Ministers". Examples are 1651/20 (2010), 1896/28 and 1897/15 (January 2015; 1897/15 "amends" 1896/28 by substituting the whole schedule, so it is a baseline), 1933/13 (2015), 2103/33 (2018), 2153/12 (2019), 2187/27 (2020), 2281/41 and 2289/43 (2022), and 2403/53 and 2412/08 (2024).
+
+A **supplement** assigns subjects and functions only to the Ministers just appointed ("…to be assigned to the Ministers appointed under Article 43… have been determined…"), and says nothing about the number of ministers. The crisis gazettes of November 2018 are supplements: 2096/17 (19 ministers), 2096/25 (2) and 2096/68 (10) together form a cabinet of 31, like the baseline 2103/33 that follows. The structure in force is the latest baseline. A run of supplements after a baseline (or after another supplement) accumulates into a new structure that **replaces** the previous one from the first supplement's date. Each later supplement in the run adds or replaces headings by `portfolio_key`, from its own date. A later baseline starts afresh. The same accumulation serves the build, `structure` and `diff`.
+
+An **amendment** amends a named baseline "with effect from" a date. It does so heading by heading and column by column: insert an item after item N, omit item N, substitute item N, or renumber N–M. 2458/65 (2025), which amends 2412/08, is an example.
+
+Each baseline's or supplement's schedule repeats one block per minister (the **table layout**, 2010–2019 and 2022–2025):
+- a heading, `NN. Minister of …` (also `(N) Minister of …`, `NN Minister…`, and `Ministry of …` in 2010), followed by `(Contd.)` on continuation pages. A new minister can start in the middle of a page, with or without a repeated column header;
+- three columns: Column I, *Subjects and Functions*, as a numbered list; Column II, *Departments, Statutory Institutions and Public Corporations*, as a numbered list; Column III, *Laws, Acts and Ordinances to be Implemented*, one per act (with bullets on some pages, with hanging indents or only act names on others).
+
+2187/27 (2020) has a second, narrative **policy-statement layout**: `N.0 Minister of …` sections, each with the parts *Purview*, *Subjects and Functions*, *Special Priorities* and *Related Institutional and Legal Framework*, followed by `N.k State Minister of …` sections. It is read into the same model: the Cabinet minister's numbered *Subjects and Functions* are the functions; the institutions of the framework tables of the Cabinet minister and then of his State Ministers (whose institutions are in the ministry's charge) are the institutions, numbered 1..n in reading order (groups such as `1. Treasury Affairs` with roman-numbered institutions are labels, not institutions); the bullets of the right band are the laws. State Ministers' own functions are left out.
+
+**C1 scope:**
+- Baselines are parsed fully.
+- Amendments are recorded as timeline events, with the baseline they amend and their effective date.
+- Applying amendment operations is C2, and goes through review.
+
+**Schema** (migration `0018_civic.sql`, schema `civic`, owner `lanka_owner`; `lanka_ingest` writes and `lanka_api` reads, with grants by `civic.apply_grants()`):
+
+```sql
+civic.instruments (doc_id text pk references docs.documents, kind text check (kind in ('baseline','supplement','amendment')),
+  effective_from date not null, amends text references civic.instruments,   -- the baseline or supplement an amendment amends
+  head_of_state text, parser text not null, parsed_at timestamptz,
+  status text not null check (status in ('validated','needs_review','approved','rejected')),
+  checks jsonb not null default '[]')          -- [{check, ok, detail}] from validation, shown to reviewers
+civic.portfolios (doc_id text references civic.instruments, seq int,   -- the heading number, "01"
+  title text not null,                       -- "Minister of Defence"
+  portfolio_key text not null,               -- slug of the title without "Minister of": "defence"
+  first_page int, primary key (doc_id, seq))
+civic.items (doc_id text, seq int, col text check (col in ('function','institution','law')), item_no int,
+  text text not null, entity_key text,       -- set for institutions
+  page int, primary key (doc_id, seq, col, item_no), foreign key (doc_id, seq) references civic.portfolios)
+civic.entities (entity_key text pk, name text not null, kind text not null
+  check (kind in ('department','statutory_body','corporation','company','fund','university','force','other')),
+  aliases text[] not null default '{}')
+civic.assignments (entity_key text references civic.entities, doc_id text references civic.instruments, seq int,
+  portfolio_title text, portfolio_key text, valid_from date not null, valid_to date,   -- null = still in force
+  page int, primary key (entity_key, valid_from))
+```
+
+**Entity keys.** An entity key is the institution's name lower-cased, with these changes:
+- `&` becomes `and`;
+- "Ltd", "Ltd." and "(Pvt)" become `limited`;
+- a leading "the" is dropped;
+- punctuation and extra spaces are removed;
+- the result is slugged.
+
+`registry/civic/aliases.yaml` maps renamed or reworded institutions to one key, for example `{ "sri lanka telecom regulatory commission": "telecommunications-regulatory-commission-of-sri-lanka" }`, and is reviewed like any registry change. A hyphen between two letters (`Ter-minal`, `Non- Governmental`, set by a line wrap) and zero-width characters never change a key. In an alias file, a lower-case slug is taken as a key and anything else as a name. The entity's name is its latest wording that has no wrap hyphen; its other wordings are its `aliases`. Kind is guessed from the name: Department…, …Authority/Board/Commission/Council → `statutory_body`, …Corporation → `corporation`, …Limited/PLC → `company`, …Fund → `fund`, University… → `university`, Sri Lanka Army/Navy/Air Force/Police → `force`.
+
+**Parser** (`lanka-ingest/src/civic/`). The parser reads the English PDF's words with their boxes, through extractd, either `pdf_words` or the local `pdftotext -bbox-layout`. On each page:
+- the x positions of the "Column I/II/III" header words split the page into three bands;
+- a minister heading is a line matching `^\(?\d{1,3}[.)]?\s*Minist(er|ry) of` next to a column header. A new heading must be numbered like the minister in progress (a `(Contd.)` heading) or the next one, and be followed by item 1, so an item such as `2. Minister of X to be consulted` stays an item. A header printed out of place on one page is replaced by the bands of the page before;
+- items are numbered lines. Wrapped lines join until the next number (a number printed with a typo, such as `3l.`, `15,` or `23,.`, is read when it is the next one expected). A line back at the number's edge under hanging text is a note and stays out of the item. A line ending in `-` before a lower-case letter is a word split by the line break and joins without the hyphen (`Authori-` `ty`); before a capital the hyphen is real and stays, with no space. This holds in all three columns. Column III items start at a bullet when the page has bullets, otherwise at the left edge when the page indents wrapped lines, otherwise after a line that completes an act name, a pattern of the form `… Act No. N of YYYY`, `(Chapter N)` or `Ordinance`.
+- the 2020 layout is read by `schedule_b` when the table parser finds nothing (see above).
+
+**Validation**, stored in `checks` (`[{check, ok, detail}]`):
+- `schedule_found`: at least one table or policy-statement section with a minister's heading was read;
+- `headings_sequential`: heading numbers run 1..n with no gap;
+- `items_sequential`: inside each heading, Column I and Column II numbers run 1..k with no gap;
+- `institution_text_clean`: no institution's text holds an act citation (`No. 37`, `of 1991`, `… Act,`, `Ordinance`, a trailing number) or ends by repeating a word already in the name: both mean words of a neighbouring column were glued on. A list of two things (`… and …`, commas, parentheses) may repeat a word;
+- `headings_have_items`: every heading has at least one item;
+- `heading_count`: the heading count matches the count of distinct minister headings found in the plain text (a heading's number and words that the PDF's text flow splits across lines still count);
+- for a supplement, `run_coverage`: the supplements of its run up to and including it cover at least 30% of the ministers of the baseline before the run;
+- for an amendment, `amended_baseline`: the gazette it names is an extracted baseline or supplement (a named amendment resolves to the baseline it amends);
+- `parser_warnings` (information only): what the parser set aside, such as an unnumbered note ("Institution being reviewed") or a header printed out of place.
+
+All checks passing → `validated`; otherwise `needs_review`. A reviewer can `approve` or `reject` (recorded in `checks`). The API serves `validated` and `approved` instruments only.
+
+**Exceptions.** If a gazette really skips a number, no parser can fix it. `registry/civic/exceptions.yaml` lists, per `doc_id`, `expected_gaps: [{heading, column: I|II, missing: [N], note}]`, each checked against the PDF page by a reviewer. `items_sequential` then passes, with the exceptions quoted in its `detail`. `expected_citations: [{heading, item_no, note}]` likewise lets an institution whose real name cites an act pass `institution_text_clean` (2153/12, heading 28 item 1). Today: 1651/20 (heading 02 Column II prints 42 then 44; heading 43 Column II prints 5 then 7) and 1933/13 (heading 38 Column I prints 4 then 6).
+
+**Build** (`lanka civic build`). Take the validated or approved baselines and supplements and compose them into structures (see Instruments): a baseline, or a run of supplements accumulated. Structure *i* holds from its own date (the date of its latest gazette) until structure *i+1*'s date, or until now for the last one. Its institutions become `assignments` with that interval, and an entity in consecutive structures under the same `portfolio_key` keeps one continuous row; the row's `doc_id`, `seq` and `page` are those of the gazette that first listed it there. An institution listed under two ministers in one structure keeps its first listing. The build is idempotent and replaces `civic.assignments` and `civic.entities` in one transaction.
+
+**CLI:**
+- `lanka civic aliases suggest [--min 0.85]` compares every pair of entity keys (pg_trgm similarity of the de-slugged names), skips pairs that already resolve to one key or that `aliases.yaml` already joins, and writes the candidates, most similar first, to `registry/civic/alias-suggestions.yaml` (`{a, b, similarity, seen_in: [gazette numbers]}`). It is a review aid: nothing is ever applied automatically;
+- `lanka civic discover` lists candidate instruments from `docs.documents` titles and text.
+- `lanka civic extract <doc_id>|--all` parses and validates.
+- `lanka civic approve|reject <doc_id> --by <handle>`.
+- `lanka civic build` rebuilds `civic.assignments`.
+- `lanka civic show --at YYYY-MM-DD` prints the structure in force on that date.
+
+**API** (read-only, `lanka_api`):
+
+| Endpoint | Returns |
+|---|---|
+| `GET /v2/civic/instruments` | `[{doc_id, kind, effective_from, amends, head_of_state, status, portfolios, institutions, title, number}]`, newest first, every instrument of every kind and status (including `needs_review`; `portfolios` and `institutions` are 0 when unparsed), `number` as `"2412/08"`, `title` the English title of the document, for the timeline |
+| `GET /v2/civic/structure?at=YYYY-MM-DD` | `{at, instrument:{doc_id, effective_from, number}, composed_of:[{doc_id, effective_from}], amendments_since:[{doc_id, effective_from, title}], portfolios:[{doc_id, seq, title, short_title, portfolio_key, page, functions:[{item_no, text}], institutions:[{item_no, text, entity_key, kind, page}], laws:[{item_no, text}]}]}`. Without `at`, today. `instrument` is the latest gazette of the structure; `composed_of` lists the gazettes it is made of (one baseline, or the run of supplements); each portfolio carries the `doc_id` it is printed in, which its pages refer to. `title` is as printed (`Minister of Defence`), `short_title` has the `Minister of`/`Minister for` prefix dropped (`Defence`). For a date before the first parsed schedule: 404 with `payload.problem = {code: "not_in_coverage", earliest: "YYYY-MM-DD"}`. |
+| `GET /v2/civic/diff?from=DATE&to=DATE` | `{from:{doc_id, effective_from}, to:{…}, moved:[{entity_key, name, kind, from:{portfolio_key, title, short_title, page}, to:{…}}], added:[{entity_key, name, kind, to:{…}}], removed:[{entity_key, name, kind, from:{…}}], portfolios:{added:[title], removed:[title], kept:[{from_title, to_title, from_key, to_key, overlap, renamed}]}, counts:{moved, added, removed, portfolios_added, portfolios_removed, portfolios_renamed}}`. Both dates use the composed structure. `page` is the institution's page in that side's gazette. 404 as for `structure`. |
+| `GET /v2/civic/entities?q=&limit=` | `[{entity_key, name, kind, current:{portfolio_title} or null}]` |
+| `GET /v2/civic/entities/{key}` | `{entity_key, name, kind, aliases, history:[{portfolio_title, portfolio_key, valid_from, valid_to, doc_id, page}]}` |
+| `GET /v2/documents/{doc_id}` | `{doc_id, number, issued_on, title, files:[{lang, status, pages, bytes, sha256}], source_url}` (from 1.3) |
+| `GET /v2/documents/{doc_id}/{lang}.pdf` | The archived blob, `application/pdf`, with a `Link: <source_url>; rel="via"` header. The web links to it with `#page=N`. |
+
+**Renamed ministries in `diff`.** Two ministries (one from each side) are the same ministry, `kept`, when they have the same `portfolio_key`, or their institutions overlap: Jaccard at least 0.5, or the new one keeps at least 60% of the old one's institutions. `overlap` is the Jaccard value and `renamed` is true when the keys differ. One ministry can pair with several (two merged into one). An institution counts as `moved` only when its old and new ministries are not a kept pair; `portfolios.added` and `removed` are the ministries with no pair.
+
+**View** (`/government` in web-v2):
+- **Timeline.** Every instrument on one axis, with baselines as tall marks and amendments as small marks, banded by head of state. The selected date drives everything below it.
+- **Structure at a date.** One card per ministry, showing its institution count and kind chips, with institutions listed and functions folded. A search box highlights an institution wherever it is.
+- **Compare.** Pick two dates; the default is the previous baseline against the current one. Counts sit at the top: moved, added, removed, ministries added and removed. A flow diagram has old ministries on the left and new on the right, with a ribbon for each group of institutions that moved. Lists follow.
+- **Institution history.** A drawer with one bar per assignment over time, coloured by ministry.
+- **Evidence.** Every item and assignment links to the gazette PDF at its page.
+
 ## 3. Views (track D)
 
 These views make the data understandable at a glance. They are built in web-v2 with the existing chart and map stack and the same design system.

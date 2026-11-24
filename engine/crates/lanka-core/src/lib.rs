@@ -7,6 +7,8 @@
 
 pub mod basis;
 pub mod catalog;
+pub mod civic;
+pub mod civic_timeline;
 pub mod db;
 pub mod dims;
 pub mod dsv;

@@ -3,6 +3,7 @@
 //! feed, validation, range-versioned staging and approval, the job queue,
 //! the scheduler, the release train and the worker.
 
+pub mod civic;
 pub mod classc;
 pub mod connector;
 pub mod connector_test;
