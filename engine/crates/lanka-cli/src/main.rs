@@ -22,7 +22,7 @@
 //! lanka area <pcode>
 //! lanka map validate <file>… | hash <file> | refs <file> | resolve <file> [--freeze] | types
 //! lanka tiles build [--tileset ID]… [--force] | list
-//! lanka docs harvest <collection> [--mode incremental|sweep|files|text] [--limit N] [--since YYYY-MM-DD] [--max-pages N] [--skip-files]
+//! lanka docs harvest <collection> [--mode incremental|sweep|files|text|gaps] [--limit N] [--since YYYY-MM-DD] [--max-pages N] [--skip-files]
 //! lanka docs status [<collection>] [--json] | search <query> [--limit N]
 //! lanka grid lookups | list | parity --v1-dir DIR [--v1-geojson FILE] | reverse-check [--n 100000]
 //! ```

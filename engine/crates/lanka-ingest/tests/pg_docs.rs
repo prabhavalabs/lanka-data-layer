@@ -241,10 +241,39 @@ async fn run(url: String) {
             .expect("upsert");
     }
     tx.commit().await.expect("commit");
-    let n = harvest::withdraw_unseen(&pool, COLLECTION, sweep_started)
+    // the unseen are only candidates; a search of their numbers decides
+    let candidates: Vec<(String, Option<String>, String)> = sqlx::query_as(
+        "SELECT doc_id, number, upstream_id FROM docs.documents
+          WHERE collection = $1 AND withdrawn_at IS NULL AND last_seen_at < $2 ORDER BY doc_id",
+    )
+    .bind(COLLECTION)
+    .bind(sweep_started)
+    .fetch_all(&pool)
+    .await
+    .expect("candidates");
+    assert_eq!(candidates.len(), 2); // gze-2515-01 and the twin
+    // the search of 2515 still returns the twin (skipped by paging), not gze-2515-01
+    let twin_upstream = candidates
+        .iter()
+        .find(|c| c.0 != "gze-2515-01")
+        .map(|c| c.2.clone())
+        .expect("twin");
+    let found = std::collections::BTreeMap::from([(
+        "2515".to_owned(),
+        std::collections::HashSet::from([twin_upstream]),
+    )]);
+    let gone = harvest::proven_withdrawn(&candidates, &found);
+    assert_eq!(gone, vec!["gze-2515-01".to_owned()]);
+    let n = harvest::withdraw_docs(&pool, &gone)
         .await
         .expect("withdraw");
-    assert_eq!(n, 2); // gze-2515-01 and the twin
+    assert_eq!(n, 1);
+    // the search proves the twin gone too
+    let all: Vec<String> = candidates.iter().map(|c| c.0.clone()).collect();
+    assert_eq!(
+        harvest::withdraw_docs(&pool, &all).await.expect("withdraw"),
+        1
+    );
     assert_eq!(
         count(
             &pool,
@@ -254,12 +283,7 @@ async fn run(url: String) {
         2
     );
     // withdrawing again changes nothing
-    assert_eq!(
-        harvest::withdraw_unseen(&pool, COLLECTION, sweep_started)
-            .await
-            .expect("again"),
-        0
-    );
+    assert_eq!(harvest::withdraw_docs(&pool, &all).await.expect("again"), 0);
     // the withdrawn document is listed again
     let mut tx = pool.begin().await.expect("tx");
     let u = upsert_record(

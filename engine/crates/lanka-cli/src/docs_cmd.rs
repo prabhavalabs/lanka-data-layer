@@ -14,6 +14,7 @@ pub enum ModeArg {
     Sweep,
     Files,
     Text,
+    Gaps,
 }
 
 impl From<ModeArg> for Mode {
@@ -23,6 +24,7 @@ impl From<ModeArg> for Mode {
             ModeArg::Sweep => Self::Sweep,
             ModeArg::Files => Self::Files,
             ModeArg::Text => Self::Text,
+            ModeArg::Gaps => Self::Gaps,
         }
     }
 }
