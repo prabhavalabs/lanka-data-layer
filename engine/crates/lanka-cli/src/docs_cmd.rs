@@ -5,6 +5,7 @@ use chrono::NaiveDate;
 use clap::{Subcommand, ValueEnum};
 use lanka_core::db::PoolRole;
 use lanka_ingest::docs::harvest::{self, Mode, Options};
+use lanka_ingest::docs::mirror::{self, MirrorOptions};
 
 use crate::{Global, find_registry, pool, print_json, store};
 
@@ -53,6 +54,45 @@ pub enum DocsCmd {
         /// After a listing, do not download files (run `--mode files` later).
         #[arg(long)]
         skip_files: bool,
+        /// Restrict the files tail to documents issued in this month
+        /// (YYYY-MM), so a month can be completed on demand.
+        #[arg(long, value_name = "YYYY-MM")]
+        month: Option<String>,
+    },
+    /// Publish the archive to GitHub: one release per complete month (PDF tar,
+    /// text tar.gz, manifest) and the metadata, month files and README
+    /// statistics committed to the archive repository (13 §1.4). Only months
+    /// whose manifest changed are published; a re-run with nothing new does
+    /// nothing. Needs an authenticated `gh`.
+    Mirror {
+        /// Collection id, e.g. `lk-gazette-extraordinary`.
+        collection: String,
+        /// Local clone of the archive repository.
+        #[arg(long)]
+        repo_dir: std::path::PathBuf,
+        /// Mirror this month (YYYY-MM); repeatable. Default: every complete
+        /// month whose manifest changed, oldest first.
+        #[arg(long, value_name = "YYYY-MM")]
+        month: Vec<String>,
+        /// Build and verify the packs in a temporary directory; do not
+        /// upload, commit or push.
+        #[arg(long)]
+        dry_run: bool,
+        /// Mirror at most N months in this run.
+        #[arg(long)]
+        max_months: Option<usize>,
+        /// Testing only: mirror a month with files still pending.
+        #[arg(long)]
+        allow_incomplete: bool,
+        /// GitHub repository, `owner/name`.
+        #[arg(long, default_value = mirror::DEFAULT_REPO)]
+        github_repo: String,
+        /// The GitHub CLI binary.
+        #[arg(long, env = "LANKA_GH_BIN", default_value = "gh")]
+        gh_bin: String,
+        /// Directory for the packs (default: the system temp directory).
+        #[arg(long)]
+        work_dir: Option<std::path::PathBuf>,
     },
     /// Counts by file and text status, the last harvests, withdrawn documents.
     Status {
@@ -78,6 +118,7 @@ pub async fn run(g: &Global, cmd: DocsCmd) -> Result<()> {
             since,
             max_pages,
             skip_files,
+            month,
         } => {
             let dir = find_registry(g.registry.as_deref())?;
             let st = store(g, &dir);
@@ -92,10 +133,39 @@ pub async fn run(g: &Global, cmd: DocsCmd) -> Result<()> {
                     since,
                     max_pages,
                     skip_files,
+                    month,
                 },
             )
             .await
             .with_context(|| format!("docs harvest {collection}"))?;
+            print_json(&report)
+        }
+        DocsCmd::Mirror {
+            collection,
+            repo_dir,
+            month,
+            dry_run,
+            max_months,
+            allow_incomplete,
+            github_repo,
+            gh_bin,
+            work_dir,
+        } => {
+            let dir = find_registry(g.registry.as_deref())?;
+            let st = store(g, &dir);
+            let pool = pool(g, PoolRole::Api).await?;
+            let mut opts = MirrorOptions::new(repo_dir);
+            opts.months = month;
+            opts.dry_run = dry_run;
+            opts.max_months = max_months;
+            opts.allow_incomplete = allow_incomplete;
+            opts.github_repo = github_repo;
+            opts.gh_bin = gh_bin;
+            opts.work_dir = work_dir;
+            let report = mirror::run(&pool, &st, &collection, &opts)
+                .await
+                .with_context(|| format!("docs mirror {collection}"))?;
+            println!("{}", report.message);
             print_json(&report)
         }
         DocsCmd::Status { collection, json } => {

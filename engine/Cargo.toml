@@ -79,6 +79,7 @@ memmap2 = "=0.9.12"
 tiff = { version = "=0.11.3", default-features = false, features = ["deflate", "lzw"] }
 png = "=0.18.1"
 flate2 = "=1.1.11"
+tar = { version = "=0.4.46", default-features = false }
 tracing-subscriber = { version = "=0.3.23", features = ["env-filter", "json", "fmt"] }
 # WP-04: OSM PBF reading (pure Rust, rust zlib backend) and gzip for PMTiles directories
 osmpbf = { version = "=0.3.8", default-features = false, features = ["rust-zlib"] }

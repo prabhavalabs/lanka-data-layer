@@ -87,6 +87,8 @@ pub struct Options {
     pub max_pages: Option<u32>,
     /// Do not run the files tail after a listing.
     pub skip_files: bool,
+    /// Restrict the files tail to documents issued in this month (`YYYY-MM`).
+    pub month: Option<String>,
 }
 
 /// `docs.collections.harvest`.
@@ -584,15 +586,20 @@ async fn run_inner(
     started: DateTime<Utc>,
     report: &mut Report,
 ) -> Result<()> {
+    let range = opts
+        .month
+        .as_deref()
+        .map(super::mirror::month_range)
+        .transpose()?;
     match mode {
         Mode::Incremental | Mode::Sweep => {
             list(pool, col, opts, mode, started, report).await?;
             if !opts.skip_files {
-                files_tail(pool, store, col, opts.limit, false, report).await?;
+                files_tail(pool, store, col, opts.limit, false, range, report).await?;
             }
         }
-        Mode::Files => files_tail(pool, store, col, opts.limit, false, report).await?,
-        Mode::Text => files_tail(pool, store, col, opts.limit, true, report).await?,
+        Mode::Files => files_tail(pool, store, col, opts.limit, false, range, report).await?,
+        Mode::Text => files_tail(pool, store, col, opts.limit, true, range, report).await?,
         Mode::Gaps => fill_gaps(pool, col, opts, report).await?,
     }
     Ok(())
@@ -604,6 +611,7 @@ async fn files_tail(
     col: &Collection,
     limit: Option<usize>,
     text_only: bool,
+    range: Option<(NaiveDate, NaiveDate)>,
     report: &mut Report,
 ) -> Result<()> {
     let fr = files::run(
@@ -615,6 +623,7 @@ async fn files_tail(
             text_only,
             concurrency: col.cfg.file_concurrency.max(1),
             ocr_page_cap: col.cfg.ocr_page_cap,
+            range,
         },
     )
     .await?;

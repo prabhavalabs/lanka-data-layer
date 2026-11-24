@@ -9,10 +9,12 @@
 //! | [`record`] | normalised record, `meta_hash`, `doc_id` derivation, the stop and withdrawal rules (pure) |
 //! | [`harvest`] | listing modes `incremental` and `sweep`, upserts, revisions, `docs.harvests` |
 //! | [`files`] | downloads into the store, text layer and OCR through the sandbox, `docs.search` |
+//! | [`mirror`] | publishes the archive to GitHub: monthly release assets plus metadata in git (13 §1.4) |
 
 pub mod action;
 pub mod files;
 pub mod harvest;
+pub mod mirror;
 pub mod record;
 pub mod rsc;
 

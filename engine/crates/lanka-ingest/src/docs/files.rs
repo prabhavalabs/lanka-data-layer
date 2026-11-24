@@ -48,6 +48,8 @@ pub struct FileOpts {
     pub text_only: bool,
     pub concurrency: usize,
     pub ocr_page_cap: usize,
+    /// Only files of documents issued in `[from, to)`.
+    pub range: Option<(chrono::NaiveDate, chrono::NaiveDate)>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -97,16 +99,23 @@ pub async fn run(
         );
     }
     let limit = opts.limit.map_or(i64::MAX, |l| l as i64);
+    let (from, to) = match opts.range {
+        Some((f, t)) => (Some(f), Some(t)),
+        None => (None, None),
+    };
     let rows: Vec<Row> = if opts.text_only {
         sqlx::query_as(
             "SELECT f.doc_id, f.lang, f.upstream_path, f.sha256, f.bytes
                FROM docs.files f JOIN docs.documents d USING (doc_id)
               WHERE d.collection = $1 AND f.status = 'ok' AND f.sha256 IS NOT NULL
                 AND f.text_status IS NOT DISTINCT FROM 'none'
+                AND ($3::date IS NULL OR (d.issued_on >= $3 AND d.issued_on < $4))
               ORDER BY d.issued_on DESC, f.doc_id, f.lang LIMIT $2",
         )
         .bind(&col.id)
         .bind(limit)
+        .bind(from)
+        .bind(to)
         .fetch_all(pool)
         .await?
     } else {
@@ -114,11 +123,14 @@ pub async fn run(
             "SELECT f.doc_id, f.lang, f.upstream_path, f.sha256, f.bytes
                FROM docs.files f JOIN docs.documents d USING (doc_id)
               WHERE d.collection = $1 AND f.status IN ('pending', 'failed') AND f.attempts < $3
+                AND ($4::date IS NULL OR (d.issued_on >= $4 AND d.issued_on < $5))
               ORDER BY d.issued_on DESC, f.doc_id, f.lang LIMIT $2",
         )
         .bind(&col.id)
         .bind(limit)
         .bind(MAX_ATTEMPTS)
+        .bind(from)
+        .bind(to)
         .fetch_all(pool)
         .await?
     };
