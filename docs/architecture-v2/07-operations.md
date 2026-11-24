@@ -162,6 +162,28 @@ RPO: ≤ 5 min for Postgres (WAL archive timeout 300 s), ≤ 24 h for the store.
 
 **Restore drill**, quarterly, scripted (`infra/v2/restore-drill.sh`): restore the latest backup into a scratch container, run `lanka rebuild --verify` on three datasets and the conformance corpus against it, record the outcome with `lanka ops record-backup --kind drill`. `/v2/status.backups` exposes last-ok times; a stale backup becomes an incident.
 
+### 6.1 Single-host form (built; the off-site copy above is still to come)
+
+The data lives outside the repository, so a `git clean` or a fresh clone never touches it:
+
+```
+/Volumes/externalSSD/lanka-data/          # LANKA_BACKUP_DIR's parent; on the VPS, /srv/lanka
+  store/                                   # the blob store (LANKA_STORE_DIR); <repo>/data/v2 is a symlink to it
+  backups/pg/<ts>.dump                     # pg_dump -Fc, with .sha256 and .counts (exact rows per table)
+  backups/store/<ts>/                      # dated snapshots, hard-linked to the previous one
+  backups/store/<ts>.sha256                # manifest of every file in that snapshot
+  backups/store/latest -> <ts>
+```
+
+| Script | Does |
+|---|---|
+| `infra/v2/backup.sh [all\|pg\|store\|verify]` | Dumps the database inside its container, where `pg_dump` matches the server, and reads the dump back before it counts. Then snapshots the store with `rsync --link-dest`, so unchanged files cost nothing and deleted or overwritten files survive in older snapshots. Only new files are hashed. Keeps 14 of each (`LANKA_KEEP`). `verify` re-checks the newest dump and every file of the newest snapshot. |
+| `infra/v2/restore.sh pg --db NAME [--dump F] [--replace]` | Restores into a named database. An existing database is only dropped with `--replace`, so overwriting the live one takes its name and the flag. |
+| `infra/v2/restore.sh store --to DIR [--snapshot TS]` | Copies a snapshot into an empty directory and checks it against the manifest. |
+| `infra/v2/restore-drill.sh` | Restores the newest dump into `lanka_drill` and runs `lanka db migrate`, `release list` and `serve rebuild` against it. Compares every table's row count with the dump-time counts; drift fails the drill unless `LANKA_DRILL_TOLERATE_DRIFT=1`. Re-hashes the snapshot, then drops the scratch database. |
+
+All three record their outcome with `lanka ops record-backup`. First run on this host: a 352 MB dump in 24 s and an 8.2 GB store snapshot in 83 s. The next snapshot took 1 s with 0 new files. The drill passed in 40 s, with all 658 tables matching and 1,452 files verified.
+
 ## 7. CI/CD
 
 GitHub Actions is used for build and test only (never as the production scheduler).
