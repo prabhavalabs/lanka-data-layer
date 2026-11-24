@@ -9,6 +9,7 @@ pub mod connector_test;
 pub mod connectors;
 pub mod copy_bin;
 pub mod derive;
+pub mod docs;
 pub mod drivers;
 pub mod evidence;
 pub mod expect;

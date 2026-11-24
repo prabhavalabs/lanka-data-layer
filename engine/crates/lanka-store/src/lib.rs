@@ -9,6 +9,7 @@
 //! ```text
 //! raw/ab/cd/<sha256>                 L0, content-addressed
 //! extract/ab/cd/<sha256>.parquet     L1, content-addressed
+//! text/ab/cd/<sha256>.txt            document text (13 §1.2), content-addressed
 //! grids/… tiles/… datasets/… releases/… evidence/…   named, immutable
 //! tmp/                               same filesystem → rename is atomic
 //! ```
@@ -32,6 +33,9 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWriteExt};
 pub enum Ns {
     Raw,
     Extract,
+    /// Plain UTF-8 text of archived documents, pages separated by `\f`
+    /// (13 §1.2), `text/ab/cd/<sha256>.txt`.
+    Text,
     Grid,
     Tile,
     Dataset,
@@ -49,6 +53,7 @@ impl Ns {
         match self {
             Self::Raw => "raw",
             Self::Extract => "extract",
+            Self::Text => "text",
             Self::Grid => "grids",
             Self::Tile => "tiles",
             Self::Dataset => "datasets",
@@ -62,17 +67,18 @@ impl Ns {
     /// Namespaces whose keys are derived from the content hash.
     #[must_use]
     pub const fn is_cas(self) -> bool {
-        matches!(self, Self::Raw | Self::Extract)
+        matches!(self, Self::Raw | Self::Extract | Self::Text)
     }
 
     const fn cas_suffix(self) -> &'static str {
         match self {
             Self::Extract => ".parquet",
+            Self::Text => ".txt",
             _ => "",
         }
     }
 
-    /// Key of a content-addressed object: `ab/cd/<sha256>[.parquet]`.
+    /// Key of a content-addressed object: `ab/cd/<sha256>[.parquet|.txt]`.
     #[must_use]
     pub fn cas_key(self, sha256: &[u8; 32]) -> String {
         let h = hex::encode(sha256);
@@ -455,6 +461,15 @@ mod tests {
         let (r, created) = s.put_cas_file(Ns::Extract, &src).await.expect("file");
         assert!(created && r.key.ends_with(".parquet"));
         assert!(s.exists(Ns::Extract, &r.key).await.expect("exists"));
+        let (t, created) = s
+            .put_cas(Ns::Text, Bytes::from_static(b"page one\x0cpage two"))
+            .await
+            .expect("text");
+        assert!(created && t.key.ends_with(".txt"));
+        assert!(
+            root.join("text").join(&t.key).is_file(),
+            "text blobs live under text/"
+        );
         let n = s
             .put_named(Ns::Dataset, "ds/dsv_1/data.csv", &src)
             .await
