@@ -3,7 +3,7 @@
 import { scaleTime } from 'd3-scale'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import type { Instrument } from '@/api/civic'
+import { isApplied, type Instrument } from '@/api/civic'
 import { useMeasure } from '@/components/charts/chartKit'
 import { fmtDay, isoDay, parseDay } from './shared'
 
@@ -194,11 +194,12 @@ export function Timeline({ instruments, at, onChange, today }: { instruments: In
           {sorted.map((i) => {
             const px = x(parseDay(i.effective_from))
             const base = i.kind === 'baseline'
-            const parsedOk = i.portfolios > 0 || i.kind === 'amendment'
+            // an amendment counts as read when its changes are applied to the structure
+            const parsedOk = i.kind === 'amendment' ? isApplied(i) : i.portfolios > 0
             const h = base ? 52 : i.kind === 'supplement' ? 34 : 18
             const bw = base ? 6 : i.kind === 'supplement' ? 5 : 3
             const hit = hitW.get(i.doc_id) ?? 12
-            const label = `Gazette ${i.number}, ${i.kind}, ${fmtDay(i.effective_from)}${i.head_of_state ? `, President ${i.head_of_state}` : ''}${parsedOk ? '' : ', not yet parsed'}`
+            const label = `Gazette ${i.number}, ${i.kind}, ${fmtDay(i.effective_from)}${i.head_of_state ? `, President ${i.head_of_state}` : ''}${parsedOk ? '' : i.kind === 'amendment' ? ', not applied yet' : ', not yet parsed'}`
             const select = () => onChange(i.effective_from)
             return (
               <g
@@ -227,7 +228,7 @@ export function Timeline({ instruments, at, onChange, today }: { instruments: In
                   height={h}
                   rx={2}
                   fill={parsedOk ? (base ? 'var(--ink)' : i.kind === 'supplement' ? 'var(--ink2)' : 'var(--brand)') : 'var(--bg2)'}
-                  stroke={parsedOk ? 'none' : 'var(--ink3)'}
+                  stroke={parsedOk ? 'none' : i.kind === 'amendment' ? 'var(--brand)' : 'var(--ink3)'}
                   strokeWidth={1.25}
                   strokeDasharray={parsedOk ? undefined : '2 2'}
                 />
@@ -285,7 +286,8 @@ export function Timeline({ instruments, at, onChange, today }: { instruments: In
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-ink3">
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3.5 w-1.5 rounded-[2px] bg-ink" /> Baseline gazette</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-1 rounded-[2px] bg-ink2" /> Supplement</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2 w-1 rounded-[2px] bg-brand" /> Amendment</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2 w-1 rounded-[2px] bg-brand" /> Amendment, applied</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2 w-1 rounded-[2px] border border-dashed border-brand" /> Amendment, not applied yet</span>
         <span className="inline-flex items-center gap-1.5"><span className="inline-block h-3.5 w-1.5 rounded-[2px] border border-dashed border-ink3" /> Not yet read</span>
         <span className="max-md:hidden">Drag the handle, click a mark, or use the arrow keys. Marks within a cluster: use the arrows beside the date.</span>
         <span className="md:hidden">Scroll sideways; tap a mark.</span>

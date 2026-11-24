@@ -54,7 +54,8 @@ function Tile({ label, value, tone }: { label: string; value: number; tone?: 'br
   )
 }
 
-type Row = { entity_key: string; name: string; kind: Moved['kind']; from?: { page?: number | null }; to?: { page?: number | null } }
+type Side = { page?: number | null; doc_id?: string | null }
+type Row = { entity_key: string; name: string; kind: Moved['kind']; from?: Side; to?: Side }
 function Group({ title, rows, fromDoc, toDoc, onOpen, theme }: { title: React.ReactNode; rows: Row[]; fromDoc?: string; toDoc?: string; onOpen: (k: string) => void; theme: 'dark' | 'light' }) {
   return (
     <div className="surface p-4">
@@ -69,8 +70,8 @@ function Group({ title, rows, fromDoc, toDoc, onOpen, theme }: { title: React.Re
             <button type="button" onClick={() => onOpen(r.entity_key)} className="min-w-0 flex-1 rounded text-left text-[13px] leading-snug text-ink hover:text-brand-ink">
               {r.name}
             </button>
-            {fromDoc && r.from && <Evidence docId={fromDoc} page={r.from.page} label={r.from.page ? `before p.${r.from.page}` : 'before'} />}
-            {toDoc && r.to && <Evidence docId={toDoc} page={r.to.page} label={r.to.page ? `now p.${r.to.page}` : 'now'} />}
+            {fromDoc && r.from && <Evidence docId={r.from.doc_id ?? fromDoc} page={r.from.page} label={r.from.page ? `before p.${r.from.page}` : 'before'} />}
+            {toDoc && r.to && <Evidence docId={r.to.doc_id ?? toDoc} page={r.to.page} label={r.to.page ? `now p.${r.to.page}` : 'now'} />}
           </li>
         ))}
       </ul>
@@ -221,7 +222,7 @@ export function CompareView({ diff, sample, onOpen }: { diff: Diff; sample: bool
                             <button type="button" onClick={() => onOpen(i.entity_key)} className="rounded text-left text-ink hover:text-brand-ink">
                               {i.name}
                             </button>
-                            <Evidence docId={diff.to.doc_id} page={i.to.page} />
+                            <Evidence docId={i.to.doc_id ?? diff.to.doc_id} page={i.to.page} />
                           </li>
                         ))}
                       </ul>

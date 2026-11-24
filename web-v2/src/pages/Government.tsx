@@ -2,11 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { GitCompareArrows, Landmark } from 'lucide-react'
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { diffQuery, earliestOf, instrumentsQuery, structureQuery } from '@/api/civic'
+import { diffQuery, earliestOf, instrumentsQuery, isApplied, structureQuery } from '@/api/civic'
 import { ApiError } from '@/api/http'
 import { SampleMark } from '@/components/common/bits'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { AmendmentDrawer } from '@/features/government/AmendmentDrawer'
 import { CompareControls, CompareView } from '@/features/government/Compare'
 import { HistoryDrawer } from '@/features/government/HistoryDrawer'
 import { fmtDay, isDay, isoDay, StateBox } from '@/features/government/shared'
@@ -50,11 +51,12 @@ export default function GovernmentPage() {
   const at = isDay(rawAt) ? (rawAt > today ? today : rawAt) : today
   const compare = params.get('view') === 'compare'
   const entity = params.get('e')
+  const amendment = params.get('am')
 
   const instruments = useQuery(instrumentsQuery())
   const list = instruments.data?.data
-  // the dates a comparison can start or end on: every gazette that carries a schedule, newest first
-  const schedules = useMemo(() => (list ?? []).filter((i) => i.kind !== 'amendment' && i.portfolios > 0).sort((a, b) => b.effective_from.localeCompare(a.effective_from)), [list])
+  // the dates a comparison can start or end on: every gazette that carries a schedule (or an applied amendment), newest first
+  const schedules = useMemo(() => (list ?? []).filter((i) => (i.kind !== 'amendment' && i.portfolios > 0) || isApplied(i)).sort((a, b) => b.effective_from.localeCompare(a.effective_from)), [list])
   const baselines = useMemo(() => schedules.filter((i) => i.kind === 'baseline'), [schedules])
 
   // the comparison defaults to the baseline in force at `at` against the one before it
@@ -147,7 +149,7 @@ export default function GovernmentPage() {
         ) : structure.data.data.portfolios.length === 0 ? (
           <StateBox title="This gazette lists no ministries">Its schedule has not been read into the record.</StateBox>
         ) : (
-          <StructureView s={structure.data.data} sample={structure.data.sample} at={at} onOpen={open} />
+          <StructureView s={structure.data.data} sample={structure.data.sample} at={at} onOpen={open} onAmendment={(d) => update({ am: d })} />
         )}
       </div>
 
@@ -160,12 +162,13 @@ export default function GovernmentPage() {
             Under Article 44 of the Constitution the President sets out, by extraordinary gazette, each minister’s subjects and functions and the departments, statutory institutions and public corporations in their charge. A <strong className="font-semibold text-ink">baseline</strong> gazette lists the whole schedule; an <strong className="font-semibold text-ink">amendment</strong> changes a named baseline from a stated date.
           </p>
           <p>
-            We read the schedules from the archived gazette PDFs, check them (ministries and items numbered without gaps, the count matching the text) and keep only those that pass. Amendments are shown on the timeline and under the structure they change, but their changes are not yet applied to the lists. Every institution links to the gazette page it was read from.
+            We read the schedules from the archived gazette PDFs, check them (ministries and items numbered without gaps, the count matching the text) and keep only those that pass. Amendments are read change by change (an item added, removed, reworded or renumbered, a ministry renamed, added or removed) and applied in date order to the structure in force. A change is applied only when the item or ministry it names is there, and when its printed number and text agree; otherwise the gazette waits for a person to check it, and the page says so. Every institution links to the gazette page it is printed on, which after an amendment can be the amendment itself.
           </p>
         </div>
       </section>
 
       <HistoryDrawer entityKey={entity} onClose={() => update({ e: null })} today={today} />
+      <AmendmentDrawer docId={amendment} onClose={() => update({ am: null })} onCompare={(f, t) => update({ am: null, view: 'compare', from: f, to: t })} />
     </article>
   )
 }
