@@ -5,7 +5,7 @@ import { ChartTip, TipRow, useMeasure, useTip } from './chartKit'
 export type StackSegment = { id: string; label: string; share: number; color: string }
 
 /** 100% stacked bar. Fixed category order, 2px surface gap, direct labels only where they fit. */
-export function StackBar({ segments, labelMin = 8, ariaLabel }: { segments: StackSegment[]; labelMin?: number; ariaLabel: string }) {
+export function StackBar({ segments, labelMin = 8, ariaLabel, axisLabel = '100% of land area', showLabels = true }: { segments: StackSegment[]; labelMin?: number; ariaLabel: string; axisLabel?: string | null; showLabels?: boolean }) {
   const [ref, w] = useMeasure<HTMLDivElement>()
   const { tip, show, hide } = useTip()
   const [hi, setHi] = useState<string | null>(null)
@@ -13,7 +13,7 @@ export function StackBar({ segments, labelMin = 8, ariaLabel }: { segments: Stac
   return (
     <div ref={ref} className="relative" data-chart role="img" aria-label={ariaLabel}>
       {/* direct labels sit above the bar in ink, never inside in the series colour */}
-      <div className="flex gap-[2px]" aria-hidden>
+      {showLabels && <div className="flex gap-[2px]" aria-hidden>
         {segments.map((s) => {
           const pct = (s.share / total) * 100
           const px = (pct / 100) * w
@@ -28,7 +28,7 @@ export function StackBar({ segments, labelMin = 8, ariaLabel }: { segments: Stac
             </div>
           )
         })}
-      </div>
+      </div>}
       <div className="flex h-[18px] gap-[2px]" onPointerLeave={() => (hide(), setHi(null))}>
         {segments.map((s, i) => (
           <div
@@ -42,11 +42,13 @@ export function StackBar({ segments, labelMin = 8, ariaLabel }: { segments: Stac
           />
         ))}
       </div>
-      <div className="mt-1.5 flex justify-between font-sans text-[10.5px] text-ink3 tabular-nums" aria-hidden>
-        <span>0</span>
-        <span>50</span>
-        <span>100% of land area</span>
-      </div>
+      {axisLabel && (
+        <div className="mt-1.5 flex justify-between font-sans text-[10.5px] text-ink3 tabular-nums" aria-hidden>
+          <span>0</span>
+          <span>50</span>
+          <span>{axisLabel}</span>
+        </div>
+      )}
       <ChartTip tip={tip} width={w} />
     </div>
   )

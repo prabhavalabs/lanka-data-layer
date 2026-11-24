@@ -9,7 +9,7 @@ export type View = 'chart' | 'table'
 
 export function ViewToggle({ value, onChange, label }: { value: View; onChange: (v: View) => void; label: string }) {
   return (
-    <ToggleGroup type="single" value={value} onValueChange={(v) => v && onChange(v as View)} aria-label={`${label}: chart or table`} className="shrink-0">
+    <ToggleGroup type="single" value={value} onValueChange={(v) => v && onChange(v as View)} aria-label={`${label}: chart or table`} className="shrink-0 max-md:h-12">
       <ToggleGroupItem value="chart">
         <BarChart3 />
         Chart
