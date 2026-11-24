@@ -7,7 +7,10 @@
 //! into a new structure that replaces the previous one from the first
 //! supplement's date; each later supplement in the run adds or replaces
 //! headings by `portfolio_key`, from its own date. A later baseline starts
-//! afresh.
+//! afresh. An applied *amendment* (C2) carries the whole structure as
+//! amended, so it replaces the structure from its date, and the gazettes it
+//! is composed of are those of the structure it amends plus itself. It does
+//! not end a run of supplements: a supplement after it still accumulates.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -23,11 +26,11 @@ pub struct Heading {
     pub portfolio_key: String,
 }
 
-/// A served baseline or supplement.
+/// A served baseline, supplement or applied amendment.
 #[derive(Debug, Clone)]
 pub struct Instrument {
     pub doc_id: String,
-    /// `baseline` | `supplement`
+    /// `baseline` | `supplement` | `amendment`
     pub kind: String,
     pub effective_from: NaiveDate,
     pub headings: Vec<Heading>,
@@ -76,6 +79,17 @@ pub fn compose(instruments: &[Instrument]) -> Vec<Step> {
                 composed,
                 headings,
             }
+        } else if i.kind == "amendment"
+            && let Some(last) = steps.last()
+        {
+            let mut composed = last.composed.clone();
+            composed.push((i.doc_id.clone(), i.effective_from));
+            Step {
+                effective_from: i.effective_from,
+                latest: i.doc_id.clone(),
+                composed,
+                headings: i.headings.clone(),
+            }
         } else {
             Step {
                 effective_from: i.effective_from,
@@ -84,7 +98,9 @@ pub fn compose(instruments: &[Instrument]) -> Vec<Step> {
                 headings: i.headings.clone(),
             }
         };
-        prev_supplement = i.kind == "supplement";
+        if i.kind != "amendment" {
+            prev_supplement = i.kind == "supplement";
+        }
         if steps
             .last()
             .is_some_and(|l| l.effective_from == step.effective_from)
@@ -141,6 +157,8 @@ pub struct Listing {
     pub entity_key: String,
     pub name: String,
     pub kind: String,
+    /// The gazette the line is printed in, and its page there.
+    pub doc_id: Option<String>,
     pub page: Option<i32>,
     pub ministry_key: String,
 }
@@ -159,6 +177,9 @@ pub struct PortfolioSide {
     pub title: String,
     /// Without `Minister of`: `Defence`.
     pub short_title: String,
+    /// The gazette the institution's line is printed in (in an amended
+    /// structure it can be an earlier gazette or the amendment).
+    pub doc_id: Option<String>,
     /// The institution's page in that gazette.
     pub page: Option<i32>,
 }
@@ -240,12 +261,13 @@ const MIN_JACCARD: f64 = 0.5;
 /// institutions: its successor in a split or merge (not counted as renamed).
 const MIN_KEPT_SHARE: f64 = 0.6;
 
-fn side(m: &Ministry, page: Option<i32>) -> PortfolioSide {
+fn side(m: &Ministry, l: &Listing) -> PortfolioSide {
     PortfolioSide {
         portfolio_key: m.key.clone(),
         title: m.title.clone(),
         short_title: short_title(&m.title),
-        page,
+        doc_id: l.doc_id.clone(),
+        page: l.page,
     }
 }
 
@@ -325,14 +347,14 @@ pub fn compare(from: &Side, to: &Side) -> Changes {
     );
     let mut c = Changes::default();
     for (k, old) in &fl {
-        let from_side = side(&title_of(from, &old.ministry_key), old.page);
+        let from_side = side(&title_of(from, &old.ministry_key), old);
         match tl.get(k) {
             Some(new) if !is_kept(&old.ministry_key, &new.ministry_key) => c.moved.push(Moved {
                 entity_key: (*k).to_owned(),
                 name: new.name.clone(),
                 kind: new.kind.clone(),
                 from: from_side,
-                to: side(&title_of(to, &new.ministry_key), new.page),
+                to: side(&title_of(to, &new.ministry_key), new),
             }),
             Some(_) => {}
             None => c.removed.push(Removed {
@@ -349,7 +371,7 @@ pub fn compare(from: &Side, to: &Side) -> Changes {
                 entity_key: (*k).to_owned(),
                 name: new.name.clone(),
                 kind: new.kind.clone(),
-                to: side(&title_of(to, &new.ministry_key), new.page),
+                to: side(&title_of(to, &new.ministry_key), new),
             });
         }
     }
@@ -451,6 +473,31 @@ mod tests {
     }
 
     #[test]
+    fn an_amendment_replaces_the_structure_and_keeps_its_lineage() {
+        let steps = compose(&[
+            inst("s1", "supplement", d(2018, 11, 5), &["a", "b"]),
+            inst("a1", "amendment", d(2018, 11, 9), &["a", "b", "x"]),
+            // a supplement after the amendment still belongs to the run
+            inst("s2", "supplement", d(2018, 11, 12), &["c"]),
+            inst("base", "baseline", d(2018, 12, 24), &["z"]),
+            inst("a2", "amendment", d(2019, 1, 3), &["z", "y"]),
+        ]);
+        let keys = |s: &Step| {
+            s.headings
+                .iter()
+                .map(|h| h.portfolio_key.clone())
+                .collect::<Vec<_>>()
+        };
+        let ids = |s: &Step| s.composed.iter().map(|c| c.0.clone()).collect::<Vec<_>>();
+        assert_eq!(keys(&steps[1]), vec!["a", "b", "x"]);
+        assert_eq!(ids(&steps[1]), vec!["s1", "a1"]);
+        assert_eq!(keys(&steps[2]), vec!["a", "b", "x", "c"]);
+        assert_eq!(ids(&steps[2]), vec!["s1", "a1", "s2"]);
+        assert_eq!(ids(&steps[4]), vec!["base", "a2"]);
+        assert_eq!(steps[4].latest, "a2");
+    }
+
+    #[test]
     fn a_supplement_after_a_baseline_starts_a_new_run() {
         let steps = compose(&[
             inst("base", "baseline", d(2020, 1, 1), &["a", "b"]),
@@ -489,6 +536,7 @@ mod tests {
                     entity_key: (*e).into(),
                     name: (*e).into(),
                     kind: "other".into(),
+                    doc_id: None,
                     page: Some(7),
                     ministry_key: (*m).into(),
                 })

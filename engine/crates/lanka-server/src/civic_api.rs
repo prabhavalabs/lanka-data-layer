@@ -4,6 +4,7 @@
 //! | Route | Payload |
 //! |---|---|
 //! | `GET /v2/civic/instruments` | every instrument (baselines and amendments, with `status`), newest first |
+//! | `GET /v2/civic/instruments/{doc_id}/changes` | what an amending gazette changes, change by change, and whether each applied |
 //! | `GET /v2/civic/structure?at=` | the ministries in force on a date (default today), with functions, institutions, laws |
 //! | `GET /v2/civic/diff?from=&to=` | institutions that moved, were added or removed between two dates |
 //! | `GET /v2/civic/entities?q=&limit=` | institutions by name |
@@ -27,7 +28,9 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use chrono::NaiveDate;
 use futures::stream;
-use lanka_core::civic::{self, Diff, Document, EntityDetail, EntityRow, InstrumentRow, Structure};
+use lanka_core::civic::{
+    self, AmendmentChanges, Diff, Document, EntityDetail, EntityRow, InstrumentRow, Structure,
+};
 use lanka_core::envelope::Link;
 use lanka_core::{CoreError, Envelope, Meta};
 use serde::{Deserialize, Serialize};
@@ -38,7 +41,7 @@ use crate::{ApiError, ApiResult, AppState, CACHE_FLOATING, ErrorBody};
 
 #[derive(OpenApi)]
 #[openapi(
-    paths(instruments, structure, diff, entities, entity, document, document_pdf),
+    paths(instruments, amendment_changes, structure, diff, entities, entity, document, document_pdf),
     tags(
         (name = "civic", description = "Ministries and the institutions in their charge, over time (Article 44 gazettes)"),
         (name = "documents", description = "The archived gazettes: record, files, PDF"),
@@ -49,6 +52,10 @@ pub struct CivicDoc;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/v2/civic/instruments", get(instruments))
+        .route(
+            "/v2/civic/instruments/{doc_id}/changes",
+            get(amendment_changes),
+        )
         .route("/v2/civic/structure", get(structure))
         .route("/v2/civic/diff", get(diff))
         .route("/v2/civic/entities", get(entities))
@@ -239,6 +246,23 @@ async fn entities(
         })
         .unwrap_or_default();
     respond_payload(&headers, rows, meta(&st, next))
+}
+
+/// What an amending gazette changes, change by change: the clause as
+/// printed, the change read from it, and whether it applied.
+#[utoipa::path(get, path = "/v2/civic/instruments/{doc_id}/changes", tag = "civic",
+    params(("doc_id" = String, Path, description = "an amendment's document id, e.g. gze-2458-65")),
+    responses((status = 200, body = Envelope<AmendmentChanges>), (status = 404, body = ErrorBody)))]
+async fn amendment_changes(
+    State(st): State<AppState>,
+    Path(doc_id): Path<String>,
+    headers: HeaderMap,
+) -> ApiResult {
+    let c = civic::amendment_changes(&st.pool, &doc_id)
+        .await
+        .map_err(|e| fail(&st, e))?;
+    let next = vec![Link::new("document", format!("/v2/documents/{doc_id}"))];
+    respond_payload(&headers, c, meta(&st, next))
 }
 
 /// One institution and the ministries it sat under, oldest first.
@@ -485,6 +509,7 @@ mod tests {
         let paths = &json(&body)["paths"];
         for p in [
             "/v2/civic/instruments",
+            "/v2/civic/instruments/{doc_id}/changes",
             "/v2/civic/structure",
             "/v2/civic/diff",
             "/v2/civic/entities",

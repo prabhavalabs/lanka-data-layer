@@ -9,9 +9,15 @@
 //! | [`instrument`] | baseline vs amendment, effective date, amended gazette, head of state (pure) |
 //! | [`discover`] | candidate instruments from document titles, confirmed from the text |
 //! | [`extract`] | the pipeline: archive blobs, parse, validate, store |
+//! | [`amend`] | pure parser: an amending gazette's words to its changes |
+//! | [`apply`] | pure: the structure in force plus an amendment's changes |
+//! | [`consolidate`] | the build's first step: every amendment applied in date order |
 //! | [`build`] | assignments with continuous intervals; the diff of two dates |
 
+pub mod amend;
+pub mod apply;
 pub mod build;
+pub mod consolidate;
 pub mod discover;
 pub mod entity;
 pub mod exceptions;
