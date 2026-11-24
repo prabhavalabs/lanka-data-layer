@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Status of all records: **proposed** (0001–0017: 2026-11-21; 0018–0026: 2026-11-22), pending the owner's review of this design set.
+Status of all records: **proposed** (0001–0017: 2026-11-21; 0018–0026: 2026-11-22; 0027: 2026-11-24), pending the owner's review of this design set.
 
 | ADR | Decision |
 |---|---|
@@ -30,3 +30,4 @@ Status of all records: **proposed** (0001–0017: 2026-11-21; 0018–0026: 2026-
 | [0024](0024-workspace-data-plane-byod.md) | Private data in a parallel `ws` schema, entering through the ingestion pipeline |
 | [0025](0025-price-data-and-point-sample-policy.md) | No scraped listings; price data by licence or BYOD; fenced interpolation of point samples |
 | [0026](0026-one-open-edition-profiles-and-plugins.md) | One open-source edition, deployment profiles, compiled-in plugins |
+| [0027](0027-data-organisation-on-github.md) | A separate GitHub organisation for data: captures, archives and release mirrors |
