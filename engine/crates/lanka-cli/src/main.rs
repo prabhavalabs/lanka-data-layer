@@ -22,6 +22,8 @@
 //! lanka area <pcode>
 //! lanka map validate <file>… | hash <file> | refs <file> | resolve <file> [--freeze] | types
 //! lanka tiles build [--tileset ID]… [--force] | list
+//! lanka docs harvest <collection> [--mode incremental|sweep|files|text] [--limit N] [--since YYYY-MM-DD] [--max-pages N] [--skip-files]
+//! lanka docs status [<collection>] [--json] | search <query> [--limit N]
 //! lanka grid lookups | list | parity --v1-dir DIR [--v1-geojson FILE] | reverse-check [--n 100000]
 //! ```
 
@@ -43,6 +45,7 @@ use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
 
 mod doc_cmd;
+mod docs_cmd;
 mod grid_cmd;
 mod propose;
 mod review_cmd;
@@ -154,6 +157,9 @@ enum Cmd {
     /// Class C (operator-run): propose an anchored extract from two model readings.
     #[command(subcommand)]
     Extract(ExtractCmd),
+    /// Documents archive (gazettes): harvest, status, full-text search.
+    #[command(subcommand)]
+    Docs(docs_cmd::DocsCmd),
     /// Grid engine: lookup arrays, layers, v1 parity, reverse-geocoding check.
     #[command(subcommand)]
     Grid(grid_cmd::GridCmd),
@@ -1053,6 +1059,7 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Cmd::Probe { url } => probe(&url).await?,
         Cmd::Tiles(cmd) => tiles_cmd::run(g, cmd).await?,
+        Cmd::Docs(cmd) => docs_cmd::run(g, cmd).await?,
         Cmd::Template(cmd) => doc_cmd::template(g, cmd).await?,
         Cmd::Extract(ExtractCmd::Propose(a)) => propose::extract_propose(g, *a).await?,
         Cmd::Extract(ExtractCmd::Publish { extract }) => {
