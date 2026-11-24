@@ -26,4 +26,4 @@ Thumbs.db
 
 # Rust engine build output and v2 local raw archive
 engine/target/
-data/v2/
+data/v2
