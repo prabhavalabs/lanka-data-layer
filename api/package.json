@@ -14,12 +14,12 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.11",
     "@lanka-data-layer/shared": "workspace:*",
-    "@hono/node-server": "^1.13.7",
     "better-sqlite3": "^13.0.0",
-    "hono": "^4.6.9",
+    "hono": "^4.13.21",
     "tsx": "^4.19.1",
-    "zod": "^3.23.8"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.11",
