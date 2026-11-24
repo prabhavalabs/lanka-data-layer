@@ -3,6 +3,7 @@ import { ArrowUpRight, Check, ChevronRight, CircleHelp, Copy, Download, Minus, P
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 import { datasetQuery, themesQuery } from '@/api/queries'
+import { datasetMetaQuery, levelsOf } from '@/api/real/series'
 import { realCatalogue, REAL_INDICATORS } from '@/api/real/registry'
 import { isSample, type DatasetDetail } from '@/api/types'
 import { FreshnessDot, LicenceLight, SampleMark } from '@/components/common/bits'
@@ -10,6 +11,7 @@ import { CodeBlock } from '@/components/common/CodeBlock'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DatasetChart } from '@/features/dataset-chart/DatasetChart'
 import { fmtInt } from '@/lib/format'
 import { useCopy } from '@/lib/hooks'
 import { API, DOWNLOADS } from '@/lib/site'
@@ -49,6 +51,17 @@ function Cite({ text }: { text: string }) {
       </div>
       <p className="mt-2 text-[13px] leading-relaxed text-ink2">{text}</p>
     </div>
+  )
+}
+
+/** The chart block: only for datasets the engine holds statistics for (not places, boundaries or the bundled samples). */
+function ChartBlock({ id, mapHref, sample }: { id: string; mapHref?: string; sample: boolean }) {
+  const { data, isError } = useQuery(datasetMetaQuery(id))
+  if (isError || (data && !data.indicators.some((i) => levelsOf(i).length > 0))) return null
+  return (
+    <Block id="chart" title="The data at a glance" kicker="from the live API">
+      <DatasetChart datasetId={id} mapHref={mapHref} sample={sample} />
+    </Block>
   )
 }
 
@@ -140,6 +153,8 @@ export default function DatasetPage() {
 
       <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-14">
         <div className="min-w-0 space-y-12">
+          <ChartBlock id={d.id} mapHref={mappable ? `/explore?dataset=${encodeURIComponent(d.id)}` : undefined} sample={isSample(d.sample, '*')} />
+
           <section id="preview" className="scroll-mt-28">
             <Tabs defaultValue="preview">
               <div className="flex flex-wrap items-center justify-between gap-3">
