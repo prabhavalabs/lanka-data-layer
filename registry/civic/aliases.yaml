@@ -1,0 +1,218 @@
+# Institution aliases (13 §2.1, track C1).
+#
+# Maps a reworded or renamed institution to one entity key, so the same body
+# keeps one continuous history across gazettes. Left side: the name as a
+# gazette words it (or its key). Right side: the name or key to merge it into,
+# normally the current wording. The key rules are applied to both sides
+# (lower-case, `Ltd`/`(Pvt)` as `limited`, line-wrap hyphens joined), so a
+# difference of that kind needs no entry. A target must not itself be an alias.
+# After a change run `lanka civic build`.
+#
+# Found by comparing Gazette Extraordinary 2403/53 (2024-09-27) with 2412/08
+# (2024-11-25): the same body, worded differently.
+
+# the company's name abbreviated in 2412/08
+"Colombo Lotus Tower Management Company (Pvt) Limited": "Colombo Lotus Tower Management Co. (Pvt.) Ltd"
+# "of Sri Lanka" added
+"Credit Information Bureau": "Credit Information Bureau of Sri Lanka"
+# renamed: "National" dropped
+"Department of National Community Water Supply": "Department of Community Water Supply"
+# 2412/08 prints "Person" (typo); the right spelling is the key
+"Department of Registration of Person": "Department of Registration of Persons"
+# 2412/08 prints "MedicalCouncil" (typo); the right spelling is the key
+"Homeopathy MedicalCouncil": "Homeopathy Medical Council"
+# renamed: "National" added
+"Institute of Post-Harvest Management": "National Institute of Post-Harvest Management"
+# spaced differently in 2412/08
+"Northsea Ltd": "North sea Ltd"
+# renamed: "National" added, "Organization" singular
+"Secretariat for Non-Governmental Organizations": "National Secretariat for Non-Governmental Organization"
+
+# Found comparing 2289/43 (2022-07-22) with 2403/53 (2024-09-27).
+"SME Authority": "Small and Medium Enterprises Authority"
+"SME Venture Capital Company": "Small and Medium Enterprises Venture Capital Company"
+"National Planning Department": "Department of National Planning"
+"Sri Lanka Survey Department": "Survey Department of Sri Lanka"
+"Import and Export Control Department": "Department of Import and Export Control"
+"Department of Trade and Investment Policies": "Department of Trade and Investment Policy"
+# 2289/43 prints "Productionand" (typo)
+"Department of Animal Productionand Health": "Department of Animal Production and Health"
+# 2289/43 prints "Posphate" (typo)
+"Lanka Posphate Limited": "Lanka Phosphate Limited"
+"Office of Missing Persons": "Office on Missing Persons"
+"National Research Council": "National Research Council of Sri Lanka"
+"Regional Economic Centres": "Regional Economic Centers"
+"Tea and Rubber Estates (Control and Fragmentation) Board": "Tea and Rubber Estates (Control of Fragmentation) Board"
+
+# Found by `lanka civic aliases suggest` (similarity >= 0.88, reviewed by hand; every pair is one body,
+# spelling / plural / spacing / word order / an acronym added). The target is the newest wording.
+# Pairs left out on purpose: "all state universities …" vs "all universities …", the two wordings of the
+# state banks catch-all, and "Widowers'" vs "Widows'" Pension Funds (different funds).
+# spelling, plural or a letter lost by the PDF
+all-national-teaching-and-specified-government-hospitals: all-national-teaching-and-specific-government-hospitals
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+all-postgraduate-institutions-and-other-institutions-coming-under-the-purview-of-the-university-grants-commission: all-postgraduate-institutions-and-other-institutions-under-the-purview-of-the-university-grants-commission
+# spelling, plural or a letter lost by the PDF
+all-state-banks-and-their-subsidiaries-and-associates-etc: all-state-banks-and-their-subsidiaries-associates-etc
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+all-universities-coming-under-the-purview-of-the-university-grants-commission: all-universities-under-the-purview-of-university-grants-commission
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+all-universities-coming-under-the-purview-of-university-grants-commission: all-universities-under-the-purview-of-university-grants-commission
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+coast-conservation-department: department-of-coast-conservation
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+department-of-civil-security: civil-security-department
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+department-of-cooperative-development-registrar-of-cooprative-societies: department-of-cooperative-development-registrar-of-cooperative-societies
+# spelling, plural or a letter lost by the PDF
+department-of-examination: department-of-examinations
+# spelling, plural or a letter lost by the PDF
+department-of-governmen-analyst: department-of-government-analyst
+# spelling, plural or a letter lost by the PDF
+department-of-imports-and-exports: department-of-import-and-export
+# spelling, plural or a letter lost by the PDF
+department-of-national-botanical-garden: department-of-national-botanic-gardens
+# spelling, plural or a letter lost by the PDF
+department-of-national-botanical-gardens: department-of-national-botanic-gardens
+# spelling, plural or a letter lost by the PDF
+department-of-national-museum: department-of-national-museums
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+department-of-national-physical-planning: national-physical-planning-department
+# spelling, plural or a letter lost by the PDF
+department-of-national-zoological-garden: department-of-national-zoological-gardens
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+department-of-registrar-companies: department-of-the-registrar-of-companies
+# spelling, plural or a letter lost by the PDF
+department-of-telecommunication: department-of-telecommunications
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+department-of-the-government-printing: department-of-government-printing
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+diplomatic-missions-abroad: diplomatic-missions-in-abroad
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+engineering-council-sri-lanka: engineering-council-of-sri-lanka
+# spelling, plural or a letter lost by the PDF
+institute-of-survey-and-mapping: institute-of-surveying-and-mapping
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+insurance-board-of-sri-lanka: sri-lanka-insurance-board
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+internal-trade-department: department-of-internal-trade
+# a space missing or added
+international-arbitration-centre-of-sri-lanka: international-arbitrationcentre-of-sri-lanka
+# spelling, plural or a letter lost by the PDF
+janatha-fertilizer-enterprise-limited: janatha-fertilizer-enterprises-limited
+# spelling, plural or a letter lost by the PDF
+kahagolle-engineering-services-company-limited-kesco: kahagolla-engineering-services-company-limited-kesco
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+kiriya-milk-industries-of-lanka-limited: kiriya-milk-industries-lanka-limited
+# spelling, plural or a letter lost by the PDF
+lakshman-kadirgamar-institute-of-international-relations-and-strategic-studies: lakshman-kadirgamar-institute-for-international-relations-and-strategic-studies
+# a space missing or added
+lakshmankadirgamar-institute-for-international-relations-and-strategic-studies: lakshman-kadirgamar-institute-for-international-relations-and-strategic-studies
+# word order
+lanka-phosphate-limited-company: lanka-phosphate-company-limited
+# spelling, plural or a letter lost by the PDF
+legal-draftsman-department: legal-draftsmans-department
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+mahaweli-authority-of-sri-lanka: sri-lanka-mahaweli-authority
+# spelling, plural or a letter lost by the PDF
+mahaweli-livestock-enterprises-limited: mahaweli-livestock-enterprise-limited
+# a space missing or added
+mahindarajapaksa-national-tele-cinema-park: mahinda-rajapaksa-national-tele-cinema-park
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+major-development-projects-including-uma-oya-moragahakanda-kalu-ganga-gin-nilwala-malwathu-oya: major-irrigation-development-projects-including-uma-oya-moragahakanda-kalu-ganga-gin-ganga-nilwala-malwathu-oya
+# a space missing or added
+major-irrigation-development-projects-including-uma-oya-moragahakanda-kalu-ganga-gin-ganga-nilwala-malwathuoya: major-irrigation-development-projects-including-uma-oya-moragahakanda-kalu-ganga-gin-ganga-nilwala-malwathu-oya
+# a space missing or added
+miloda-institute-as-a-faculty-of-kotelawaladefence-university: miloda-institute-as-a-faculty-of-kotelawala-defence-university
+# spelling, plural or a letter lost by the PDF
+national-agricultural-diversification-and-settlement-authority-hadabima: national-agricultural-diversification-and-settlement-authority-hadabima-authority
+# word order
+national-authority-for-the-protection-of-victims-and-witnesses-of-crime: national-authority-for-the-protection-of-victims-of-crime-and-witnesses
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+national-authority-on-teachers-education-nate: national-authority-on-teachers-education
+# a space missing or added
+national-disastermanagement-council: national-disaster-management-council
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+national-housing-development-authority-nhda: national-housing-development-authority
+# spelling, plural or a letter lost by the PDF
+national-human-resource-development-council-of-sri-lanka: national-human-resources-development-council-of-sri-lanka
+# spelling, plural or a letter lost by the PDF
+national-institute-of-health-science: national-institute-of-health-sciences
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+national-institute-of-language-education-training: national-institute-of-language-education-and-training
+# spelling, plural or a letter lost by the PDF
+national-institute-of-occupational-safety-and-health: national-institute-for-occupational-safety-and-health
+# spelling, plural or a letter lost by the PDF
+national-intellectual-property-office-of-sri-lank: national-intellectual-property-office-of-sri-lanka
+# spelling, plural or a letter lost by the PDF
+national-livestock-development-board-and-affiliated-companie: national-livestock-development-board-and-affiliated-companies
+# a space missing or added
+national-performing-arts-theatre-nelumpokuna: national-performing-arts-theatre-nelum-pokuna
+# word order
+national-secretariat-for-elders-and-national-council-for-elders: national-council-for-elders-and-national-secretariat-for-elders
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+national-social-development-institute: national-institute-of-social-development
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+national-water-supply-and-drainage-board-nws-and-db: national-water-supply-and-drainage-board
+# spelling, plural or a letter lost by the PDF
+national-yoths-services-cooperative-limited: national-youths-services-cooperative-limited
+# spelling, plural or a letter lost by the PDF
+national-youth-services-cooperative-limited: national-youths-services-cooperative-limited
+# spelling, plural or a letter lost by the PDF
+palmyra-development-board: palmyrah-development-board
+# spelling, plural or a letter lost by the PDF
+paranthan-chemical-limited: paranthan-chemicals-limited
+# spelling, plural or a letter lost by the PDF
+pirivena-education-board: piriven-education-board
+# a space missing or added
+protection-of-childrennational-trust-fund: protection-of-children-national-trust-fund
+# a space missing or added
+public-utilities-commission-ofsri-lanka: public-utilities-commission-of-sri-lanka
+# spelling, plural or a letter lost by the PDF
+rehabilitation-commissioner-generals-offic: rehabilitation-commissioner-generals-office
+# a space missing or added
+saumyamoorthithondaman-memorial-foundation: saumyamoorthi-thondaman-memorial-foundation
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+secretariat-for-nongovernmental-organization: national-secretariat-for-nongovernmental-organization
+# spelling, plural or a letter lost by the PDF
+small-and-medium-enterprise-authority: small-and-medium-enterprises-authority
+# spelling, plural or a letter lost by the PDF
+small-and-medium-enterprise-venture-capital-company: small-and-medium-enterprises-venture-capital-company
+# a space missing or added
+sri-lanka-accounting-and-auditing-standard-monitoringboard: sri-lanka-accounting-and-auditing-standard-monitoring-board
+# spelling, plural or a letter lost by the PDF
+sri-lanka-accounting-and-auditing-standards-monitoring-board: sri-lanka-accounting-and-auditing-standard-monitoring-board
+# spelling, plural or a letter lost by the PDF
+sri-lanka-airlines-limited-and-its-subsidiaries: sri-lankan-air-lines-limited-and-its-subsidiaries
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+sri-lanka-bureau-of-foreign-employment: sri-lanka-foreign-employment-bureau
+# spelling, plural or a letter lost by the PDF
+sri-lanka-handicrafts-board-laksala: sri-lanka-handicraft-board-laksala
+# a space missing or added
+sri-lanka-institute-of-nano-technology-limited: sri-lanka-institute-of-nanotechnology-limited
+# spelling, plural or a letter lost by the PDF
+sri-lanka-institute-of-textile-and-apparel: sri-lanka-institute-of-textile-and-apparels
+# spelling, plural or a letter lost by the PDF
+sri-lanka-jobs-net-limited: sri-lanka-job-net-limited
+# spelling, plural or a letter lost by the PDF
+sri-lanka-standard-institute: sri-lanka-standards-institute
+# spelling, plural or a letter lost by the PDF
+sri-lanka-telecom-limited-and-its-subsidiaries-and-its-associates: sri-lanka-telecom-limited-and-its-subsidiaries-and-associates
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+sri-lanka-thriposha-limited: sri-lanka-thriposha-co-limited
+# spelling, plural or a letter lost by the PDF
+sri-lankan-air-line-limited-and-its-subsidiaries: sri-lankan-air-lines-limited-and-its-subsidiaries
+# spelling, plural or a letter lost by the PDF
+sri-lankan-airline-limited-and-its-subsidiaries: sri-lankan-air-lines-limited-and-its-subsidiaries
+# a space missing or added
+sri-lankan-airlines-limited-and-its-subsidiaries: sri-lankan-air-lines-limited-and-its-subsidiaries
+# spelling, plural or a letter lost by the PDF
+strategic-enterprise-management-agency: strategic-enterprises-management-agency
+# spelling, plural or a letter lost by the PDF
+strike-riot-and-civil-commotion-and-terrorism-fund: strike-riot-civil-commotion-and-terrorism-fund
+# words added or dropped (acronym, 'of Sri Lanka', 'the', a missing 'and')
+textile-training-service-centre: textile-training-and-service-centre
+# spelling, plural or a letter lost by the PDF
+training-schools-for-youthful-offender: training-schools-for-youthful-offenders
+# spelling, plural or a letter lost by the PDF
+vijaya-kumaranatunga-memorial-hospital: vijaya-kumaratunga-memorial-hospital

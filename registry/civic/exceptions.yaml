@@ -1,0 +1,23 @@
+# Reviewed exceptions for single gazettes (13 §2.1, track C1).
+#
+# `expected_gaps`: numbers the gazette itself skips. The sequence check
+# (Column I and II run 1..k in every heading) then passes, with the note kept
+# in the instrument's `checks`. Every entry was checked against the PDF page.
+#
+#   gze-NNNN-NN:
+#     expected_gaps:
+#       - { heading: 38, column: I, missing: [5], note: "what the page shows" }
+
+gze-1651-20:
+  expected_gaps:
+    - { heading: 2, column: II, missing: [43], note: "Ministry of Finance & Planning, page 5: Column II prints 42 then 44" }
+    - { heading: 43, column: II, missing: [6], note: "Ministry of Transport, page 49: Column II prints 5 then 7" }
+gze-1933-13:
+  expected_gaps:
+    - { heading: 38, column: I, missing: [5], note: "Minister of Foreign Employment, page 55: Column I prints 4 then 6" }
+
+# `expected_citations`: an institution whose real name cites an act, so the
+# `institution_text_clean` check (no act citations in Column II) lets it pass.
+gze-2153-12:
+  expected_citations:
+    - { heading: 28, item_no: 1, note: "Column II prints \"Assets vested to the Secretary to the Treasury, under the Act, No. 43 of 2011\" as one institution" }

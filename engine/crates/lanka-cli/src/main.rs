@@ -24,6 +24,7 @@
 //! lanka tiles build [--tileset ID]… [--force] | list
 //! lanka docs harvest <collection> [--mode incremental|sweep|files|text|gaps] [--limit N] [--since YYYY-MM-DD] [--max-pages N] [--skip-files]
 //! lanka docs status [<collection>] [--json] | search <query> [--limit N]
+//! lanka civic discover | extract <doc_id>|--all | approve|reject <doc_id> --by NAME | build | show [--at YYYY-MM-DD]
 //! lanka grid lookups | list | parity --v1-dir DIR [--v1-geojson FILE] | reverse-check [--n 100000]
 //! ```
 
@@ -44,6 +45,7 @@ use lanka_store::FsStore;
 use sqlx::PgPool;
 use tracing_subscriber::EnvFilter;
 
+mod civic_cmd;
 mod doc_cmd;
 mod docs_cmd;
 mod grid_cmd;
@@ -160,6 +162,9 @@ enum Cmd {
     /// Documents archive (gazettes): harvest, status, full-text search.
     #[command(subcommand)]
     Docs(docs_cmd::DocsCmd),
+    /// The civic record: ministries and their institutions over time (13 §2.1).
+    #[command(subcommand)]
+    Civic(civic_cmd::CivicCmd),
     /// Grid engine: lookup arrays, layers, v1 parity, reverse-geocoding check.
     #[command(subcommand)]
     Grid(grid_cmd::GridCmd),
@@ -1060,6 +1065,7 @@ async fn run(cli: Cli) -> Result<()> {
         Cmd::Probe { url } => probe(&url).await?,
         Cmd::Tiles(cmd) => tiles_cmd::run(g, cmd).await?,
         Cmd::Docs(cmd) => docs_cmd::run(g, cmd).await?,
+        Cmd::Civic(cmd) => civic_cmd::run(g, cmd).await?,
         Cmd::Template(cmd) => doc_cmd::template(g, cmd).await?,
         Cmd::Extract(ExtractCmd::Propose(a)) => propose::extract_propose(g, *a).await?,
         Cmd::Extract(ExtractCmd::Publish { extract }) => {
