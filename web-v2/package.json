@@ -31,7 +31,7 @@
     "d3-shape": "3.2.1",
     "delaunator": "5.1.0",
     "lucide-react": "1.77.0",
-    "maplibre-gl": "6.3.0",
+    "maplibre-gl": "6.4.1",
     "radix-ui": "1.8.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -56,6 +56,6 @@
     "mapshaper": "0.8.6",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
-    "vite": "7.3.6"
+    "vite": "7.3.7"
   }
 }
