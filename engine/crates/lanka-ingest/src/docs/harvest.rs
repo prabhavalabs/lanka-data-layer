@@ -6,8 +6,13 @@
 //!
 //! - `incremental` (daily): walk from page 1 until a full page has no new and
 //!   no changed record.
-//! - `sweep` (weekly): walk every page; documents not seen get `withdrawn_at`
-//!   (cleared when they are listed again).
+//! - `sweep` (weekly): walk every page. A document the walk did not see is
+//!   only a candidate: the site orders by date with ties, so offset paging
+//!   skips and repeats records. Each candidate's gazette number is searched
+//!   directly; everything the search returns is stored, and only what it does
+//!   not return gets `withdrawn_at` (cleared when it is listed again).
+//! - `gaps`: search every gazette number from the lowest to the highest held,
+//!   storing what the walks skipped (the site's own total is the target).
 //! - `files`: download pending and failed files, extract their text.
 //! - `text`: extract the text of archived files that have none yet.
 //!
@@ -23,6 +28,7 @@
 // TODO(13 §1.2 step 5): mark the collection fresh in `ops` and raise the P1
 // `upstream_changed` incident once collections are registered as sources.
 
+use std::collections::{BTreeMap, HashSet};
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow, bail};
@@ -33,7 +39,7 @@ use serde_json::{Value, json};
 use sqlx::{PgConnection, PgPool};
 
 use super::record::{self, DocRecord, Kind, Sighting};
-use super::rsc::{ListPage, parse_listing};
+use super::rsc::{ListPage, RawRecord, parse_listing};
 use super::{DocsError, action, files};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -42,6 +48,7 @@ pub enum Mode {
     Sweep,
     Files,
     Text,
+    Gaps,
 }
 
 impl Mode {
@@ -52,6 +59,7 @@ impl Mode {
             Self::Sweep => "sweep",
             Self::Files => "files",
             Self::Text => "text",
+            Self::Gaps => "gaps",
         }
     }
 
@@ -61,7 +69,8 @@ impl Mode {
             "sweep" => Self::Sweep,
             "files" => Self::Files,
             "text" => Self::Text,
-            o => bail!("unknown mode {o:?} (incremental | sweep | files | text)"),
+            "gaps" => Self::Gaps,
+            o => bail!("unknown mode {o:?} (incremental | sweep | files | text | gaps)"),
         })
     }
 }
@@ -296,21 +305,39 @@ async fn insert_revision(
     Ok(())
 }
 
-/// Sets `withdrawn_at` on the collection's documents not seen since `run_started`.
-pub async fn withdraw_unseen(
-    pool: &PgPool,
-    collection: &str,
-    run_started: DateTime<Utc>,
-) -> Result<u64> {
+/// Sets `withdrawn_at` on these documents (those still listed as current).
+pub async fn withdraw_docs(pool: &PgPool, doc_ids: &[String]) -> Result<u64> {
+    if doc_ids.is_empty() {
+        return Ok(0);
+    }
     Ok(sqlx::query(
         "UPDATE docs.documents SET withdrawn_at = now()
-          WHERE collection = $1 AND withdrawn_at IS NULL AND last_seen_at < $2",
+          WHERE doc_id = ANY($1) AND withdrawn_at IS NULL",
     )
-    .bind(collection)
-    .bind(run_started)
+    .bind(doc_ids)
     .execute(pool)
     .await?
     .rows_affected())
+}
+
+/// The candidates of a sweep that a direct search proved gone: those whose
+/// number was searched and whose upstream id the search did not return.
+/// Candidates without a number, or whose number was not searched, stay.
+#[must_use]
+pub fn proven_withdrawn(
+    candidates: &[(String, Option<String>, String)],
+    found: &BTreeMap<String, HashSet<String>>,
+) -> Vec<String> {
+    candidates
+        .iter()
+        .filter(|(_, number, upstream)| {
+            number
+                .as_ref()
+                .and_then(|n| found.get(n))
+                .is_some_and(|ids| !ids.contains(upstream))
+        })
+        .map(|(doc_id, _, _)| doc_id.clone())
+        .collect()
 }
 
 // ── listing ────────────────────────────────────────────────────────────────
@@ -333,6 +360,35 @@ struct Lister {
 }
 
 impl Lister {
+    fn new(col: &Collection) -> Result<Self> {
+        Ok(Self {
+            http: super::client(Duration::from_secs(col.cfg.list_timeout_secs))?,
+            cfg: col.cfg.clone(),
+            action_id: col.cfg.action_id.clone(),
+            refreshed: false,
+        })
+    }
+
+    /// Every record a search returns, all its pages.
+    async fn search_all(&mut self, needle: &str) -> Result<Vec<RawRecord>> {
+        const LIMIT: usize = 200;
+        let mut out = Vec::new();
+        for page in 1..=50u32 {
+            let lp = self.page(page, LIMIT, needle).await?;
+            let n = lp.records.len();
+            let pages = lp.pagination.total_pages.or_else(|| {
+                lp.pagination
+                    .total
+                    .map(|t| (t + LIMIT as i64 - 1) / LIMIT as i64)
+            });
+            out.extend(lp.records);
+            if n == 0 || pages.is_none_or(|t| i64::from(page) >= t) {
+                return Ok(out);
+            }
+        }
+        bail!("search {needle:?} has more than 50 pages")
+    }
+
     async fn ensure_id(&mut self) -> Result<String> {
         if let Some(id) = &self.action_id {
             return Ok(id.clone());
@@ -343,13 +399,19 @@ impl Lister {
         Ok(id)
     }
 
-    async fn once(&self, id: &str, page: u32, limit: usize) -> Result<ListPage, Attempt> {
+    async fn once(
+        &self,
+        id: &str,
+        page: u32,
+        limit: usize,
+        search: &str,
+    ) -> Result<ListPage, Attempt> {
         let body = json!([{
             "apiEndpoint": self.cfg.api_endpoint,
             "page": page,
             "limit": limit,
-            "q": "",
-            "search": "",
+            "q": search,
+            "search": search,
             "forwarded": {},
         }]);
         let resp = self
@@ -388,14 +450,15 @@ impl Lister {
         }
     }
 
-    /// One listing page; re-resolves the action id once when it is refused.
-    async fn page(&mut self, page: u32, limit: usize) -> Result<ListPage> {
+    /// One listing page (of a search, when `search` is not empty); re-resolves
+    /// the action id once when it is refused.
+    async fn page(&mut self, page: u32, limit: usize, search: &str) -> Result<ListPage> {
         let mut reresolved = false;
         loop {
             let id = self.ensure_id().await?;
             let mut tries = 0usize;
             let outcome = loop {
-                match self.once(&id, page, limit).await {
+                match self.once(&id, page, limit, search).await {
                     Err(Attempt::Retry(e)) if tries < BACKOFF.len() => {
                         let wait = BACKOFF[tries];
                         tracing::warn!(error = %e, page, wait, "listing failed; backing off");
@@ -530,6 +593,7 @@ async fn run_inner(
         }
         Mode::Files => files_tail(pool, store, col, opts.limit, false, report).await?,
         Mode::Text => files_tail(pool, store, col, opts.limit, true, report).await?,
+        Mode::Gaps => fill_gaps(pool, col, opts, report).await?,
     }
     Ok(())
 }
@@ -570,13 +634,7 @@ async fn list(
     started: DateTime<Utc>,
     report: &mut Report,
 ) -> Result<()> {
-    let http = super::client(Duration::from_secs(col.cfg.list_timeout_secs))?;
-    let mut lister = Lister {
-        http,
-        cfg: col.cfg.clone(),
-        action_id: col.cfg.action_id.clone(),
-        refreshed: false,
-    };
+    let mut lister = Lister::new(col)?;
     // A small --limit asks for a small page: the upstream is slow per record.
     let page_size = opts
         .limit
@@ -586,7 +644,7 @@ async fn list(
     let mut upstream_total: Option<i64> = None;
     let mut complete = false;
     let walk = loop {
-        let lp = match lister.page(page, page_size).await {
+        let lp = match lister.page(page, page_size, "").await {
             Ok(p) => p,
             Err(e) => break Err(e),
         };
@@ -693,8 +751,126 @@ async fn list(
             }
             tracing::warn!("partial sweep: nothing withdrawn");
         } else {
-            report.withdrawn = i32::try_from(withdraw_unseen(pool, &col.id, started).await?)?;
+            confirm_withdrawals(pool, col, &mut lister, started, report).await?;
         }
+    }
+    if lister.refreshed {
+        persist_action_id(pool, &col.id, lister.action_id.as_deref()).await;
+    }
+    Ok(())
+}
+
+/// Stores records a search returned; the upstream ids it saw.
+async fn store_found(
+    pool: &PgPool,
+    col: &Collection,
+    records: &[RawRecord],
+    report: &mut Report,
+) -> Result<HashSet<String>> {
+    let mut seen = HashSet::new();
+    let mut tx = pool.begin().await?;
+    for raw in records {
+        seen.insert(raw.id.clone());
+        let rec = match record::normalise(raw, &col.cfg.doc_prefix) {
+            Ok(r) => r,
+            Err(e) => {
+                tracing::warn!(id = raw.id, error = %e, "searched record skipped");
+                report.skipped += 1;
+                continue;
+            }
+        };
+        let up = upsert_record(&mut tx, &col.id, &rec, Utc::now()).await?;
+        report.listed += 1;
+        match up.sighting.kind {
+            Kind::New => report.new += 1,
+            Kind::Changed => report.changed += 1,
+            Kind::Unchanged => {}
+        }
+        if up.sighting.reappeared {
+            report.reappeared += 1;
+        }
+    }
+    tx.commit().await?;
+    Ok(seen)
+}
+
+/// After a whole sweep: search each unseen document's number and withdraw
+/// only what the search does not return (13 §1.2; offset paging over a
+/// date order with ties skips records, so "not walked" is not "gone").
+async fn confirm_withdrawals(
+    pool: &PgPool,
+    col: &Collection,
+    lister: &mut Lister,
+    started: DateTime<Utc>,
+    report: &mut Report,
+) -> Result<()> {
+    let candidates: Vec<(String, Option<String>, String)> = sqlx::query_as(
+        "SELECT doc_id, number, upstream_id FROM docs.documents
+          WHERE collection = $1 AND withdrawn_at IS NULL AND last_seen_at < $2",
+    )
+    .bind(&col.id)
+    .bind(started)
+    .fetch_all(pool)
+    .await?;
+    if candidates.is_empty() {
+        return Ok(());
+    }
+    let numbers: Vec<String> = candidates
+        .iter()
+        .filter_map(|c| c.1.clone())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    tracing::info!(
+        candidates = candidates.len(),
+        numbers = numbers.len(),
+        "checking unseen documents by search"
+    );
+    let mut found = BTreeMap::new();
+    for n in numbers {
+        let records = lister.search_all(&n).await?;
+        found.insert(n, store_found(pool, col, &records, report).await?);
+    }
+    let gone = proven_withdrawn(&candidates, &found);
+    report.withdrawn = i32::try_from(withdraw_docs(pool, &gone).await?)?;
+    tracing::info!(
+        candidates = candidates.len(),
+        withdrawn = gone.len(),
+        "unseen documents checked"
+    );
+    Ok(())
+}
+
+/// `gaps`: search every gazette number between the lowest and the highest
+/// held, newest first, and store what the walks skipped.
+async fn fill_gaps(
+    pool: &PgPool,
+    col: &Collection,
+    opts: &Options,
+    report: &mut Report,
+) -> Result<()> {
+    let (lo, hi): (Option<i32>, Option<i32>) = sqlx::query_as(
+        "SELECT min(number::int), max(number::int) FROM docs.documents
+          WHERE collection = $1 AND number ~ '^[0-9]{1,6}$'",
+    )
+    .bind(&col.id)
+    .fetch_one(pool)
+    .await?;
+    let (Some(lo), Some(hi)) = (lo, hi) else {
+        bail!("no numbered documents yet: run a listing first");
+    };
+    let mut lister = Lister::new(col)?;
+    let cap = opts.limit.unwrap_or(usize::MAX);
+    for (i, n) in (lo..=hi).rev().take(cap).enumerate() {
+        let records = lister.search_all(&n.to_string()).await?;
+        store_found(pool, col, &records, report).await?;
+        report.pages += 1;
+        if i % 50 == 49 {
+            tracing::info!(number = n, new = report.new, "gap fill progress");
+        }
+    }
+    if lister.refreshed {
+        persist_action_id(pool, &col.id, lister.action_id.as_deref()).await;
     }
     Ok(())
 }
@@ -828,4 +1004,36 @@ pub async fn search(pool: &PgPool, q: &str, limit: i64) -> Result<Vec<Hit>> {
     .bind(limit)
     .fetch_all(pool)
     .await?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_what_a_search_did_not_return_is_withdrawn() {
+        let c =
+            |d: &str, n: Option<&str>, u: &str| (d.to_owned(), n.map(str::to_owned), u.to_owned());
+        let candidates = vec![
+            c("gze-2502-20", Some("2502"), "u-skipped-by-paging"),
+            c("gze-2502-99", Some("2502"), "u-really-gone"),
+            c("gze-2400-01", Some("2400"), "u-not-searched"),
+            c("gze-x", None, "u-no-number"),
+        ];
+        let mut found = BTreeMap::new();
+        found.insert(
+            "2502".to_owned(),
+            HashSet::from(["u-skipped-by-paging".to_owned(), "u-other".to_owned()]),
+        );
+        assert_eq!(
+            proven_withdrawn(&candidates, &found),
+            vec!["gze-2502-99".to_owned()]
+        );
+        // a search that returned nothing proves its number's candidates gone
+        found.insert("2400".to_owned(), HashSet::new());
+        assert_eq!(
+            proven_withdrawn(&candidates, &found),
+            vec!["gze-2502-99".to_owned(), "gze-2400-01".to_owned()]
+        );
+    }
 }
