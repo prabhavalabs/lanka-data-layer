@@ -12,6 +12,7 @@ const LINKS = [
   { to: '/explore', label: 'Explore' },
   { to: '/area/LK11', label: 'Areas', match: '/area' },
   { to: '/data', label: 'Data' },
+  { to: '/government', label: 'Government' },
   { to: '/developers', label: 'Developers' },
 ]
 
