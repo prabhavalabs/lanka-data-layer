@@ -86,12 +86,11 @@ fn compose_tools_service_is_isolated() {
     assert_eq!(tools["read_only"].as_bool(), Some(true));
     assert_eq!(tools["cap_drop"][0].as_str(), Some("ALL"));
     assert!(tools["ports"].is_null(), "tools publishes no ports");
-    assert!(tools["pids_limit"].as_u64().is_some());
-    assert!(
-        tools["deploy"]["resources"]["limits"]["memory"]
-            .as_str()
-            .is_some()
-    );
+    // The process cap sits with the other limits; Compose rejects `pids_limit` beside `deploy` limits.
+    let limits = &tools["deploy"]["resources"]["limits"];
+    assert!(limits["pids"].as_u64().is_some(), "tools must cap its processes");
+    assert!(tools["pids_limit"].is_null(), "set the process cap in one place");
+    assert!(limits["memory"].as_str().is_some());
     let worker_env = &doc["services"]["worker"]["environment"];
     assert_eq!(worker_env["LANKA_EXTRACTD"].as_str(), Some("require"));
     assert!(worker_env["LANKA_EXTRACTD_SOCKET"].as_str().is_some());

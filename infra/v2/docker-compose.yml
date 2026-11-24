@@ -171,7 +171,6 @@ services:
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
-    pids_limit: 128
     restart: unless-stopped
     environment:
       LANKA_EXTRACTD_SOCKET: /run/lanka/extractd.sock
@@ -188,7 +187,8 @@ services:
       options: { max-size: "20m", max-file: "5" }
     deploy:
       resources:
-        limits: { memory: 1536m, cpus: "2" }
+        # the process cap lives here only: Compose refuses pids_limit next to deploy limits
+        limits: { memory: 1536m, cpus: "2", pids: 128 }
 
 volumes:
   lanka_extractd:
