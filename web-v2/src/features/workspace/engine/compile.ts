@@ -468,6 +468,8 @@ function polygon(layer: Layer, source: Source | undefined, v: Vector, env: Env):
   }
   const admin = isTileRef(v.tiles) && v.title === 'name_en'
   if (admin) layers.push(...outlineLayers(layer, s.id, s.sourceLayer!, env, s.base))
+  // one name inside each area (MapLibre places it at the polygon's pole of inaccessibility)
+  else layers.push(...labelLayer(layer, s.id, env).map((l) => ({ ...l, sourceLayer: s.sourceLayer, filter })))
   return {
     layers,
     sources: [s.source],
@@ -501,6 +503,8 @@ function line(layer: Layer, source: Source | undefined, v: Vector, env: Env): Co
     opacity: { 'line-opacity': 1 },
     hit: v.fields.length > 0,
   })
+  // names along the line, repeated as it runs, kept upright
+  layers.push(...labelLayer(layer, s.id, env).map((l) => ({ ...l, sourceLayer: s.sourceLayer, filter, layout: { ...l.layout, 'symbol-placement': 'line', 'symbol-spacing': 320, 'text-max-angle': 45, 'text-anchor': 'center', 'text-offset': [0, 0] } })))
   const widthMeta = isBinding(stroke.width) ? v.fields.find((f) => f.id === (stroke.width as FieldBinding).field) : undefined
   const legend = boundLegend(v, c, dashKind(stroke.dash) === 'solid' ? 'line' : 'dash', layer.name)
   return { layers, sources: [s.source], areal: false, overlap: false, legend: legend && widthMeta ? { ...legend, note: `Width: ${widthMeta.label.toLowerCase()}` } : legend, tip: v.fields.length ? featureTip(v, layer.name, env) : undefined }

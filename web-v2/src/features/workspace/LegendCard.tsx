@@ -1,6 +1,6 @@
 import { ChevronDown } from 'lucide-react'
 import { useState } from 'react'
-import { allLayers, isGroup, type Layer, type LayerNode } from '@/lib/map-spec'
+import { allLayers, isGroup, parentOf, type Layer, type LayerNode } from '@/lib/map-spec'
 import { cn } from '@/lib/utils'
 import { shownLayers, useWorkspace } from './context'
 import type { LegendModel } from './engine/compile'
@@ -120,24 +120,43 @@ export function legendEntries(nodes: LayerNode[], shown: Set<string>): Layer[] {
   return out
 }
 
+export type LegendEntry = { key: string; title: string; model: LegendModel; unit?: string }
+/**
+ * The legend's blocks: one per layer, except that layers of one group that each draw in a single colour (the
+ * parts of a split) share one block under the group's name, one swatch each, instead of a block apiece.
+ */
+export function legendBlocks(nodes: LayerNode[], shown: Set<string>, legendOf: (id: string) => LegendModel | null | undefined): LegendEntry[] {
+  const out: (LegendEntry & { group?: string })[] = []
+  for (const l of legendEntries(nodes, shown)) {
+    const model = legendOf(l.id)
+    if (!model || model.kind === 'relief') continue
+    const group = parentOf(nodes, l.id)
+    const single = model.kind === 'categories' && model.items.length === 1
+    const last = out[out.length - 1]
+    if (single && group && last?.group === group.id && last.model.kind === 'categories') {
+      last.model = { ...last.model, items: [...last.model.items, { ...model.items[0], label: l.name }] }
+      continue
+    }
+    out.push(single && group ? { key: l.id, group: group.id, title: group.name, model: { ...model, items: [{ ...model.items[0], label: l.name }] } } : { key: l.id, title: l.legend.title ?? l.name, model })
+  }
+  return out
+}
+
 export function LegendList({ className }: { className?: string }) {
   const layers = useWs((s) => s.doc!.layers)
   const solo = useWs((s) => s.solo)
   const { engine, tick } = useWorkspace()
   void tick
-  const entries = legendEntries(layers, shownLayers(layers, solo)).flatMap((l) => {
-    const model = engine.current?.legend(l.id)
-    return model && model.kind !== 'relief' ? [{ layer: l, model }] : []
-  })
+  const entries = legendBlocks(layers, shownLayers(layers, solo), (id) => engine.current?.legend(id))
   if (entries.length === 0) return <p className={cn('px-3.5 py-3 text-[12px] text-ink3', className)}>Nothing on the map has a key.</p>
   return (
     <ul className={className}>
-      {entries.map(({ layer, model }) => {
+      {entries.map(({ key, title, model }) => {
         const unit = 'unit' in model ? unitSuffix(model.unit) : ''
         return (
-          <li key={layer.id} className="border-t border-glass-line px-3.5 pt-2.5 pb-3 first:border-t-0">
+          <li key={key} className="border-t border-glass-line px-3.5 pt-2.5 pb-3 first:border-t-0">
             <div className="mb-2 flex items-baseline gap-2">
-              <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium tracking-[-0.005em] text-ink">{layer.legend.title ?? layer.name}</span>
+              <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium tracking-[-0.005em] text-ink">{title}</span>
               {(unit || model.period) && <span className="t-label t-num shrink-0">{[unit, model.period].filter(Boolean).join(' · ')}</span>}
             </div>
             <LegendBody model={model} />
