@@ -3,9 +3,9 @@
 //!
 //! A baseline's PDF is read through the document sandbox (`pdf_words`),
 //! parsed by [`super::schedule`], checked by [`super::validate`] and stored
-//! with its portfolios and items. An amendment is recorded as a timeline
-//! event only (kind, effective date, the baseline it amends); applying its
-//! operations is C2.
+//! with its portfolios and items. An amendment is read by [`super::amend`]
+//! into its changes, stored in `civic.amendment_changes`; `lanka civic
+//! build` applies them (C2).
 
 use anyhow::Result;
 use chrono::NaiveDate;
@@ -19,7 +19,7 @@ use super::entity::{Aliases, portfolio_key};
 use super::exceptions::Exceptions;
 use super::instrument::{self, Kind};
 use super::validate::{self, Check};
-use super::{PARSER, schedule, schedule_b};
+use super::{PARSER, amend, schedule, schedule_b};
 use crate::docs::files::blob_ref;
 
 /// Why a document was not extracted (the batch skips these).
@@ -50,6 +50,8 @@ pub struct Extracted {
     pub institutions: usize,
     pub functions: usize,
     pub laws: usize,
+    /// Changes an amendment makes, as read (0 for a baseline).
+    pub changes: usize,
 }
 
 #[derive(sqlx::FromRow)]
@@ -76,6 +78,32 @@ async fn resolve_baseline(pool: &PgPool, named: &str) -> Result<Option<String>> 
         Some((_, amends)) => amends,
         None => None,
     })
+}
+
+/// Every clause of an amending schedule was understood.
+fn changes_read(am: &amend::Amendment) -> Check {
+    let unread: Vec<String> = am
+        .changes
+        .iter()
+        .filter_map(|c| match &c.op {
+            amend::Op::Unparsed { reason } => Some(format!("{}: {reason}", c.clause)),
+            _ => None,
+        })
+        .collect();
+    let n = am.changes.len();
+    Check {
+        check: "changes_read".to_owned(),
+        ok: unread.is_empty() && n > 0,
+        detail: if unread.is_empty() {
+            format!("{n} change(s) read")
+        } else {
+            format!(
+                "{} of {n} change(s) not read: {}",
+                unread.len(),
+                unread.into_iter().take(6).collect::<Vec<_>>().join(" | ")
+            )
+        },
+    }
 }
 
 /// A supplement covers only the ministers just appointed, so it is judged
@@ -183,6 +211,7 @@ pub async fn extract(
     let mut checks: Vec<Check> = Vec::new();
     let mut amends: Option<String> = None;
     let mut sched = schedule::Schedule::default();
+    let mut changes: Vec<amend::Change> = Vec::new();
     let status = match kind {
         Kind::Amendment => {
             let named = info.amends.clone();
@@ -203,7 +232,24 @@ pub async fn extract(
                 ok,
                 detail,
             });
-            if ok { "validated" } else { "needs_review" }
+            let blob = blob_ref(sha, row.bytes.unwrap_or(0))?;
+            let pdf = store.get(&blob).await?;
+            let words = sandbox.pdf_words(&pdf, 0, 0).await?;
+            let am = amend::parse(&words);
+            checks.push(changes_read(&am));
+            if !am.warnings.is_empty() {
+                checks.push(Check {
+                    check: "parser_warnings".to_owned(),
+                    ok: true,
+                    detail: am.warnings.join(" | "),
+                });
+            }
+            changes = am.changes;
+            if validate::all_ok(&checks) {
+                "validated"
+            } else {
+                "needs_review"
+            }
         }
         Kind::Baseline | Kind::Supplement => {
             let blob = blob_ref(sha, row.bytes.unwrap_or(0))?;
@@ -262,6 +308,32 @@ pub async fn extract(
     .execute(&mut *tx)
     .await
     .map_err(anyhow::Error::from)?;
+
+    sqlx::query("DELETE FROM civic.amendment_changes WHERE doc_id = $1")
+        .bind(doc_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(anyhow::Error::from)?;
+    for (k, c) in changes.iter().enumerate() {
+        sqlx::query(
+            "INSERT INTO civic.amendment_changes
+               (doc_id, change_no, clause, heading, lang_only, op, col, spec, page, text)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+        )
+        .bind(doc_id)
+        .bind(i32::try_from(k + 1).unwrap_or(i32::MAX))
+        .bind(&c.clause)
+        .bind(c.heading.as_ref().map(sqlx::types::Json))
+        .bind(&c.lang_only)
+        .bind(c.op.kind())
+        .bind(c.op.column().map(amend::Column::as_str))
+        .bind(sqlx::types::Json(&c.op))
+        .bind(c.page)
+        .bind(&c.text)
+        .execute(&mut *tx)
+        .await
+        .map_err(anyhow::Error::from)?;
+    }
 
     let (mut institutions, mut functions, mut laws) = (0, 0, 0);
     for p in &sched.portfolios {
@@ -327,6 +399,7 @@ pub async fn extract(
         institutions,
         functions,
         laws,
+        changes: changes.len(),
     })
 }
 

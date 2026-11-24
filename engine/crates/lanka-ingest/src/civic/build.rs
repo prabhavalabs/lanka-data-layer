@@ -167,12 +167,23 @@ pub fn plan(inputs: &[BaselineInput]) -> Plan {
     plan
 }
 
-/// `(doc_id, seq, item_no, text, portfolio title, portfolio key, page)`
-type InstitutionRow = (String, i32, i32, String, String, String, Option<i32>);
+/// `(doc_id, seq, item_no, text, portfolio title, portfolio key, page, printed in)`
+type InstitutionRow = (
+    String,
+    i32,
+    i32,
+    String,
+    String,
+    String,
+    Option<i32>,
+    String,
+);
 
 #[derive(Debug, Clone, Serialize)]
 pub struct BuildReport {
-    /// Served baselines and supplements.
+    /// The amendments applied first (C2).
+    pub amendments: super::consolidate::ConsolidateReport,
+    /// Served baselines, supplements and applied amendments.
     pub instruments: usize,
     /// Structures over time they make up (a baseline, or a run of supplements).
     pub steps: usize,
@@ -187,10 +198,15 @@ pub struct BuildReport {
 
 /// Rebuilds `civic.assignments` (and `civic.entities`) from the served baselines and supplements.
 pub async fn build(pool: &PgPool, aliases: &Aliases) -> Result<BuildReport> {
+    let amendments = super::consolidate::run(pool)
+        .await
+        .context("applying the amendments")?;
     let insts: Vec<(String, String, NaiveDate)> = sqlx::query_as(
-        "SELECT doc_id, kind, effective_from FROM civic.instruments
-         WHERE kind IN ('baseline', 'supplement') AND status IN ('validated', 'approved')
-         ORDER BY effective_from, doc_id",
+        "SELECT i.doc_id, i.kind, i.effective_from FROM civic.instruments i
+         WHERE i.status IN ('validated', 'approved')
+           AND (i.kind IN ('baseline', 'supplement')
+                OR (i.kind = 'amendment' AND EXISTS (SELECT 1 FROM civic.portfolios p WHERE p.doc_id = i.doc_id)))
+         ORDER BY i.effective_from, i.doc_id",
     )
     .fetch_all(pool)
     .await?;
@@ -202,7 +218,8 @@ pub async fn build(pool: &PgPool, aliases: &Aliases) -> Result<BuildReport> {
     .fetch_all(pool)
     .await?;
     let rows: Vec<InstitutionRow> = sqlx::query_as(
-        "SELECT t.doc_id, t.seq, t.item_no, t.text, p.title, p.portfolio_key, t.page
+        "SELECT t.doc_id, t.seq, t.item_no, t.text, p.title, p.portfolio_key, t.page,
+                COALESCE(t.source_doc, t.doc_id)
          FROM civic.items t JOIN civic.portfolios p ON p.doc_id = t.doc_id AND p.seq = t.seq
          WHERE t.col = 'institution' AND t.doc_id = ANY($1)
          ORDER BY t.doc_id, t.seq, t.item_no",
@@ -215,7 +232,7 @@ pub async fn build(pool: &PgPool, aliases: &Aliases) -> Result<BuildReport> {
     let mut by_heading: BTreeMap<(String, i32), Vec<Occ>> = BTreeMap::new();
     let (mut u_doc, mut u_seq, mut u_no, mut u_key) =
         (Vec::new(), Vec::new(), Vec::new(), Vec::new());
-    for (doc_id, seq, item_no, text, title, pkey, page) in rows {
+    for (doc_id, seq, item_no, text, title, pkey, page, printed_in) in rows {
         let key = aliases.key_of(&text);
         u_doc.push(doc_id.clone());
         u_seq.push(seq);
@@ -225,7 +242,7 @@ pub async fn build(pool: &PgPool, aliases: &Aliases) -> Result<BuildReport> {
             .entry((doc_id.clone(), seq))
             .or_default()
             .push(Occ {
-                doc_id,
+                doc_id: printed_in,
                 entity_key: key,
                 name: text,
                 seq,
@@ -355,6 +372,7 @@ pub async fn build(pool: &PgPool, aliases: &Aliases) -> Result<BuildReport> {
     tx.commit().await?;
 
     Ok(BuildReport {
+        amendments,
         instruments: insts.len(),
         steps: steps.len(),
         entities: plan.entities.len(),

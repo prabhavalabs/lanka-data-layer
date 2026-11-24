@@ -60,7 +60,7 @@ function Card({ p, q, onOpen, theme }: { p: StructurePortfolio; q: string; onOpe
             ) : (
               <span className="min-w-0 flex-1 text-[13px] leading-snug text-ink">{i.text}</span>
             )}
-            <Evidence docId={p.doc_id} page={i.page} />
+            <Evidence docId={i.doc_id ?? p.doc_id} page={i.page} />
           </li>
         ))}
         {!rows.length && <li className="px-1.5 py-1 text-[12.5px] text-ink3">No institutions listed.</li>}
@@ -88,7 +88,21 @@ function Card({ p, q, onOpen, theme }: { p: StructurePortfolio; q: string; onOpe
   )
 }
 
-export function StructureView({ s, sample, at, onOpen }: { s: Structure; sample: boolean; at: string; onOpen: (key: string) => void }) {
+function AmendmentLink({ docId, effective, onAmendment }: { docId: string; effective: string; onAmendment: (docId: string) => void }) {
+  return (
+    <li className="flex flex-wrap items-center gap-x-2">
+      <span>
+        Gazette {gazetteNumber(docId)}, from {fmtDay(effective)}
+      </span>
+      <button type="button" onClick={() => onAmendment(docId)} className="pressable rounded-md px-1 py-0.5 text-[12.5px] font-medium text-brand-ink hover:bg-brand-soft">
+        What changed
+      </button>
+      <Evidence docId={docId} label="PDF" />
+    </li>
+  )
+}
+
+export function StructureView({ s, sample, at, onOpen, onAmendment }: { s: Structure; sample: boolean; at: string; onOpen: (key: string) => void; onAmendment: (docId: string) => void }) {
   const [theme] = useTheme()
   const [q, setQ] = useState('')
   const total = s.portfolios.reduce((n, p) => n + p.institutions.length, 0)
@@ -103,13 +117,17 @@ export function StructureView({ s, sample, at, onOpen }: { s: Structure; sample:
   const elsewhere = (hits.data?.data ?? []).filter((h) => !inView.has(h.entity_key))
   const counts = KINDS.map((k) => [k, s.portfolios.reduce((n, p) => n + p.institutions.filter((i) => i.kind === k).length, 0)] as const).filter(([, n]) => n > 0)
   const num = s.instrument.number
-  const composed = s.composed_of ?? []
+  // the schedule (a baseline, or a run of supplements), then the amendments applied to it
+  const composed = (s.composed_of ?? []).filter((c) => c.kind !== 'amendment')
+  const amended = (s.composed_of ?? []).filter((c) => c.kind === 'amendment')
+  const baseNum = composed.length === 1 ? gazetteNumber(composed[0].doc_id) : num
 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h2 className="t-h3 min-w-0">
-          In force on {fmtDay(at)}: {composed.length > 1 ? `composed of gazettes ${listAnd(composed.map((c) => gazetteNumber(c.doc_id)))}` : `Gazette ${num}`}, {fmtInt(s.portfolios.length)} {s.portfolios.length === 1 ? 'ministry' : 'ministries'}, {fmtInt(total)} institutions
+          In force on {fmtDay(at)}: {composed.length > 1 ? `composed of gazettes ${listAnd(composed.map((c) => gazetteNumber(c.doc_id)))}` : `Gazette ${baseNum}`}
+          {amended.length > 0 && `, as amended ${amended.length === 1 ? 'once' : `${amended.length} times`}`}, {fmtInt(s.portfolios.length)} {s.portfolios.length === 1 ? 'ministry' : 'ministries'}, {fmtInt(total)} institutions
         </h2>
         {sample && <SampleMark />}
       </div>
@@ -122,24 +140,33 @@ export function StructureView({ s, sample, at, onOpen }: { s: Structure; sample:
             <Evidence key={c.doc_id} docId={c.doc_id} label={`${gazetteNumber(c.doc_id)} PDF`} />
           ))}
         </p>
+      ) : composed.length === 1 ? (
+        <p className="mt-2 text-[13.5px] text-ink2">
+          Schedule of {fmtDay(composed[0].effective_from)} <Evidence docId={composed[0].doc_id} label={`Gazette ${baseNum} PDF`} />
+        </p>
       ) : (
         <p className="mt-2 text-[13.5px] text-ink2">
           Schedule of {fmtDay(s.instrument.effective_from)} <Evidence docId={s.instrument.doc_id} label={`Gazette ${num} PDF`} />
         </p>
       )}
+      {amended.length > 0 && (
+        <div className="mt-2 text-[13px] text-ink2">
+          <p>Amended by {amended.length === 1 ? 'this gazette' : 'these gazettes'}, whose changes are in the lists below (each line links to the gazette it is printed in):</p>
+          <ul className="mt-1 flex flex-col gap-0.5">
+            {amended.map((a) => (
+              <AmendmentLink key={a.doc_id} docId={a.doc_id} effective={a.effective_from} onAmendment={onAmendment} />
+            ))}
+          </ul>
+        </div>
+      )}
       {s.amendments_since.length > 0 && (
         <div className="mt-3 rounded-xl border border-warn/30 bg-warn-soft px-3.5 py-2.5 text-[13px] text-ink2">
           <p className="font-medium text-ink">
-            {s.amendments_since.length === 1 ? 'One amendment' : `${s.amendments_since.length} amendments`} since, shown here but not yet applied to the lists below:
+            {s.amendments_since.length === 1 ? 'One amendment is' : `${s.amendments_since.length} amendments are`} in force by this date but not applied to the lists below yet. Either its wording is not read yet, or a change in it waits for a person to check it.
           </p>
           <ul className="mt-1 flex flex-col gap-0.5">
             {s.amendments_since.map((a) => (
-              <li key={a.doc_id} className="flex flex-wrap items-center gap-x-2">
-                <span>
-                  Gazette {a.doc_id.replace(/^gze-/, '').replace('-', '/')}, effective {fmtDay(a.effective_from)}
-                </span>
-                <Evidence docId={a.doc_id} label="PDF" />
-              </li>
+              <AmendmentLink key={a.doc_id} docId={a.doc_id} effective={a.effective_from} onAmendment={onAmendment} />
             ))}
           </ul>
         </div>

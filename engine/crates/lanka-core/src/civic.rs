@@ -32,10 +32,15 @@ pub struct InstrumentRow {
     pub head_of_state: Option<String>,
     /// `validated` | `needs_review` | `approved` | `rejected`
     pub status: String,
-    /// Ministers (headings) parsed; 0 for amendments.
+    /// Ministers (headings) parsed; for an applied amendment, the headings
+    /// of the structure as amended; 0 for an amendment not applied.
     pub portfolios: i64,
-    /// Institutions listed in Column II; 0 for amendments.
+    /// Institutions listed in Column II (as amended, for an amendment).
     pub institutions: i64,
+    /// Changes an amendment makes, as read (0 for other kinds).
+    pub changes: i64,
+    /// Of those, the ones applied to the English schedule.
+    pub changes_applied: i64,
     pub title: Option<String>,
     /// Gazette number, `2412/08`.
     pub number: Option<String>,
@@ -47,6 +52,8 @@ pub async fn instruments(pool: &PgPool) -> CoreResult<Vec<InstrumentRow>> {
         "SELECT i.doc_id, i.kind, i.effective_from, i.amends, i.head_of_state, i.status,
                 (SELECT count(*) FROM civic.portfolios p WHERE p.doc_id = i.doc_id) AS portfolios,
                 (SELECT count(*) FROM civic.items t WHERE t.doc_id = i.doc_id AND t.col = 'institution') AS institutions,
+                (SELECT count(*) FROM civic.amendment_changes c WHERE c.doc_id = i.doc_id) AS changes,
+                (SELECT count(*) FROM civic.amendment_changes c WHERE c.doc_id = i.doc_id AND c.applied) AS changes_applied,
                 d.title ->> 'en' AS title,
                 CASE WHEN d.number IS NULL THEN NULL ELSE d.number || COALESCE('/' || d.sub_number, '') END AS number
          FROM civic.instruments i JOIN docs.documents d ON d.doc_id = i.doc_id
@@ -74,6 +81,8 @@ pub struct InstrumentRef {
 pub struct ComposedRef {
     pub doc_id: String,
     pub effective_from: NaiveDate,
+    /// `baseline` | `supplement` | `amendment`
+    pub kind: String,
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, ToSchema)]
@@ -96,12 +105,15 @@ pub struct InstitutionItem {
     pub entity_key: Option<String>,
     /// From `civic.entities` (after `lanka civic build`).
     pub kind: Option<String>,
+    /// The gazette the line is printed in (in an amended structure, the
+    /// amendment that inserted or reworded it, or an earlier gazette).
+    pub doc_id: String,
     pub page: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct PortfolioOut {
-    /// The gazette this heading is printed in (the evidence for its pages).
+    /// The gazette this heading's title is printed in (the evidence for its page).
     pub doc_id: String,
     pub seq: i32,
     /// As printed: `Minister of Defence`.
@@ -120,17 +132,23 @@ pub struct Structure {
     pub at: NaiveDate,
     /// The latest gazette the structure is made of.
     pub instrument: InstrumentRef,
-    /// Every gazette it is made of: one baseline, or a run of supplements.
+    /// Every gazette it is made of: one baseline or a run of supplements,
+    /// then the amendments applied to it, oldest first.
     pub composed_of: Vec<ComposedRef>,
+    /// Amendments to it, in force by `at`, that are not applied (not read
+    /// yet, or waiting for review).
     pub amendments_since: Vec<AmendmentRef>,
     pub portfolios: Vec<PortfolioOut>,
 }
 
-/// The served structures over time (baselines and runs of supplements).
+/// The served structures over time (baselines, runs of supplements, and
+/// applied amendments).
 async fn steps(pool: &PgPool) -> CoreResult<Vec<Step>> {
     let insts: Vec<(String, String, NaiveDate)> = sqlx::query_as(
-        "SELECT doc_id, kind, effective_from FROM civic.instruments
-         WHERE kind IN ('baseline', 'supplement') AND status IN ('validated', 'approved')",
+        "SELECT i.doc_id, i.kind, i.effective_from FROM civic.instruments i
+         WHERE i.status IN ('validated', 'approved')
+           AND (i.kind IN ('baseline', 'supplement')
+                OR (i.kind = 'amendment' AND EXISTS (SELECT 1 FROM civic.portfolios p WHERE p.doc_id = i.doc_id)))",
     )
     .fetch_all(pool)
     .await?;
@@ -196,6 +214,7 @@ struct ItemRow {
     text: String,
     entity_key: Option<String>,
     kind: Option<String>,
+    printed_in: String,
     page: Option<i32>,
 }
 
@@ -204,14 +223,16 @@ pub async fn structure(pool: &PgPool, at: NaiveDate) -> CoreResult<Structure> {
     let all = steps(pool).await?;
     let step = in_force(&all, at)?;
     let docs: Vec<String> = step.composed.iter().map(|c| c.0.clone()).collect();
-    let ports = sqlx::query_as::<_, (String, i32, String, String, Option<i32>)>(
-        "SELECT doc_id, seq, title, portfolio_key, first_page FROM civic.portfolios WHERE doc_id = ANY($1)",
+    let ports = sqlx::query_as::<_, (String, i32, String, String, Option<i32>, String)>(
+        "SELECT doc_id, seq, title, portfolio_key, first_page, COALESCE(source_doc, doc_id)
+         FROM civic.portfolios WHERE doc_id = ANY($1)",
     )
     .bind(&docs)
     .fetch_all(pool)
     .await?;
     let items = sqlx::query_as::<_, ItemRow>(
-        "SELECT t.doc_id, t.seq, t.col, t.item_no, t.text, t.entity_key, e.kind, t.page
+        "SELECT t.doc_id, t.seq, t.col, t.item_no, t.text, t.entity_key, e.kind,
+                COALESCE(t.source_doc, t.doc_id) AS printed_in, t.page
          FROM civic.items t LEFT JOIN civic.entities e ON e.entity_key = t.entity_key
          WHERE t.doc_id = ANY($1) ORDER BY t.doc_id, t.seq, t.col, t.item_no",
     )
@@ -221,12 +242,12 @@ pub async fn structure(pool: &PgPool, at: NaiveDate) -> CoreResult<Structure> {
     let mut portfolios: Vec<PortfolioOut> = Vec::new();
     let mut pos: BTreeMap<(String, i32), usize> = BTreeMap::new();
     for h in &step.headings {
-        if let Some((_, _, title, key, page)) =
+        if let Some((_, _, title, key, page, printed_in)) =
             ports.iter().find(|p| p.0 == h.doc_id && p.1 == h.seq)
         {
             pos.insert((h.doc_id.clone(), h.seq), portfolios.len());
             portfolios.push(PortfolioOut {
-                doc_id: h.doc_id.clone(),
+                doc_id: printed_in.clone(),
                 seq: h.seq,
                 title: title.clone(),
                 short_title: short_title(title),
@@ -253,6 +274,7 @@ pub async fn structure(pool: &PgPool, at: NaiveDate) -> CoreResult<Structure> {
                 text: it.text,
                 entity_key: it.entity_key,
                 kind: it.kind,
+                doc_id: it.printed_in,
                 page: it.page,
             }),
             _ => p.laws.push(TextItem {
@@ -265,8 +287,9 @@ pub async fn structure(pool: &PgPool, at: NaiveDate) -> CoreResult<Structure> {
     let amendments_since = sqlx::query_as::<_, AmendmentRef>(
         "SELECT i.doc_id, i.effective_from, d.title ->> 'en' AS title
          FROM civic.instruments i JOIN docs.documents d ON d.doc_id = i.doc_id
-         WHERE i.kind = 'amendment' AND i.status IN ('validated', 'approved')
-           AND i.amends = ANY($1) AND i.effective_from > $2 AND i.effective_from <= $3
+         WHERE i.kind = 'amendment' AND i.status <> 'rejected'
+           AND i.amends = ANY($1) AND NOT (i.doc_id = ANY($1))
+           AND i.effective_from > $2 AND i.effective_from <= $3
          ORDER BY i.effective_from, i.doc_id",
     )
     .bind(&docs)
@@ -274,6 +297,14 @@ pub async fn structure(pool: &PgPool, at: NaiveDate) -> CoreResult<Structure> {
     .bind(at)
     .fetch_all(pool)
     .await?;
+    let kinds: BTreeMap<String, String> = sqlx::query_as::<_, (String, String)>(
+        "SELECT doc_id, kind FROM civic.instruments WHERE doc_id = ANY($1)",
+    )
+    .bind(&docs)
+    .fetch_all(pool)
+    .await?
+    .into_iter()
+    .collect();
     Ok(Structure {
         at,
         instrument: InstrumentRef {
@@ -285,12 +316,106 @@ pub async fn structure(pool: &PgPool, at: NaiveDate) -> CoreResult<Structure> {
             .composed
             .iter()
             .map(|(doc_id, effective_from)| ComposedRef {
+                kind: kinds.get(doc_id).cloned().unwrap_or_default(),
                 doc_id: doc_id.clone(),
                 effective_from: *effective_from,
             })
             .collect(),
         amendments_since,
         portfolios,
+    })
+}
+
+// ───────────────────────────── an amendment's changes ──────────────────────
+
+#[derive(Debug, Clone, FromRow, Serialize, ToSchema)]
+pub struct ChangeRow {
+    pub change_no: i32,
+    /// `(2) (f)`: the clause and sub-clause as printed.
+    pub clause: String,
+    /// The heading as the clause names it.
+    pub heading_no: Option<i32>,
+    pub heading_title: Option<String>,
+    /// `omit` | `insert` | `substitute` | `renumber` | `replace_column` |
+    /// `replace_columns` | `rename_heading` | `replace_heading` |
+    /// `insert_heading` | `omit_heading` | `renumber_headings` | `unparsed`
+    pub op: String,
+    /// `function` | `institution` | `law`, for a change to one column.
+    pub col: Option<String>,
+    /// `si` | `ta`: made in that language's text only (not applied to English).
+    pub lang_only: Option<String>,
+    pub page: Option<i32>,
+    /// The sentence as printed.
+    pub text: String,
+    /// Set by `lanka civic build`; null when the build did not reach it.
+    pub applied: Option<bool>,
+    pub ok: Option<bool>,
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct CheckOut {
+    pub check: String,
+    pub ok: bool,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct AmendmentChanges {
+    pub doc_id: String,
+    pub number: Option<String>,
+    pub effective_from: NaiveDate,
+    /// The gazette it amends.
+    pub amends: Option<String>,
+    pub status: String,
+    pub checks: Vec<CheckOut>,
+    pub changes: Vec<ChangeRow>,
+}
+
+/// What an amending gazette changes, change by change, and what happened
+/// to each when it was applied.
+pub async fn amendment_changes(pool: &PgPool, doc_id: &str) -> CoreResult<AmendmentChanges> {
+    #[derive(FromRow)]
+    struct Row {
+        effective_from: NaiveDate,
+        amends: Option<String>,
+        status: String,
+        checks: sqlx::types::Json<Vec<serde_json::Value>>,
+    }
+    let r = sqlx::query_as::<_, Row>(
+        "SELECT effective_from, amends, status, checks FROM civic.instruments
+         WHERE doc_id = $1 AND kind = 'amendment'",
+    )
+    .bind(doc_id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| CoreError::not_found(format!("{doc_id} is not an extracted amendment")))?;
+    let changes = sqlx::query_as::<_, ChangeRow>(
+        "SELECT change_no, clause, (heading ->> 'no')::int AS heading_no, heading ->> 'title' AS heading_title,
+                op, col, lang_only, page, text, applied, ok, note
+         FROM civic.amendment_changes WHERE doc_id = $1 ORDER BY change_no",
+    )
+    .bind(doc_id)
+    .fetch_all(pool)
+    .await?;
+    let checks = r
+        .checks
+        .0
+        .iter()
+        .map(|c| CheckOut {
+            check: c["check"].as_str().unwrap_or_default().to_owned(),
+            ok: c["ok"].as_bool().unwrap_or(false),
+            detail: c["detail"].as_str().unwrap_or_default().to_owned(),
+        })
+        .collect();
+    Ok(AmendmentChanges {
+        doc_id: doc_id.to_owned(),
+        number: number_of(pool, doc_id).await?,
+        effective_from: r.effective_from,
+        amends: r.amends,
+        status: r.status,
+        checks,
+        changes,
     })
 }
 
@@ -319,6 +444,7 @@ struct ListingRow {
     seq: i32,
     text: String,
     entity_key: Option<String>,
+    printed_in: String,
     page: Option<i32>,
     name: Option<String>,
     kind: Option<String>,
@@ -330,7 +456,8 @@ struct ListingRow {
 async fn side_of(pool: &PgPool, step: &Step) -> CoreResult<Side> {
     let docs: Vec<String> = step.composed.iter().map(|c| c.0.clone()).collect();
     let rows = sqlx::query_as::<_, ListingRow>(
-        "SELECT t.doc_id, t.seq, t.text, t.entity_key, t.page, e.name, e.kind, p.portfolio_key
+        "SELECT t.doc_id, t.seq, t.text, t.entity_key, COALESCE(t.source_doc, t.doc_id) AS printed_in,
+                t.page, e.name, e.kind, p.portfolio_key
          FROM civic.items t
          JOIN civic.portfolios p ON p.doc_id = t.doc_id AND p.seq = t.seq
          LEFT JOIN civic.entities e ON e.entity_key = t.entity_key
@@ -368,6 +495,7 @@ async fn side_of(pool: &PgPool, step: &Step) -> CoreResult<Side> {
                     entity_key: key.clone(),
                     name: r.name.clone().unwrap_or_else(|| r.text.clone()),
                     kind: r.kind.clone().unwrap_or_else(|| "other".to_owned()),
+                    doc_id: Some(r.printed_in.clone()),
                     page: r.page,
                     ministry_key: r.portfolio_key.clone(),
                 });

@@ -1,4 +1,4 @@
-//! `lanka civic discover | extract | approve | reject | build | show` (13 §2.1):
+//! `lanka civic discover | extract | approve | reject | build | show | changes` (13 §2.1, §2.2):
 //! ministries and the institutions in their charge, over time.
 
 use anyhow::{Context, Result, bail};
@@ -27,8 +27,8 @@ pub enum CivicCmd {
         json: bool,
     },
     /// Parse and validate an archived English gazette: a baseline is parsed
-    /// into ministers and columns; an amendment is recorded as a timeline
-    /// event with the baseline it amends.
+    /// into ministers and columns; an amendment is read into its changes
+    /// (applied by `build`).
     Extract {
         /// Document id, e.g. `gze-2412-08`.
         doc_id: Option<String>,
@@ -51,8 +51,9 @@ pub enum CivicCmd {
         #[arg(long)]
         by: String,
     },
-    /// Rebuild `civic.assignments` and `civic.entities` from the validated
-    /// and approved baselines (idempotent).
+    /// Apply the amendments in date order, then rebuild `civic.assignments`
+    /// and `civic.entities` from the validated and approved structures
+    /// (idempotent).
     Build {
         #[arg(long)]
         json: bool,
@@ -60,6 +61,17 @@ pub enum CivicCmd {
     /// Alias review aids.
     #[command(subcommand)]
     Aliases(AliasCmd),
+    /// Print what an amendment changes, and what happened to each change
+    /// when it was applied (the review aid for amendments).
+    Changes {
+        /// Document id, e.g. `gze-2458-65`.
+        doc_id: String,
+        /// Only the changes that did not apply cleanly.
+        #[arg(long)]
+        problems: bool,
+        #[arg(long)]
+        json: bool,
+    },
     /// Print the structure in force on a date.
     Show {
         /// `YYYY-MM-DD` (default: today).
@@ -256,8 +268,21 @@ pub async fn run(g: &Global, cmd: CivicCmd) -> Result<()> {
             if json {
                 return print_json(&r);
             }
+            let a = &r.amendments;
             println!(
-                "{} baselines and supplements make {} structures -> {} entities, {} assignments ({} in force); {} institutions listed under two ministers in one structure (first listing kept); {} aliases",
+                "{} amendment(s): {} applied and served, {} of {} change(s) applied{}",
+                a.amendments,
+                a.served,
+                a.changes_applied,
+                a.changes_total,
+                if a.needs_review.is_empty() {
+                    String::new()
+                } else {
+                    format!("; needs review: {}", a.needs_review.join(", "))
+                }
+            );
+            println!(
+                "{} served instruments make {} structures -> {} entities, {} assignments ({} in force); {} institutions listed under two ministers in one structure (first listing kept); {} aliases",
                 r.instruments,
                 r.steps,
                 r.entities,
@@ -281,6 +306,62 @@ pub async fn run(g: &Global, cmd: CivicCmd) -> Result<()> {
                 found.len(),
                 path.display()
             );
+            Ok(())
+        }
+        CivicCmd::Changes {
+            doc_id,
+            problems,
+            json,
+        } => {
+            let pool = pool(g, PoolRole::Api).await?;
+            let c = civic::amendment_changes(&pool, &doc_id).await?;
+            if json {
+                return print_json(&c);
+            }
+            println!(
+                "{} ({}), effective {}, amends {}: {}",
+                c.number.as_deref().unwrap_or(&c.doc_id),
+                c.doc_id,
+                c.effective_from,
+                c.amends.as_deref().unwrap_or("?"),
+                c.status
+            );
+            for k in &c.checks {
+                println!(
+                    "  {} {} {}",
+                    if k.ok { "ok  " } else { "FAIL" },
+                    k.check,
+                    k.detail
+                );
+            }
+            for ch in c
+                .changes
+                .iter()
+                .filter(|ch| !problems || ch.ok != Some(true))
+            {
+                let mark = match (ch.applied, ch.ok) {
+                    (Some(true), Some(true)) => "applied ",
+                    (Some(true), _) => "REVIEW  ",
+                    (Some(false), Some(true)) => "other-language",
+                    (Some(false), _) => "SKIPPED ",
+                    (None, _) => "not reached",
+                };
+                let heading = match (ch.heading_no, &ch.heading_title) {
+                    (Some(n), Some(t)) => format!("{n:02}. {t}"),
+                    (None, Some(t)) => t.clone(),
+                    _ => String::new(),
+                };
+                println!(
+                    "{:<10} p{:<3} {mark} {:<17} {}{}",
+                    ch.clause,
+                    ch.page.unwrap_or(0),
+                    ch.op,
+                    heading,
+                    ch.note
+                        .as_deref()
+                        .map_or(String::new(), |n| format!("\n           {n}"))
+                );
+            }
             Ok(())
         }
         CivicCmd::Show { at, institutions } => {

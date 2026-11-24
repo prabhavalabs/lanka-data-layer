@@ -5,7 +5,7 @@
 // real gazette numbers with approximate dates and no parsed schedule. Everything this file returns is flagged
 // `sample` by `src/api/civic.ts`, and the page marks it.
 import { ApiError } from '@/api/http'
-import type { Diff, EntityDetail, EntityHit, EntityKind, GazetteDocument, Instrument, Structure, StructureInstitution, StructurePortfolio } from '@/api/civic'
+import type { AmendmentChange, AmendmentChanges, Diff, EntityDetail, EntityHit, EntityKind, GazetteDocument, Instrument, Structure, StructureInstitution, StructurePortfolio } from '@/api/civic'
 
 /* ---------------- keys, as docs/architecture-v2/13-civic-record.md §2.1 defines them ---------------- */
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -299,6 +299,46 @@ export const mockCivic = {
     }
     if (!rows.length) throw new ApiError(`No such institution: ${key}`, 404, null)
     return { entity_key: key, name, kind, aliases: [], history: rows.reverse() }
+  },
+
+  /** A few real changes of 2458/65 (2025), as the engine reports them. */
+  async changes(docId: string): Promise<AmendmentChanges> {
+    await lag()
+    if (docId !== 'gze-2458-65') throw new ApiError(`${docId} is not an extracted amendment`, 404, { problem: { code: 'not_found' } })
+    const c = (n: number, clause: string, no: number, title: string, op: AmendmentChange['op'], col: AmendmentChange['col'], page: number, text: string, note: string, extra: Partial<AmendmentChange> = {}): AmendmentChange => ({
+      change_no: n,
+      clause,
+      heading_no: no,
+      heading_title: title,
+      op,
+      col,
+      lang_only: null,
+      page,
+      text,
+      applied: true,
+      ok: true,
+      note,
+      ...extra,
+    })
+    return {
+      doc_id: docId,
+      number: '2458/65',
+      effective_from: '2025-10-17',
+      amends: 'gze-2412-08',
+      status: 'needs_review',
+      checks: [
+        { check: 'changes_read', ok: true, detail: '83 change(s) read' },
+        { check: 'changes_applied', ok: false, detail: '71 of 83 change(s) applied; 10 made in the Sinhala or Tamil text only; 2 to review' },
+      ],
+      changes: [
+        c(1, '(1) (b)', 1, 'Minister of Defence', 'insert', 'institution', 2, 'In Column II thereof, by insertion of the following item immediately after item No. 25;', '2 item(s) inserted in Column II'),
+        c(2, '(1) (c)', 1, 'Minister of Defence', 'omit', 'institution', 2, 'In Column II thereof, by omitting following item;', '1 item(s) omitted from Column II'),
+        c(3, '(2) (e)', 2, 'Minister of Finance, Planning and Economic Development', 'insert', 'institution', 2, 'In Column II thereof, by insertion of the following item immediately after item No. 55;', '1 item(s) inserted in Column II'),
+        c(4, '(4) (a)', 4, 'Minister of Agriculture, Livestock, Land, and Irrigation', 'insert', 'institution', 3, 'In Column II thereof, by insertion of the following item immediately after item No. 11;', '1 item(s) inserted in Column II'),
+        c(5, '(1) (d)', 1, 'Minister of Defence', 'omit', 'law', 2, 'In Column III (only in Tamil Notification) thereof, by omitting following item;', 'made in the Tamil text only', { applied: false, lang_only: 'ta' }),
+        c(6, '(8) (e)', 9, 'Minister of Health and Mass Media', 'substitute', 'law', 5, 'In Column III thereof, by substitution of following item instead of item “Homoeopathy Act, No. 07 of 2070”;', 'no item reads “Homoeopathy Act, No. 07 of 2070”, to substitute', { applied: false, ok: false }),
+      ],
+    }
   },
 
   async document(docId: string): Promise<GazetteDocument> {

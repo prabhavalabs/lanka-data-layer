@@ -54,6 +54,24 @@ pub fn is_candidate_title(title: &str) -> bool {
     INCLUDE.iter().any(|r| r.is_match(title)) && !EXCLUDE.iter().any(|r| r.is_match(title))
 }
 
+/// Does a title amend a gazette that is an extracted schedule ("Amended
+/// Gazette Extraordinary No. 2289/43 of 22.07.2022 with effect from …")?
+/// Such titles need not say "duties" or "functions".
+#[must_use]
+pub fn cites_schedule(title: &str, schedules: &std::collections::BTreeSet<String>) -> bool {
+    static AMEND: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"(?i)\bamend").expect("amend regex"));
+    static NUMBER: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"\b(\d{4})\s*/\s*(\d{1,3})\b").expect("number regex"));
+    AMEND.is_match(title)
+        && !EXCLUDE.iter().any(|r| r.is_match(title))
+        && NUMBER.captures_iter(title).any(|c| {
+            let sub: u32 = c[2].parse().unwrap_or(0);
+            schedules.contains(&format!("{}/{sub:02}", &c[1]))
+                || schedules.contains(&format!("{}/{sub}", &c[1]))
+        })
+}
+
 /// What the confirmation read from the text.
 #[derive(Debug, Clone, Serialize)]
 pub struct Confirmation {
@@ -145,15 +163,24 @@ pub async fn discover(pool: &PgPool, store: &dyn BlobStore) -> Result<Vec<Candid
          LEFT JOIN docs.files f ON f.doc_id = d.doc_id AND f.lang = 'en'
          LEFT JOIN civic.instruments i ON i.doc_id = d.doc_id
          WHERE d.withdrawn_at IS NULL
-           AND d.title ->> 'en' ~* '(subjects|duties|functions|assignment|ministries)'
+           AND d.title ->> 'en' ~* '(subjects|duties|functions|assignment|ministries|amend)'
          ORDER BY d.issued_on, d.doc_id",
     )
     .fetch_all(pool)
     .await?;
+    // the numbers of the extracted schedules, `2289/43`
+    let schedules: std::collections::BTreeSet<String> = sqlx::query_scalar::<_, String>(
+        "SELECT d.number || '/' || d.sub_number FROM civic.instruments i JOIN docs.documents d ON d.doc_id = i.doc_id
+         WHERE i.kind IN ('baseline', 'supplement') AND d.number IS NOT NULL AND d.sub_number IS NOT NULL",
+    )
+    .fetch_all(pool)
+    .await?
+    .into_iter()
+    .collect();
     let mut out = Vec::new();
     for r in rows {
         let title = r.title.clone().unwrap_or_default();
-        if !is_candidate_title(&title) {
+        if !is_candidate_title(&title) && !cites_schedule(&title, &schedules) {
             continue;
         }
         let confirmation = match (r.en_status.as_deref(), r.text_sha256.as_deref()) {
@@ -199,6 +226,25 @@ mod tests {
         ] {
             assert!(is_candidate_title(t), "{t}");
         }
+    }
+
+    #[test]
+    fn a_title_that_amends_a_known_schedule_is_a_candidate() {
+        let known: std::collections::BTreeSet<String> =
+            ["2289/43".to_owned()].into_iter().collect();
+        assert!(cites_schedule(
+            "Presidential Secretariat - Amended Gazette Extraordinary No. 2289/43 of 22.07.2022 with effect from 16.09.2022",
+            &known
+        ));
+        // another gazette's number, or no amendment
+        assert!(!cites_schedule(
+            "Presidential Secretariat - Amended the Public Security Ordinance (Chapter 40) Gaz. Ex. No. 2289/41 of 21st July 2022",
+            &known
+        ));
+        assert!(!cites_schedule(
+            "Presidential Secretariat - Gazette No. 2289/43 reprinted",
+            &known
+        ));
     }
 
     #[test]

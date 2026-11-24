@@ -8,9 +8,9 @@
 use chrono::NaiveDate;
 use lanka_core::civic;
 use lanka_core::db::{self, PoolRole};
-use lanka_ingest::civic::build;
 use lanka_ingest::civic::entity::Aliases;
 use lanka_ingest::civic::extract;
+use lanka_ingest::civic::{amend, build};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 
 async fn with_database<F, Fut>(tag: &str, f: F)
@@ -708,5 +708,227 @@ async fn run_supplements(url: String) {
         diff.moved.is_empty(),
         "{:?}",
         diff.moved.iter().map(|m| &m.entity_key).collect::<Vec<_>>()
+    );
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn amendments_are_applied_in_order_and_keep_their_evidence() {
+    with_database("civicamend", run_amendments).await;
+}
+
+/// Stores one change of an amendment as extract would.
+async fn change(pool: &PgPool, doc_id: &str, no: i32, clause: &str, heading: &str, op: &amend::Op) {
+    sqlx::query(
+        "INSERT INTO civic.amendment_changes (doc_id, change_no, clause, heading, op, col, spec, page, text)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 1, 'as printed')",
+    )
+    .bind(doc_id)
+    .bind(no)
+    .bind(clause)
+    .bind(serde_json::json!({"no": null, "title": heading}))
+    .bind(op.kind())
+    .bind(op.column().map(amend::Column::as_str))
+    .bind(sqlx::types::Json(op))
+    .execute(pool)
+    .await
+    .expect("change");
+}
+
+async fn run_amendments(url: String) {
+    use amend::{Anchor, Column, NewItem, Op};
+    let pool = db::connect(&url, PoolRole::Ingest).await.expect("pool");
+    db::migrate(&pool).await.expect("migrate");
+
+    let (b, a1, a2) = ("gze-2281-41", "gze-2283-34", "gze-2300-24");
+    instrument(&pool, b, "baseline", d(2022, 5, 27), "validated", None).await;
+    portfolio(
+        &pool,
+        b,
+        1,
+        "Minister of Defence",
+        "defence",
+        &[
+            "Sri Lanka Army",
+            "Civil Security Department",
+            "Sri Lanka Navy",
+        ],
+    )
+    .await;
+    portfolio(&pool, b, 2, "Minister of Trade", "trade", &["Trade Board"]).await;
+    // a1: Coast Guard added, Civil Security Department omitted, Trade renamed
+    instrument(&pool, a1, "amendment", d(2022, 6, 10), "validated", Some(b)).await;
+    let item = |no: Option<i32>, text: &str| NewItem {
+        item_no: no,
+        text: text.to_owned(),
+        page: 1,
+    };
+    change(
+        &pool,
+        a1,
+        1,
+        "(1) (a)",
+        "Minister of Defence",
+        &Op::Insert {
+            col: Column::Institution,
+            anchor: Anchor::After { no: 3 },
+            items: vec![item(Some(4), "Sri Lanka Coast Guard")],
+        },
+    )
+    .await;
+    change(
+        &pool,
+        a1,
+        2,
+        "(1) (b)",
+        "Minister of Defence",
+        &Op::Omit {
+            col: Column::Institution,
+            nos: vec![2],
+            quoted: vec![item(Some(2), "Civil Security Department")],
+        },
+    )
+    .await;
+    change(
+        &pool,
+        a1,
+        3,
+        "(2) (a)",
+        "Minister of Trade",
+        &Op::RenameHeading {
+            title: "Minister of Trade and Commerce".to_owned(),
+        },
+    )
+    .await;
+    // a2 names a heading that is not in force: applied in part, waits for review
+    instrument(&pool, a2, "amendment", d(2022, 10, 6), "validated", Some(b)).await;
+    change(
+        &pool,
+        a2,
+        1,
+        "(1) (a)",
+        "Minister of Nothing",
+        &Op::Omit {
+            col: Column::Institution,
+            nos: vec![1],
+            quoted: vec![],
+        },
+    )
+    .await;
+
+    let r = build::build(&pool, &Aliases::default())
+        .await
+        .expect("build");
+    assert_eq!(
+        (r.amendments.amendments, r.amendments.served),
+        (2, 1),
+        "{:?}",
+        r.amendments
+    );
+    assert_eq!(r.amendments.needs_review, vec![a2.to_owned()]);
+
+    // the structure after a1: base lines keep the baseline as evidence, new ones the amendment
+    let s = civic::structure(&pool, d(2022, 6, 15))
+        .await
+        .expect("structure");
+    assert_eq!(s.instrument.doc_id, a1);
+    let kinds: Vec<(&str, &str)> = s
+        .composed_of
+        .iter()
+        .map(|c| (c.doc_id.as_str(), c.kind.as_str()))
+        .collect();
+    assert_eq!(kinds, vec![(b, "baseline"), (a1, "amendment")]);
+    let defence = s
+        .portfolios
+        .iter()
+        .find(|p| p.portfolio_key == "defence")
+        .expect("defence");
+    let lines: Vec<(&str, &str)> = defence
+        .institutions
+        .iter()
+        .map(|i| (i.text.as_str(), i.doc_id.as_str()))
+        .collect();
+    assert_eq!(
+        lines,
+        vec![
+            ("Sri Lanka Army", b),
+            ("Sri Lanka Navy", b),
+            ("Sri Lanka Coast Guard", a1)
+        ]
+    );
+    assert_eq!(defence.doc_id, b, "the heading is printed in the baseline");
+    assert!(
+        s.portfolios
+            .iter()
+            .any(|p| p.title == "Minister of Trade and Commerce")
+    );
+    assert!(s.amendments_since.is_empty());
+
+    // before a1: the baseline alone; after a2's date: a2 is listed as not applied
+    let s0 = civic::structure(&pool, d(2022, 6, 1))
+        .await
+        .expect("structure");
+    assert_eq!(s0.instrument.doc_id, b);
+    let s2 = civic::structure(&pool, d(2022, 11, 1))
+        .await
+        .expect("structure");
+    assert_eq!(s2.instrument.doc_id, a1);
+    assert_eq!(
+        s2.amendments_since
+            .iter()
+            .map(|a| a.doc_id.as_str())
+            .collect::<Vec<_>>(),
+        vec![a2]
+    );
+
+    // the diff across a1, and the histories, carry the amendment's date and page
+    let df = civic::diff(&pool, d(2022, 6, 9), d(2022, 6, 10))
+        .await
+        .expect("diff");
+    assert_eq!(
+        df.added.iter().map(|a| a.name.as_str()).collect::<Vec<_>>(),
+        vec!["Sri Lanka Coast Guard"]
+    );
+    assert_eq!(df.added[0].to.doc_id.as_deref(), Some(a1));
+    assert_eq!(
+        df.removed
+            .iter()
+            .map(|a| a.name.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Civil Security Department"]
+    );
+    let cg = civic::entity(&pool, "sri-lanka-coast-guard")
+        .await
+        .expect("entity");
+    assert_eq!(
+        (cg.history[0].valid_from, cg.history[0].doc_id.as_deref()),
+        (d(2022, 6, 10), Some(a1))
+    );
+    let csd = civic::entity(&pool, "civil-security-department")
+        .await
+        .expect("entity");
+    assert_eq!(csd.history[0].valid_to, Some(d(2022, 6, 10)));
+
+    // each change records what happened
+    let ch = civic::amendment_changes(&pool, a1).await.expect("changes");
+    assert!(
+        ch.changes
+            .iter()
+            .all(|c| c.applied == Some(true) && c.ok == Some(true)),
+        "{:?}",
+        ch.changes
+    );
+    let ch2 = civic::amendment_changes(&pool, a2).await.expect("changes");
+    assert_eq!(
+        (ch2.status.as_str(), ch2.changes[0].applied),
+        ("needs_review", Some(false))
+    );
+
+    // a rebuild is idempotent
+    let again = build::build(&pool, &Aliases::default())
+        .await
+        .expect("rebuild");
+    assert_eq!(
+        (again.assignments, again.entities),
+        (r.assignments, r.entities)
     );
 }

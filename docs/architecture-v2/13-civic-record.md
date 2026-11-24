@@ -146,7 +146,7 @@ Each baseline's or supplement's schedule repeats one block per minister (the **t
 **C1 scope:**
 - Baselines are parsed fully.
 - Amendments are recorded as timeline events, with the baseline they amend and their effective date.
-- Applying amendment operations is C2, and goes through review.
+- Applying amendment operations is C2 (§2.2), and goes through review.
 
 **Schema** (migration `0018_civic.sql`, schema `civic`, owner `lanka_owner`; `lanka_ingest` writes and `lanka_api` reads, with grants by `civic.apply_grants()`):
 
@@ -216,7 +216,7 @@ All checks passing → `validated`; otherwise `needs_review`. A reviewer can `ap
 | Endpoint | Returns |
 |---|---|
 | `GET /v2/civic/instruments` | `[{doc_id, kind, effective_from, amends, head_of_state, status, portfolios, institutions, title, number}]`, newest first, every instrument of every kind and status (including `needs_review`; `portfolios` and `institutions` are 0 when unparsed), `number` as `"2412/08"`, `title` the English title of the document, for the timeline |
-| `GET /v2/civic/structure?at=YYYY-MM-DD` | `{at, instrument:{doc_id, effective_from, number}, composed_of:[{doc_id, effective_from}], amendments_since:[{doc_id, effective_from, title}], portfolios:[{doc_id, seq, title, short_title, portfolio_key, page, functions:[{item_no, text}], institutions:[{item_no, text, entity_key, kind, page}], laws:[{item_no, text}]}]}`. Without `at`, today. `instrument` is the latest gazette of the structure; `composed_of` lists the gazettes it is made of (one baseline, or the run of supplements); each portfolio carries the `doc_id` it is printed in, which its pages refer to. `title` is as printed (`Minister of Defence`), `short_title` has the `Minister of`/`Minister for` prefix dropped (`Defence`). For a date before the first parsed schedule: 404 with `payload.problem = {code: "not_in_coverage", earliest: "YYYY-MM-DD"}`. |
+| `GET /v2/civic/structure?at=YYYY-MM-DD` | `{at, instrument:{doc_id, effective_from, number}, composed_of:[{doc_id, effective_from, kind}], amendments_since:[{doc_id, effective_from, title}], portfolios:[{doc_id, seq, title, short_title, portfolio_key, page, functions:[{item_no, text}], institutions:[{item_no, text, entity_key, kind, doc_id, page}], laws:[{item_no, text}]}]}`. Since C2, `composed_of` ends with the amendments applied, an institution's `doc_id` is the gazette its line is printed in, and `amendments_since` lists only the amendments in force by `at` that are not applied (§2.2). Without `at`, today. `instrument` is the latest gazette of the structure; `composed_of` lists the gazettes it is made of (one baseline, or the run of supplements); each portfolio carries the `doc_id` it is printed in, which its pages refer to. `title` is as printed (`Minister of Defence`), `short_title` has the `Minister of`/`Minister for` prefix dropped (`Defence`). For a date before the first parsed schedule: 404 with `payload.problem = {code: "not_in_coverage", earliest: "YYYY-MM-DD"}`. |
 | `GET /v2/civic/diff?from=DATE&to=DATE` | `{from:{doc_id, effective_from}, to:{…}, moved:[{entity_key, name, kind, from:{portfolio_key, title, short_title, page}, to:{…}}], added:[{entity_key, name, kind, to:{…}}], removed:[{entity_key, name, kind, from:{…}}], portfolios:{added:[title], removed:[title], kept:[{from_title, to_title, from_key, to_key, overlap, renamed}]}, counts:{moved, added, removed, portfolios_added, portfolios_removed, portfolios_renamed}}`. Both dates use the composed structure. `page` is the institution's page in that side's gazette. 404 as for `structure`. |
 | `GET /v2/civic/entities?q=&limit=` | `[{entity_key, name, kind, current:{portfolio_title} or null}]` |
 | `GET /v2/civic/entities/{key}` | `{entity_key, name, kind, aliases, history:[{portfolio_title, portfolio_key, valid_from, valid_to, doc_id, page}]}` |
@@ -231,6 +231,64 @@ All checks passing → `validated`; otherwise `needs_review`. A reviewer can `ap
 - **Compare.** Pick two dates; the default is the previous baseline against the current one. Counts sit at the top: moved, added, removed, ministries added and removed. A flow diagram has old ministries on the left and new on the right, with a ribbon for each group of institutions that moved. Lists follow.
 - **Institution history.** A drawer with one bar per assignment over time, coloured by ministry.
 - **Evidence.** Every item and assignment links to the gazette PDF at its page.
+
+### 2.2 Build C2: amendments applied (binding contract)
+
+**Reading** (`lanka-ingest/src/civic/amend.rs`, pure). An amending schedule is read clause by clause from the PDF's words, in reading order, after the word `SCHEDULE`. Running heads, page labels and print codes are dropped. A clause `(N)` names a heading:
+- `With reference to the Heading, No. "02. Minister of …"`;
+- `Heading (1) Minister of …`;
+- `Heading : Minister of … (No. 4)`;
+- `heading, ''Minister of … (No. 31)''`.
+
+Its lettered sub-clauses `(a)`… (or one unlettered `By omission …` line) each make one change. The changes read:
+
+| op | printed as |
+|---|---|
+| `omit` | `by omitting item(s) N, M to K`, or the items printed below (numbered, or acts after a bullet), or quoted in the sentence |
+| `insert` | `insertion/addition of the following item(s) immediately after item N` (or `before item N`, or after a quoted act in Column III, or at the end) |
+| `substitute` | `substitution of following item instead of item N`; `omitting item N and insertion of the following item`; `item N as -`; `instead of items 6, 10 and 13 respectively` (one per item) |
+| `renumber` | `re-numbering of items 56 to 62 respectively, as numbers 57 to 63` (groups joined by `and`); `re-numbering the items 21 and 22` (numbered on from the item before); `re-numbering the items from 22` (that item and every one after it) |
+| `replace_column` | `in Column I change as follows` |
+| `replace_columns` | `by omission of the items in Columns I, II and III thereof and insertion of the following items` (a table without a heading) |
+| `rename_heading` | `The Heading (thereof) as "…"` |
+| `insert_heading` | `By insertion/addition of the following new Heading(s) after … the Heading …`, then the tables |
+| `replace_heading` | `By the omission of the said Heading … and the insertion of the following Heading`; `By the substitution for the Heading …`; a schedule made only of heading tables replaces those headings |
+| `omit_heading` | `By the omission/removal of the (said) Heading …` |
+| `renumber_headings` | kept as a record; headings are found by title |
+| `unparsed` | anything else, with the reason, so nothing is ever dropped |
+
+Tables are read by the C1 table parser on the words of the table alone, cut where the next clause starts. A change made `(only in Sinhala/Tamil Notification)` is read, stored with `lang_only`, and not applied to the English schedule. Extract stores the changes in `civic.amendment_changes` (migration `0019`) and adds the check `changes_read`, which fails when any change is `unparsed` or none was read.
+
+**Applying** (`apply.rs`, pure; `consolidate.rs`, the first step of `lanka civic build`). The timeline is replayed in date order. Baselines and runs of supplements compose as in §2.1. Each amendment is applied to the structure in force just before it:
+- **Headings** are found by portfolio key, then by a close title (word overlap ≥ 0.8, or ≥ 0.4 when the printed number agrees; a close match always goes to review). A clause's heading is found once, so a clause that renames its heading first still changes its columns.
+- **Items** are found by the numbers they had before the clause, so `insert 56 after 55` then `renumber 56–62 as 57–63` moves the old items. When a change prints both a number and the text, both must agree; if they disagree, the text decides only when it names exactly one item, and the change goes to review. Column III items are found by their text (word overlap ≥ 0.6).
+- A change that cannot be placed is **skipped, never guessed**.
+- An omission leaves a gap in the numbers; the amended columns must still number upwards.
+
+Checks stored on the amendment (`changes_read` from extract, the rest from the build):
+- `amended_structure`: the gazette it names is part of the structure in force;
+- `changes_applied`: every change applied as printed (changes in the Sinhala or Tamil text only do not count against it; no changes at all fail it);
+- `numbering_consistent`: the columns it changed still number upwards;
+- `earlier_amendments_served`: every earlier amendment of the same structure is served.
+
+Status follows the checks unless a reviewer approved or rejected the amendment. An amendment is **served** when it is validated or approved and every earlier amendment of its structure is served. An amendment that is not served, but not rejected, is still the base for later amendments, so their own changes resolve; they wait with it. A rejected amendment is skipped.
+
+**Storage.** The structure as amended is written under the amendment's `doc_id` in `civic.portfolios` and `civic.items`, one heading per position, and every heading and line keeps `source_doc`, the gazette it is printed in. A served amendment is a step of the timeline: it replaces the structure from its date, its `composed_of` is the structure it amends plus itself, and it does not end a run of supplements. Assignments then read amended structures like any other, so an institution added by an amendment starts on the amendment's date, with the amendment's page as evidence. `civic.amendment_changes` records, per change, `applied`, `ok` and a plain `note`.
+
+**Read side.**
+- `GET /v2/civic/instruments/{doc_id}/changes` → `{doc_id, number, effective_from, amends, status, checks:[{check, ok, detail}], changes:[{change_no, clause, heading_no, heading_title, op, col, lang_only, page, text, applied, ok, note}]}`.
+- `GET /v2/civic/instruments` adds `changes` and `changes_applied`.
+- `lanka civic changes <doc_id> [--problems]` prints the same for review.
+- `lanka civic discover` also lists titles that amend an extracted schedule by number ("Amended Gazette Extraordinary No. 2289/43 …"), which need not say "duties" or "functions".
+
+**View.** The timeline fills an applied amendment's mark and outlines one that is not applied. The structure says "as amended N times" and lists the amendments applied, and those in force but not applied, each with a **What changed** drawer: the changes grouped by ministry, in plain words, each with its page, whether it applied, and why not. For a served amendment, the drawer also offers the comparison of the day before with its date.
+
+**Known limits** (2026-11-24, local run over the archive):
+- 76 amendments since 2011; 9 applied and served.
+- The 2020 policy-statement layout (2187/27 and its 17 amendments, which replace whole sections, and the reprints 2194/74 and 2196/27) is not read yet (C2b).
+- The 2011–2014 amendments name 1681/03 (November 2010), which the document listing does not hold.
+- The "English" file of 2303/17 is the Tamil text, so the 2289/43 chain waits at 2311/42.
+- 2458/65 (2025) applies 71 of 83 changes cleanly; its three problems are errors in the gazette itself (an act "No. 07 of 2070", an act omitted from a heading that does not list it, and an inserted item 4 that leaves the old item 4 unrenumbered). It waits for review.
 
 ## 3. Views (track D)
 

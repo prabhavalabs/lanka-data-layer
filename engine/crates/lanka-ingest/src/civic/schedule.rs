@@ -30,10 +30,10 @@ use std::sync::LazyLock;
 
 use lanka_extractd::{Word, Words};
 use regex::Regex;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// One numbered line of a column.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Item {
     pub item_no: i32,
     pub text: String,
@@ -41,7 +41,7 @@ pub struct Item {
 }
 
 /// One minister's heading with its three columns.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Portfolio {
     /// The heading number (`01.` is 1).
     pub seq: i32,
@@ -73,7 +73,7 @@ enum Col {
 
 // ─────────────────────────── text helpers ───────────────────────────────────
 
-static HEADING: LazyLock<Regex> = LazyLock::new(|| {
+pub(super) static HEADING: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)^\s*\(?(\d{1,3})(?:\s*[.)]\s*|\s+)(Minist(?:er|ry)\b.*)$")
         .expect("heading regex")
 });

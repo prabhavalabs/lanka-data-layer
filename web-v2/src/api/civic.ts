@@ -18,12 +18,19 @@ export type Instrument = {
   status: InstrumentStatus
   portfolios: number
   institutions: number
+  /** changes an amendment makes, as read, and how many applied to the English schedule */
+  changes?: number
+  changes_applied?: number
   title: string
   number: string
 }
 
+/** An amendment whose changes are applied to the structure the page shows. */
+export const isApplied = (i: Pick<Instrument, 'kind' | 'portfolios' | 'status'>) => i.kind === 'amendment' && i.portfolios > 0 && (i.status === 'validated' || i.status === 'approved')
+
 export type Item = { item_no: number; text: string }
-export type StructureInstitution = Item & { entity_key: string | null; kind: EntityKind; page: number | null }
+/** `doc_id`: the gazette the line is printed in (after amendments, it can be the amendment or an earlier gazette) */
+export type StructureInstitution = Item & { entity_key: string | null; kind: EntityKind; page: number | null; doc_id?: string }
 export type StructurePortfolio = {
   /** the gazette this ministry is printed in; in a composed structure the pages belong to different gazettes */
   doc_id: string
@@ -39,12 +46,14 @@ export type StructurePortfolio = {
 export type Structure = {
   at: string
   instrument: { doc_id: string; effective_from: string; number: string }
-  composed_of?: { doc_id: string; effective_from: string }[]
+  /** the baseline (or run of supplements) and then every amendment applied to it, oldest first */
+  composed_of?: { doc_id: string; effective_from: string; kind?: Instrument['kind'] }[]
+  /** amendments in force by then that are not applied: not read yet, or waiting for review */
   amendments_since: { doc_id: string; effective_from: string; title: string }[]
   portfolios: StructurePortfolio[]
 }
 
-export type PortfolioRef = { portfolio_key: string; title: string; short_title?: string; page?: number | null }
+export type PortfolioRef = { portfolio_key: string; title: string; short_title?: string; page?: number | null; doc_id?: string | null }
 export type DiffInstrument = { doc_id: string; effective_from: string; number?: string }
 export type Moved = { entity_key: string; name: string; kind: EntityKind; from: PortfolioRef; to: PortfolioRef }
 export type Added = { entity_key: string; name: string; kind: EntityKind; to: PortfolioRef }
@@ -57,6 +66,43 @@ export type Diff = {
   removed: Removed[]
   portfolios: { added: string[]; removed: string[]; kept: { from_title: string; to_title: string; from_key?: string; to_key?: string; overlap?: number; share?: number; relation?: 'same' | 'renamed' | 'successor'; renamed?: boolean }[] }
   counts?: { moved: number; added: number; removed: number; portfolios_added: number; portfolios_removed: number; portfolios_renamed: number }
+}
+
+export type ChangeOp =
+  | 'omit'
+  | 'insert'
+  | 'substitute'
+  | 'renumber'
+  | 'replace_column'
+  | 'replace_columns'
+  | 'rename_heading'
+  | 'replace_heading'
+  | 'insert_heading'
+  | 'omit_heading'
+  | 'renumber_headings'
+  | 'unparsed'
+export type AmendmentChange = {
+  change_no: number
+  clause: string
+  heading_no: number | null
+  heading_title: string | null
+  op: ChangeOp
+  col: 'function' | 'institution' | 'law' | null
+  lang_only: 'si' | 'ta' | null
+  page: number | null
+  text: string
+  applied: boolean | null
+  ok: boolean | null
+  note: string | null
+}
+export type AmendmentChanges = {
+  doc_id: string
+  number: string | null
+  effective_from: string
+  amends: string | null
+  status: InstrumentStatus
+  checks: { check: string; ok: boolean; detail: string }[]
+  changes: AmendmentChange[]
 }
 
 export type EntityHit = { entity_key: string; name: string; kind: EntityKind; current: { portfolio_title: string } | null }
@@ -127,6 +173,15 @@ export const entitySearchQuery = (q: string) =>
 
 export const entityQuery = (key: string | null) =>
   queryOptions({ queryKey: ['civic', 'entity', key], queryFn: () => read<EntityDetail>(`/v2/civic/entities/${encodeURIComponent(key ?? '')}`, {}, () => mockCivic.entity(key ?? '')), staleTime: HOUR, enabled: !!key, retry: false })
+
+export const amendmentChangesQuery = (docId: string | null) =>
+  queryOptions({
+    queryKey: ['civic', 'changes', docId],
+    queryFn: () => read<AmendmentChanges>(`/v2/civic/instruments/${encodeURIComponent(docId ?? '')}/changes`, {}, () => mockCivic.changes(docId ?? '')),
+    staleTime: HOUR,
+    enabled: !!docId,
+    retry: false,
+  })
 
 /** The gazette's archived PDF; `page` opens it there. */
 export const gazettePdf = (docId: string, page?: number | null, lang = 'en') => `${apiUrl(`/v2/documents/${encodeURIComponent(docId)}/${lang}.pdf`)}${page ? `#page=${page}` : ''}`
